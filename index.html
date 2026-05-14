@@ -209,55 +209,98 @@ const pc=name=>S.providers[name]?.color||'#888';
 const mkProv=name=>{if(!S.providers[name])S.providers[name]={color:PC[Object.keys(S.providers).length%PC.length]};};
 const conflicts=evs=>{const ids=new Set();for(let i=0;i<evs.length;i++)for(let j=i+1;j<evs.length;j++){const a=evs[i],b=evs[j];if(a.provider===b.provider&&a.slotIndex<b.slotIndex+b.duration&&a.slotIndex+a.duration>b.slotIndex){ids.add(a.id);ids.add(b.id);}}return ids;};
 
-// ── Firebase save/load ────────────────────────────────────────────────────
-// Store entire state as JSON string to avoid ALL Firebase key restrictions
-let isSaving=false, saveTmr=null;
+// ── Save / Load ───────────────────────────────────────────────────────────
+// localStorage = primary (instant, never lost on refresh)
+// Firebase     = secondary (background sync for sharing across devices)
+
+const LS_KEY = 'pdi_sched_v1';
+let fbSaveTmr = null, lastFBBlob = null;
+
+function getBlob(){
+  return JSON.stringify({
+    ts: Date.now(),
+    title:S.title, subtitle:S.subtitle,
+    clients:S.clients, events:S.events,
+    providers:S.providers, services:S.services
+  });
+}
+
+function applyBlob(blob){
+  try{
+    const d=JSON.parse(blob);
+    if(d.clients)  { S.clients=d.clients; const ni=new Set(d.clients.map(c=>c.id)); S.clients.forEach(c=>{if(!S.selClients.has(c.id))S.selClients.add(c.id);}); for(const id of[...S.selClients])if(!ni.has(id))S.selClients.delete(id); }
+    if(d.events)   S.events=d.events;
+    if(d.providers)S.providers=d.providers;
+    if(d.services) S.services=d.services;
+    if(d.title)    S.title=d.title;
+    if(d.subtitle!==undefined)S.subtitle=d.subtitle;
+    return true;
+  }catch(e){ console.error('applyBlob error',e); return false; }
+}
 
 function saveAll(){
-  isSaving=true;
-  showSaveStatus('saving');
-  clearTimeout(saveTmr);
-  saveTmr=setTimeout(()=>{
-    const blob=JSON.stringify({
-      title:S.title, subtitle:S.subtitle,
-      clients:S.clients, events:S.events,
-      providers:S.providers, services:S.services
-    });
-    FB.set({blob},err=>{
-      isSaving=false;
-      if(err){console.error('Firebase write error:',err);showSaveStatus('error');}
-      else{showSaveStatus('saved');}
-    });
-  },300);
+  // 1. Save to localStorage immediately — this NEVER gets lost on refresh
+  const blob = getBlob();
+  try{ localStorage.setItem(LS_KEY, blob); }catch(e){}
+  showSave('saved');
+
+  // 2. Mirror to Firebase in background (for sharing / other devices)
+  clearTimeout(fbSaveTmr);
+  fbSaveTmr = setTimeout(()=>{
+    lastFBBlob = blob;
+    FB.set({blob}, err=>{ if(err){ console.warn('Firebase mirror failed:',err); setLive(false); } else { setLive(true); } });
+  }, 500);
 }
 
-function showSaveStatus(st){
+function showSave(st){
   const el=document.getElementById('save-status');if(!el)return;
-  if(st==='saving'){el.textContent='Saving...';el.style.color='var(--color-txt3)';}
-  else if(st==='saved'){el.textContent='Saved \u2713';el.style.color='var(--color-txt-ok)';setTimeout(()=>{if(el.textContent==='Saved \u2713')el.textContent='';},3000);}
-  else if(st==='error'){el.textContent='Save failed!';el.style.color='var(--color-txt-err)';}
+  if(st==='saved'){ el.textContent='Saved ✓'; el.style.color='var(--color-txt-ok)'; setTimeout(()=>{ if(el.textContent==='Saved ✓')el.textContent=''; },2500); }
+  else if(st==='error'){ el.textContent='Save error'; el.style.color='var(--color-txt-err)'; }
 }
 
-FB.on('value',snap=>{
-  if(isSaving)return;
-  const raw=snap.val();
-  if(raw?.blob){
-    try{
-      const d=JSON.parse(raw.blob);
-      const oldIds=new Set(S.clients.map(c=>c.id));
-      if(d.clients)  {S.clients=d.clients;d.clients.forEach(c=>{if(!oldIds.has(c.id))S.selClients.add(c.id);});}
-      if(d.events)   S.events=d.events;
-      if(d.providers)S.providers=d.providers;
-      if(d.services) S.services=d.services;
-      if(d.title)    S.title=d.title;
-      if(d.subtitle!==undefined)S.subtitle=d.subtitle;
-      const ni=new Set(S.clients.map(c=>c.id));
-      for(const id of[...S.selClients])if(!ni.has(id))S.selClients.delete(id);
-    }catch(e){console.error('Parse error',e);}
+// On load: read localStorage first (instant), then check Firebase for newer version
+(function initLoad(){
+  const local = (() => { try{ return localStorage.getItem(LS_KEY); }catch(e){return null;} })();
+  const localTs = (() => { try{ return local ? JSON.parse(local).ts||0 : 0; }catch(e){return 0;} })();
+
+  if(local && applyBlob(local)){
+    renderAll();
   }
-  setLive(true);
-  renderAll();
-},()=>setLive(false));
+
+  // Check Firebase for a newer version (e.g. edited from another device)
+  FB.once('value').then(snap=>{
+    const raw = snap.val();
+    if(!raw?.blob) { setLive(true); if(!local) renderAll(); return; }
+    let fbTs=0; try{ fbTs=JSON.parse(raw.blob).ts||0; }catch(e){}
+    if(fbTs > localTs){
+      // Firebase is newer — use it and update localStorage
+      if(applyBlob(raw.blob)){
+        try{ localStorage.setItem(LS_KEY, raw.blob); }catch(e){}
+        lastFBBlob = raw.blob;
+        renderAll();
+      }
+    }
+    setLive(true);
+  }).catch(()=>{ setLive(false); if(!local) renderAll(); });
+
+  // Poll Firebase every 20 seconds for updates from other users
+  setInterval(()=>{
+    FB.once('value').then(snap=>{
+      const raw=snap.val();
+      if(!raw?.blob||raw.blob===lastFBBlob)return;
+      let fbTs=0; try{ fbTs=JSON.parse(raw.blob).ts||0; }catch(e){}
+      const localNow = (()=>{ try{ const l=localStorage.getItem(LS_KEY); return l?JSON.parse(l).ts||0:0; }catch(e){return 0;} })();
+      if(fbTs > localNow){
+        if(applyBlob(raw.blob)){
+          try{ localStorage.setItem(LS_KEY, raw.blob); }catch(e){}
+          lastFBBlob=raw.blob;
+          renderAll();
+        }
+      }
+      setLive(true);
+    }).catch(()=>setLive(false));
+  }, 20000);
+})();
 
 function setLive(ok){
   const d=document.getElementById('ldot'),l=document.getElementById('llbl');
