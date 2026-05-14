@@ -534,7 +534,7 @@ function exportToExcel(){if(typeof XLSX==='undefined'){alert('Still loading.');r
 // ── Export: Full PDF ──────────────────────────────────────────────────────
 function exportToPDF(){if(typeof window.jspdf==='undefined'){alert('PDF loading, try again.');return;}const btn=document.getElementById('pdf-btn');if(btn){btn.innerHTML='...';btn.disabled=true;}try{const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});const pW=297,mg=12,uW=pW-2*mg;doc.setFont('helvetica','bold');doc.setFontSize(16);doc.setTextColor(15,23,42);doc.text(S.title,mg,14);doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(100,116,139);doc.text(`Generated ${new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}`,mg,20);let lx=mg;Object.entries(S.providers).forEach(([name,{color}])=>{const[r,g,b]=rgb(color);doc.setFillColor(r,g,b);doc.roundedRect(lx,24,3,3,.5,.5,'F');doc.setTextColor(71,85,105);doc.setFontSize(8);doc.text(name,lx+5,27);lx+=doc.getTextWidth(name)+12;});let y=34;const allDates=[...new Set(S.events.map(e=>e.date))].sort();allDates.forEach(date=>{const de=S.events.filter(e=>e.date===date);if(!de.length)return;const cf=conflicts(de),minSi=Math.max(0,Math.min(...de.map(e=>e.slotIndex))-1),maxSi=Math.min(SLOTS.length,Math.max(...de.map(e=>e.slotIndex+e.duration))+1);const estH=(maxSi-minSi)*6.5+14;if(y+estH>195){doc.addPage();y=14;}doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(15,23,42);doc.text(fmtFull(date),mg,y);y+=4;const tW=20,cW=(uW-tW)/Math.max(S.clients.length,1);const head=[[{content:'Time',styles:{halign:'right',fontStyle:'bold'}},...S.clients.map(c=>({content:c.name,styles:{halign:'center',fontStyle:'bold'}}))]];const body=[];for(let si=minSi;si<maxSi;si++){const slot=SLOTS[si];const row=[{content:slot.label,styles:{fontSize:6.5,halign:'right',textColor:slot.m===0?[50,65,92]:[148,163,184],cellPadding:{top:1,right:4,bottom:1,left:2}}}];S.clients.forEach(client=>{const ev=de.find(e=>e.clientId===client.id&&e.slotIndex===si);const cEv=de.find(e=>e.clientId===client.id&&si>e.slotIndex&&si<e.slotIndex+e.duration);if(ev){const[r,g,b]=rgb(pc(ev.provider));row.push({content:`${ev.service}\n${ev.provider}`,styles:{fillColor:[r,g,b],textColor:[255,255,255],fontSize:6.5,fontStyle:'bold',cellPadding:2}});}else if(cEv){const[r,g,b]=rgb(pc(cEv.provider));row.push({content:'',styles:{fillColor:[r,g,b],lineWidth:0}});}else row.push({content:'',styles:{fillColor:[255,255,255]}});});body.push(row);}doc.autoTable({head,body,startY:y,styles:{fontSize:7,cellPadding:1.5,lineColor:[226,232,240],lineWidth:.2,overflow:'linebreak'},headStyles:{fillColor:[30,41,59],textColor:[255,255,255],fontSize:8,halign:'center',cellPadding:3},columnStyles:{0:{cellWidth:tW},...Object.fromEntries(S.clients.map((_,i)=>[i+1,{cellWidth:cW}]))},margin:{left:mg,right:mg}});y=doc.lastAutoTable.finalY+10;});const pages=doc.getNumberOfPages();for(let i=1;i<=pages;i++){doc.setPage(i);doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(148,163,184);doc.text(`${S.title} \u00b7 Page ${i} of ${pages}`,pW/2,205,{align:'center'});}doc.save(`${S.title.replace(/[^a-z0-9]/gi,'_')}.pdf`);}catch(err){alert('PDF failed: '+err.message);}finally{if(btn){btn.innerHTML='<i class="ti ti-file-type-pdf"></i> PDF';btn.disabled=false;}}}
 
-// ── Export: Word — clean bulleted daily schedule ─────────────────
+// ── Export: Word ─────────────────────────────────────────────────────────
 function exportToWord(){
   const btn=document.getElementById('word-btn');
   if(btn){btn.innerHTML='...';btn.disabled=true;}
@@ -542,283 +542,66 @@ function exportToWord(){
     const selIds=[...S.selClients];
     const selClients=selIds.length>0?S.clients.filter(c=>selIds.includes(c.id)):S.clients;
     const de=S.events.filter(e=>e.date===S.selectedDate);
-    const dateStr=fmtFull(S.selectedDate);
 
-    let body='';
-
+    let pages='';
     selClients.forEach((client,ci)=>{
       const evs=de.filter(e=>e.clientId===client.id).sort((a,b)=>a.slotIndex-b.slotIndex);
-      const pageBreak=ci>0?'<p style="page-break-before:always;margin:0">&nbsp;</p>':'';
 
-      // Build bullet items
-      let items='';
+      // Each service = one entry block using a Word-safe 2-col table
+      let entries='';
       if(!evs.length){
-        items=`<p style="font-size:11pt;color:#9ca3af;font-style:italic;margin:0 0 6pt 20pt">No services scheduled for this day.</p>`;
+        entries=`<p style="font-size:11pt;color:#9ca3af;font-style:italic;margin:0 0 8pt 0">No services scheduled for this day.</p>`;
       } else {
         evs.forEach(ev=>{
-          const es=SLOTS[ev.slotIndex+ev.duration];
-          const timeStr=es?`${SLOTS[ev.slotIndex].label} – ${es.label}`:SLOTS[ev.slotIndex].label;
           const col=pc(ev.provider);
-          items+=`
-          <p style="margin:0 0 12pt 0;padding:10pt 14pt;border-left:4pt solid ${col};background:#f8fafc">
-            <span style="display:block;font-size:9.5pt;color:#6b7280;font-weight:normal;letter-spacing:.03em">${timeStr}</span>
-            <span style="display:block;font-size:13pt;font-weight:bold;color:#111827;margin-top:3pt">${ev.service}</span>
-            <span style="display:block;font-size:10.5pt;color:#374151;margin-top:2pt">${ev.provider}</span>
-          </p>`;
+          const es=SLOTS[ev.slotIndex+ev.duration];
+          const timeStr=es?`${SLOTS[ev.slotIndex].label} &ndash; ${es.label}`:SLOTS[ev.slotIndex].label;
+          // Use a table: thin colored bar on left | text on right — Word renders this perfectly
+          entries+=`
+<table style="border-collapse:collapse;width:100%;margin-bottom:10pt">
+  <tr>
+    <td style="width:5pt;background:${col};padding:0">&nbsp;</td>
+    <td style="padding:8pt 0 8pt 14pt;vertical-align:top;border-bottom:1pt solid #f3f4f6">
+      <p style="margin:0 0 3pt 0;font-size:9pt;color:#9ca3af">${timeStr}</p>
+      <p style="margin:0 0 3pt 0;font-size:13pt;font-weight:bold;color:#111827">${ev.service}</p>
+      <p style="margin:0;font-size:10.5pt;color:#6b7280">${ev.provider}</p>
+    </td>
+  </tr>
+</table>`;
         });
       }
 
-      body+=`
-      ${pageBreak}
-      <p style="font-size:8.5pt;color:#9ca3af;letter-spacing:.08em;text-transform:uppercase;margin:0 0 4pt 0">${S.title}</p>
-      <p style="font-size:22pt;font-weight:bold;color:#111827;margin:0 0 2pt 0">${client.name}</p>
-      <p style="font-size:11pt;color:#6b7280;margin:0 0 24pt 0">${dateStr}</p>
-      <p style="border-bottom:1.5pt solid #e5e7eb;margin:0 0 20pt 0"></p>
-      ${items}
-      <p style="font-size:7.5pt;color:#d1d5db;text-align:center;margin:32pt 0 0 0;border-top:1pt solid #f3f4f6;padding-top:10pt">${S.title} &nbsp;&middot;&nbsp; Confidential &nbsp;&middot;&nbsp; ${new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}</p>`;
+      const pb = ci>0 ? '<p style="page-break-before:always;font-size:1pt;margin:0">&nbsp;</p>' : '';
+      pages += `
+${pb}
+<p style="font-size:8pt;color:#9ca3af;letter-spacing:2pt;text-transform:uppercase;margin:0 0 6pt 0">${S.title}</p>
+<p style="font-size:24pt;font-weight:bold;color:#111827;margin:0 0 4pt 0">${client.name}</p>
+<p style="font-size:11pt;color:#6b7280;margin:0 0 20pt 0">${fmtFull(S.selectedDate)}</p>
+<p style="font-size:8pt;color:#d1d5db;letter-spacing:1pt;text-transform:uppercase;margin:0 0 10pt 0;border-bottom:2pt solid #e5e7eb;padding-bottom:6pt">${evs.length} Session${evs.length!==1?'s':''}</p>
+${entries}
+<p style="font-size:7.5pt;color:#d1d5db;text-align:center;margin:28pt 0 0 0">${S.title} &nbsp;&middot;&nbsp; Confidential &nbsp;&middot;&nbsp; ${new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}</p>`;
     });
 
     const html=`<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
 <head><meta charset="utf-8"><title>${S.title}</title>
-<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml><![endif]-->
+<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->
 <style>
-  body{font-family:'Calibri',sans-serif;margin:.9in 1in .9in 1in;color:#111827;}
+  @page{margin:.9in 1in .9in 1in;}
+  body{font-family:Calibri,sans-serif;font-size:11pt;color:#111827;margin:.9in 1in;}
   p{margin:0;}
+  table{border-collapse:collapse;}
 </style>
-</head><body>${body}</body></html>`;
+</head><body>${pages}</body></html>`;
 
-    const blob=new Blob(['﻿'+html],{type:'application/msword'});
+    const blob=new Blob(['\ufeff'+html],{type:'application/msword'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
-    a.href=url;a.download=`Schedule_${client&&selClients.length===1?selClients[0].name.replace(/\s+/g,'_')+'_':''}${S.selectedDate.replace(/-/g,'')}.doc`;
-    document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+    a.href=url;
+    a.download=`Schedule_${S.selectedDate.replace(/-/g,'')}.doc`;
+    document.body.appendChild(a);a.click();
+    document.body.removeChild(a);URL.revokeObjectURL(url);
   }catch(err){alert('Word export failed: '+err.message);}
   finally{if(btn){btn.innerHTML='<i class="ti ti-file-type-doc"></i> Word';btn.disabled=false;}}
-}
-DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PDI/Signature Schedule</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/dist/tabler-icons.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <style>
-    :root {
-      --color-bg:       #ffffff;
-      --color-bg2:      #f8fafc;
-      --color-bg-info:  #eff6ff;
-      --color-bg-ok:    #f0fdf4;
-      --color-bg-warn:  #fef2f2;
-      --color-txt:      #0f172a;
-      --color-txt2:     #475569;
-      --color-txt3:     #94a3b8;
-      --color-txt-info: #1d4ed8;
-      --color-txt-ok:   #15803d;
-      --color-txt-err:  #b91c1c;
-      --color-bdr:      rgba(0,0,0,.09);
-      --color-bdr2:     rgba(0,0,0,.16);
-      --color-bdr-info: #bfdbfe;
-      --color-bdr-ok:   #bbf7d0;
-      --color-bdr-err:  #fecaca;
-      --r:  8px;
-      --rl: 12px;
-      --font: 'Plus Jakarta Sans',-apple-system,sans-serif;
-    }
-    @media(prefers-color-scheme:dark){
-      :root{
-        --color-bg:#1e293b;--color-bg2:#0f172a;--color-bg-info:#1e3a5f;
-        --color-bg-ok:#052e16;--color-bg-warn:#450a0a;
-        --color-txt:#f1f5f9;--color-txt2:#94a3b8;--color-txt3:#64748b;
-        --color-txt-info:#93c5fd;--color-txt-ok:#86efac;--color-txt-err:#fca5a5;
-        --color-bdr:rgba(255,255,255,.08);--color-bdr2:rgba(255,255,255,.16);
-        --color-bdr-info:rgba(147,197,253,.3);--color-bdr-ok:rgba(134,239,172,.3);--color-bdr-err:rgba(252,165,165,.3);
-      }
-    }
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-    body{font-family:var(--font);background:var(--color-bg2);color:var(--color-txt);padding:18px;min-height:100vh;}
-    #app{max-width:1800px;margin:0 auto;}
-    .card{background:var(--color-bg);border:0.5px solid var(--color-bdr);border-radius:var(--rl);padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;flex-wrap:wrap;gap:8px;}
-    .btn{display:flex;align-items:center;gap:6px;padding:7px 13px;border-radius:var(--r);border:0.5px solid var(--color-bdr2);background:transparent;cursor:pointer;font-size:13px;color:var(--color-txt2);font-family:var(--font);white-space:nowrap;transition:background .12s;}
-    .btn:hover{background:var(--color-bg2);}
-    .btn:disabled{opacity:.5;cursor:not-allowed;}
-    .btn.grn{background:var(--color-bg-ok);border-color:var(--color-bdr-ok);color:var(--color-txt-ok);}
-    .btn.red{background:var(--color-bg-warn);border-color:var(--color-bdr-err);color:var(--color-txt-err);}
-    .btn.pur{background:#7f77dd18;border-color:#7f77dd55;color:#7F77DD;}
-    .btn.nav{font-size:18px;line-height:1;padding:5px 10px;}
-    .ibtn{background:none;border:none;cursor:pointer;padding:4px;border-radius:var(--r);color:var(--color-txt3);display:flex;align-items:center;font-family:var(--font);transition:background .1s,color .1s;}
-    .ibtn:hover{background:var(--color-bg2);color:var(--color-txt);}
-    .day-tab{display:flex;flex-direction:column;align-items:center;padding:6px 11px;border-radius:var(--r);border:0.5px solid var(--color-bdr);background:transparent;cursor:pointer;font-family:var(--font);transition:all .15s;gap:2px;min-width:54px;}
-    .day-tab:hover:not(.active){background:var(--color-bg2);}
-    .day-tab.active{background:var(--color-bg-info);border-color:var(--color-bdr-info);}
-    .day-tab.active .dn,.day-tab.active .dd,.day-tab.active .dm,.day-tab.active .dc{color:var(--color-txt-info);}
-    .day-tab.wknd .dn,.day-tab.wknd .dd,.day-tab.wknd .dm{color:var(--color-txt-err);}
-    .day-tab.wknd.active .dn,.day-tab.wknd.active .dd,.day-tab.wknd.active .dm{color:var(--color-txt-info);}
-    .day-tab.tday .dn,.day-tab.tday .dd,.day-tab.tday .dm{color:var(--color-txt-info);}
-    .dn{font-size:10px;font-weight:500;color:var(--color-txt3);}
-    .dd{font-size:14px;font-weight:600;color:var(--color-txt2);line-height:1;}
-    .dm{font-size:9px;color:var(--color-txt3);line-height:1;}
-    .dc{font-size:9px;color:var(--color-txt3);}
-    .tdot{width:4px;height:4px;border-radius:50%;background:var(--color-txt-info);margin-top:1px;}
-    .lpill{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;border:1.5px solid transparent;cursor:pointer;transition:all .15s;font-size:12px;color:var(--color-txt2);}
-    .lpill:hover{background:var(--color-bg2);}
-    .lpill.dim{opacity:.3;}
-    select,input[type=text]{box-sizing:border-box;width:100%;padding:7px 10px;border-radius:var(--r);border:0.5px solid var(--color-bdr2);background:var(--color-bg);color:var(--color-txt);font-family:var(--font);font-size:13px;}
-    select:focus,input[type=text]:focus{outline:2px solid #7F77DD;outline-offset:1px;border-color:#7F77DD;}
-    input[type=color]{cursor:pointer;border:0.5px solid var(--color-bdr2);border-radius:6px;padding:2px;background:none;}
-    #grid-wrap{border:0.5px solid var(--color-bdr);border-radius:var(--rl);overflow:auto;max-height:62vh;background:var(--color-bg);}
-    #grid{display:flex;min-width:max-content;}
-    .slot{height:48px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
-    .slot:hover{background:var(--color-bg2);}
-    .slot:hover .ph{opacity:1;}
-    .slot .ph{opacity:0;transition:opacity .15s;color:var(--color-txt3);font-size:20px;pointer-events:none;}
-    .drop-target{background:var(--color-bg-info)!important;}
-    .ecard{position:absolute;border-radius:var(--r);padding:6px 8px;color:#fff!important;overflow:hidden;z-index:2;user-select:none;cursor:grab;transition:filter .12s,transform .12s;}
-    .ecard:hover{filter:brightness(1.1);transform:translateY(-1px);}
-    .prov-row{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--r);border:0.5px solid var(--color-bdr);margin-bottom:6px;background:var(--color-bg);}
-    .prov-row input[type=text]{border:none;background:transparent;font-size:13px;padding:2px 4px;outline:none;flex:1;border-bottom:1.5px solid transparent;}
-    .prov-row input[type=text]:focus{border-bottom-color:#7F77DD;}
-    .svc-row{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:var(--r);border:0.5px solid var(--color-bdr);margin-bottom:5px;background:var(--color-bg);}
-    .svc-row input{border:none;background:transparent;font-size:13px;padding:0;outline:none;font-family:var(--font);color:var(--color-txt);flex:1;border-bottom:1.5px solid transparent;}
-    .svc-row input:focus{border-bottom-color:#7F77DD;}
-    .copy-dp{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 8px;border-radius:var(--r);border:1.5px solid var(--color-bdr);cursor:pointer;transition:all .15s;min-width:40px;user-select:none;}
-    .copy-dp.on{border-color:#7F77DD;background:#7F77DD18;}
-    .copy-dp.we{color:var(--color-txt-err);}
-    .copy-row{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:var(--r);border:0.5px solid var(--color-bdr);cursor:pointer;transition:background .1s;}
-    .copy-row:hover{background:var(--color-bg2);}
-    .copy-row.on{border-color:#7f77dd55;background:#7f77dd08;}
-    #modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-start;justify-content:center;z-index:200;padding-top:60px;overflow-y:auto;}
-    #mbox{background:var(--color-bg);border-radius:var(--rl);padding:24px;width:440px;border:0.5px solid var(--color-bdr);max-height:85vh;overflow-y:auto;}
-    @keyframes pu{0%,100%{opacity:1}50%{opacity:.25}}
-    .pul{animation:pu 2s infinite;}
-    @keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
-  </style>
-</head>
-<body>
-<div id="app">
-
-  <div class="card">
-    <div>
-      <div style="display:flex;align-items:center;gap:6px">
-        <div id="app-title" style="font-size:16px;font-weight:700;letter-spacing:-0.3px"></div>
-        <button class="ibtn" onclick="openEditTitle()" title="Edit title" style="opacity:.4"><i class="ti ti-pencil" style="font-size:13px"></i></button>
-      </div>
-      <div style="font-size:11px;color:var(--color-txt3)"><span id="app-subtitle"></span></div>
-    </div>
-    <div style="display:flex;align-items:center;gap:6px;margin-left:12px">
-      <button class="btn nav" onclick="shiftWeek(-1)">&#x2039;</button>
-      <div style="text-align:center;min-width:170px"><div id="week-label" style="font-size:13px;font-weight:500"></div></div>
-      <button class="btn nav" onclick="shiftWeek(1)">&#x203A;</button>
-      <button id="today-btn" class="btn" onclick="goToday()" style="font-size:12px;padding:5px 10px">Today</button>
-    </div>
-    <div style="display:flex;align-items:center;gap:6px">
-      <div id="ldot" class="pul" style="width:7px;height:7px;border-radius:50%;background:#888;flex-shrink:0"></div>
-      <span id="llbl" style="font-size:11px;color:var(--color-txt3)">Connecting...</span>
-      <span id="save-status" style="font-size:11px;font-weight:500;min-width:60px"></span>
-    </div>
-    <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">
-      <button class="btn pur" onclick="exportDaySchedule()" id="day-btn"><i class="ti ti-calendar-export"></i> Day Schedule <span id="sel-badge" style="background:rgba(127,119,221,.2);color:#7F77DD;border-radius:20px;padding:1px 7px;font-size:10px;font-weight:600"></span></button>
-      <button class="btn grn" onclick="exportToExcel()" id="xls-btn"><i class="ti ti-table-export"></i> Excel</button>
-      <button class="btn red"  onclick="exportToPDF()"   id="pdf-btn"><i class="ti ti-file-type-pdf"></i> PDF</button>
-      <button class="btn" onclick="exportToWord()" id="word-btn" style="border-color:#2b579a55;color:#2b579a;background:#2b579a11"><i class="ti ti-file-type-doc"></i> Word</button>
-      <button class="btn"      onclick="openShare()"><i class="ti ti-link"></i> Share</button>
-    </div>
-  </div>
-
-  <div id="cbar" style="display:none;padding:8px 14px;background:var(--color-bg-warn);border:0.5px solid var(--color-bdr-err);border-radius:var(--r);font-size:12px;color:var(--color-txt-err);margin-bottom:10px"></div>
-
-  <div class="card" style="min-height:42px">
-    <span style="font-size:11px;color:var(--color-txt3);font-weight:500;flex-shrink:0">Providers</span>
-    <div id="legend" style="display:flex;gap:6px;flex-wrap:wrap;flex:1"></div>
-    <button onclick="openManageProviders()" style="display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;border:0.5px solid var(--color-bdr2);background:transparent;cursor:pointer;font-size:11px;color:var(--color-txt2);font-family:var(--font);white-space:nowrap"><i class="ti ti-settings" style="font-size:12px"></i> Manage</button>
-  </div>
-
-  <div class="card" style="overflow-x:auto"><div id="day-tabs" style="display:flex;gap:5px"></div></div>
-
-  <div id="fbar" style="display:none;margin-bottom:10px;animation:fi .2s ease"></div>
-
-  <div class="card">
-    <i class="ti ti-layout-columns" style="font-size:14px;color:var(--color-txt3)"></i>
-    <span style="font-size:12px;color:var(--color-txt2)">Select clients for day export:</span>
-    <div id="client-pills" style="display:flex;gap:6px;flex-wrap:wrap;flex:1"></div>
-    <button onclick="selAll(true)"  style="padding:4px 10px;border-radius:var(--r);border:0.5px solid var(--color-bdr2);background:transparent;cursor:pointer;font-size:11px;color:var(--color-txt2);font-family:var(--font)">All</button>
-    <button onclick="selAll(false)" style="padding:4px 10px;border-radius:var(--r);border:0.5px solid var(--color-bdr2);background:transparent;cursor:pointer;font-size:11px;color:var(--color-txt2);font-family:var(--font)">None</button>
-  </div>
-
-  <div id="grid-wrap"><div id="grid"></div></div>
-</div>
-
-<div id="modal"><div id="mbox"></div></div>
-
-<script>
-// ── Firebase ──────────────────────────────────────────────────────────────
-firebase.initializeApp({
-  apiKey:            "AIzaSyCERxntgytkfCHWN7EoAVYVmLBcfWyYZ5A",
-  authDomain:        "pdi-signature-schedule.firebaseapp.com",
-  databaseURL:       "https://pdi-signature-schedule-default-rtdb.firebaseio.com",
-  projectId:         "pdi-signature-schedule",
-  storageBucket:     "pdi-signature-schedule.firebasestorage.app",
-  messagingSenderId: "545049861048",
-  appId:             "1:545049861408:web:1e0bf60ab88497f67a8b45"
-});
-const db = firebase.database();
-const FB = db.ref('schedule_v3'); // v3 = clean JSON blob storage, no key restrictions
-
-// ── Date utils ────────────────────────────────────────────────────────────
-const toISO=d=>{const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),dd=String(d.getDate()).padStart(2,'0');return`${y}-${m}-${dd}`;};
-const fromISO=s=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d);};
-const addDays=(iso,n)=>{const d=fromISO(iso);d.setDate(d.getDate()+n);return toISO(d);};
-const getMon=date=>{const d=new Date(date),day=d.getDay();d.setDate(d.getDate()+(day===0?-6:1-day));return toISO(d);};
-const todayISO=()=>toISO(new Date());
-const weekDates=m=>[0,1,2,3,4,5,6].map(i=>addDays(m,i));
-const isWknd=iso=>{const d=fromISO(iso).getDay();return d===0||d===6;};
-const isToday=iso=>iso===todayISO();
-const fmtS=iso=>fromISO(iso).toLocaleDateString('en-US',{month:'short',day:'numeric'});
-const fmtWD=iso=>fromISO(iso).toLocaleDateString('en-US',{weekday:'short'});
-const fmtFull=iso=>fromISO(iso).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
-const fmtRange=m=>{const d=weekDates(m);return`${fromISO(d[0]).toLocaleDateString('en-US',{month:'short',day:'numeric'})} \u2013 ${fromISO(d[6]).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;};
-const wdIdx=iso=>{const d=fromISO(iso).getDay();return d===0?6:d-1;};
-
-// ── Constants ─────────────────────────────────────────────────────────────
-const SH=48, PC=['#7F77DD','#1D9E75','#D85A30','#378ADD','#D4537E','#BA7517','#639922','#E24B4A','#00B4D8','#FF6B35'];
-const WLBL=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-const SLOTS=[];for(let h=8;h<20;h++){const ap=h>=12?'PM':'AM',hh=h>12?h-12:h;SLOTS.push({label:`${hh}:00 ${ap}`,m:0});SLOTS.push({label:`${hh}:30 ${ap}`,m:30});}
-
-// ── State ─────────────────────────────────────────────────────────────────
-const TODAY=todayISO(), MON=getMon(new Date());
-const S={
-  title:'PDI/Signature Schedule',
-  subtitle:'Click a slot to add \u00b7 drag to move \u00b7 click event to edit',
-  clients:[], events:[], providers:{}, services:[],
-  weekStart:MON, selectedDate:TODAY,
-  selClients:new Set(), drag:null, addingClient:false, filterProv:null,
-};
-
-let _uid=100;
-const nid=()=>'i'+(++_uid)+Math.random().toString(36).slice(2,5);
-const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-const rgb=hex=>{const h=hex.replace('#','');return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];};
-const pc=name=>S.providers[name]?.color||'#888';
-const mkProv=name=>{if(!S.providers[name])S.providers[name]={color:PC[Object.keys(S.providers).length%PC.length]};};
-const conflicts=evs=>{const ids=new Set();for(let i=0;i<evs.length;i++)for(let j=i+1;j<evs.length;j++){const a=evs[i],b=evs[j];if(a.provider===b.provider&&a.slotIndex<b.slotIndex+b.duration&&a.slotIndex+a.duration>b.slotIndex){ids.add(a.id);ids.add(b.id);}}return ids;};
-
-// ── Save / Load ───────────────────────────────────────────────────────────
-// localStorage = always the source of truth on THIS device.
-// Firebase = write-only mirror for other devices. NEVER reads back over localStorage.
-
-const LS_KEY = 'pdi_sched_v1';
-
-function getBlob(){
-  return JSON.stringify({
-    clients:S.clients, events:S.events,
-    providers:S.providers, services:S.services,
-    title:S.title, subtitle:S.subtitle
-  });
 }
 
 function applyData(d){
