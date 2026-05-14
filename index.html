@@ -221,7 +221,7 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-const SCHED_KEY = 'schedule_v2';
+const SCHED_KEY = 'schedule_v1';
 
 // ── Date utilities ────────────────────────────────────────────────────────
 function toISO(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),dd=String(d.getDate()).padStart(2,'0');return`${y}-${m}-${dd}`;}
