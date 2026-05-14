@@ -12,153 +12,117 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <style>
-    /* ── Design tokens ──────────────────────────────────────────────────── */
     :root {
-      --color-background-primary:   #ffffff;
-      --color-background-secondary: #f8fafc;
-      --color-background-info:      #eff6ff;
-      --color-background-success:   #f0fdf4;
-      --color-background-danger:    #fef2f2;
-      --color-text-primary:   #0f172a;
-      --color-text-secondary: #475569;
-      --color-text-tertiary:  #94a3b8;
-      --color-text-info:      #1d4ed8;
-      --color-text-success:   #15803d;
-      --color-text-danger:    #b91c1c;
-      --color-border-tertiary:  rgba(0,0,0,.08);
-      --color-border-secondary: rgba(0,0,0,.15);
-      --color-border-info:    #bfdbfe;
-      --color-border-success: #bbf7d0;
-      --color-border-danger:  #fecaca;
-      --border-radius-md: 8px;
-      --border-radius-lg: 12px;
-      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-      --font-mono: 'SF Mono', 'Fira Code', monospace;
+      --color-bg:       #ffffff;
+      --color-bg2:      #f8fafc;
+      --color-bg-info:  #eff6ff;
+      --color-bg-ok:    #f0fdf4;
+      --color-bg-warn:  #fef2f2;
+      --color-txt:      #0f172a;
+      --color-txt2:     #475569;
+      --color-txt3:     #94a3b8;
+      --color-txt-info: #1d4ed8;
+      --color-txt-ok:   #15803d;
+      --color-txt-err:  #b91c1c;
+      --color-bdr:      rgba(0,0,0,.09);
+      --color-bdr2:     rgba(0,0,0,.16);
+      --color-bdr-info: #bfdbfe;
+      --color-bdr-ok:   #bbf7d0;
+      --color-bdr-err:  #fecaca;
+      --r:  8px;
+      --rl: 12px;
+      --font: 'Plus Jakarta Sans',-apple-system,sans-serif;
     }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --color-background-primary:   #1e293b;
-        --color-background-secondary: #0f172a;
-        --color-background-info:      #1e3a5f;
-        --color-background-success:   #052e16;
-        --color-background-danger:    #450a0a;
-        --color-text-primary:   #f1f5f9;
-        --color-text-secondary: #94a3b8;
-        --color-text-tertiary:  #64748b;
-        --color-text-info:      #93c5fd;
-        --color-text-success:   #86efac;
-        --color-text-danger:    #fca5a5;
-        --color-border-tertiary:  rgba(255,255,255,.08);
-        --color-border-secondary: rgba(255,255,255,.15);
-        --color-border-info:    rgba(147,197,253,.3);
-        --color-border-success: rgba(134,239,172,.3);
-        --color-border-danger:  rgba(252,165,165,.3);
+    @media(prefers-color-scheme:dark){
+      :root{
+        --color-bg:#1e293b;--color-bg2:#0f172a;--color-bg-info:#1e3a5f;
+        --color-bg-ok:#052e16;--color-bg-warn:#450a0a;
+        --color-txt:#f1f5f9;--color-txt2:#94a3b8;--color-txt3:#64748b;
+        --color-txt-info:#93c5fd;--color-txt-ok:#86efac;--color-txt-err:#fca5a5;
+        --color-bdr:rgba(255,255,255,.08);--color-bdr2:rgba(255,255,255,.16);
+        --color-bdr-info:rgba(147,197,253,.3);--color-bdr-ok:rgba(134,239,172,.3);--color-bdr-err:rgba(252,165,165,.3);
       }
     }
-
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; }
-    body { font-family: var(--font-sans); background: var(--color-background-secondary); color: var(--color-text-primary); padding: 20px; min-height: 100vh; }
-    #app { max-width: 1800px; margin: 0 auto; }
-
-    .card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 10px 14px; margin-bottom: 10px; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
-
-    .btn { display: flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-secondary); background: transparent; cursor: pointer; font-size: 13px; color: var(--color-text-secondary); font-family: var(--font-sans); white-space: nowrap; transition: background .12s; }
-    .btn:hover { background: var(--color-background-secondary); }
-    .btn:disabled { opacity: .5; cursor: not-allowed; }
-    .btn.grn { background: var(--color-background-success);  border-color: var(--color-border-success); color: var(--color-text-success); }
-    .btn.red { background: var(--color-background-danger);   border-color: var(--color-border-danger);  color: var(--color-text-danger); }
-    .btn.pur { background: #7f77dd18; border-color: #7f77dd55; color: #7F77DD; }
-    .btn.nav { font-size: 18px; line-height: 1; padding: 5px 10px; }
-
-    .icon-btn { background: none; border: none; cursor: pointer; padding: 4px; border-radius: var(--border-radius-md); color: var(--color-text-tertiary); display: flex; align-items: center; font-family: var(--font-sans); transition: background .1s, color .1s; }
-    .icon-btn:hover { background: var(--color-background-secondary); color: var(--color-text-primary); }
-
-    #day-tabs { display: flex; gap: 5px; flex-wrap: wrap; }
-    .day-tab { display: flex; flex-direction: column; align-items: center; padding: 6px 11px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-tertiary); background: transparent; cursor: pointer; font-family: var(--font-sans); transition: all .15s; gap: 2px; min-width: 54px; }
-    .day-tab:hover:not(.active) { background: var(--color-background-secondary); }
-    .day-tab.active { background: var(--color-background-info); border-color: var(--color-border-info); }
-    .day-tab.active .dtnm, .day-tab.active .dtn, .day-tab.active .dtmo, .day-tab.active .dtct { color: var(--color-text-info); }
-    .day-tab.weekend .dtnm, .day-tab.weekend .dtn, .day-tab.weekend .dtmo { color: var(--color-text-danger); }
-    .day-tab.weekend.active .dtnm, .day-tab.weekend.active .dtn, .day-tab.weekend.active .dtmo { color: var(--color-text-info); }
-    .day-tab.today-tab .dtnm, .day-tab.today-tab .dtn, .day-tab.today-tab .dtmo { color: var(--color-text-info); }
-    .dtnm { font-size: 10px; font-weight: 500; color: var(--color-text-tertiary); }
-    .dtn  { font-size: 14px; font-weight: 600; color: var(--color-text-secondary); line-height: 1; }
-    .dtmo { font-size: 9px; color: var(--color-text-tertiary); line-height: 1; }
-    .dtct { font-size: 9px; color: var(--color-text-tertiary); }
-    .today-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--color-text-info); margin-top: 1px; }
-
-    .legend-pill { display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; border: 1.5px solid transparent; cursor: pointer; transition: all .15s; font-size: 12px; color: var(--color-text-secondary); }
-    .legend-pill:hover { background: var(--color-background-secondary); }
-    .legend-pill.dimmed { opacity: .3; }
-
-    .title-wrap:hover .edit-icon { opacity: 1 !important; }
-    .col-hdr:hover .col-edit { opacity: 1 !important; }
-
-    select, input[type=text] { box-sizing: border-box; width: 100%; padding: 7px 10px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-primary); font-family: var(--font-sans); font-size: 13px; }
-    select:focus, input[type=text]:focus { outline: 2px solid #7F77DD; outline-offset: 1px; border-color: #7F77DD; }
-    input[type=color] { cursor: pointer; border: 0.5px solid var(--color-border-secondary); border-radius: 6px; padding: 2px; background: none; }
-
-    #grid-wrap { border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); overflow: auto; max-height: 62vh; background: var(--color-background-primary); }
-    #grid { display: flex; min-width: max-content; }
-
-    .slot { height: 48px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .1s; }
-    .slot:hover { background: var(--color-background-secondary); }
-    .slot:hover .ph { opacity: 1; }
-    .slot .ph { opacity: 0; transition: opacity .15s; color: var(--color-text-tertiary); font-size: 20px; pointer-events: none; }
-    .drop-target { background: var(--color-background-info) !important; }
-
-    .ecard { position: absolute; border-radius: 8px; padding: 6px 8px; color: #fff !important; cursor: grab; overflow: hidden; z-index: 2; user-select: none; transition: filter .12s, transform .12s; -webkit-user-select: none; touch-action: none; }
-    .ecard:hover { filter: brightness(1.1); transform: translateY(-1px); }
-    .ecard:active { cursor: grabbing; }
-
-    .prov-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-tertiary); margin-bottom: 6px; background: var(--color-background-primary); }
-    .prov-row input[type=text] { border: none; background: transparent; font-size: 13px; padding: 2px 4px; outline: none; flex: 1; border-bottom: 1.5px solid transparent; }
-    .prov-row input[type=text]:focus { border-bottom-color: #7F77DD; }
-
-    .svc-row { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-tertiary); margin-bottom: 5px; background: var(--color-background-primary); }
-    .svc-row input { border: none; background: transparent; font-size: 13px; padding: 0; outline: none; font-family: var(--font-sans); color: var(--color-text-primary); flex: 1; border-bottom: 1.5px solid transparent; }
-    .svc-row input:focus { border-bottom-color: #7F77DD; }
-
-    .copy-day-pill { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 7px 8px; border-radius: var(--border-radius-md); border: 1.5px solid var(--color-border-tertiary); cursor: pointer; transition: all .15s; min-width: 40px; user-select: none; }
-    .copy-day-pill.on { border-color: #7F77DD; background: #7F77DD18; }
-    .copy-day-pill.wknd { color: var(--color-text-danger); }
-    .copy-row { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-tertiary); cursor: pointer; transition: background .1s; }
-    .copy-row:hover { background: var(--color-background-secondary); }
-    .copy-row.on { border-color: #7f77dd55; background: #7f77dd08; }
-
-    #modal { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: flex-start; justify-content: center; z-index: 200; padding-top: 60px; overflow-y: auto; }
-    #mbox { background: var(--color-background-primary); border-radius: var(--border-radius-lg); padding: 24px; width: 440px; border: 0.5px solid var(--color-border-tertiary); max-height: 85vh; overflow-y: auto; }
-
-    @keyframes pu { 0%,100%{opacity:1} 50%{opacity:.25} }
-    .pul { animation: pu 2s infinite; }
-    @keyframes fi { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:var(--font);background:var(--color-bg2);color:var(--color-txt);padding:18px;min-height:100vh;}
+    #app{max-width:1800px;margin:0 auto;}
+    .card{background:var(--color-bg);border:0.5px solid var(--color-bdr);border-radius:var(--rl);padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;flex-wrap:wrap;gap:8px;}
+    .btn{display:flex;align-items:center;gap:6px;padding:7px 13px;border-radius:var(--r);border:0.5px solid var(--color-bdr2);background:transparent;cursor:pointer;font-size:13px;color:var(--color-txt2);font-family:var(--font);white-space:nowrap;transition:background .12s;}
+    .btn:hover{background:var(--color-bg2);}
+    .btn:disabled{opacity:.5;cursor:not-allowed;}
+    .btn.grn{background:var(--color-bg-ok);border-color:var(--color-bdr-ok);color:var(--color-txt-ok);}
+    .btn.red{background:var(--color-bg-warn);border-color:var(--color-bdr-err);color:var(--color-txt-err);}
+    .btn.pur{background:#7f77dd18;border-color:#7f77dd55;color:#7F77DD;}
+    .btn.nav{font-size:18px;line-height:1;padding:5px 10px;}
+    .ibtn{background:none;border:none;cursor:pointer;padding:4px;border-radius:var(--r);color:var(--color-txt3);display:flex;align-items:center;font-family:var(--font);transition:background .1s,color .1s;}
+    .ibtn:hover{background:var(--color-bg2);color:var(--color-txt);}
+    .day-tab{display:flex;flex-direction:column;align-items:center;padding:6px 11px;border-radius:var(--r);border:0.5px solid var(--color-bdr);background:transparent;cursor:pointer;font-family:var(--font);transition:all .15s;gap:2px;min-width:54px;}
+    .day-tab:hover:not(.active){background:var(--color-bg2);}
+    .day-tab.active{background:var(--color-bg-info);border-color:var(--color-bdr-info);}
+    .day-tab.active .dn,.day-tab.active .dd,.day-tab.active .dm,.day-tab.active .dc{color:var(--color-txt-info);}
+    .day-tab.wknd .dn,.day-tab.wknd .dd,.day-tab.wknd .dm{color:var(--color-txt-err);}
+    .day-tab.wknd.active .dn,.day-tab.wknd.active .dd,.day-tab.wknd.active .dm{color:var(--color-txt-info);}
+    .day-tab.tday .dn,.day-tab.tday .dd,.day-tab.tday .dm{color:var(--color-txt-info);}
+    .dn{font-size:10px;font-weight:500;color:var(--color-txt3);}
+    .dd{font-size:14px;font-weight:600;color:var(--color-txt2);line-height:1;}
+    .dm{font-size:9px;color:var(--color-txt3);line-height:1;}
+    .dc{font-size:9px;color:var(--color-txt3);}
+    .tdot{width:4px;height:4px;border-radius:50%;background:var(--color-txt-info);margin-top:1px;}
+    .lpill{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;border:1.5px solid transparent;cursor:pointer;transition:all .15s;font-size:12px;color:var(--color-txt2);}
+    .lpill:hover{background:var(--color-bg2);}
+    .lpill.dim{opacity:.3;}
+    select,input[type=text]{box-sizing:border-box;width:100%;padding:7px 10px;border-radius:var(--r);border:0.5px solid var(--color-bdr2);background:var(--color-bg);color:var(--color-txt);font-family:var(--font);font-size:13px;}
+    select:focus,input[type=text]:focus{outline:2px solid #7F77DD;outline-offset:1px;border-color:#7F77DD;}
+    input[type=color]{cursor:pointer;border:0.5px solid var(--color-bdr2);border-radius:6px;padding:2px;background:none;}
+    #grid-wrap{border:0.5px solid var(--color-bdr);border-radius:var(--rl);overflow:auto;max-height:62vh;background:var(--color-bg);}
+    #grid{display:flex;min-width:max-content;}
+    .slot{height:48px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+    .slot:hover{background:var(--color-bg2);}
+    .slot:hover .ph{opacity:1;}
+    .slot .ph{opacity:0;transition:opacity .15s;color:var(--color-txt3);font-size:20px;pointer-events:none;}
+    .drop-target{background:var(--color-bg-info)!important;}
+    .ecard{position:absolute;border-radius:var(--r);padding:6px 8px;color:#fff!important;overflow:hidden;z-index:2;user-select:none;cursor:grab;transition:filter .12s,transform .12s;}
+    .ecard:hover{filter:brightness(1.1);transform:translateY(-1px);}
+    .prov-row{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--r);border:0.5px solid var(--color-bdr);margin-bottom:6px;background:var(--color-bg);}
+    .prov-row input[type=text]{border:none;background:transparent;font-size:13px;padding:2px 4px;outline:none;flex:1;border-bottom:1.5px solid transparent;}
+    .prov-row input[type=text]:focus{border-bottom-color:#7F77DD;}
+    .svc-row{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:var(--r);border:0.5px solid var(--color-bdr);margin-bottom:5px;background:var(--color-bg);}
+    .svc-row input{border:none;background:transparent;font-size:13px;padding:0;outline:none;font-family:var(--font);color:var(--color-txt);flex:1;border-bottom:1.5px solid transparent;}
+    .svc-row input:focus{border-bottom-color:#7F77DD;}
+    .copy-dp{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 8px;border-radius:var(--r);border:1.5px solid var(--color-bdr);cursor:pointer;transition:all .15s;min-width:40px;user-select:none;}
+    .copy-dp.on{border-color:#7F77DD;background:#7F77DD18;}
+    .copy-dp.we{color:var(--color-txt-err);}
+    .copy-row{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:var(--r);border:0.5px solid var(--color-bdr);cursor:pointer;transition:background .1s;}
+    .copy-row:hover{background:var(--color-bg2);}
+    .copy-row.on{border-color:#7f77dd55;background:#7f77dd08;}
+    #modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-start;justify-content:center;z-index:200;padding-top:60px;overflow-y:auto;}
+    #mbox{background:var(--color-bg);border-radius:var(--rl);padding:24px;width:440px;border:0.5px solid var(--color-bdr);max-height:85vh;overflow-y:auto;}
+    @keyframes pu{0%,100%{opacity:1}50%{opacity:.25}}
+    .pul{animation:pu 2s infinite;}
+    @keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
   </style>
 </head>
 <body>
 <div id="app">
 
-  <!-- Header -->
   <div class="card">
     <div>
-      <div class="title-wrap" style="display:flex;align-items:center;gap:6px">
+      <div style="display:flex;align-items:center;gap:6px">
         <div id="app-title" style="font-size:16px;font-weight:700;letter-spacing:-0.3px"></div>
-        <button class="icon-btn edit-icon" onclick="openEditTitle()" title="Edit title" style="opacity:.4"><i class="ti ti-pencil" style="font-size:13px"></i></button>
+        <button class="ibtn" onclick="openEditTitle()" title="Edit title" style="opacity:.4"><i class="ti ti-pencil" style="font-size:13px"></i></button>
       </div>
-      <div style="font-size:11px;color:var(--color-text-tertiary);display:flex;align-items:center;gap:4px">
-        <span id="app-subtitle"></span>
-        <button class="icon-btn" onclick="openEditTitle()" title="Edit subtitle" style="opacity:.4;padding:2px"><i class="ti ti-pencil" style="font-size:10px"></i></button>
-      </div>
+      <div style="font-size:11px;color:var(--color-txt3)"><span id="app-subtitle"></span></div>
     </div>
     <div style="display:flex;align-items:center;gap:6px;margin-left:12px">
-      <button class="btn nav" onclick="shiftWeek(-1)" aria-label="Previous week">&#x2039;</button>
+      <button class="btn nav" onclick="shiftWeek(-1)">&#x2039;</button>
       <div style="text-align:center;min-width:170px"><div id="week-label" style="font-size:13px;font-weight:500"></div></div>
-      <button class="btn nav" onclick="shiftWeek(1)" aria-label="Next week">&#x203A;</button>
+      <button class="btn nav" onclick="shiftWeek(1)">&#x203A;</button>
       <button id="today-btn" class="btn" onclick="goToday()" style="font-size:12px;padding:5px 10px">Today</button>
     </div>
-    <div style="display:flex;align-items:center;gap:5px">
+    <div style="display:flex;align-items:center;gap:6px">
       <div id="ldot" class="pul" style="width:7px;height:7px;border-radius:50%;background:#888;flex-shrink:0"></div>
-      <span id="llbl" style="font-size:11px;color:var(--color-text-tertiary)">Connecting...</span>
+      <span id="llbl" style="font-size:11px;color:var(--color-txt3)">Connecting...</span>
+      <span id="save-status" style="font-size:11px;font-weight:500;min-width:60px"></span>
     </div>
     <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">
       <button class="btn pur" onclick="exportDaySchedule()" id="day-btn"><i class="ti ti-calendar-export"></i> Day Schedule <span id="sel-badge" style="background:rgba(127,119,221,.2);color:#7F77DD;border-radius:20px;padding:1px 7px;font-size:10px;font-weight:600"></span></button>
@@ -168,433 +132,384 @@
     </div>
   </div>
 
-  <!-- Conflict bar -->
-  <div id="cbar" style="display:none;padding:8px 14px;background:var(--color-background-danger);border:0.5px solid var(--color-border-danger);border-radius:var(--border-radius-md);font-size:12px;color:var(--color-text-danger);margin-bottom:10px"></div>
+  <div id="cbar" style="display:none;padding:8px 14px;background:var(--color-bg-warn);border:0.5px solid var(--color-bdr-err);border-radius:var(--r);font-size:12px;color:var(--color-txt-err);margin-bottom:10px"></div>
 
-  <!-- Provider legend -->
   <div class="card" style="min-height:42px">
-    <span style="font-size:11px;color:var(--color-text-tertiary);font-weight:500;flex-shrink:0">Providers</span>
+    <span style="font-size:11px;color:var(--color-txt3);font-weight:500;flex-shrink:0">Providers</span>
     <div id="legend" style="display:flex;gap:6px;flex-wrap:wrap;flex:1"></div>
-    <button onclick="openManageProviders()" style="display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;border:0.5px solid var(--color-border-secondary);background:transparent;cursor:pointer;font-size:11px;color:var(--color-text-secondary);font-family:var(--font-sans);white-space:nowrap">
-      <i class="ti ti-settings" style="font-size:12px"></i> Manage
-    </button>
+    <button onclick="openManageProviders()" style="display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;border:0.5px solid var(--color-bdr2);background:transparent;cursor:pointer;font-size:11px;color:var(--color-txt2);font-family:var(--font);white-space:nowrap"><i class="ti ti-settings" style="font-size:12px"></i> Manage</button>
   </div>
 
-  <!-- Day tabs -->
-  <div class="card" style="overflow-x:auto"><div id="day-tabs"></div></div>
+  <div class="card" style="overflow-x:auto"><div id="day-tabs" style="display:flex;gap:5px"></div></div>
 
-  <!-- Filter banner -->
   <div id="fbar" style="display:none;margin-bottom:10px;animation:fi .2s ease"></div>
 
-  <!-- Client selection -->
   <div class="card">
-    <i class="ti ti-layout-columns" style="font-size:14px;color:var(--color-text-tertiary)"></i>
-    <span style="font-size:12px;color:var(--color-text-secondary)">Select clients for day export:</span>
+    <i class="ti ti-layout-columns" style="font-size:14px;color:var(--color-txt3)"></i>
+    <span style="font-size:12px;color:var(--color-txt2)">Select clients for day export:</span>
     <div id="client-pills" style="display:flex;gap:6px;flex-wrap:wrap;flex:1"></div>
-    <button onclick="selectAllClients(true)"  style="padding:4px 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:transparent;cursor:pointer;font-size:11px;color:var(--color-text-secondary);font-family:var(--font-sans)">All</button>
-    <button onclick="selectAllClients(false)" style="padding:4px 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:transparent;cursor:pointer;font-size:11px;color:var(--color-text-secondary);font-family:var(--font-sans)">None</button>
+    <button onclick="selAll(true)"  style="padding:4px 10px;border-radius:var(--r);border:0.5px solid var(--color-bdr2);background:transparent;cursor:pointer;font-size:11px;color:var(--color-txt2);font-family:var(--font)">All</button>
+    <button onclick="selAll(false)" style="padding:4px 10px;border-radius:var(--r);border:0.5px solid var(--color-bdr2);background:transparent;cursor:pointer;font-size:11px;color:var(--color-txt2);font-family:var(--font)">None</button>
   </div>
 
-  <!-- Schedule grid -->
   <div id="grid-wrap"><div id="grid"></div></div>
-
 </div>
 
-<!-- Modal -->
 <div id="modal"><div id="mbox"></div></div>
 
 <script>
-// ════════════════════════════════════════════════════════════════════════════
-//  PASTE YOUR FIREBASE CONFIG HERE
-//  Firebase Console → ⚙ Project Settings → Your Apps → </> Web
-// ════════════════════════════════════════════════════════════════════════════
-const firebaseConfig = {
+// ── Firebase ──────────────────────────────────────────────────────────────
+firebase.initializeApp({
   apiKey:            "AIzaSyCERxntgytkfCHWN7EoAVYVmLBcfWyYZ5A",
   authDomain:        "pdi-signature-schedule.firebaseapp.com",
   databaseURL:       "https://pdi-signature-schedule-default-rtdb.firebaseio.com",
   projectId:         "pdi-signature-schedule",
   storageBucket:     "pdi-signature-schedule.firebasestorage.app",
-  messagingSenderId: "545049861408",
+  messagingSenderId: "545049861048",
   appId:             "1:545049861408:web:1e0bf60ab88497f67a8b45"
-};
-// ════════════════════════════════════════════════════════════════════════════
-
-firebase.initializeApp(firebaseConfig);
+});
 const db = firebase.database();
-const SCHED_KEY = 'schedule_v2';
+const FB = db.ref('schedule_v3'); // v3 = clean JSON blob storage, no key restrictions
 
-// ── Date utilities ────────────────────────────────────────────────────────
-function toISO(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),dd=String(d.getDate()).padStart(2,'0');return`${y}-${m}-${dd}`;}
-function fromISO(s){const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d);}
-function addDays(iso,n){const d=fromISO(iso);d.setDate(d.getDate()+n);return toISO(d);}
-function getMondayISO(date){const d=new Date(date);const day=d.getDay();d.setDate(d.getDate()+(day===0?-6:1-day));return toISO(d);}
-function todayISO(){return toISO(new Date());}
-function getWeekDates(m){return[0,1,2,3,4,5,6].map(i=>addDays(m,i));}
-function isWeekend(iso){const d=fromISO(iso).getDay();return d===0||d===6;}
-function isToday(iso){return iso===todayISO();}
-function fmtShort(iso){return fromISO(iso).toLocaleDateString('en-US',{month:'short',day:'numeric'});}
-function fmtWeekday(iso){return fromISO(iso).toLocaleDateString('en-US',{weekday:'short'});}
-function fmtFull(iso){return fromISO(iso).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});}
-function fmtWeekRange(m){const d=getWeekDates(m);const s=fromISO(d[0]).toLocaleDateString('en-US',{month:'short',day:'numeric'});const e=fromISO(d[6]).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});return`${s} \u2013 ${e}`;}
-function weekdayIdx(iso){const d=fromISO(iso).getDay();return d===0?6:d-1;}
+// ── Date utils ────────────────────────────────────────────────────────────
+const toISO=d=>{const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),dd=String(d.getDate()).padStart(2,'0');return`${y}-${m}-${dd}`;};
+const fromISO=s=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d);};
+const addDays=(iso,n)=>{const d=fromISO(iso);d.setDate(d.getDate()+n);return toISO(d);};
+const getMon=date=>{const d=new Date(date),day=d.getDay();d.setDate(d.getDate()+(day===0?-6:1-day));return toISO(d);};
+const todayISO=()=>toISO(new Date());
+const weekDates=m=>[0,1,2,3,4,5,6].map(i=>addDays(m,i));
+const isWknd=iso=>{const d=fromISO(iso).getDay();return d===0||d===6;};
+const isToday=iso=>iso===todayISO();
+const fmtS=iso=>fromISO(iso).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+const fmtWD=iso=>fromISO(iso).toLocaleDateString('en-US',{weekday:'short'});
+const fmtFull=iso=>fromISO(iso).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+const fmtRange=m=>{const d=weekDates(m);return`${fromISO(d[0]).toLocaleDateString('en-US',{month:'short',day:'numeric'})} \u2013 ${fromISO(d[6]).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;};
+const wdIdx=iso=>{const d=fromISO(iso).getDay();return d===0?6:d-1;};
 
 // ── Constants ─────────────────────────────────────────────────────────────
-const SLOT_H = 48;
-const PC = ['#7F77DD','#1D9E75','#D85A30','#378ADD','#D4537E','#BA7517','#639922','#E24B4A','#00B4D8','#FF6B35'];
-const WDAY_LABELS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-const SLOTS = [];
-for(let h=7;h<20;h++){const ap=h>=12?'PM':'AM',hh=h>12?h-12:h;SLOTS.push({label:`${hh}:00 ${ap}`,m:0});SLOTS.push({label:`${hh}:30 ${ap}`,m:30});}
+const SH=48, PC=['#7F77DD','#1D9E75','#D85A30','#378ADD','#D4537E','#BA7517','#639922','#E24B4A','#00B4D8','#FF6B35'];
+const WLBL=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const SLOTS=[];for(let h=7;h<20;h++){const ap=h>=12?'PM':'AM',hh=h>12?h-12:h;SLOTS.push({label:`${hh}:00 ${ap}`,m:0});SLOTS.push({label:`${hh}:30 ${ap}`,m:30});}
 
 // ── State ─────────────────────────────────────────────────────────────────
-const TODAY = todayISO(), MON = getMondayISO(new Date()), WK = getWeekDates(MON);
-const S = {
-  title:    'PDI/Signature Schedule',
-  subtitle: 'Click a slot to add · drag to move · click an event to edit or copy',
-  clients:  [],
-  events:   [],
-  providers: {},
-  services:  [],
-  weekStart:       MON,
-  selectedDate:    TODAY,
-  selectedClients: new Set(),
-  drag: null, addingClient: false, filterProvider: null,
+const TODAY=todayISO(), MON=getMon(new Date());
+const S={
+  title:'PDI/Signature Schedule',
+  subtitle:'Click a slot to add \u00b7 drag to move \u00b7 click event to edit',
+  clients:[], events:[], providers:{}, services:[],
+  weekStart:MON, selectedDate:TODAY,
+  selClients:new Set(), drag:null, addingClient:false, filterProv:null,
 };
 
+let _uid=100;
+const nid=()=>'i'+(++_uid)+Math.random().toString(36).slice(2,5);
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const rgb=hex=>{const h=hex.replace('#','');return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];};
+const pc=name=>S.providers[name]?.color||'#888';
+const mkProv=name=>{if(!S.providers[name])S.providers[name]={color:PC[Object.keys(S.providers).length%PC.length]};};
+const conflicts=evs=>{const ids=new Set();for(let i=0;i<evs.length;i++)for(let j=i+1;j<evs.length;j++){const a=evs[i],b=evs[j];if(a.provider===b.provider&&a.slotIndex<b.slotIndex+b.duration&&a.slotIndex+a.duration>b.slotIndex){ids.add(a.id);ids.add(b.id);}}return ids;};
 
-let _uid = 200;
-function nid(){return 'i'+(++_uid)+Math.random().toString(36).slice(2,4);}
-function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function hexToRgb(hex){const h=hex.replace('#','');return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
-function pc(name){return S.providers[name]?.color||'#888';}
-function encKey(k){return k.replace(/\./g,'__').replace(/#/g,'_h_').replace(/\$/g,'_s_').replace(/\[/g,'_lb_').replace(/\]/g,'_rb_');}
-function decKey(k){return k.replace(/__/g,'.').replace(/_h_/g,'#').replace(/_s_/g,'$').replace(/_lb_/g,'[').replace(/_rb_/g,']');}
-function encProviders(p){const r={};Object.entries(p).forEach(([k,v])=>r[encKey(k)]=v);return r;}
-function decProviders(p){const r={};Object.entries(p).forEach(([k,v])=>r[decKey(k)]=v);return r;}
-function ensureProv(name){if(!S.providers[name])S.providers[name]={color:PC[Object.keys(S.providers).length%PC.length]};}
-function getConflicts(evs){const ids=new Set();for(let i=0;i<evs.length;i++)for(let j=i+1;j<evs.length;j++){const a=evs[i],b=evs[j];if(a.provider===b.provider&&a.slotIndex<b.slotIndex+b.duration&&a.slotIndex+a.duration>b.slotIndex){ids.add(a.id);ids.add(b.id);}}return ids;}
-
-// ── Firebase sync ─────────────────────────────────────────────────────────
-let myUpdate = false, savePending = null;
+// ── Firebase save/load ────────────────────────────────────────────────────
+// Store entire state as JSON string to avoid ALL Firebase key restrictions
+let isSaving=false, saveTmr=null;
 
 function saveAll(){
-  myUpdate = true; // Lock listener out immediately so it can't overwrite pending changes
-  clearTimeout(savePending);
-  savePending = setTimeout(()=>{
-    db.ref(SCHED_KEY).set(
-      {clients:S.clients,events:S.events,providers:encProviders(S.providers),meta:{title:S.title,subtitle:S.subtitle,services:S.services}},
-      (err)=>{
-        if(err){ console.error('Save failed:',err); myUpdate=false; setLive(false); }
-        else { setTimeout(()=>{ myUpdate=false; }, 1000); setLive(true); }
-      }
-    );
-  }, 200);
+  isSaving=true;
+  showSaveStatus('saving');
+  clearTimeout(saveTmr);
+  saveTmr=setTimeout(()=>{
+    const blob=JSON.stringify({
+      title:S.title, subtitle:S.subtitle,
+      clients:S.clients, events:S.events,
+      providers:S.providers, services:S.services
+    });
+    FB.set({blob},err=>{
+      isSaving=false;
+      if(err){console.error('Firebase write error:',err);showSaveStatus('error');}
+      else{showSaveStatus('saved');}
+    });
+  },300);
 }
 
-db.ref(SCHED_KEY).on('value', snapshot=>{
-  if(myUpdate) return;
-  const data = snapshot.val();
-  if(data){
-    if(data.clients){
-      const oi=new Set(S.clients.map(c=>c.id));
-      S.clients=data.clients;
-      S.clients.forEach(c=>{if(!oi.has(c.id))S.selectedClients.add(c.id);});
+function showSaveStatus(st){
+  const el=document.getElementById('save-status');if(!el)return;
+  if(st==='saving'){el.textContent='Saving...';el.style.color='var(--color-txt3)';}
+  else if(st==='saved'){el.textContent='Saved \u2713';el.style.color='var(--color-txt-ok)';setTimeout(()=>{if(el.textContent==='Saved \u2713')el.textContent='';},3000);}
+  else if(st==='error'){el.textContent='Save failed!';el.style.color='var(--color-txt-err)';}
+}
+
+FB.on('value',snap=>{
+  if(isSaving)return;
+  const raw=snap.val();
+  if(raw?.blob){
+    try{
+      const d=JSON.parse(raw.blob);
+      const oldIds=new Set(S.clients.map(c=>c.id));
+      if(d.clients)  {S.clients=d.clients;d.clients.forEach(c=>{if(!oldIds.has(c.id))S.selClients.add(c.id);});}
+      if(d.events)   S.events=d.events;
+      if(d.providers)S.providers=d.providers;
+      if(d.services) S.services=d.services;
+      if(d.title)    S.title=d.title;
+      if(d.subtitle!==undefined)S.subtitle=d.subtitle;
       const ni=new Set(S.clients.map(c=>c.id));
-      for(const id of[...S.selectedClients])if(!ni.has(id))S.selectedClients.delete(id);
-    }
-    if(data.events)    S.events    = data.events;
-    if(data.providers) S.providers = decProviders(data.providers);
-    if(data.meta){
-      if(data.meta.title)    S.title    = data.meta.title;
-      if(data.meta.subtitle !== undefined) S.subtitle = data.meta.subtitle;
-      if(data.meta.services) S.services = data.meta.services;
-    }
-  } else {
-    saveAll();
+      for(const id of[...S.selClients])if(!ni.has(id))S.selClients.delete(id);
+    }catch(e){console.error('Parse error',e);}
   }
   setLive(true);
   renderAll();
-}, ()=>setLive(false));
+},()=>setLive(false));
 
 function setLive(ok){
   const d=document.getElementById('ldot'),l=document.getElementById('llbl');
-  if(d) d.style.background=ok?'#1D9E75':'#E24B4A';
-  if(l) l.textContent=ok?'Live':'Offline \u2014 check Firebase config';
+  if(d)d.style.background=ok?'#1D9E75':'#E24B4A';
+  if(l)l.textContent=ok?'Live':'Offline';
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────
-function shiftWeek(dir){S.weekStart=addDays(S.weekStart,dir*7);const wk=getWeekDates(S.weekStart);const wd=fromISO(S.selectedDate).getDay();S.selectedDate=wk[wd===0?6:wd-1];renderAll();}
-function goToday(){S.weekStart=getMondayISO(new Date());S.selectedDate=todayISO();renderAll();}
-function selectDate(d){S.selectedDate=d;renderAll();}
-function toggleFilter(name){S.filterProvider=S.filterProvider===name?null:name;renderAll();}
-function clearFilter(){S.filterProvider=null;renderAll();}
-function toggleClientSel(id,on){on?S.selectedClients.add(id):S.selectedClients.delete(id);renderSelectionBar();renderSelBadge();}
-function selectAllClients(on){S.clients.forEach(c=>on?S.selectedClients.add(c.id):S.selectedClients.delete(c.id));renderSelectionBar();renderSelBadge();}
+function shiftWeek(dir){S.weekStart=addDays(S.weekStart,dir*7);const wk=weekDates(S.weekStart);const wd=fromISO(S.selectedDate).getDay();S.selectedDate=wk[wd===0?6:wd-1];renderAll();}
+function goToday(){S.weekStart=getMon(new Date());S.selectedDate=todayISO();renderAll();}
+function selDate(d){S.selectedDate=d;renderAll();}
+function togFilter(n){S.filterProv=S.filterProv===n?null:n;renderAll();}
+function clearFilter(){S.filterProv=null;renderAll();}
+function togSel(id,on){on?S.selClients.add(id):S.selClients.delete(id);renderSelBar();renderBadge();}
+function selAll(on){S.clients.forEach(c=>on?S.selClients.add(c.id):S.selClients.delete(c.id));renderSelBar();renderBadge();}
 
 // ── Edit title ────────────────────────────────────────────────────────────
 function openEditTitle(){
   showModal(`<div style="font-size:15px;font-weight:500;margin-bottom:18px"><i class="ti ti-pencil" style="font-size:14px;margin-right:6px"></i>Edit schedule name</div>
-    <div style="margin-bottom:14px"><div style="font-size:11px;font-weight:500;color:var(--color-text-secondary);margin-bottom:5px">Schedule name</div><input type="text" id="ei-t" value="${esc(S.title)}"></div>
-    <div style="margin-bottom:14px"><div style="font-size:11px;font-weight:500;color:var(--color-text-secondary);margin-bottom:5px">Subtitle</div><input type="text" id="ei-s" value="${esc(S.subtitle)}"></div>
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px">${cancelBtn()} ${saveBtn('submitEditTitle()')}</div>`);
-  setTimeout(()=>{const i=document.getElementById('ei-t');if(i){i.focus();i.select();}},50);
+    <div style="margin-bottom:14px"><div style="font-size:11px;font-weight:500;color:var(--color-txt2);margin-bottom:5px">Schedule name</div><input type="text" id="et1" value="${esc(S.title)}"></div>
+    <div style="margin-bottom:14px"><div style="font-size:11px;font-weight:500;color:var(--color-txt2);margin-bottom:5px">Subtitle</div><input type="text" id="et2" value="${esc(S.subtitle)}"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px">${cBtn()} ${sBtn('submitTitle()')}</div>`);
+  setTimeout(()=>{const i=document.getElementById('et1');if(i){i.focus();i.select();}},50);
 }
-function submitEditTitle(){const t=document.getElementById('ei-t')?.value?.trim();const s=document.getElementById('ei-s')?.value;if(t)S.title=t;if(s!==undefined)S.subtitle=s;renderAll();saveAll();closeModal();}
+function submitTitle(){const t=document.getElementById('et1')?.value?.trim();const s=document.getElementById('et2')?.value;if(t)S.title=t;if(s!==undefined)S.subtitle=s;renderAll();saveAll();closeModal();}
 
 // ── Rename client ─────────────────────────────────────────────────────────
 function openRenameClient(cid){
   const c=S.clients.find(c=>c.id===cid);if(!c)return;
   showModal(`<div style="font-size:15px;font-weight:500;margin-bottom:18px"><i class="ti ti-pencil" style="font-size:14px;margin-right:6px"></i>Rename client</div>
-    <div style="margin-bottom:14px"><div style="font-size:11px;font-weight:500;color:var(--color-text-secondary);margin-bottom:5px">Client name</div><input type="text" id="rc-inp" value="${esc(c.name)}" onkeydown="if(event.key==='Enter')submitRenameClient('${cid}')"></div>
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px">${cancelBtn()} ${saveBtn(`submitRenameClient('${cid}')`)}</div>`);
-  setTimeout(()=>{const i=document.getElementById('rc-inp');if(i){i.focus();i.select();}},50);
+    <div style="margin-bottom:14px"><div style="font-size:11px;font-weight:500;color:var(--color-txt2);margin-bottom:5px">Client name</div><input type="text" id="rc1" value="${esc(c.name)}" onkeydown="if(event.key==='Enter')submitRename('${cid}')"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px">${cBtn()} ${sBtn(`submitRename('${cid}')`)}</div>`);
+  setTimeout(()=>{const i=document.getElementById('rc1');if(i){i.focus();i.select();}},50);
 }
-function submitRenameClient(cid){const name=document.getElementById('rc-inp')?.value?.trim();if(!name)return;const c=S.clients.find(c=>c.id===cid);if(c)c.name=name;renderAll();saveAll();closeModal();}
+function submitRename(cid){const name=document.getElementById('rc1')?.value?.trim();if(!name)return;const c=S.clients.find(c=>c.id===cid);if(c)c.name=name;renderAll();saveAll();closeModal();}
 
 // ── Manage providers ──────────────────────────────────────────────────────
 function openManageProviders(){
   showModal(`<div style="font-size:15px;font-weight:500;margin-bottom:6px"><i class="ti ti-users" style="font-size:14px;margin-right:6px"></i>Manage providers</div>
-    <div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:14px">Click a color swatch to change it. Click a name to rename. Trash to remove.</div>
-    <div id="prov-edit-list" style="max-height:280px;overflow-y:auto;margin-bottom:16px"></div>
-    <div style="border-top:0.5px solid var(--color-border-tertiary);padding-top:14px;margin-bottom:16px">
-      <div style="font-size:11px;font-weight:500;color:var(--color-text-secondary);margin-bottom:8px">Add new provider</div>
+    <div style="font-size:11px;color:var(--color-txt3);margin-bottom:14px">Click the color square to change it. Click the name to rename. Trash to remove.</div>
+    <div id="plist" style="max-height:280px;overflow-y:auto;margin-bottom:16px"></div>
+    <div style="border-top:0.5px solid var(--color-bdr);padding-top:14px;margin-bottom:16px">
+      <div style="font-size:11px;font-weight:500;color:var(--color-txt2);margin-bottom:8px">Add new provider</div>
       <div style="display:flex;gap:8px;align-items:center">
-        <input type="color" id="new-prov-color" value="#7F77DD" style="width:36px;height:36px;flex-shrink:0">
-        <input type="text" id="new-prov-name" placeholder="Provider name..." onkeydown="if(event.key==='Enter')addProvider()" style="flex:1">
-        <button onclick="addProvider()" style="padding:7px 16px;border-radius:var(--border-radius-md);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-family:var(--font-sans);white-space:nowrap;font-weight:500">+ Add</button>
+        <input type="color" id="np-col" value="#7F77DD" style="width:36px;height:36px;flex-shrink:0">
+        <input type="text" id="np-name" placeholder="Provider name..." onkeydown="if(event.key==='Enter')addProvider()" style="flex:1">
+        <button onclick="addProvider()" style="padding:7px 16px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-family:var(--font);white-space:nowrap;font-weight:500">+ Add</button>
       </div>
     </div>
-    <div style="display:flex;justify-content:flex-end"><button onclick="closeModal()" style="padding:8px 20px;border-radius:var(--border-radius-md);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--font-sans)">Done</button></div>`);
+    <div style="display:flex;justify-content:flex-end"><button onclick="closeModal()" style="padding:8px 20px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--font)">Done</button></div>`);
   renderProvList();
-  setTimeout(()=>document.getElementById('new-prov-name')?.focus(),50);
+  setTimeout(()=>document.getElementById('np-name')?.focus(),50);
 }
-
 function renderProvList(){
-  const el=document.getElementById('prov-edit-list');if(!el)return;
+  const el=document.getElementById('plist');if(!el)return;
   const entries=Object.entries(S.providers);
-  if(!entries.length){el.innerHTML='<div style="font-size:12px;color:var(--color-text-tertiary);padding:10px 0;text-align:center">No providers yet</div>';return;}
+  if(!entries.length){el.innerHTML='<div style="font-size:12px;color:var(--color-txt3);text-align:center;padding:10px">No providers yet \u2014 add one below</div>';return;}
   el.innerHTML=entries.map(([name,{color}])=>{
-    const evCount=S.events.filter(e=>e.provider===name).length;
-    const sid=name.replace(/[^a-z0-9]/gi,'_');
+    const sid='p_'+name.replace(/[^a-z0-9]/gi,'_');
+    const cnt=S.events.filter(e=>e.provider===name).length;
     return`<div class="prov-row">
       <input type="color" value="${color}" onchange="updateProvColor('${esc(name)}',this.value)" style="width:32px;height:32px;flex-shrink:0" title="Change color">
-      <input type="text" value="${esc(name)}" id="pn-${sid}" onblur="renameProvider('${esc(name)}',this.value,'${sid}')" onkeydown="if(event.key==='Enter')this.blur()" title="Click to rename">
-      <span style="font-size:10px;color:var(--color-text-tertiary);white-space:nowrap;flex-shrink:0">${evCount} session${evCount!==1?'s':''}</span>
-      <button onclick="deleteProvider('${esc(name)}')" class="icon-btn" style="color:var(--color-text-danger);flex-shrink:0"><i class="ti ti-trash" style="font-size:14px"></i></button>
+      <input type="text" value="${esc(name)}" id="${sid}" onblur="renameProvider('${esc(name)}',this.value,'${sid}')" onkeydown="if(event.key==='Enter')this.blur()" title="Click to rename">
+      <span style="font-size:10px;color:var(--color-txt3);white-space:nowrap;flex-shrink:0">${cnt} session${cnt!==1?'s':''}</span>
+      <button onclick="deleteProvider('${esc(name)}')" class="ibtn" style="color:var(--color-txt-err);flex-shrink:0"><i class="ti ti-trash" style="font-size:14px"></i></button>
     </div>`;
   }).join('');
 }
-
 function updateProvColor(name,color){if(S.providers[name]){S.providers[name].color=color;renderLegend();renderGrid();saveAll();}}
-function renameProvider(oldName,newName,sid){
-  newName=newName.trim();if(!newName||newName===oldName)return;
-  if(S.providers[newName]){alert(`"${newName}" already exists.`);const inp=document.getElementById(`pn-${sid}`);if(inp)inp.value=oldName;return;}
-  S.providers[newName]={...S.providers[oldName]};delete S.providers[oldName];
-  S.events.forEach(ev=>{if(ev.provider===oldName)ev.provider=newName;});
-  if(S.filterProvider===oldName)S.filterProvider=newName;
+function renameProvider(old,nw,sid){
+  nw=nw.trim();if(!nw||nw===old)return;
+  if(S.providers[nw]){alert(`"${nw}" already exists.`);const i=document.getElementById(sid);if(i)i.value=old;return;}
+  S.providers[nw]={...S.providers[old]};delete S.providers[old];
+  S.events.forEach(e=>{if(e.provider===old)e.provider=nw;});
+  if(S.filterProv===old)S.filterProv=nw;
   renderAll();saveAll();renderProvList();
 }
 function deleteProvider(name){
-  const evCount=S.events.filter(e=>e.provider===name).length;
-  if(evCount>0){const removeEvs=confirm(`"${name}" has ${evCount} session${evCount!==1?'s':''}.\n\nOK = Remove provider AND their sessions\nCancel = Remove from list but keep sessions`);if(removeEvs)S.events=S.events.filter(e=>e.provider!==name);}
-  delete S.providers[name];if(S.filterProvider===name)S.filterProvider=null;
+  const cnt=S.events.filter(e=>e.provider===name).length;
+  if(cnt>0){const rm=confirm(`"${name}" has ${cnt} session${cnt!==1?'s':''}.\nOK = remove provider AND sessions\nCancel = remove from list only`);if(rm)S.events=S.events.filter(e=>e.provider!==name);}
+  delete S.providers[name];if(S.filterProv===name)S.filterProv=null;
   renderAll();saveAll();renderProvList();
 }
 function addProvider(){
-  const name=document.getElementById('new-prov-name')?.value?.trim();
-  const color=document.getElementById('new-prov-color')?.value||PC[Object.keys(S.providers).length%PC.length];
-  if(!name){alert('Please enter a name.');return;}if(S.providers[name]){alert(`"${name}" already exists.`);return;}
+  const name=document.getElementById('np-name')?.value?.trim();
+  const color=document.getElementById('np-col')?.value||PC[Object.keys(S.providers).length%PC.length];
+  if(!name){alert('Please enter a name.');return;}
+  if(S.providers[name]){alert(`"${name}" already exists.`);return;}
   S.providers[name]={color};
-  const inp=document.getElementById('new-prov-name');if(inp)inp.value='';
-  const nc=document.getElementById('new-prov-color');if(nc)nc.value=PC[Object.keys(S.providers).length%PC.length];
-  renderAll();saveAll();renderProvList();
+  document.getElementById('np-name').value='';
+  document.getElementById('np-col').value=PC[Object.keys(S.providers).length%PC.length];
+  saveAll();
+  renderAll();
+  renderProvList();
 }
 
 // ── Manage services ───────────────────────────────────────────────────────
-function openManageServices(){
+function openManageSvc(){
   showModal(`<div style="font-size:15px;font-weight:500;margin-bottom:6px"><i class="ti ti-list" style="font-size:14px;margin-right:6px"></i>Manage service types</div>
-    <div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:14px">Click a name to rename it. Trash to remove.</div>
-    <div id="svc-edit-list" style="max-height:260px;overflow-y:auto;margin-bottom:14px"></div>
-    <div style="font-size:11px;font-weight:500;color:var(--color-text-secondary);margin-bottom:6px">Add new service</div>
+    <div style="font-size:11px;color:var(--color-txt3);margin-bottom:14px">Click a name to rename it. Trash to remove.</div>
+    <div id="slist" style="max-height:260px;overflow-y:auto;margin-bottom:14px"></div>
+    <div style="font-size:11px;font-weight:500;color:var(--color-txt2);margin-bottom:6px">Add new service</div>
     <div style="display:flex;gap:8px;margin-bottom:18px">
-      <input type="text" id="new-svc-inp" placeholder="e.g. Community Integration..." onkeydown="if(event.key==='Enter')addService()" style="flex:1">
-      <button onclick="addService()" style="padding:7px 16px;border-radius:var(--border-radius-md);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-family:var(--font-sans);white-space:nowrap;font-weight:500">+ Add</button>
+      <input type="text" id="ns-inp" placeholder="Service name..." onkeydown="if(event.key==='Enter')addSvc()" style="flex:1">
+      <button onclick="addSvc()" style="padding:7px 16px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-family:var(--font);white-space:nowrap;font-weight:500">+ Add</button>
     </div>
-    <div style="display:flex;justify-content:flex-end"><button onclick="closeModal()" style="padding:8px 20px;border-radius:var(--border-radius-md);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--font-sans)">Done</button></div>`);
+    <div style="display:flex;justify-content:flex-end"><button onclick="closeModal()" style="padding:8px 20px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--font)">Done</button></div>`);
   renderSvcList();
 }
-function renderSvcList(){const el=document.getElementById('svc-edit-list');if(!el)return;if(!S.services.length){el.innerHTML='<div style="font-size:12px;color:var(--color-text-tertiary);text-align:center;padding:10px">No services yet</div>';return;}el.innerHTML=S.services.map((s,i)=>`<div class="svc-row"><i class="ti ti-grip-vertical" style="font-size:14px;color:var(--color-text-tertiary);flex-shrink:0"></i><input type="text" value="${esc(s)}" onchange="updateSvc(${i},this.value)" onblur="updateSvc(${i},this.value)"><button onclick="deleteSvc(${i})" class="icon-btn" style="flex-shrink:0;color:var(--color-text-danger)"><i class="ti ti-trash" style="font-size:14px"></i></button></div>`).join('');}
-function updateSvc(i,val){const v=val.trim();if(v&&v!==S.services[i]){S.services[i]=v;saveAll();}}
-function deleteSvc(i){if(!confirm(`Remove "${S.services[i]}"?`))return;S.services.splice(i,1);renderSvcList();saveAll();}
-function addService(){const inp=document.getElementById('new-svc-inp');const val=inp?.value?.trim();if(!val)return;if(S.services.includes(val)){alert('Already exists.');return;}S.services.push(val);inp.value='';renderSvcList();saveAll();const el=document.getElementById('svc-edit-list');if(el)el.scrollTop=el.scrollHeight;}
+function renderSvcList(){const el=document.getElementById('slist');if(!el)return;if(!S.services.length){el.innerHTML='<div style="font-size:12px;color:var(--color-txt3);text-align:center;padding:10px">No services yet</div>';return;}el.innerHTML=S.services.map((s,i)=>`<div class="svc-row"><i class="ti ti-grip-vertical" style="font-size:14px;color:var(--color-txt3);flex-shrink:0"></i><input type="text" value="${esc(s)}" onchange="updSvc(${i},this.value)" onblur="updSvc(${i},this.value)"><button onclick="delSvc(${i})" class="ibtn" style="flex-shrink:0;color:var(--color-txt-err)"><i class="ti ti-trash" style="font-size:14px"></i></button></div>`).join('');}
+function updSvc(i,val){const v=val.trim();if(v&&v!==S.services[i]){S.services[i]=v;saveAll();}}
+function delSvc(i){if(!confirm(`Remove "${S.services[i]}"?`))return;S.services.splice(i,1);renderSvcList();saveAll();}
+function addSvc(){const inp=document.getElementById('ns-inp');const val=inp?.value?.trim();if(!val)return;if(S.services.includes(val)){alert('Already exists.');return;}S.services.push(val);inp.value='';renderSvcList();saveAll();}
 
 // ── Render ────────────────────────────────────────────────────────────────
-function renderAll(){renderHeader();renderWeekNav();renderDayTabs();renderConflictBar();renderLegend();renderFilterBanner();renderSelectionBar();renderSelBadge();renderGrid();}
+function renderAll(){renderHdr();renderWeekNav();renderDayTabs();renderCBar();renderLegend();renderFBar();renderSelBar();renderBadge();renderGrid();}
 
-function renderHeader(){const t=document.getElementById('app-title'),s=document.getElementById('app-subtitle');if(t)t.textContent=S.title;if(s)s.textContent=S.subtitle;}
+function renderHdr(){const t=document.getElementById('app-title'),s=document.getElementById('app-subtitle');if(t)t.textContent=S.title;if(s)s.textContent=S.subtitle;}
 
-function renderWeekNav(){const el=document.getElementById('week-label');if(el)el.textContent=fmtWeekRange(S.weekStart);const tb=document.getElementById('today-btn');if(tb){const ic=S.weekStart===getMondayISO(new Date())&&S.selectedDate===todayISO();tb.style.opacity=ic?'.4':'1';tb.style.pointerEvents=ic?'none':'auto';}}
+function renderWeekNav(){const el=document.getElementById('week-label');if(el)el.textContent=fmtRange(S.weekStart);const tb=document.getElementById('today-btn');if(tb){const ic=S.weekStart===getMon(new Date())&&S.selectedDate===todayISO();tb.style.opacity=ic?'.4':'1';tb.style.pointerEvents=ic?'none':'auto';}}
 
-function renderDayTabs(){const el=document.getElementById('day-tabs');if(!el)return;const wk=getWeekDates(S.weekStart);el.innerHTML=wk.map(date=>{const isSel=date===S.selectedDate,today=isToday(date),wknd=isWeekend(date);const cnt=S.events.filter(e=>e.date===date).length;return`<button class="day-tab${isSel?' active':''}${today?' today-tab':''}${wknd?' weekend':''}" onclick="selectDate('${date}')" title="${fmtFull(date)}"><span class="dtnm">${fmtWeekday(date)}</span><span class="dtn">${fromISO(date).getDate()}</span><span class="dtmo">${fromISO(date).toLocaleDateString('en-US',{month:'short'})}</span>${today?'<div class="today-dot"></div>':''}<span class="dtct">${cnt?`${cnt} session${cnt>1?'s':''}`:''}</span></button>`;}).join('');}
+function renderDayTabs(){const el=document.getElementById('day-tabs');if(!el)return;const wk=weekDates(S.weekStart);el.innerHTML=wk.map(date=>{const sel=date===S.selectedDate,tod=isToday(date),we=isWknd(date);const cnt=S.events.filter(e=>e.date===date).length;return`<button class="day-tab${sel?' active':''}${tod?' tday':''}${we?' wknd':''}" onclick="selDate('${date}')" title="${fmtFull(date)}"><span class="dn">${fmtWD(date)}</span><span class="dd">${fromISO(date).getDate()}</span><span class="dm">${fromISO(date).toLocaleDateString('en-US',{month:'short'})}</span>${tod?'<div class="tdot"></div>':''}<span class="dc">${cnt?`${cnt} session${cnt>1?'s':''}`:''}</span></button>`;}).join('');}
 
-function renderConflictBar(){const bar=document.getElementById('cbar');if(!bar)return;const de=S.events.filter(e=>e.date===S.selectedDate),cf=getConflicts(de);if(!cf.size){bar.style.display='none';return;}const pm={};de.filter(e=>cf.has(e.id)).forEach(e=>{if(!pm[e.provider])pm[e.provider]=[];pm[e.provider].push(e);});bar.innerHTML=`<i class="ti ti-alert-triangle" style="font-size:14px;vertical-align:-2px;margin-right:6px"></i><strong>Double-booking on ${fmtShort(S.selectedDate)}:</strong> `+Object.keys(pm).map(p=>`<span style="display:inline-flex;align-items:center;gap:5px;margin:2px 4px;padding:2px 8px;border-radius:var(--border-radius-md);background:rgba(255,255,255,.15)"><span style="width:8px;height:8px;border-radius:50%;background:${pc(p)};display:inline-block;flex-shrink:0"></span>${esc(p)}</span>`).join('');bar.style.display='block';}
+function renderCBar(){const bar=document.getElementById('cbar');if(!bar)return;const de=S.events.filter(e=>e.date===S.selectedDate),cf=conflicts(de);if(!cf.size){bar.style.display='none';return;}const pm={};de.filter(e=>cf.has(e.id)).forEach(e=>{if(!pm[e.provider])pm[e.provider]=[];pm[e.provider].push(e);});bar.innerHTML=`<i class="ti ti-alert-triangle" style="font-size:14px;vertical-align:-2px;margin-right:6px"></i><strong>Double-booking:</strong> `+Object.keys(pm).map(p=>`<span style="display:inline-flex;align-items:center;gap:5px;margin:2px 4px;padding:2px 8px;border-radius:var(--r);background:rgba(255,255,255,.15)"><span style="width:8px;height:8px;border-radius:50%;background:${pc(p)};display:inline-block"></span>${esc(p)}</span>`).join('');bar.style.display='block';}
 
-function renderLegend(){const el=document.getElementById('legend');if(!el)return;const de=S.events.filter(e=>e.date===S.selectedDate),cf=getConflicts(de);const cp=new Set(de.filter(e=>cf.has(e.id)).map(e=>e.provider));const fp=S.filterProvider,wk=getWeekDates(S.weekStart);const entries=Object.entries(S.providers);if(!entries.length){el.innerHTML='<span style="font-size:12px;color:var(--color-text-tertiary)">No providers yet \u2014 click Manage to add one</span>';return;}el.innerHTML=entries.map(([n,{color}])=>{const isActive=fp===n,isDimmed=fp&&fp!==n,wkCnt=S.events.filter(e=>e.provider===n&&wk.includes(e.date)).length;return`<div class="legend-pill${isDimmed?' dimmed':''}" onclick="toggleFilter('${esc(n)}')" style="border-color:${isActive?color:'transparent'};background:${isActive?color+'18':'transparent'}"><div style="width:9px;height:9px;border-radius:2px;background:${color};flex-shrink:0"></div><span style="color:${cp.has(n)?'var(--color-text-danger)':isActive?color:'var(--color-text-secondary)'}">${esc(n)}</span><span style="font-size:10px;color:var(--color-text-tertiary)">${wkCnt} this wk</span>${cp.has(n)?`<i class="ti ti-alert-triangle" style="font-size:10px;vertical-align:-1px"></i>`:''}${isActive?`<i class="ti ti-check" style="font-size:10px;color:${color}"></i>`:''}</div>`;}).join('');}
+function renderLegend(){const el=document.getElementById('legend');if(!el)return;const de=S.events.filter(e=>e.date===S.selectedDate),cf=conflicts(de);const cp=new Set(de.filter(e=>cf.has(e.id)).map(e=>e.provider));const fp=S.filterProv,wk=weekDates(S.weekStart);const entries=Object.entries(S.providers);if(!entries.length){el.innerHTML='<span style="font-size:12px;color:var(--color-txt3)">No providers yet \u2014 click Manage to add one</span>';return;}el.innerHTML=entries.map(([n,{color}])=>{const isA=fp===n,isD=fp&&fp!==n,wkC=S.events.filter(e=>e.provider===n&&wk.includes(e.date)).length;return`<div class="lpill${isD?' dim':''}" onclick="togFilter('${esc(n)}')" style="border-color:${isA?color:'transparent'};background:${isA?color+'18':'transparent'}"><div style="width:9px;height:9px;border-radius:2px;background:${color};flex-shrink:0"></div><span style="color:${cp.has(n)?'var(--color-txt-err)':isA?color:'var(--color-txt2)'}">${esc(n)}</span><span style="font-size:10px;color:var(--color-txt3)">${wkC} this wk</span>${cp.has(n)?'<i class="ti ti-alert-triangle" style="font-size:10px"></i>':''}${isA?`<i class="ti ti-check" style="font-size:10px;color:${color}"></i>`:''}</div>`;}).join('');}
 
-function renderFilterBanner(){const el=document.getElementById('fbar');if(!el)return;if(!S.filterProvider){el.style.display='none';return;}const col=pc(S.filterProvider);const wk=getWeekDates(S.weekStart);const wkE=S.events.filter(e=>e.provider===S.filterProvider&&wk.includes(e.date));const dE=wkE.filter(e=>e.date===S.selectedDate).length;el.style.display='block';el.innerHTML=`<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--color-background-primary);border:0.5px solid ${col}44;border-left:3px solid ${col};border-radius:var(--border-radius-md)"><div style="width:12px;height:12px;border-radius:3px;background:${col};flex-shrink:0"></div><div><div style="font-size:13px;font-weight:500">${esc(S.filterProvider)}</div><div style="font-size:11px;color:var(--color-text-tertiary)">${dE} session${dE!==1?'s':''} on ${fmtShort(S.selectedDate)} \u00b7 ${wkE.length} total this week</div></div><button onclick="clearFilter()" style="margin-left:auto;display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:transparent;cursor:pointer;font-size:12px;color:var(--color-text-secondary);font-family:var(--font-sans)"><i class="ti ti-x" style="font-size:12px"></i> Show all</button></div>`;}
+function renderFBar(){const el=document.getElementById('fbar');if(!el)return;if(!S.filterProv){el.style.display='none';return;}const col=pc(S.filterProv);const wk=weekDates(S.weekStart);const wkE=S.events.filter(e=>e.provider===S.filterProv&&wk.includes(e.date));const dE=wkE.filter(e=>e.date===S.selectedDate).length;el.style.display='block';el.innerHTML=`<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--color-bg);border:0.5px solid ${col}44;border-left:3px solid ${col};border-radius:var(--r)"><div style="width:12px;height:12px;border-radius:3px;background:${col};flex-shrink:0"></div><div><div style="font-size:13px;font-weight:500">${esc(S.filterProv)}</div><div style="font-size:11px;color:var(--color-txt3)">${dE} session${dE!==1?'s':''} today \u00b7 ${wkE.length} this week</div></div><button onclick="clearFilter()" style="margin-left:auto;display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:var(--r);border:0.5px solid var(--color-bdr2);background:transparent;cursor:pointer;font-size:12px;color:var(--color-txt2);font-family:var(--font)"><i class="ti ti-x" style="font-size:12px"></i> Show all</button></div>`;}
 
-function renderSelectionBar(){const el=document.getElementById('client-pills');if(!el)return;el.innerHTML=S.clients.map(c=>{const sel=S.selectedClients.has(c.id);return`<label style="display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;border:1.5px solid ${sel?'#7F77DD':'var(--color-border-tertiary)'};background:${sel?'#7F77DD18':'transparent'};cursor:pointer;font-size:12px;color:${sel?'#7F77DD':'var(--color-text-tertiary)'};transition:all .15s;user-select:none"><input type="checkbox" ${sel?'checked':''} onchange="toggleClientSel('${c.id}',this.checked)" style="accent-color:#7F77DD;cursor:pointer;width:12px;height:12px">${esc(c.name)}</label>`;}).join('');}
-function renderSelBadge(){const el=document.getElementById('sel-badge');if(el)el.textContent=`${S.selectedClients.size}/${S.clients.length}`;const btn=document.getElementById('day-btn');if(btn)btn.disabled=S.selectedClients.size===0;}
+function renderSelBar(){const el=document.getElementById('client-pills');if(!el)return;el.innerHTML=S.clients.map(c=>{const sel=S.selClients.has(c.id);return`<label style="display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;border:1.5px solid ${sel?'#7F77DD':'var(--color-bdr)'};background:${sel?'#7F77DD18':'transparent'};cursor:pointer;font-size:12px;color:${sel?'#7F77DD':'var(--color-txt3)'};user-select:none"><input type="checkbox" ${sel?'checked':''} onchange="togSel('${c.id}',this.checked)" style="accent-color:#7F77DD;cursor:pointer;width:12px;height:12px">${esc(c.name)}</label>`;}).join('');}
+function renderBadge(){const el=document.getElementById('sel-badge');if(el)el.textContent=`${S.selClients.size}/${S.clients.length}`;const btn=document.getElementById('day-btn');if(btn)btn.disabled=S.selClients.size===0;}
 
 function renderGrid(){
   const grid=document.getElementById('grid');if(!grid)return;
-  const de=S.events.filter(e=>e.date===S.selectedDate),cf=getConflicts(de),fp=S.filterProvider,wknd=isWeekend(S.selectedDate);
+  const de=S.events.filter(e=>e.date===S.selectedDate),cf=conflicts(de),fp=S.filterProv,we=isWknd(S.selectedDate);
   let h='';
-  // Time column
-  h+=`<div style="position:sticky;left:0;z-index:10;background:var(--color-background-primary);border-right:0.5px solid var(--color-border-tertiary);width:72px;flex-shrink:0"><div style="height:52px;position:sticky;top:0;z-index:11;background:var(--color-background-primary);border-bottom:0.5px solid var(--color-border-tertiary)"></div>`;
-  SLOTS.forEach(s=>{const oh=s.m===0;h+=`<div style="height:${SLOT_H}px;display:flex;align-items:flex-start;justify-content:flex-end;padding:5px 10px 0 0;font-size:11px;color:${oh?'var(--color-text-secondary)':'var(--color-text-tertiary)'};font-weight:${oh?500:400};border-bottom:${oh?'0.5px solid var(--color-border-tertiary)':'0.5px dashed var(--color-border-tertiary)'};">${oh?esc(s.label):'<span style="opacity:.5">&middot;30</span>'}</div>`;});
+  // Time col
+  h+=`<div style="position:sticky;left:0;z-index:10;background:var(--color-bg);border-right:0.5px solid var(--color-bdr);width:72px;flex-shrink:0"><div style="height:52px;position:sticky;top:0;z-index:11;background:var(--color-bg);border-bottom:0.5px solid var(--color-bdr)"></div>`;
+  SLOTS.forEach(s=>{const oh=s.m===0;h+=`<div style="height:${SH}px;display:flex;align-items:flex-start;justify-content:flex-end;padding:5px 10px 0 0;font-size:11px;color:${oh?'var(--color-txt2)':'var(--color-txt3)'};font-weight:${oh?500:400};border-bottom:${oh?'0.5px solid var(--color-bdr)':'0.5px dashed var(--color-bdr)'};">${oh?esc(s.label):'<span style="opacity:.5">&middot;30</span>'}</div>`;});
   h+=`</div>`;
-  // Client columns
+  // Client cols
   S.clients.forEach(client=>{
-    const ce=de.filter(e=>e.clientId===client.id),activeEvs=fp?ce.filter(e=>e.provider===fp):ce,bgEvs=fp?ce.filter(e=>e.provider!==fp):[];
-    const isSel=S.selectedClients.has(client.id);
-    h+=`<div style="width:185px;flex-shrink:0;border-right:0.5px solid var(--color-border-tertiary);opacity:${isSel?1:.45};transition:opacity .2s">`;
-    h+=`<div class="col-hdr" style="position:relative;height:52px;position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:var(--color-text-secondary);background:${wknd?'var(--color-background-danger)':'var(--color-background-secondary)'};border-bottom:0.5px solid var(--color-border-tertiary);padding:0 52px 0 28px;text-align:center;line-height:1.3">
-      <label style="position:absolute;left:8px;top:50%;transform:translateY(-50%);cursor:pointer"><input type="checkbox" ${isSel?'checked':''} onchange="toggleClientSel('${client.id}',this.checked)" onclick="event.stopPropagation()" style="cursor:pointer;accent-color:#7F77DD;width:14px;height:14px"></label>
-      <div onclick="openRenameClient('${client.id}')" title="Click name to rename" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px;overflow:hidden;max-width:100%">
-        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:500">${esc(client.name)}</span>
-        <span style="font-size:9px;opacity:.45;letter-spacing:0.2px">click to rename</span>
+    const ce=de.filter(e=>e.clientId===client.id),actE=fp?ce.filter(e=>e.provider===fp):ce,bgE=fp?ce.filter(e=>e.provider!==fp):[];
+    const sel=S.selClients.has(client.id);
+    h+=`<div style="width:185px;flex-shrink:0;border-right:0.5px solid var(--color-bdr);opacity:${sel?1:.45};transition:opacity .2s">`;
+    h+=`<div style="position:relative;height:52px;position:sticky;top:0;z-index:5;background:${we?'var(--color-bg-warn)':'var(--color-bg2)'};border-bottom:0.5px solid var(--color-bdr);display:flex;align-items:center;justify-content:center;padding:0 36px 0 28px;">
+      <label style="position:absolute;left:8px;top:50%;transform:translateY(-50%);cursor:pointer"><input type="checkbox" ${sel?'checked':''} onchange="togSel('${client.id}',this.checked)" onclick="event.stopPropagation()" style="cursor:pointer;accent-color:#7F77DD;width:14px;height:14px"></label>
+      <div onclick="openRenameClient('${client.id}')" title="Click to rename" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px;overflow:hidden;max-width:100%">
+        <span style="font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(client.name)}</span>
+        <span style="font-size:9px;opacity:.4">click to rename</span>
       </div>
-      <button onclick="event.stopPropagation();removeClient('${client.id}')" title="Remove client" style="position:absolute;right:5px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--color-text-tertiary);padding:3px;font-size:15px;line-height:1;font-family:var(--font-sans)">&#x2715;</button>
+      <button onclick="event.stopPropagation();removeClient('${client.id}')" title="Remove" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--color-txt3);font-size:15px;padding:3px;font-family:var(--font)">&#x2715;</button>
     </div>`;
     h+=`<div style="position:relative">`;
-    SLOTS.forEach((s,si)=>{const covered=ce.some(e=>si>=e.slotIndex&&si<e.slotIndex+e.duration);const oh=s.m===0,bd=`border-bottom:${oh?'0.5px solid var(--color-border-tertiary)':'0.5px dashed var(--color-border-tertiary)'}`;if(covered){h+=`<div style="height:${SLOT_H}px;${bd}"></div>`;}else{h+=`<div class="slot" data-cid="${client.id}" data-si="${si}" style="height:${SLOT_H}px;${bd};${wknd?'background:rgba(254,242,242,.3)':''}"><span class="ph">+</span></div>`;}});
-    bgEvs.forEach(ev=>{h+=`<div style="position:absolute;top:${ev.slotIndex*SLOT_H+2}px;left:3px;right:3px;height:${ev.duration*SLOT_H-4}px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);z-index:1;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:4px 8px"><span style="font-size:10px;color:var(--color-text-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(ev.provider)}</span></div>`;});
-    activeEvs.forEach(ev=>{const col=pc(ev.provider),isC=cf.has(ev.id),es=SLOTS[ev.slotIndex+ev.duration],tr=es?`${SLOTS[ev.slotIndex].label} \u2013 ${es.label}`:'';h+=`<div class="ecard" data-eid="${ev.id}" draggable="true" style="top:${ev.slotIndex*SLOT_H+2}px;left:3px;right:3px;height:${ev.duration*SLOT_H-4}px;background:${col};color:#fff;position:absolute;border-radius:8px;padding:6px 8px;overflow:hidden;z-index:2;user-select:none;cursor:grab;${isC?'outline:2.5px solid #E24B4A;outline-offset:1px':''}">`;
-h+=`<div style="font-size:11px;font-weight:600;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:${isC?16:0}px">${esc(ev.service)}</div>`;
-h+=`<div style="font-size:10px;opacity:.85;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(ev.provider)}</div>`;
-if(ev.duration>=3&&tr)h+=`<div style="font-size:9px;opacity:.6;margin-top:2px">${esc(tr)}</div>`;
-if(isC)h+=`<div style="position:absolute;top:4px;right:5px;font-size:10px">&#x26A0;</div>`;
-h+=`</div>`;});
+    SLOTS.forEach((s,si)=>{const cov=ce.some(e=>si>=e.slotIndex&&si<e.slotIndex+e.duration);const oh=s.m===0,bd=`border-bottom:${oh?'0.5px solid var(--color-bdr)':'0.5px dashed var(--color-bdr)'}`;if(cov){h+=`<div style="height:${SH}px;${bd}"></div>`;}else{h+=`<div class="slot" data-cid="${client.id}" data-si="${si}" style="${bd};${we?'background:rgba(254,242,242,.3)':''}"><span class="ph">+</span></div>`;}});
+    bgE.forEach(ev=>{h+=`<div style="position:absolute;top:${ev.slotIndex*SH+2}px;left:3px;right:3px;height:${ev.duration*SH-4}px;background:var(--color-bg2);border:0.5px solid var(--color-bdr);border-radius:var(--r);z-index:1;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:4px 8px"><span style="font-size:10px;color:var(--color-txt3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(ev.provider)}</span></div>`;});
+    actE.forEach(ev=>{
+      const col=pc(ev.provider),isC=cf.has(ev.id),es=SLOTS[ev.slotIndex+ev.duration],tr=es?`${SLOTS[ev.slotIndex].label}\u2013${es.label}`:'';
+      h+=`<div class="ecard" data-eid="${ev.id}" draggable="true" style="top:${ev.slotIndex*SH+2}px;left:3px;right:3px;height:${ev.duration*SH-4}px;background:${col};${isC?'outline:2.5px solid #E24B4A;outline-offset:1px':''}">`;
+      h+=`<div style="font-size:11px;font-weight:600;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(ev.service)}</div>`;
+      h+=`<div style="font-size:10px;opacity:.85;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(ev.provider)}</div>`;
+      if(ev.duration>=3&&tr)h+=`<div style="font-size:9px;opacity:.6;margin-top:2px">${esc(tr)}</div>`;
+      if(isC)h+=`<div style="position:absolute;top:4px;right:5px;font-size:10px">&#x26A0;</div>`;
+      h+=`</div>`;
+    });
     h+=`</div></div>`;
   });
   // Add client
   h+=`<div style="width:155px;flex-shrink:0;padding:8px">`;
-  if(S.addingClient){h+=`<div style="display:flex;flex-direction:column;gap:6px"><input type="text" id="nc-inp" placeholder="Client name..." onkeydown="if(event.key==='Enter')submitAddC()"><div style="display:flex;gap:6px"><button onclick="submitAddC()" style="flex:1;padding:7px;border-radius:var(--border-radius-md);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:12px;font-family:var(--font-sans)">Add</button><button onclick="cancelAddC()" style="padding:7px 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:transparent;cursor:pointer;font-size:12px;font-family:var(--font-sans);color:var(--color-text-secondary)"><i class="ti ti-x" style="font-size:14px"></i></button></div></div>`;setTimeout(()=>{const i=document.getElementById('nc-inp');if(i)i.focus();},50);}
-  else{h+=`<button onclick="startAddC()" style="width:100%;height:52px;display:flex;align-items:center;justify-content:center;gap:8px;border:0.5px dashed var(--color-border-secondary);border-radius:var(--border-radius-md);background:transparent;cursor:pointer;color:var(--color-text-tertiary);font-size:12px;font-family:var(--font-sans)"><i class="ti ti-plus" style="font-size:16px"></i> Add client</button>`;}
+  if(S.addingClient){h+=`<div style="display:flex;flex-direction:column;gap:6px"><input type="text" id="nc-i" placeholder="Client name..." onkeydown="if(event.key==='Enter')submitAddC()"><div style="display:flex;gap:6px"><button onclick="submitAddC()" style="flex:1;padding:7px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:12px;font-family:var(--font)">Add</button><button onclick="cancelAddC()" style="padding:7px 10px;border-radius:var(--r);border:0.5px solid var(--color-bdr2);background:transparent;cursor:pointer;font-size:12px;font-family:var(--font);color:var(--color-txt2)">&#x2715;</button></div></div>`;setTimeout(()=>{const i=document.getElementById('nc-i');if(i)i.focus();},50);}
+  else{h+=`<button onclick="startAddC()" style="width:100%;height:52px;display:flex;align-items:center;justify-content:center;gap:8px;border:0.5px dashed var(--color-bdr2);border-radius:var(--r);background:transparent;cursor:pointer;color:var(--color-txt3);font-size:12px;font-family:var(--font)"><i class="ti ti-plus" style="font-size:16px"></i> Add client</button>`;}
   h+=`</div>`;
-  grid.innerHTML=h;
-  attachListeners();
+  grid.innerHTML=h;attachListeners();
 }
 
 function attachListeners(){
   document.querySelectorAll('.ecard').forEach(card=>{
-    let wd=false, startX=0, startY=0;
+    let wd=false;
     card.setAttribute('draggable','true');
-    card.addEventListener('dragstart',e=>{
-      wd=true;
-      S.drag=card.dataset.eid;
-      e.dataTransfer.effectAllowed='move';
-      try{e.dataTransfer.setData('text/plain',card.dataset.eid);}catch(x){}
-      e.stopPropagation();
-    });
-    card.addEventListener('dragend',e=>{
-      S.drag=null;
-      document.querySelectorAll('.drop-target').forEach(el=>el.classList.remove('drop-target'));
-      setTimeout(()=>wd=false,80);
-    });
-    card.addEventListener('click',e=>{
-      if(wd)return;
-      e.stopPropagation();
-      openEditModal(card.dataset.eid);
-    });
+    card.addEventListener('dragstart',e=>{wd=true;S.drag=card.dataset.eid;try{e.dataTransfer.setData('text/plain',S.drag);}catch(x){}e.dataTransfer.effectAllowed='move';e.stopPropagation();});
+    card.addEventListener('dragend',()=>{S.drag=null;document.querySelectorAll('.drop-target').forEach(el=>el.classList.remove('drop-target'));setTimeout(()=>wd=false,80);});
+    card.addEventListener('click',e=>{if(wd)return;e.stopPropagation();openEditModal(card.dataset.eid);});
   });
   document.querySelectorAll('.slot').forEach(cell=>{
-    cell.addEventListener('click',e=>{
-      if(!S.drag)openAddModal(cell.dataset.cid,+cell.dataset.si);
-    });
-    cell.addEventListener('dragenter',e=>{
-      e.preventDefault();
-      cell.classList.add('drop-target');
-    });
-    cell.addEventListener('dragover',e=>{
-      e.preventDefault();
-      e.dataTransfer.dropEffect='move';
-      cell.classList.add('drop-target');
-    });
-    cell.addEventListener('dragleave',e=>{
-      cell.classList.remove('drop-target');
-    });
-    cell.addEventListener('drop',e=>{
-      e.preventDefault();
-      e.stopPropagation();
-      cell.classList.remove('drop-target');
-      if(!S.drag)return;
-      handleDrop(cell.dataset.cid,+cell.dataset.si);
-    });
+    cell.addEventListener('click',()=>{if(!S.drag)openAddModal(cell.dataset.cid,+cell.dataset.si);});
+    cell.addEventListener('dragenter',e=>{e.preventDefault();cell.classList.add('drop-target');});
+    cell.addEventListener('dragover',e=>{e.preventDefault();e.dataTransfer.dropEffect='move';cell.classList.add('drop-target');});
+    cell.addEventListener('dragleave',()=>cell.classList.remove('drop-target'));
+    cell.addEventListener('drop',e=>{e.preventDefault();e.stopPropagation();cell.classList.remove('drop-target');if(!S.drag)return;handleDrop(cell.dataset.cid,+cell.dataset.si);});
   });
 }
 
-// ── Actions ───────────────────────────────────────────────────────────────
 function handleDrop(cid,si){const ev=S.events.find(e=>e.id===S.drag);if(!ev||si+ev.duration>SLOTS.length)return;ev.date=S.selectedDate;ev.clientId=cid;ev.slotIndex=si;S.drag=null;renderAll();saveAll();}
-function removeClient(cid){S.clients=S.clients.filter(c=>c.id!==cid);S.events=S.events.filter(e=>e.clientId!==cid);S.selectedClients.delete(cid);renderAll();saveAll();}
+function removeClient(cid){S.clients=S.clients.filter(c=>c.id!==cid);S.events=S.events.filter(e=>e.clientId!==cid);S.selClients.delete(cid);renderAll();saveAll();}
 function startAddC(){S.addingClient=true;renderGrid();}
 function cancelAddC(){S.addingClient=false;renderGrid();}
-function submitAddC(){const inp=document.getElementById('nc-inp');const name=inp?.value?.trim();if(!name)return;const id=nid();S.clients.push({id,name});S.selectedClients.add(id);S.addingClient=false;renderAll();saveAll();}
+function submitAddC(){const inp=document.getElementById('nc-i');const name=inp?.value?.trim();if(!name)return;const id=nid();S.clients.push({id,name});S.selClients.add(id);S.addingClient=false;renderAll();saveAll();}
 
 // ── Modal helpers ─────────────────────────────────────────────────────────
-let mCtx = null;
+let mCtx=null;
 function showModal(html){document.getElementById('mbox').innerHTML=html;document.getElementById('modal').style.display='flex';}
 function closeModal(){document.getElementById('modal').style.display='none';mCtx=null;}
 document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal();});
-function cancelBtn(){return`<button onclick="closeModal()" style="padding:8px 16px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:transparent;cursor:pointer;font-size:13px;color:var(--color-text-secondary);font-family:var(--font-sans)">Cancel</button>`;}
-function saveBtn(fn,label='Save'){return`<button onclick="${fn}" style="padding:8px 18px;border-radius:var(--border-radius-md);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--font-sans)">${label}</button>`;}
-function pdl(id){return`<datalist id="${id}">${Object.keys(S.providers).map(p=>`<option value="${esc(p)}">`).join('')}</datalist>`;}
+function cBtn(){return`<button onclick="closeModal()" style="padding:8px 16px;border-radius:var(--r);border:0.5px solid var(--color-bdr2);background:transparent;cursor:pointer;font-size:13px;color:var(--color-txt2);font-family:var(--font)">Cancel</button>`;}
+function sBtn(fn,lbl='Save'){return`<button onclick="${fn}" style="padding:8px 18px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--font)">${lbl}</button>`;}
+function provDL(id){return`<datalist id="${id}">${Object.keys(S.providers).map(p=>`<option value="${esc(p)}">`).join('')}</datalist>`;}
 function svcDL(id){return`<datalist id="${id}">${S.services.map(s=>`<option value="${esc(s)}">`).join('')}</datalist>`;}
 const durOpts=[[1,'30 min'],[2,'1 hr'],[3,'1.5 hrs'],[4,'2 hrs'],[6,'3 hrs'],[8,'4 hrs']];
 
-function svcField(val=''){return`<div style="margin-bottom:14px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px"><div style="font-size:11px;font-weight:500;color:var(--color-text-secondary)">Service type</div><button onclick="openManageServices()" style="font-size:10px;color:#7F77DD;background:none;border:none;cursor:pointer;font-family:var(--font-sans);display:flex;align-items:center;gap:3px;padding:0"><i class="ti ti-settings" style="font-size:11px"></i> Manage</button></div><input type="text" id="m-s" value="${esc(val)}" placeholder="Select or type a service..." list="svc-dl" autocomplete="off">${svcDL('svc-dl')}</div>`;}
-function provField(val=''){return`<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:500;color:var(--color-text-secondary);margin-bottom:5px">Provider</div><div style="display:flex;align-items:center;gap:8px"><div id="pcdot" style="width:11px;height:11px;border-radius:3px;background:${pc(val)||'#ccc'};flex-shrink:0"></div><input type="text" id="m-p" value="${esc(val)}" placeholder="Select or type a provider..." list="prov-dl" autocomplete="off" oninput="updateProvDot(this.value)" style="flex:1"></div>${pdl('prov-dl')}</div>`;}
-function durField(val=2){return`<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:500;color:var(--color-text-secondary);margin-bottom:5px">Duration</div><select id="m-d">${durOpts.map(([v,l])=>`<option value="${v}"${v===val?' selected':''}>${l}</option>`).join('')}</select></div>`;}
+function svcFld(val=''){return`<div style="margin-bottom:14px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px"><div style="font-size:11px;font-weight:500;color:var(--color-txt2)">Service type</div><button onclick="openManageSvc()" style="font-size:10px;color:#7F77DD;background:none;border:none;cursor:pointer;font-family:var(--font);display:flex;align-items:center;gap:3px;padding:0"><i class="ti ti-settings" style="font-size:11px"></i> Manage</button></div><input type="text" id="ms" value="${esc(val)}" placeholder="Type or select service..." list="sdl" autocomplete="off">${svcDL('sdl')}</div>`;}
+function prvFld(val=''){return`<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:500;color:var(--color-txt2);margin-bottom:5px">Provider</div><div style="display:flex;align-items:center;gap:8px"><div id="pdot" style="width:11px;height:11px;border-radius:3px;background:${pc(val)||'#ccc'};flex-shrink:0"></div><input type="text" id="mp" value="${esc(val)}" placeholder="Type or select provider..." list="pdl" autocomplete="off" oninput="updDot(this.value)" style="flex:1"></div>${provDL('pdl')}</div>`;}
+function durFld(val=2){return`<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:500;color:var(--color-txt2);margin-bottom:5px">Duration</div><select id="md">${durOpts.map(([v,l])=>`<option value="${v}"${v===val?' selected':''}>${l}</option>`).join('')}</select></div>`;}
+function updDot(v){const d=document.getElementById('pdot');if(d)d.style.background=pc(v)||'#ccc';}
 
-function openAddModal(cid,si){mCtx={type:'add',cid,si};showModal(`<div style="font-size:15px;font-weight:500;margin-bottom:4px">Add service</div><div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:18px">${fmtFull(S.selectedDate)}</div>${svcField()}${provField(S.filterProvider||'')}${durField()}<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px">${cancelBtn()} ${saveBtn('submitAdd()','Add service')}</div>`);}
-function submitAdd(){const svc=document.getElementById('m-s')?.value?.trim(),prov=document.getElementById('m-p')?.value?.trim(),dur=+document.getElementById('m-d')?.value||2;if(!svc||!prov){alert('Please fill in all fields.');return;}ensureProv(prov);S.events.push({id:nid(),date:S.selectedDate,clientId:mCtx.cid,slotIndex:mCtx.si,duration:dur,service:svc,provider:prov});renderAll();saveAll();closeModal();}
+function openAddModal(cid,si){mCtx={type:'add',cid,si};showModal(`<div style="font-size:15px;font-weight:500;margin-bottom:4px">Add service</div><div style="font-size:11px;color:var(--color-txt3);margin-bottom:18px">${fmtFull(S.selectedDate)}</div>${svcFld()}${prvFld(S.filterProv||'')}${durFld()}<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px">${cBtn()} ${sBtn('submitAdd()','Add service')}</div>`);}
+function submitAdd(){const svc=document.getElementById('ms')?.value?.trim(),prov=document.getElementById('mp')?.value?.trim(),dur=+document.getElementById('md')?.value||2;if(!svc||!prov){alert('Please fill in all fields.');return;}mkProv(prov);S.events.push({id:nid(),date:S.selectedDate,clientId:mCtx.cid,slotIndex:mCtx.si,duration:dur,service:svc,provider:prov});renderAll();saveAll();closeModal();}
 
 function openEditModal(eid){
   const ev=S.events.find(e=>e.id===eid);if(!ev)return;mCtx={type:'edit',eid};
-  showModal(`<div style="font-size:15px;font-weight:500;margin-bottom:4px">Edit service</div><div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:18px">${fmtFull(ev.date)}</div>
-    ${svcField(ev.service)}${provField(ev.provider)}${durField(ev.duration)}
-    <div style="padding-top:14px;border-top:0.5px solid var(--color-border-tertiary)">
-      <button onclick="openCopyModal('${eid}')" style="width:100%;padding:9px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:transparent;cursor:pointer;font-size:13px;color:var(--color-text-secondary);font-family:var(--font-sans);display:flex;align-items:center;justify-content:center;gap:7px"><i class="ti ti-copy" style="font-size:14px"></i> Copy to other days / clients / weeks...</button>
+  showModal(`<div style="font-size:15px;font-weight:500;margin-bottom:4px">Edit service</div><div style="font-size:11px;color:var(--color-txt3);margin-bottom:18px">${fmtFull(ev.date)}</div>
+    ${svcFld(ev.service)}${prvFld(ev.provider)}${durFld(ev.duration)}
+    <div style="padding-top:14px;border-top:0.5px solid var(--color-bdr)">
+      <button onclick="openCopyModal('${eid}')" style="width:100%;padding:9px;border-radius:var(--r);border:0.5px solid var(--color-bdr2);background:transparent;cursor:pointer;font-size:13px;color:var(--color-txt2);font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:7px"><i class="ti ti-copy" style="font-size:14px"></i> Copy to other days / clients / weeks...</button>
     </div>
     <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
-      <button onclick="deleteEv('${eid}')" style="display:flex;align-items:center;gap:5px;padding:8px 14px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-danger);background:var(--color-background-danger);cursor:pointer;font-size:13px;color:var(--color-text-danger);font-family:var(--font-sans)"><i class="ti ti-trash" style="font-size:13px"></i> Delete</button>
-      <div style="flex:1"></div>${cancelBtn()} ${saveBtn(`submitEdit('${eid}')`)}
+      <button onclick="delEv('${eid}')" style="display:flex;align-items:center;gap:5px;padding:8px 14px;border-radius:var(--r);border:0.5px solid var(--color-bdr-err);background:var(--color-bg-warn);cursor:pointer;font-size:13px;color:var(--color-txt-err);font-family:var(--font)"><i class="ti ti-trash" style="font-size:13px"></i> Delete</button>
+      <div style="flex:1"></div>${cBtn()} ${sBtn(`submitEdit('${eid}')`)}
     </div>`);
 }
-function updateProvDot(v){const d=document.getElementById('pcdot');if(d)d.style.background=pc(v)||'#ccc';}
-function submitEdit(eid){const svc=document.getElementById('m-s')?.value?.trim(),prov=document.getElementById('m-p')?.value?.trim(),dur=+document.getElementById('m-d')?.value||2;if(!svc||!prov){alert('Please fill in all fields.');return;}ensureProv(prov);const ev=S.events.find(e=>e.id===eid);if(ev){ev.service=svc;ev.provider=prov;ev.duration=dur;}renderAll();saveAll();closeModal();}
-function deleteEv(eid){S.events=S.events.filter(e=>e.id!==eid);renderAll();saveAll();closeModal();}
+function submitEdit(eid){const svc=document.getElementById('ms')?.value?.trim(),prov=document.getElementById('mp')?.value?.trim(),dur=+document.getElementById('md')?.value||2;if(!svc||!prov){alert('Please fill in all fields.');return;}mkProv(prov);const ev=S.events.find(e=>e.id===eid);if(ev){ev.service=svc;ev.provider=prov;ev.duration=dur;}renderAll();saveAll();closeModal();}
+function delEv(eid){S.events=S.events.filter(e=>e.id!==eid);renderAll();saveAll();closeModal();}
 
 // ── Copy modal ────────────────────────────────────────────────────────────
-function openCopyModal(eid){const ev=S.events.find(e=>e.id===eid);if(!ev)return;const evDayIdx=weekdayIdx(ev.date),col=pc(ev.provider);const dayPills=WDAY_LABELS.map((d,i)=>`<label class="copy-day-pill${i===evDayIdx?' on':''}${i>=5?' wknd':''}" id="cdlbl-${i}" onclick="refreshDayPill(${i})"><input type="checkbox" id="cdc-${i}" ${i===evDayIdx?'checked':''} onchange="updateCopyPreview('${eid}')" style="accent-color:#7F77DD;cursor:pointer"><span style="font-size:10px;font-weight:500">${d}</span></label>`).join('');const clientRows=S.clients.map(c=>`<label class="copy-row${c.id===ev.clientId?' on':''}" id="cclbl-${c.id}" onclick="refreshRow('ccc-${c.id}','cclbl-${c.id}')"><input type="checkbox" id="ccc-${c.id}" ${c.id===ev.clientId?'checked':''} onchange="updateCopyPreview('${eid}')" style="accent-color:#7F77DD;cursor:pointer;width:14px;height:14px"><span style="font-size:13px">${esc(c.name)}</span></label>`).join('');const weekRows=[0,1,2,3].map(offset=>{const mon=addDays(S.weekStart,offset*7);const lbl=offset===0?`${fmtShort(mon)} \u00b7 this week`:offset===1?`${fmtShort(mon)} \u00b7 next week`:fmtShort(mon);return`<label class="copy-row${offset===0?' on':''}" id="cwlbl-${offset}" onclick="refreshRow('cwc-${offset}','cwlbl-${offset}')"><input type="checkbox" id="cwc-${offset}" ${offset===0?'checked':''} onchange="updateCopyPreview('${eid}')" style="accent-color:#7F77DD;cursor:pointer;width:14px;height:14px"><span style="font-size:13px">Week of ${lbl}</span></label>`;}).join('');showModal(`<div style="display:flex;align-items:center;gap:10px;margin-bottom:18px"><div style="width:34px;height:34px;border-radius:var(--border-radius-md);background:${col};display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-copy" style="font-size:16px;color:#fff"></i></div><div><div style="font-size:15px;font-weight:500">Copy service</div><div style="font-size:11px;color:var(--color-text-tertiary)">${esc(ev.service)} \u00b7 ${esc(ev.provider)} \u00b7 ${SLOTS[ev.slotIndex]?.label}</div></div></div><div style="margin-bottom:14px"><div style="font-size:11px;font-weight:500;color:var(--color-text-secondary);margin-bottom:8px">Apply to days</div><div style="display:flex;gap:5px;flex-wrap:wrap">${dayPills}</div></div><div style="margin-bottom:14px"><div style="font-size:11px;font-weight:500;color:var(--color-text-secondary);margin-bottom:8px">Apply to clients</div><div style="display:flex;flex-direction:column;gap:5px">${clientRows}</div></div><div style="margin-bottom:16px"><div style="font-size:11px;font-weight:500;color:var(--color-text-secondary);margin-bottom:8px">Apply to weeks</div><div style="display:flex;flex-direction:column;gap:5px">${weekRows}</div></div><div id="copy-preview" style="padding:10px 12px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);margin-bottom:16px;font-size:12px;color:var(--color-text-secondary);min-height:36px;display:flex;align-items:center;gap:6px"><i class="ti ti-loader" style="font-size:13px"></i> Calculating...</div><div style="display:flex;gap:8px;align-items:center"><button onclick="openEditModal('${eid}')" style="display:flex;align-items:center;gap:5px;padding:8px 14px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:transparent;cursor:pointer;font-size:13px;color:var(--color-text-secondary);font-family:var(--font-sans)"><i class="ti ti-arrow-left" style="font-size:12px"></i> Back</button><div style="flex:1"></div>${cancelBtn()}<button id="copy-exec-btn" onclick="executeCopy('${eid}')" style="padding:8px 20px;border-radius:var(--border-radius-md);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--font-sans)" disabled>Copy</button></div>`);setTimeout(()=>updateCopyPreview(eid),10);}
-function refreshDayPill(i){const cb=document.getElementById(`cdc-${i}`),lbl=document.getElementById(`cdlbl-${i}`);if(cb&&lbl)lbl.classList.toggle('on',cb.checked);}
-function refreshRow(cbId,lblId){const cb=document.getElementById(cbId),lbl=document.getElementById(lblId);if(cb&&lbl)lbl.classList.toggle('on',cb.checked);}
-function calcCopyEvents(eid){const ev=S.events.find(e=>e.id===eid);if(!ev)return{toCreate:[],skipped:0};const selDays=[0,1,2,3,4,5,6].filter(i=>document.getElementById(`cdc-${i}`)?.checked);const selClients=S.clients.filter(c=>document.getElementById(`ccc-${c.id}`)?.checked).map(c=>c.id);const selWeeks=[0,1,2,3].filter(i=>document.getElementById(`cwc-${i}`)?.checked);const toCreate=[];let skipped=0;selWeeks.forEach(offset=>{const mon=addDays(S.weekStart,offset*7);selDays.forEach(di=>{const targetDate=addDays(mon,di);selClients.forEach(cid=>{if(targetDate===ev.date&&cid===ev.clientId)return;const hasOv=S.events.some(e=>e.date===targetDate&&e.clientId===cid&&e.slotIndex<ev.slotIndex+ev.duration&&e.slotIndex+e.duration>ev.slotIndex);const hasNew=toCreate.some(e=>e.date===targetDate&&e.clientId===cid);if(hasOv||hasNew){skipped++;return;}toCreate.push({id:nid(),date:targetDate,clientId:cid,slotIndex:ev.slotIndex,duration:ev.duration,service:ev.service,provider:ev.provider});});});});return{toCreate,skipped};}
-function updateCopyPreview(eid){const preview=document.getElementById('copy-preview'),btn=document.getElementById('copy-exec-btn');if(!preview)return;const{toCreate,skipped}=calcCopyEvents(eid);if(!toCreate.length&&!skipped){preview.innerHTML=`<i class="ti ti-info-circle" style="font-size:13px;color:var(--color-text-tertiary)"></i> Select at least one day, client, and week.`;if(btn){btn.disabled=true;btn.textContent='Copy';}}else if(!toCreate.length){preview.innerHTML=`<i class="ti ti-alert-circle" style="font-size:13px"></i> All ${skipped} slot${skipped>1?'s':''} already occupied.`;if(btn){btn.disabled=true;btn.textContent='Copy';}}else{const sk=skipped>0?` <span style="color:var(--color-text-tertiary)">\u00b7 ${skipped} skipped (occupied)</span>`:'';preview.innerHTML=`<i class="ti ti-check" style="font-size:13px;color:var(--color-text-success)"></i> <strong>${toCreate.length} new session${toCreate.length>1?'s':''}</strong> will be created${sk}`;if(btn){btn.disabled=false;btn.textContent=`Copy ${toCreate.length} session${toCreate.length>1?'s':''}`;}}}
-function executeCopy(eid){const{toCreate}=calcCopyEvents(eid);if(!toCreate.length)return;toCreate.forEach(ev=>S.events.push(ev));renderAll();saveAll();closeModal();}
+function openCopyModal(eid){const ev=S.events.find(e=>e.id===eid);if(!ev)return;const edi=wdIdx(ev.date),col=pc(ev.provider);const dps=WLBL.map((d,i)=>`<label class="copy-dp${i===edi?' on':''}${i>=5?' we':''}" id="cdl-${i}" onclick="rfDP(${i})"><input type="checkbox" id="cdc-${i}" ${i===edi?'checked':''} onchange="updCP('${eid}')" style="accent-color:#7F77DD;cursor:pointer"><span style="font-size:10px;font-weight:500">${d}</span></label>`).join('');const crs=S.clients.map(c=>`<label class="copy-row${c.id===ev.clientId?' on':''}" id="ccl-${c.id}" onclick="rfRow('ccc-${c.id}','ccl-${c.id}')"><input type="checkbox" id="ccc-${c.id}" ${c.id===ev.clientId?'checked':''} onchange="updCP('${eid}')" style="accent-color:#7F77DD;cursor:pointer;width:14px;height:14px"><span style="font-size:13px">${esc(c.name)}</span></label>`).join('');const wrs=[0,1,2,3].map(o=>{const m=addDays(S.weekStart,o*7);const l=o===0?`${fmtS(m)} \u00b7 this week`:o===1?`${fmtS(m)} \u00b7 next week`:fmtS(m);return`<label class="copy-row${o===0?' on':''}" id="cwl-${o}" onclick="rfRow('cwc-${o}','cwl-${o}')"><input type="checkbox" id="cwc-${o}" ${o===0?'checked':''} onchange="updCP('${eid}')" style="accent-color:#7F77DD;cursor:pointer;width:14px;height:14px"><span style="font-size:13px">Week of ${l}</span></label>`;}).join('');showModal(`<div style="display:flex;align-items:center;gap:10px;margin-bottom:18px"><div style="width:34px;height:34px;border-radius:var(--r);background:${col};display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-copy" style="font-size:16px;color:#fff"></i></div><div><div style="font-size:15px;font-weight:500">Copy service</div><div style="font-size:11px;color:var(--color-txt3)">${esc(ev.service)} \u00b7 ${esc(ev.provider)} \u00b7 ${SLOTS[ev.slotIndex]?.label}</div></div></div><div style="margin-bottom:14px"><div style="font-size:11px;font-weight:500;color:var(--color-txt2);margin-bottom:8px">Days</div><div style="display:flex;gap:5px;flex-wrap:wrap">${dps}</div></div><div style="margin-bottom:14px"><div style="font-size:11px;font-weight:500;color:var(--color-txt2);margin-bottom:8px">Clients</div><div style="display:flex;flex-direction:column;gap:5px">${crs}</div></div><div style="margin-bottom:16px"><div style="font-size:11px;font-weight:500;color:var(--color-txt2);margin-bottom:8px">Weeks</div><div style="display:flex;flex-direction:column;gap:5px">${wrs}</div></div><div id="cp-prev" style="padding:10px 12px;background:var(--color-bg2);border-radius:var(--r);margin-bottom:16px;font-size:12px;color:var(--color-txt2);min-height:36px;display:flex;align-items:center;gap:6px"></div><div style="display:flex;gap:8px;align-items:center"><button onclick="openEditModal('${eid}')" style="display:flex;align-items:center;gap:5px;padding:8px 14px;border-radius:var(--r);border:0.5px solid var(--color-bdr2);background:transparent;cursor:pointer;font-size:13px;color:var(--color-txt2);font-family:var(--font)"><i class="ti ti-arrow-left" style="font-size:12px"></i> Back</button><div style="flex:1"></div>${cBtn()}<button id="cp-btn" onclick="execCopy('${eid}')" style="padding:8px 20px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--font)" disabled>Copy</button></div>`);setTimeout(()=>updCP(eid),10);}
+function rfDP(i){const cb=document.getElementById(`cdc-${i}`),l=document.getElementById(`cdl-${i}`);if(cb&&l)l.classList.toggle('on',cb.checked);}
+function rfRow(ci,li){const cb=document.getElementById(ci),l=document.getElementById(li);if(cb&&l)l.classList.toggle('on',cb.checked);}
+function calcCopy(eid){const ev=S.events.find(e=>e.id===eid);if(!ev)return{toCreate:[],skipped:0};const sd=[0,1,2,3,4,5,6].filter(i=>document.getElementById(`cdc-${i}`)?.checked);const sc=S.clients.filter(c=>document.getElementById(`ccc-${c.id}`)?.checked).map(c=>c.id);const sw=[0,1,2,3].filter(i=>document.getElementById(`cwc-${i}`)?.checked);const tc=[];let sk=0;sw.forEach(o=>{const m=addDays(S.weekStart,o*7);sd.forEach(di=>{const td=addDays(m,di);sc.forEach(cid=>{if(td===ev.date&&cid===ev.clientId)return;const ov=S.events.some(e=>e.date===td&&e.clientId===cid&&e.slotIndex<ev.slotIndex+ev.duration&&e.slotIndex+e.duration>ev.slotIndex);const nw=tc.some(e=>e.date===td&&e.clientId===cid);if(ov||nw){sk++;return;}tc.push({id:nid(),date:td,clientId:cid,slotIndex:ev.slotIndex,duration:ev.duration,service:ev.service,provider:ev.provider});});});});return{toCreate:tc,skipped:sk};}
+function updCP(eid){const p=document.getElementById('cp-prev'),b=document.getElementById('cp-btn');if(!p)return;const{toCreate:tc,skipped:sk}=calcCopy(eid);if(!tc.length&&!sk){p.innerHTML=`<i class="ti ti-info-circle" style="font-size:13px;color:var(--color-txt3)"></i> Select at least one day, client, and week.`;if(b){b.disabled=true;b.textContent='Copy';}}else if(!tc.length){p.innerHTML=`<i class="ti ti-alert-circle" style="font-size:13px"></i> All slots already occupied.`;if(b){b.disabled=true;b.textContent='Copy';}}else{p.innerHTML=`<i class="ti ti-check" style="font-size:13px;color:var(--color-txt-ok)"></i> <strong>${tc.length} new session${tc.length>1?'s':''}</strong> will be created${sk?` <span style="color:var(--color-txt3)">\u00b7 ${sk} skipped</span>`:''}`;if(b){b.disabled=false;b.textContent=`Copy ${tc.length} session${tc.length>1?'s':''}`;}}  }
+function execCopy(eid){const{toCreate:tc}=calcCopy(eid);if(!tc.length)return;tc.forEach(e=>S.events.push(e));renderAll();saveAll();closeModal();}
 
 // ── Share ─────────────────────────────────────────────────────────────────
-function openShare(){const url=window.location.href;showModal(`<div style="font-size:15px;font-weight:500;margin-bottom:10px"><i class="ti ti-link" style="font-size:14px;vertical-align:-1px;margin-right:6px"></i>Share schedule</div><div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:16px;line-height:1.6">Anyone with this link sees live updates instantly via Firebase.</div><div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--color-background-success);border:0.5px solid var(--color-border-success);border-radius:var(--border-radius-md);margin-bottom:16px"><div class="pul" style="width:7px;height:7px;border-radius:50%;background:#1D9E75;flex-shrink:0"></div><span style="font-size:12px;color:var(--color-text-success);font-weight:500">Real-time sync active</span></div><div style="display:flex;gap:8px;margin-bottom:16px"><input type="text" id="surl" value="${esc(url)}" readonly style="flex:1;font-size:11px;font-family:var(--font-mono);color:var(--color-text-secondary)"><button id="cbtn" onclick="copyUrl()" style="padding:7px 14px;border-radius:var(--border-radius-md);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-family:var(--font-sans);white-space:nowrap">Copy link</button></div><div style="display:flex;justify-content:flex-end"><button onclick="closeModal()" style="padding:8px 16px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:transparent;cursor:pointer;font-size:13px;color:var(--color-text-secondary);font-family:var(--font-sans)">Close</button></div>`);}
-function copyUrl(){const inp=document.getElementById('surl');navigator.clipboard.writeText(inp?.value||'').catch(()=>{});const b=document.getElementById('cbtn');if(b){b.textContent='Copied!';setTimeout(()=>b.textContent='Copy link',2000);}}
+function openShare(){showModal(`<div style="font-size:15px;font-weight:500;margin-bottom:10px"><i class="ti ti-link" style="font-size:14px;vertical-align:-1px;margin-right:6px"></i>Share schedule</div><div style="font-size:13px;color:var(--color-txt2);margin-bottom:16px;line-height:1.6">Anyone with this link sees live updates.</div><div style="display:flex;gap:8px;margin-bottom:16px"><input type="text" id="surl" value="${esc(window.location.href)}" readonly style="flex:1;font-size:11px;color:var(--color-txt2)"><button id="scbtn" onclick="copyURL()" style="padding:7px 14px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-family:var(--font)">Copy</button></div><div style="display:flex;justify-content:flex-end">${cBtn().replace('Cancel','Close')}</div>`);}
+function copyURL(){const i=document.getElementById('surl');navigator.clipboard.writeText(i?.value||'').catch(()=>{});const b=document.getElementById('scbtn');if(b){b.textContent='Copied!';setTimeout(()=>b.textContent='Copy',2000);}}
 
-// ── Export: Day Schedule PDF ──────────────────────────────────────────────
-function exportDaySchedule(){if(typeof window.jspdf==='undefined'){alert('PDF library loading \u2014 try again.');return;}const selIds=[...S.selectedClients];if(!selIds.length){alert('Select at least one client.');return;}const selClients=S.clients.filter(c=>selIds.includes(c.id));const btn=document.getElementById('day-btn');if(btn){btn.innerHTML='...';btn.disabled=true;}try{const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});const pW=210,pH=297,mg=14,uW=pW-2*mg;doc.setFillColor(30,41,59);doc.rect(0,0,pW,32,'F');doc.setFont('helvetica','bold');doc.setFontSize(15);doc.setTextColor(255,255,255);doc.text(S.title,mg,14);doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(148,163,184);doc.text(fmtFull(S.selectedDate),mg,22);doc.text(`${selClients.length} client${selClients.length>1?'s':''} \u00b7 ${new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}`,pW-mg,22,{align:'right'});let y=40;doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(100,116,139);doc.text('PROVIDERS',mg,y);y+=5;let lx=mg;Object.entries(S.providers).forEach(([name,{color}])=>{const[r,g,b]=hexToRgb(color);doc.setFillColor(r,g,b);doc.roundedRect(lx,y-2.5,3,3,.5,.5,'F');doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(71,85,105);doc.text(name,lx+5,y);lx+=doc.getTextWidth(name)+12;if(lx>pW-mg-30){lx=mg;y+=5;}});y+=10;const de=S.events.filter(e=>e.date===S.selectedDate),cf=getConflicts(de),cE=de.filter(e=>selIds.includes(e.clientId));const minSi=cE.length>0?Math.max(0,Math.min(...cE.map(e=>e.slotIndex))-2):0,maxSi=cE.length>0?Math.min(SLOTS.length,Math.max(...cE.map(e=>e.slotIndex+e.duration))+2):SLOTS.length;const tW=18,cW=(uW-tW)/selClients.length;const head=[[{content:'Time',styles:{halign:'right',fontStyle:'bold',fontSize:8}},...selClients.map(c=>({content:c.name,styles:{halign:'center',fontStyle:'bold',fontSize:8}}))]];const body=[];for(let si=minSi;si<maxSi;si++){const slot=SLOTS[si];const row=[{content:slot.label,styles:{fontSize:6.5,halign:'right',textColor:slot.m===0?[50,65,92]:[148,163,184],cellPadding:{top:1,right:4,bottom:1,left:2}}}];selClients.forEach(client=>{const ev=de.find(e=>e.clientId===client.id&&e.slotIndex===si);const cEv=de.find(e=>e.clientId===client.id&&si>e.slotIndex&&si<e.slotIndex+e.duration);if(ev){const[r,g,b]=hexToRgb(pc(ev.provider));const es=SLOTS[ev.slotIndex+ev.duration];const tr=es?`${SLOTS[ev.slotIndex].label}\u2013${es.label}`:'';row.push({content:`${ev.service}\n${ev.provider}${ev.duration>=2?'\n'+tr:''}`,styles:{fillColor:[r,g,b],textColor:[255,255,255],fontSize:6.5,fontStyle:'bold',cellPadding:2.5,lineColor:cf.has(ev.id)?[226,75,74]:[r,g,b],lineWidth:cf.has(ev.id)?.8:0}});}else if(cEv){const[r,g,b]=hexToRgb(pc(cEv.provider));row.push({content:'',styles:{fillColor:[r,g,b],lineWidth:0}});}else row.push({content:'',styles:{fillColor:slot.m===0?[255,255,255]:[250,252,255]}});});body.push(row);}doc.autoTable({head,body,startY:y,styles:{fontSize:7.5,cellPadding:1.5,lineColor:[226,232,240],lineWidth:.2,overflow:'linebreak'},headStyles:{fillColor:[30,41,59],textColor:[255,255,255],fontSize:8.5,halign:'center',cellPadding:3},columnStyles:{0:{cellWidth:tW,halign:'right'},...Object.fromEntries(selClients.map((_,i)=>[i+1,{cellWidth:cW}]))},margin:{left:mg,right:mg},tableLineColor:[226,232,240],tableLineWidth:.2,alternateRowStyles:{fillColor:[248,250,252]}});if(!cE.length){doc.setFont('helvetica','normal');doc.setFontSize(10);doc.setTextColor(148,163,184);doc.text('No services scheduled for this day.',pW/2,doc.lastAutoTable.finalY+15,{align:'center'});}doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(148,163,184);doc.text(`${S.title} \u2014 Confidential`,pW/2,pH-8,{align:'center'});doc.save(`Daily_Schedule_${S.selectedDate.replace(/-/g,'')}.pdf`);}catch(err){console.error(err);alert('Export failed: '+err.message);}finally{if(btn){btn.innerHTML='<i class="ti ti-calendar-export"></i> Day Schedule <span id="sel-badge" style="background:rgba(127,119,221,.2);color:#7F77DD;border-radius:20px;padding:1px 7px;font-size:10px;font-weight:600"></span>';btn.disabled=false;renderSelBadge();}}}
+// ── Export: Day PDF ───────────────────────────────────────────────────────
+function exportDaySchedule(){if(typeof window.jspdf==='undefined'){alert('PDF loading, try again.');return;}const sids=[...S.selClients];if(!sids.length){alert('Select at least one client.');return;}const sc=S.clients.filter(c=>sids.includes(c.id));const btn=document.getElementById('day-btn');if(btn){btn.innerHTML='...';btn.disabled=true;}try{const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});const pW=210,pH=297,mg=14,uW=pW-2*mg;doc.setFillColor(30,41,59);doc.rect(0,0,pW,32,'F');doc.setFont('helvetica','bold');doc.setFontSize(15);doc.setTextColor(255,255,255);doc.text(S.title,mg,14);doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(148,163,184);doc.text(fmtFull(S.selectedDate),mg,22);doc.text(`${sc.length} client${sc.length>1?'s':''} \u00b7 ${new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}`,pW-mg,22,{align:'right'});let y=40;doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(100,116,139);doc.text('PROVIDERS',mg,y);y+=5;let lx=mg;Object.entries(S.providers).forEach(([name,{color}])=>{const[r,g,b]=rgb(color);doc.setFillColor(r,g,b);doc.roundedRect(lx,y-2.5,3,3,.5,.5,'F');doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(71,85,105);doc.text(name,lx+5,y);lx+=doc.getTextWidth(name)+12;if(lx>pW-mg-30){lx=mg;y+=5;}});y+=10;const de=S.events.filter(e=>e.date===S.selectedDate),cf=conflicts(de),cE=de.filter(e=>sids.includes(e.clientId));const minSi=cE.length?Math.max(0,Math.min(...cE.map(e=>e.slotIndex))-2):0,maxSi=cE.length?Math.min(SLOTS.length,Math.max(...cE.map(e=>e.slotIndex+e.duration))+2):SLOTS.length;const tW=18,cW=(uW-tW)/sc.length;const head=[[{content:'Time',styles:{halign:'right',fontStyle:'bold',fontSize:8}},...sc.map(c=>({content:c.name,styles:{halign:'center',fontStyle:'bold',fontSize:8}}))]];const body=[];for(let si=minSi;si<maxSi;si++){const slot=SLOTS[si];const row=[{content:slot.label,styles:{fontSize:6.5,halign:'right',textColor:slot.m===0?[50,65,92]:[148,163,184],cellPadding:{top:1,right:4,bottom:1,left:2}}}];sc.forEach(client=>{const ev=de.find(e=>e.clientId===client.id&&e.slotIndex===si);const cEv=de.find(e=>e.clientId===client.id&&si>e.slotIndex&&si<e.slotIndex+e.duration);if(ev){const[r,g,b]=rgb(pc(ev.provider));const es=SLOTS[ev.slotIndex+ev.duration];const tr=es?`${SLOTS[ev.slotIndex].label}\u2013${es.label}`:'';row.push({content:`${ev.service}\n${ev.provider}${ev.duration>=2?'\n'+tr:''}`,styles:{fillColor:[r,g,b],textColor:[255,255,255],fontSize:6.5,fontStyle:'bold',cellPadding:2.5}});}else if(cEv){const[r,g,b]=rgb(pc(cEv.provider));row.push({content:'',styles:{fillColor:[r,g,b],lineWidth:0}});}else row.push({content:'',styles:{fillColor:slot.m===0?[255,255,255]:[250,252,255]}});});body.push(row);}doc.autoTable({head,body,startY:y,styles:{fontSize:7.5,cellPadding:1.5,lineColor:[226,232,240],lineWidth:.2,overflow:'linebreak'},headStyles:{fillColor:[30,41,59],textColor:[255,255,255],fontSize:8.5,halign:'center',cellPadding:3},columnStyles:{0:{cellWidth:tW,halign:'right'},...Object.fromEntries(sc.map((_,i)=>[i+1,{cellWidth:cW}]))},margin:{left:mg,right:mg}});doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(148,163,184);doc.text(`${S.title} \u2014 Confidential`,pW/2,pH-8,{align:'center'});doc.save(`Daily_Schedule_${S.selectedDate.replace(/-/g,'')}.pdf`);}catch(err){alert('Export failed: '+err.message);}finally{if(btn){btn.innerHTML='<i class="ti ti-calendar-export"></i> Day Schedule <span id="sel-badge" style="background:rgba(127,119,221,.2);color:#7F77DD;border-radius:20px;padding:1px 7px;font-size:10px;font-weight:600"></span>';btn.disabled=false;renderBadge();}}}
 
 // ── Export: Excel ─────────────────────────────────────────────────────────
-function exportToExcel(){if(typeof XLSX==='undefined'){alert('Still loading.');return;}const btn=document.getElementById('xls-btn');if(btn){btn.innerHTML='...';btn.disabled=true;}try{const wb=XLSX.utils.book_new(),rows=[];S.events.forEach(ev=>{const c=S.clients.find(c=>c.id===ev.clientId);rows.push({'Date':ev.date,'Day':fromISO(ev.date).toLocaleDateString('en-US',{weekday:'long'}),'Client':c?.name||'','Service':ev.service,'Provider':ev.provider,'Start':SLOTS[ev.slotIndex]?.label||'','End':SLOTS[ev.slotIndex+ev.duration]?.label||'','Duration (min)':ev.duration*30});});rows.sort((a,b)=>a.Date.localeCompare(b.Date)||a.Start.localeCompare(b.Start));const ws=XLSX.utils.json_to_sheet(rows.length?rows:[{}]);ws['!cols']=[{wch:12},{wch:12},{wch:20},{wch:26},{wch:18},{wch:12},{wch:12},{wch:16}];XLSX.utils.book_append_sheet(wb,ws,'All Events');XLSX.writeFile(wb,`${S.title.replace(/[^a-z0-9]/gi,'_')}.xlsx`);}catch(err){alert('Failed: '+err.message);}finally{if(btn){btn.innerHTML='<i class="ti ti-table-export"></i> Excel';btn.disabled=false;}}}
+function exportToExcel(){if(typeof XLSX==='undefined'){alert('Still loading.');return;}const btn=document.getElementById('xls-btn');if(btn){btn.innerHTML='...';btn.disabled=true;}try{const wb=XLSX.utils.book_new(),rows=[];S.events.forEach(ev=>{const c=S.clients.find(c=>c.id===ev.clientId);rows.push({'Date':ev.date,'Day':fromISO(ev.date).toLocaleDateString('en-US',{weekday:'long'}),'Client':c?.name||'','Service':ev.service,'Provider':ev.provider,'Start':SLOTS[ev.slotIndex]?.label||'','End':SLOTS[ev.slotIndex+ev.duration]?.label||'','Duration (min)':ev.duration*30});});rows.sort((a,b)=>a.Date.localeCompare(b.Date)||a.Start.localeCompare(b.Start));const ws=XLSX.utils.json_to_sheet(rows.length?rows:[{}]);ws['!cols']=[{wch:12},{wch:12},{wch:20},{wch:26},{wch:18},{wch:12},{wch:12},{wch:16}];XLSX.utils.book_append_sheet(wb,ws,'Schedule');XLSX.writeFile(wb,`${S.title.replace(/[^a-z0-9]/gi,'_')}.xlsx`);}catch(err){alert('Failed: '+err.message);}finally{if(btn){btn.innerHTML='<i class="ti ti-table-export"></i> Excel';btn.disabled=false;}}}
 
 // ── Export: Full PDF ──────────────────────────────────────────────────────
-function exportToPDF(){if(typeof window.jspdf==='undefined'){alert('PDF loading \u2014 try again.');return;}const btn=document.getElementById('pdf-btn');if(btn){btn.innerHTML='...';btn.disabled=true;}try{const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});const pW=297,mg=12,uW=pW-2*mg;doc.setFont('helvetica','bold');doc.setFontSize(16);doc.setTextColor(15,23,42);doc.text(S.title,mg,14);doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(100,116,139);doc.text(`Generated ${new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}`,mg,20);let lx=mg;Object.entries(S.providers).forEach(([name,{color}])=>{const[r,g,b]=hexToRgb(color);doc.setFillColor(r,g,b);doc.roundedRect(lx,24,3,3,.5,.5,'F');doc.setTextColor(71,85,105);doc.setFontSize(8);doc.text(name,lx+5,27);lx+=doc.getTextWidth(name)+12;});let y=34;const allDates=[...new Set(S.events.map(e=>e.date))].sort();allDates.forEach(date=>{const de=S.events.filter(e=>e.date===date);if(!de.length)return;const cf=getConflicts(de),minSi=Math.max(0,Math.min(...de.map(e=>e.slotIndex))-1),maxSi=Math.min(SLOTS.length,Math.max(...de.map(e=>e.slotIndex+e.duration))+1);const estH=(maxSi-minSi)*6.5+14;if(y+estH>195){doc.addPage();y=14;}doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(15,23,42);doc.text(fmtFull(date),mg,y);if(cf.size>0){doc.setTextColor(185,28,28);doc.setFontSize(8);doc.text('\u26a0 Double-booking',mg+100,y);}y+=4;const tW=20,cW=(uW-tW)/Math.max(S.clients.length,1);const head=[[{content:'Time',styles:{halign:'right',fontStyle:'bold'}},...S.clients.map(c=>({content:c.name,styles:{halign:'center',fontStyle:'bold'}}))]];const body=[];for(let si=minSi;si<maxSi;si++){const slot=SLOTS[si];const row=[{content:slot.label,styles:{fontSize:6.5,halign:'right',textColor:slot.m===0?[50,65,92]:[148,163,184],cellPadding:{top:1,right:4,bottom:1,left:2}}}];S.clients.forEach(client=>{const ev=de.find(e=>e.clientId===client.id&&e.slotIndex===si);const cEv=de.find(e=>e.clientId===client.id&&si>e.slotIndex&&si<e.slotIndex+e.duration);if(ev){const[r,g,b]=hexToRgb(pc(ev.provider));row.push({content:`${ev.service}\n${ev.provider}`,styles:{fillColor:[r,g,b],textColor:[255,255,255],fontSize:6.5,fontStyle:'bold',cellPadding:2,lineColor:cf.has(ev.id)?[226,75,74]:[r,g,b],lineWidth:cf.has(ev.id)?.6:0}});}else if(cEv){const[r,g,b]=hexToRgb(pc(cEv.provider));row.push({content:'',styles:{fillColor:[r,g,b],lineWidth:0}});}else row.push({content:'',styles:{fillColor:[255,255,255]}});});body.push(row);}doc.autoTable({head,body,startY:y,styles:{fontSize:7,cellPadding:1.5,lineColor:[226,232,240],lineWidth:.2,overflow:'linebreak'},headStyles:{fillColor:[30,41,59],textColor:[255,255,255],fontSize:8,halign:'center',cellPadding:3},columnStyles:{0:{cellWidth:tW},...Object.fromEntries(S.clients.map((_,i)=>[i+1,{cellWidth:cW}]))},margin:{left:mg,right:mg},tableLineColor:[226,232,240],tableLineWidth:.2});y=doc.lastAutoTable.finalY+10;});const pages=doc.getNumberOfPages();for(let i=1;i<=pages;i++){doc.setPage(i);doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(148,163,184);doc.text(`${S.title} \u00b7 Page ${i} of ${pages}`,pW/2,205,{align:'center'});}doc.save(`${S.title.replace(/[^a-z0-9]/gi,'_')}.pdf`);}catch(err){console.error(err);alert('PDF failed: '+err.message);}finally{if(btn){btn.innerHTML='<i class="ti ti-file-type-pdf"></i> PDF';btn.disabled=false;}}}
+function exportToPDF(){if(typeof window.jspdf==='undefined'){alert('PDF loading, try again.');return;}const btn=document.getElementById('pdf-btn');if(btn){btn.innerHTML='...';btn.disabled=true;}try{const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});const pW=297,mg=12,uW=pW-2*mg;doc.setFont('helvetica','bold');doc.setFontSize(16);doc.setTextColor(15,23,42);doc.text(S.title,mg,14);doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(100,116,139);doc.text(`Generated ${new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}`,mg,20);let lx=mg;Object.entries(S.providers).forEach(([name,{color}])=>{const[r,g,b]=rgb(color);doc.setFillColor(r,g,b);doc.roundedRect(lx,24,3,3,.5,.5,'F');doc.setTextColor(71,85,105);doc.setFontSize(8);doc.text(name,lx+5,27);lx+=doc.getTextWidth(name)+12;});let y=34;const allDates=[...new Set(S.events.map(e=>e.date))].sort();allDates.forEach(date=>{const de=S.events.filter(e=>e.date===date);if(!de.length)return;const cf=conflicts(de),minSi=Math.max(0,Math.min(...de.map(e=>e.slotIndex))-1),maxSi=Math.min(SLOTS.length,Math.max(...de.map(e=>e.slotIndex+e.duration))+1);const estH=(maxSi-minSi)*6.5+14;if(y+estH>195){doc.addPage();y=14;}doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(15,23,42);doc.text(fmtFull(date),mg,y);y+=4;const tW=20,cW=(uW-tW)/Math.max(S.clients.length,1);const head=[[{content:'Time',styles:{halign:'right',fontStyle:'bold'}},...S.clients.map(c=>({content:c.name,styles:{halign:'center',fontStyle:'bold'}}))]];const body=[];for(let si=minSi;si<maxSi;si++){const slot=SLOTS[si];const row=[{content:slot.label,styles:{fontSize:6.5,halign:'right',textColor:slot.m===0?[50,65,92]:[148,163,184],cellPadding:{top:1,right:4,bottom:1,left:2}}}];S.clients.forEach(client=>{const ev=de.find(e=>e.clientId===client.id&&e.slotIndex===si);const cEv=de.find(e=>e.clientId===client.id&&si>e.slotIndex&&si<e.slotIndex+e.duration);if(ev){const[r,g,b]=rgb(pc(ev.provider));row.push({content:`${ev.service}\n${ev.provider}`,styles:{fillColor:[r,g,b],textColor:[255,255,255],fontSize:6.5,fontStyle:'bold',cellPadding:2}});}else if(cEv){const[r,g,b]=rgb(pc(cEv.provider));row.push({content:'',styles:{fillColor:[r,g,b],lineWidth:0}});}else row.push({content:'',styles:{fillColor:[255,255,255]}});});body.push(row);}doc.autoTable({head,body,startY:y,styles:{fontSize:7,cellPadding:1.5,lineColor:[226,232,240],lineWidth:.2,overflow:'linebreak'},headStyles:{fillColor:[30,41,59],textColor:[255,255,255],fontSize:8,halign:'center',cellPadding:3},columnStyles:{0:{cellWidth:tW},...Object.fromEntries(S.clients.map((_,i)=>[i+1,{cellWidth:cW}]))},margin:{left:mg,right:mg}});y=doc.lastAutoTable.finalY+10;});const pages=doc.getNumberOfPages();for(let i=1;i<=pages;i++){doc.setPage(i);doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(148,163,184);doc.text(`${S.title} \u00b7 Page ${i} of ${pages}`,pW/2,205,{align:'center'});}doc.save(`${S.title.replace(/[^a-z0-9]/gi,'_')}.pdf`);}catch(err){alert('PDF failed: '+err.message);}finally{if(btn){btn.innerHTML='<i class="ti ti-file-type-pdf"></i> PDF';btn.disabled=false;}}}
 </script>
 </body>
 </html>
