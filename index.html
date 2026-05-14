@@ -224,24 +224,45 @@ function saveAll(){
   var blob=getBlob();
   try{localStorage.setItem(LS_KEY,blob);}catch(e){}
   showSaveStatus();
-  try{FB.set({blob:blob}).catch(function(){});}catch(e){}
+  var ts=Date.now();
+  _lastSaveTs=ts;
+  try{FB.set({blob:blob,ts:ts}).catch(function(){});}catch(e){}
 }
 function showSaveStatus(){
   var el=document.getElementById('save-status');if(!el)return;
   el.textContent='Saved \u2713';el.style.color='var(--tx-ok)';
   clearTimeout(el._t);el._t=setTimeout(function(){el.textContent='';},2500);
 }
+var _lastSaveTs=0; // track our own saves to avoid re-applying our own writes
+
 (function initLoad(){
+  // Load from localStorage immediately for instant startup
   try{
     var local=localStorage.getItem(LS_KEY);
-    if(local){var d=JSON.parse(local);if(applyData(d)){renderAll();setLive(true);return;}}
+    if(local){var d=JSON.parse(local);if(applyData(d)){renderAll();}}
   }catch(e){}
+
+  // Then subscribe to Firebase for real-time updates from other users
   setLive(false);
-  FB.once('value').then(function(snap){
+  FB.on('value',function(snap){
     var raw=snap.val();
-    if(raw&&raw.blob){try{var d=JSON.parse(raw.blob);if(applyData(d)){try{localStorage.setItem(LS_KEY,raw.blob);}catch(e){}}}catch(e){}}
-    setLive(true);renderAll();
-  }).catch(function(){setLive(false);renderAll();});
+    if(raw&&raw.blob){
+      try{
+        // Skip if this is our own write (within 2 seconds)
+        var ts=raw.ts||0;
+        if(ts>0&&ts===_lastSaveTs){setLive(true);return;}
+        var d=JSON.parse(raw.blob);
+        if(applyData(d)){
+          try{localStorage.setItem(LS_KEY,raw.blob);}catch(e){}
+          renderAll();
+        }
+      }catch(e){console.error('Sync error:',e);}
+    }
+    setLive(true);
+  },function(err){
+    console.error('Firebase error:',err);
+    setLive(false);
+  });
 })();
 function setLive(ok){
   var d=document.getElementById('ldot'),l=document.getElementById('llbl');
