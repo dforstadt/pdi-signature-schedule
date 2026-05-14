@@ -143,7 +143,7 @@
     <div>
       <div class="title-wrap" style="display:flex;align-items:center;gap:6px">
         <div id="app-title" style="font-size:16px;font-weight:700;letter-spacing:-0.3px"></div>
-        <button class="icon-btn edit-icon" onclick="openEditTitle()" title="Edit title" style="opacity:0;transition:opacity .15s"><i class="ti ti-pencil" style="font-size:13px"></i></button>
+        <button class="icon-btn edit-icon" onclick="openEditTitle()" title="Edit title" style="opacity:.4"><i class="ti ti-pencil" style="font-size:13px"></i></button>
       </div>
       <div style="font-size:11px;color:var(--color-text-tertiary);display:flex;align-items:center;gap:4px">
         <span id="app-subtitle"></span>
@@ -209,15 +209,14 @@
 //  Firebase Console → ⚙ Project Settings → Your Apps → </> Web
 // ════════════════════════════════════════════════════════════════════════════
 const firebaseConfig = {
-    apiKey: "AIzaSyCERxntgytkfCHWN7EoAVYVmLBcfWyYZ5A",
-    authDomain: "pdi-signature-schedule.firebaseapp.com",
-    databaseURL: "https://pdi-signature-schedule-default-rtdb.firebaseio.com",
-    projectId: "pdi-signature-schedule",
-    storageBucket: "pdi-signature-schedule.firebasestorage.app",
-    messagingSenderId: "545049861408",
-    appId: "1:545049861408:web:1e0bf60ab88497f67a8b45",
-    measurementId: "G-3WWZ9T31ZS"
-  };
+  apiKey:            "PASTE-YOUR-apiKey-HERE",
+  authDomain:        "PASTE-YOUR-authDomain-HERE",
+  databaseURL:       "PASTE-YOUR-databaseURL-HERE",
+  projectId:         "PASTE-YOUR-projectId-HERE",
+  storageBucket:     "PASTE-YOUR-storageBucket-HERE",
+  messagingSenderId: "PASTE-YOUR-messagingSenderId-HERE",
+  appId:             "PASTE-YOUR-appId-HERE"
+};
 // ════════════════════════════════════════════════════════════════════════════
 
 firebase.initializeApp(firebaseConfig);
@@ -465,7 +464,7 @@ function renderGrid(){
       <label style="position:absolute;left:8px;top:50%;transform:translateY(-50%);cursor:pointer"><input type="checkbox" ${isSel?'checked':''} onchange="toggleClientSel('${client.id}',this.checked)" onclick="event.stopPropagation()" style="cursor:pointer;accent-color:#7F77DD;width:14px;height:14px"></label>
       <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(client.name)}</span>
       <div style="position:absolute;right:4px;top:50%;transform:translateY(-50%);display:flex;gap:1px">
-        <button onclick="openRenameClient('${client.id}')" class="col-edit icon-btn" title="Rename" style="opacity:0;transition:opacity .15s;padding:3px"><i class="ti ti-pencil" style="font-size:12px"></i></button>
+        <button onclick="openRenameClient('${client.id}')" class="icon-btn" title="Rename client" style="padding:3px;opacity:.5"><i class="ti ti-pencil" style="font-size:12px"></i></button>
         <button onclick="removeClient('${client.id}')" class="icon-btn" title="Remove" style="padding:3px"><i class="ti ti-x" style="font-size:13px"></i></button>
       </div>
     </div>`;
