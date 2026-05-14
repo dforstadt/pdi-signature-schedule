@@ -122,6 +122,12 @@
       <button id="btn-week" onclick="setView('week')" style="padding:5px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-family:var(--f);font-weight:500;background:transparent;color:var(--tx2)">Week</button>
     </div>
     <div id="day-tabs" style="display:flex;gap:5px"></div>
+    <div id="week-client-selector" style="display:none;align-items:center;gap:8px;margin-left:auto">
+      <span style="font-size:11px;color:var(--tx3);white-space:nowrap">View:</span>
+      <select id="week-client-select" onchange="S.weekClient=this.value;renderAll()" style="width:auto;padding:5px 10px;font-size:12px;border-radius:var(--r)">
+        <option value="all">All Clients</option>
+      </select>
+    </div>
   </div>
 
   <div id="fbar" style="display:none;margin-bottom:10px;animation:fi .2s ease"></div>
@@ -326,7 +332,16 @@ function setView(mode){
   const bd=document.getElementById('btn-day'),bw=document.getElementById('btn-week');
   if(bd){bd.style.background=mode==='day'?'#7F77DD':'transparent';bd.style.color=mode==='day'?'#fff':'var(--tx2)';}
   if(bw){bw.style.background=mode==='week'?'#7F77DD':'transparent';bw.style.color=mode==='week'?'#fff':'var(--tx2)';}
+  const wcs=document.getElementById('week-client-selector');
+  if(wcs) wcs.style.display=mode==='week'?'flex':'none';
+  if(mode==='week') populateWeekClientSelect();
   renderAll();
+}
+function populateWeekClientSelect(){
+  const sel=document.getElementById('week-client-select');if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="all">All Clients</option>'+S.clients.map(c=>'<option value="'+c.id+'"'+( c.id===cur?' selected':'')+'>'+esc(c.name)+'</option>').join('');
+  if(cur&&cur!=='all'&&S.clients.find(c=>c.id===cur)) sel.value=cur;
 }
 function renderAll(){renderHdr();renderWeekNav();renderDayTabs();renderCBar();renderLegend();renderFBar();renderSelBar();renderBadge();if(S.viewMode==='week')renderWeekGrid();else renderGrid();}
 
