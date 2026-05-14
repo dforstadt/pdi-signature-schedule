@@ -221,7 +221,7 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-const SCHED_KEY = 'schedule_v1';
+const SCHED_KEY = 'schedule_v2';
 
 // ── Date utilities ────────────────────────────────────────────────────────
 function toISO(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),dd=String(d.getDate()).padStart(2,'0');return`${y}-${m}-${dd}`;}
@@ -249,26 +249,17 @@ for(let h=7;h<20;h++){const ap=h>=12?'PM':'AM',hh=h>12?h-12:h;SLOTS.push({label:
 const TODAY = todayISO(), MON = getMondayISO(new Date()), WK = getWeekDates(MON);
 const S = {
   title:    'PDI/Signature Schedule',
-  subtitle: 'Click a slot to add \u00b7 drag to move \u00b7 click an event to edit or copy',
-  clients:  [{id:'c1',name:'John Smith'},{id:'c2',name:'Maria Garcia'},{id:'c3',name:'Robert Chen'}],
-  events: [
-    {id:'e1',date:WK[0],clientId:'c1',slotIndex:2,duration:2,service:'Physical Therapy',   provider:'Dr. Adams'},
-    {id:'e2',date:WK[0],clientId:'c2',slotIndex:4,duration:3,service:'Occupational Therapy',provider:'Dr. Lee'},
-    {id:'e3',date:WK[0],clientId:'c3',slotIndex:1,duration:2,service:'Speech Therapy',      provider:'Dr. Kim'},
-    {id:'e4',date:WK[1],clientId:'c1',slotIndex:3,duration:4,service:'Behavioral Support',  provider:'Ms. Torres'},
-    {id:'e5',date:WK[5],clientId:'c2',slotIndex:4,duration:2,service:'Personal Care',       provider:'Dr. Adams'},
-  ],
-  providers: {
-    'Dr. Adams': {color:'#7F77DD'}, 'Dr. Lee':    {color:'#1D9E75'},
-    'Dr. Kim':   {color:'#D85A30'}, 'Ms. Torres': {color:'#378ADD'},
-  },
-  services: ['Physical Therapy','Occupational Therapy','Speech Therapy','Behavioral Support',
-    'Personal Care','Nursing','Day Program','Transportation','Respite Care','Vocational Training','ABA Therapy'],
+  subtitle: 'Click a slot to add · drag to move · click an event to edit or copy',
+  clients:  [],
+  events:   [],
+  providers: {},
+  services:  [],
   weekStart:       MON,
   selectedDate:    TODAY,
-  selectedClients: new Set(['c1','c2','c3']),
+  selectedClients: new Set(),
   drag: null, addingClient: false, filterProvider: null,
 };
+
 
 let _uid = 200;
 function nid(){return 'i'+(++_uid)+Math.random().toString(36).slice(2,4);}
