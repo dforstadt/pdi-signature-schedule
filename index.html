@@ -932,7 +932,7 @@ function renderSvcList(){
     nameInp.addEventListener('blur',function(){updSvc(i,this.value);this.style.borderBottomColor='transparent';});
     nameInp.addEventListener('focus',function(){this.style.borderBottomColor='#7F77DD';});
     var mealLbl=document.createElement('label');
-    mealLbl.style.cssText='display:flex;align-items:center;gap:4px;cursor:pointer;flex-shrink:0;padding:3px 8px;border-radius:20px;border:1.5px solid '+(meal?'#D4537E':'var(--bd)')+';background:'+(meal?'#D4537E18':'transparent')+';font-size:11px;color:'+(meal?'#D4537E':'var(--tx3)')+';white-space:nowrap';
+    mealLbl.style.cssText='display:flex;align-items:center;gap:4px;cursor:pointer;flex-shrink:0;padding:4px 10px;border-radius:20px;border:1.5px solid '+(meal?'#D4537E':'#94a3b8')+';background:'+(meal?'#D4537E22':'var(--bg2)')+';font-size:11px;font-weight:500;color:'+(meal?'#D4537E':'#64748b')+';white-space:nowrap';
     mealLbl.title='Meals skip provider requirement and conflict detection';
     var mealCb=document.createElement('input');
     mealCb.type='checkbox';mealCb.checked=meal;mealCb.style.cssText='accent-color:#D4537E;cursor:pointer;width:12px;height:12px';
