@@ -371,7 +371,7 @@ function renderGrid(){
   const de=S.events.filter(e=>e.date===S.selectedDate),cf=conflicts(de),fp=S.filterProv,we=isWknd(S.selectedDate);
   let h='';
   h+=`<div style="position:sticky;left:0;z-index:10;background:var(--bg);border-right:.5px solid var(--bd);width:72px;flex-shrink:0"><div style="height:52px;position:sticky;top:0;z-index:11;background:var(--bg);border-bottom:.5px solid var(--bd)"></div>`;
-  SLOTS.forEach(s=>{const oh=s.m===0;h+=`<div style="height:${SH}px;display:flex;align-items:flex-start;justify-content:flex-end;padding:5px 10px 0 0;font-size:11px;color:${oh?'var(--tx2)':'var(--tx3)'};font-weight:${oh?500:400};border-bottom:${oh?'.5px solid var(--bd)':'.5px dashed var(--bd)}">${oh?esc(s.label):'<span style="opacity:.5">&middot;30</span>'}</div>`;});
+  SLOTS.forEach(function(s){var oh=s.m===0;var tc=oh?'var(--tx2)':'var(--tx3)';var fw=oh?500:400;var bb=oh?'0.5px solid var(--bd)':'0.5px dashed var(--bd)';h+='<div style="height:'+SH+'px;display:flex;align-items:flex-start;justify-content:flex-end;padding:5px 10px 0 0;font-size:11px;color:'+tc+';font-weight:'+fw+';border-bottom:'+bb+'">'+(oh?esc(s.label):'<span style="opacity:.5">&middot;30</span>')+'</div>';});
   h+=`</div>`;
   S.clients.forEach(client=>{
     const ce=de.filter(e=>e.clientId===client.id),actE=fp?ce.filter(e=>e.provider===fp):ce,bgE=fp?ce.filter(e=>e.provider!==fp):[];
