@@ -108,7 +108,7 @@
     .slot .ph { opacity: 0; transition: opacity .15s; color: var(--color-text-tertiary); font-size: 20px; pointer-events: none; }
     .drop-target { background: var(--color-background-info) !important; }
 
-    .ecard { position: absolute; border-radius: var(--border-radius-md); padding: 7px 10px; color: #fff; cursor: grab; overflow: hidden; z-index: 2; user-select: none; transition: filter .12s, transform .12s; }
+    .ecard { position: absolute; border-radius: 8px; padding: 6px 8px; color: #fff !important; cursor: grab; overflow: hidden; z-index: 2; user-select: none; transition: filter .12s, transform .12s; -webkit-user-select: none; touch-action: none; }
     .ecard:hover { filter: brightness(1.1); transform: translateY(-1px); }
     .ecard:active { cursor: grabbing; }
 
@@ -462,16 +462,21 @@ function renderGrid(){
     h+=`<div style="width:185px;flex-shrink:0;border-right:0.5px solid var(--color-border-tertiary);opacity:${isSel?1:.45};transition:opacity .2s">`;
     h+=`<div class="col-hdr" style="position:relative;height:52px;position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:var(--color-text-secondary);background:${wknd?'var(--color-background-danger)':'var(--color-background-secondary)'};border-bottom:0.5px solid var(--color-border-tertiary);padding:0 52px 0 28px;text-align:center;line-height:1.3">
       <label style="position:absolute;left:8px;top:50%;transform:translateY(-50%);cursor:pointer"><input type="checkbox" ${isSel?'checked':''} onchange="toggleClientSel('${client.id}',this.checked)" onclick="event.stopPropagation()" style="cursor:pointer;accent-color:#7F77DD;width:14px;height:14px"></label>
-      <div onclick="openRenameClient('${client.id}')" title="Click to rename" style="cursor:pointer;display:flex;align-items:center;gap:4px;overflow:hidden;max-width:100%">
-        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(client.name)}</span>
-        <i class="ti ti-pencil" style="font-size:11px;opacity:.45;flex-shrink:0"></i>
+      <div onclick="openRenameClient('${client.id}')" title="Click name to rename" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px;overflow:hidden;max-width:100%">
+        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:500">${esc(client.name)}</span>
+        <span style="font-size:9px;opacity:.45;letter-spacing:0.2px">click to rename</span>
       </div>
-      <button onclick="removeClient('${client.id}')" class="icon-btn" title="Remove client" style="position:absolute;right:4px;top:50%;transform:translateY(-50%);padding:3px"><i class="ti ti-x" style="font-size:13px"></i></button>
+      <button onclick="event.stopPropagation();removeClient('${client.id}')" title="Remove client" style="position:absolute;right:5px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--color-text-tertiary);padding:3px;font-size:15px;line-height:1;font-family:var(--font-sans)">&#x2715;</button>
     </div>`;
     h+=`<div style="position:relative">`;
     SLOTS.forEach((s,si)=>{const covered=ce.some(e=>si>=e.slotIndex&&si<e.slotIndex+e.duration);const oh=s.m===0,bd=`border-bottom:${oh?'0.5px solid var(--color-border-tertiary)':'0.5px dashed var(--color-border-tertiary)'}`;if(covered){h+=`<div style="height:${SLOT_H}px;${bd}"></div>`;}else{h+=`<div class="slot" data-cid="${client.id}" data-si="${si}" style="height:${SLOT_H}px;${bd};${wknd?'background:rgba(254,242,242,.3)':''}"><span class="ph">+</span></div>`;}});
     bgEvs.forEach(ev=>{h+=`<div style="position:absolute;top:${ev.slotIndex*SLOT_H+2}px;left:3px;right:3px;height:${ev.duration*SLOT_H-4}px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);z-index:1;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:4px 8px"><span style="font-size:10px;color:var(--color-text-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(ev.provider)}</span></div>`;});
-    activeEvs.forEach(ev=>{const col=pc(ev.provider),isC=cf.has(ev.id),es=SLOTS[ev.slotIndex+ev.duration],tr=es?`${SLOTS[ev.slotIndex].label} \u2013 ${es.label}`:'';h+=`<div class="ecard" data-eid="${ev.id}" draggable="true" style="top:${ev.slotIndex*SLOT_H+2}px;left:3px;right:3px;height:${ev.duration*SLOT_H-4}px;background:${col}${isC?';outline:2.5px solid #E24B4A;outline-offset:1px':''}">`;if(isC)h+=`<i class="ti ti-alert-triangle" style="font-size:11px;position:absolute;top:5px;right:7px;opacity:.9"></i>`;h+=`<div style="font-size:11px;font-weight:500;line-height:1.3;padding-right:${isC?18:0}px">${esc(ev.service)}</div>`;if(ev.duration>=2)h+=`<div style="font-size:10px;opacity:.8;margin-top:2px">${esc(ev.provider)}</div>`;if(ev.duration>=3&&tr)h+=`<div style="font-size:9px;opacity:.55;position:absolute;bottom:6px;left:10px">${esc(tr)}</div>`;h+=`</div>`;});
+    activeEvs.forEach(ev=>{const col=pc(ev.provider),isC=cf.has(ev.id),es=SLOTS[ev.slotIndex+ev.duration],tr=es?`${SLOTS[ev.slotIndex].label} \u2013 ${es.label}`:'';h+=`<div class="ecard" data-eid="${ev.id}" draggable="true" style="top:${ev.slotIndex*SLOT_H+2}px;left:3px;right:3px;height:${ev.duration*SLOT_H-4}px;background:${col};color:#fff;position:absolute;border-radius:8px;padding:6px 8px;overflow:hidden;z-index:2;user-select:none;cursor:grab;${isC?'outline:2.5px solid #E24B4A;outline-offset:1px':''}">`;
+h+=`<div style="font-size:11px;font-weight:600;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:${isC?16:0}px">${esc(ev.service)}</div>`;
+h+=`<div style="font-size:10px;opacity:.85;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(ev.provider)}</div>`;
+if(ev.duration>=3&&tr)h+=`<div style="font-size:9px;opacity:.6;margin-top:2px">${esc(tr)}</div>`;
+if(isC)h+=`<div style="position:absolute;top:4px;right:5px;font-size:10px">&#x26A0;</div>`;
+h+=`</div>`;});
     h+=`</div></div>`;
   });
   // Add client
@@ -484,8 +489,51 @@ function renderGrid(){
 }
 
 function attachListeners(){
-  document.querySelectorAll('.ecard').forEach(card=>{let wd=false;card.addEventListener('dragstart',e=>{wd=true;S.drag=card.dataset.eid;e.dataTransfer.effectAllowed='move';e.stopPropagation();});card.addEventListener('dragend',()=>{S.drag=null;setTimeout(()=>wd=false,80);});card.addEventListener('click',e=>{if(wd)return;e.stopPropagation();openEditModal(card.dataset.eid);});});
-  document.querySelectorAll('.slot').forEach(cell=>{cell.addEventListener('click',()=>{if(!S.drag)openAddModal(cell.dataset.cid,+cell.dataset.si);});cell.addEventListener('dragover',e=>{if(!S.drag)return;e.preventDefault();cell.classList.add('drop-target');});cell.addEventListener('dragleave',()=>cell.classList.remove('drop-target'));cell.addEventListener('drop',e=>{e.preventDefault();cell.classList.remove('drop-target');if(!S.drag)return;handleDrop(cell.dataset.cid,+cell.dataset.si);});});
+  document.querySelectorAll('.ecard').forEach(card=>{
+    let wd=false, startX=0, startY=0;
+    card.setAttribute('draggable','true');
+    card.addEventListener('dragstart',e=>{
+      wd=true;
+      S.drag=card.dataset.eid;
+      e.dataTransfer.effectAllowed='move';
+      try{e.dataTransfer.setData('text/plain',card.dataset.eid);}catch(x){}
+      e.stopPropagation();
+    });
+    card.addEventListener('dragend',e=>{
+      S.drag=null;
+      document.querySelectorAll('.drop-target').forEach(el=>el.classList.remove('drop-target'));
+      setTimeout(()=>wd=false,80);
+    });
+    card.addEventListener('click',e=>{
+      if(wd)return;
+      e.stopPropagation();
+      openEditModal(card.dataset.eid);
+    });
+  });
+  document.querySelectorAll('.slot').forEach(cell=>{
+    cell.addEventListener('click',e=>{
+      if(!S.drag)openAddModal(cell.dataset.cid,+cell.dataset.si);
+    });
+    cell.addEventListener('dragenter',e=>{
+      e.preventDefault();
+      cell.classList.add('drop-target');
+    });
+    cell.addEventListener('dragover',e=>{
+      e.preventDefault();
+      e.dataTransfer.dropEffect='move';
+      cell.classList.add('drop-target');
+    });
+    cell.addEventListener('dragleave',e=>{
+      cell.classList.remove('drop-target');
+    });
+    cell.addEventListener('drop',e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      cell.classList.remove('drop-target');
+      if(!S.drag)return;
+      handleDrop(cell.dataset.cid,+cell.dataset.si);
+    });
+  });
 }
 
 // ── Actions ───────────────────────────────────────────────────────────────
