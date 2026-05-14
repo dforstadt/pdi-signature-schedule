@@ -546,7 +546,7 @@ function renderWeekGrid(){
           var pill=document.createElement('div');
           pill.style.cssText='background:'+ecol+';border-radius:5px;padding:5px 8px;margin-bottom:5px;cursor:pointer;position:relative';
           pill.innerHTML=
-            '<div style="font-size:10.5px;font-weight:600;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(ev.service)+'</div>'+
+            '<div style="font-size:10.5px;font-weight:600;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(ev.service)+(ev.status==='completed'?' &#x2705;':ev.status==='cancelled'?' &#x274C;':ev.status==='rescheduled'?' &#x1F504;':'')+'</div>'+
             (!isMeal(ev.service)?'<div style="font-size:9.5px;color:rgba(255,255,255,.9);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(ev.provider)+'</div>':'')+
             '<div style="font-size:8.5px;color:rgba(255,255,255,.7);margin-top:1px">'+ts+'</div>'+
             (ev.flagged?'<div style="position:absolute;top:3px;right:5px;font-size:11px" title="Conflict reported">&#x26A0;&#xFE0F;</div>':'');
@@ -627,6 +627,9 @@ function renderGrid(){
         (ev.duration>=3&&tr?'<div style="font-size:9px;opacity:.6;margin-top:2px">'+esc(tr)+'</div>':'')+
         (ev.flagged?'<div style="position:absolute;top:4px;right:5px;font-size:12px" title="Conflict reported">&#x26A0;&#xFE0F;</div>':'')+
         (isC?'<div style="position:absolute;top:4px;right:'+(ev.flagged?'22':'5')+'px;font-size:10px">&#x26A0;</div>':'')+
+        (ev.status==='completed'?'<div style="position:absolute;inset:0;background:rgba(0,0,0,.18);border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-size:18px;pointer-events:none">&#x2705;</div>':'')+
+        (ev.status==='cancelled'?'<div style="position:absolute;inset:0;background:rgba(0,0,0,.35);border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-size:18px;pointer-events:none">&#x274C;</div>':'')+
+        (ev.status==='rescheduled'?'<div style="position:absolute;inset:0;background:rgba(0,0,0,.2);border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-size:18px;pointer-events:none">&#x1F504;</div>':'')+
       '</div>';
     });
     h+='</div></div>';
@@ -726,11 +729,38 @@ function submitAdd(){
   if(!svc){alert('Please enter a service name.');return;}
   if(!isMeal(svc)&&!prov){alert('Please select a provider.');return;}
   mkProv(prov);
-  S.events.push({id:nid(),date:S.selectedDate,clientId:mCtx.cid,slotIndex:mCtx.si,duration:dur,service:svc,provider:prov,flagged:false});
+  S.events.push({id:nid(),date:S.selectedDate,clientId:mCtx.cid,slotIndex:mCtx.si,duration:dur,service:svc,provider:prov,flagged:false,status:'scheduled',statusNote:''});
   renderAll();saveAll();closeModal();
+}
+function setStatus(val){
+  var colors={scheduled:'#7F77DD',completed:'#1D9E75',cancelled:'#E24B4A',rescheduled:'#D85A30'};
+  var grp=document.getElementById('status-btns');if(!grp)return;
+  grp.dataset.status=val;
+  grp.querySelectorAll('button[data-st]').forEach(function(btn){
+    var s=btn.dataset.st,on=s===val;
+    btn.style.borderColor=on?colors[s]:'var(--bd)';
+    btn.style.background=on?(colors[s]+'18'):'transparent';
+    btn.style.color=on?colors[s]:'var(--tx3)';
+  });
+  var nw=document.getElementById('status-note-wrap');
+  if(nw)nw.style.display=(val==='cancelled'||val==='rescheduled')?'block':'none';
 }
 function openEditModal(eid){
   var ev=S.events.find(function(e){return e.id===eid;});if(!ev)return;mCtx={type:'edit',eid:eid};
+  var status=ev.status||'scheduled';
+  var statusHtml='<div style="margin-bottom:14px">'+
+    '<div style="font-size:11px;font-weight:500;color:var(--tx2);margin-bottom:8px">Session status</div>'+
+    '<div id="status-btns" style="display:flex;gap:6px;flex-wrap:wrap" data-status="'+status+'">'+
+      '<button type="button" data-st="scheduled" style="flex:1;padding:8px 6px;border-radius:var(--r);border:2px solid '+(status==='scheduled'?'#7F77DD':'var(--bd)')+';background:'+(status==='scheduled'?'#7F77DD18':'transparent')+';cursor:pointer;font-size:12px;font-weight:600;font-family:var(--f);color:'+(status==='scheduled'?'#7F77DD':'var(--tx3)')+'">&#x1F4C5; Scheduled</button>'+
+      '<button type="button" data-st="completed" style="flex:1;padding:8px 6px;border-radius:var(--r);border:2px solid '+(status==='completed'?'#1D9E75':'var(--bd)')+';background:'+(status==='completed'?'#1D9E7518':'transparent')+';cursor:pointer;font-size:12px;font-weight:600;font-family:var(--f);color:'+(status==='completed'?'#1D9E75':'var(--tx3)')+'">&#x2705; Completed</button>'+
+      '<button type="button" data-st="cancelled" style="flex:1;padding:8px 6px;border-radius:var(--r);border:2px solid '+(status==='cancelled'?'#E24B4A':'var(--bd)')+';background:'+(status==='cancelled'?'#E24B4A18':'transparent')+';cursor:pointer;font-size:12px;font-weight:600;font-family:var(--f);color:'+(status==='cancelled'?'#E24B4A':'var(--tx3)')+'">&#x274C; Cancelled</button>'+
+      '<button type="button" data-st="rescheduled" style="flex:1;padding:8px 6px;border-radius:var(--r);border:2px solid '+(status==='rescheduled'?'#D85A30':'var(--bd)')+';background:'+(status==='rescheduled'?'#D85A3018':'transparent')+';cursor:pointer;font-size:12px;font-weight:600;font-family:var(--f);color:'+(status==='rescheduled'?'#D85A30':'var(--tx3)')+'">&#x1F504; Rescheduled</button>'+
+    '</div>'+
+    '<div id="status-note-wrap" style="margin-top:10px;display:'+(status==='cancelled'||status==='rescheduled'?'block':'none')+'">'+
+      '<div style="font-size:11px;font-weight:500;color:var(--tx2);margin-bottom:5px">Reason <span style="font-weight:400;color:var(--tx3)">(optional)</span></div>'+
+      '<textarea id="status-note" placeholder="e.g. Client unavailable, rescheduled to Thursday..." style="height:70px;resize:vertical">'+esc(ev.statusNote||'')+'</textarea>'+
+    '</div>'+
+    '</div>';
   var flagHtml=
     '<div style="padding:12px 14px;background:var(--bg-warn);border:.5px solid var(--bd-err);border-radius:var(--r);margin-bottom:14px">'+
     '<div style="font-size:12px;font-weight:600;color:var(--tx-err);margin-bottom:8px">&#x26A0;&#xFE0F; Report a scheduling conflict</div>'+
@@ -740,7 +770,7 @@ function openEditModal(eid){
   showModal(
     '<div style="font-size:15px;font-weight:500;margin-bottom:4px">Edit service</div>'+
     '<div style="font-size:11px;color:var(--tx3);margin-bottom:18px">'+fmtFull(ev.date)+'</div>'+
-    svcFld(ev.service)+''+prvFld(ev.provider)+''+durFld(ev.duration)+flagHtml+
+    svcFld(ev.service)+''+prvFld(ev.provider)+''+durFld(ev.duration)+statusHtml+flagHtml+
     '<div style="padding-top:14px;border-top:.5px solid var(--bd)">'+
     '<button onclick="openCopyModal(\''+eid+'\')" style="width:100%;padding:9px;border-radius:var(--r);border:.5px solid var(--bd2);background:transparent;cursor:pointer;font-size:13px;color:var(--tx2);font-family:var(--f);display:flex;align-items:center;justify-content:center;gap:7px"><i class="ti ti-copy" style="font-size:14px"></i> Copy to other days / clients / weeks...</button>'+
     '</div>'+
@@ -749,6 +779,13 @@ function openEditModal(eid){
     '<div style="flex:1"></div>'+cBtn()+' '+sBtn('submitEdit(\''+eid+'\')')+
     '</div>'
   );
+  // Attach status button listeners after modal renders
+  setTimeout(function(){
+    var grp=document.getElementById('status-btns');
+    if(grp){grp.querySelectorAll('button[data-st]').forEach(function(btn){
+      btn.addEventListener('click',function(){setStatus(btn.dataset.st);});
+    });}
+  },10);
 }
 function submitEdit(eid){
   var svc=document.getElementById('ms')&&document.getElementById('ms').value.trim();
@@ -757,8 +794,11 @@ function submitEdit(eid){
   if(!svc){alert('Please enter a service name.');return;}
   if(!isMeal(svc)&&!prov){alert('Please select a provider.');return;}
   mkProv(prov);
+  var statusGrp=document.getElementById('status-btns');
+  var newStatus=(statusGrp&&statusGrp.dataset.status)||'scheduled';
+  var newNote=(document.getElementById('status-note')&&document.getElementById('status-note').value||'').trim();
   var ev=S.events.find(function(e){return e.id===eid;});
-  if(ev){ev.service=svc;ev.provider=prov;ev.duration=dur;}
+  if(ev){ev.service=svc;ev.provider=prov;ev.duration=dur;ev.status=newStatus;ev.statusNote=newNote;}
   renderAll();saveAll();closeModal();
 }
 function delEv(eid){S.events=S.events.filter(function(e){return e.id!==eid;});renderAll();saveAll();closeModal();}
@@ -1033,7 +1073,7 @@ function calcCopy(eid){
     var ov=S.events.some(function(e){return e.date===td&&e.clientId===cid&&e.slotIndex<ev.slotIndex+ev.duration&&e.slotIndex+e.duration>ev.slotIndex;});
     var nw=tc.some(function(e){return e.date===td&&e.clientId===cid;});
     if(ov||nw){sk++;return;}
-    tc.push({id:nid(),date:td,clientId:cid,slotIndex:ev.slotIndex,duration:ev.duration,service:ev.service,provider:ev.provider,flagged:false});
+    tc.push({id:nid(),date:td,clientId:cid,slotIndex:ev.slotIndex,duration:ev.duration,service:ev.service,provider:ev.provider,flagged:false,status:'scheduled',statusNote:''});
   });});});
   return{toCreate:tc,skipped:sk};
 }
