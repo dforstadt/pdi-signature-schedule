@@ -547,24 +547,22 @@ function exportToWord(){
     selClients.forEach((client,ci)=>{
       const evs=de.filter(e=>e.clientId===client.id).sort((a,b)=>a.slotIndex-b.slotIndex);
 
-      // Each service = one entry block using a Word-safe 2-col table
       let entries='';
       if(!evs.length){
-        entries=`<p style="font-size:11pt;color:#9ca3af;font-style:italic;margin:0 0 8pt 0">No services scheduled for this day.</p>`;
+        entries=`<p style="font-size:10pt;color:#9ca3af;font-style:italic;margin:0 0 8pt 0">No services scheduled for this day.</p>`;
       } else {
         evs.forEach(ev=>{
-          const col=pc(ev.provider);
           const es=SLOTS[ev.slotIndex+ev.duration];
           const timeStr=es?`${SLOTS[ev.slotIndex].label} &ndash; ${es.label}`:SLOTS[ev.slotIndex].label;
-          // Use a table: thin colored bar on left | text on right — Word renders this perfectly
           entries+=`
-<table style="border-collapse:collapse;width:100%;margin-bottom:10pt">
+<table style="border-collapse:collapse;width:100%;margin-bottom:11pt">
   <tr>
-    <td style="width:5pt;background:${col};padding:0">&nbsp;</td>
-    <td style="padding:8pt 0 8pt 14pt;vertical-align:top;border-bottom:1pt solid #f3f4f6">
-      <p style="margin:0 0 3pt 0;font-size:9pt;color:#9ca3af">${timeStr}</p>
-      <p style="margin:0 0 3pt 0;font-size:13pt;font-weight:bold;color:#111827">${ev.service}</p>
-      <p style="margin:0;font-size:10.5pt;color:#6b7280">${ev.provider}</p>
+    <td style="width:18pt;vertical-align:top;padding:1pt 0 0 0;text-align:center">
+      <p style="margin:0;font-size:9pt;color:#111827">&#9679;</p>
+    </td>
+    <td style="vertical-align:top;padding:0">
+      <p style="margin:0;font-size:10pt;color:#111827;font-weight:bold">${ev.service} &nbsp;<span style="font-weight:normal;color:#6b7280">&mdash; ${ev.provider}</span></p>
+      <p style="margin:2pt 0 0 0;font-size:9pt;color:#9ca3af">${timeStr}</p>
     </td>
   </tr>
 </table>`;
@@ -572,51 +570,35 @@ function exportToWord(){
       }
 
       const pb = ci>0 ? '<p style="page-break-before:always;font-size:1pt;margin:0">&nbsp;</p>' : '';
-      pages += `
+      pages+=`
 ${pb}
-<p style="font-size:8pt;color:#9ca3af;letter-spacing:2pt;text-transform:uppercase;margin:0 0 6pt 0">${S.title}</p>
-<p style="font-size:24pt;font-weight:bold;color:#111827;margin:0 0 4pt 0">${client.name}</p>
-<p style="font-size:11pt;color:#6b7280;margin:0 0 20pt 0">${fmtFull(S.selectedDate)}</p>
-<p style="font-size:8pt;color:#d1d5db;letter-spacing:1pt;text-transform:uppercase;margin:0 0 10pt 0;border-bottom:2pt solid #e5e7eb;padding-bottom:6pt">${evs.length} Session${evs.length!==1?'s':''}</p>
+<p style="font-size:8pt;color:#9ca3af;letter-spacing:2pt;text-transform:uppercase;margin:0 0 2pt 0">${S.title}</p>
+<p style="font-size:15pt;font-weight:bold;color:#111827;margin:0 0 1pt 0">${client.name}</p>
+<p style="font-size:9.5pt;color:#6b7280;margin:0 0 18pt 0">${fmtFull(S.selectedDate)}</p>
+<p style="border-bottom:1pt solid #e5e7eb;margin:0 0 16pt 0"></p>
 ${entries}
-<p style="font-size:7.5pt;color:#d1d5db;text-align:center;margin:28pt 0 0 0">${S.title} &nbsp;&middot;&nbsp; Confidential &nbsp;&middot;&nbsp; ${new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}</p>`;
+<p style="font-size:7pt;color:#d1d5db;text-align:center;margin:32pt 0 0 0">${S.title} &nbsp;&middot;&nbsp; Confidential &nbsp;&middot;&nbsp; ${new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}</p>`;
     });
 
     const html=`<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
 <head><meta charset="utf-8"><title>${S.title}</title>
 <!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->
 <style>
-  @page{margin:.9in 1in .9in 1in;}
-  body{font-family:Calibri,sans-serif;font-size:11pt;color:#111827;margin:.9in 1in;}
-  p{margin:0;}
-  table{border-collapse:collapse;}
+  @page{margin:1in 1.1in 1in 1.1in;}
+  body{font-family:'Roboto','Calibri',sans-serif;font-size:11pt;color:#111827;margin:1in 1.1in;}
+  p{margin:0;font-family:'Roboto','Calibri',sans-serif;}
+  table{border-collapse:collapse;font-family:'Roboto','Calibri',sans-serif;}
 </style>
 </head><body>${pages}</body></html>`;
 
     const blob=new Blob(['\ufeff'+html],{type:'application/msword'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
-    a.href=url;
-    a.download=`Schedule_${S.selectedDate.replace(/-/g,'')}.doc`;
+    a.href=url;a.download=`Schedule_${S.selectedDate.replace(/-/g,'')}.doc`;
     document.body.appendChild(a);a.click();
     document.body.removeChild(a);URL.revokeObjectURL(url);
   }catch(err){alert('Word export failed: '+err.message);}
   finally{if(btn){btn.innerHTML='<i class="ti ti-file-type-doc"></i> Word';btn.disabled=false;}}
-}
-
-function applyData(d){
-  try{
-    if(Array.isArray(d.clients)){
-      S.clients = d.clients;
-      S.selClients = new Set(d.clients.map(c=>c.id));
-    }
-    if(Array.isArray(d.events))   S.events    = d.events;
-    if(d.providers && typeof d.providers==='object' && !Array.isArray(d.providers)) S.providers = d.providers;
-    if(Array.isArray(d.services)) S.services  = d.services;
-    if(d.title)   S.title   = d.title;
-    if(typeof d.subtitle==='string') S.subtitle = d.subtitle;
-    return true;
-  }catch(e){ console.error('applyData error:',e); return false; }
 }
 
 function saveAll(){
