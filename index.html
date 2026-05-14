@@ -266,6 +266,10 @@ function nid(){return 'i'+(++_uid)+Math.random().toString(36).slice(2,4);}
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function hexToRgb(hex){const h=hex.replace('#','');return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
 function pc(name){return S.providers[name]?.color||'#888';}
+function encKey(k){return k.replace(/\./g,'__').replace(/#/g,'_h_').replace(/\$/g,'_s_').replace(/\[/g,'_lb_').replace(/\]/g,'_rb_');}
+function decKey(k){return k.replace(/__/g,'.').replace(/_h_/g,'#').replace(/_s_/g,'$').replace(/_lb_/g,'[').replace(/_rb_/g,']');}
+function encProviders(p){const r={};Object.entries(p).forEach(([k,v])=>r[encKey(k)]=v);return r;}
+function decProviders(p){const r={};Object.entries(p).forEach(([k,v])=>r[decKey(k)]=v);return r;}
 function ensureProv(name){if(!S.providers[name])S.providers[name]={color:PC[Object.keys(S.providers).length%PC.length]};}
 function getConflicts(evs){const ids=new Set();for(let i=0;i<evs.length;i++)for(let j=i+1;j<evs.length;j++){const a=evs[i],b=evs[j];if(a.provider===b.provider&&a.slotIndex<b.slotIndex+b.duration&&a.slotIndex+a.duration>b.slotIndex){ids.add(a.id);ids.add(b.id);}}return ids;}
 
@@ -273,14 +277,17 @@ function getConflicts(evs){const ids=new Set();for(let i=0;i<evs.length;i++)for(
 let myUpdate = false, savePending = null;
 
 function saveAll(){
+  myUpdate = true; // Lock listener out immediately so it can't overwrite pending changes
   clearTimeout(savePending);
   savePending = setTimeout(()=>{
-    myUpdate = true;
     db.ref(SCHED_KEY).set(
-      {clients:S.clients,events:S.events,providers:S.providers,meta:{title:S.title,subtitle:S.subtitle,services:S.services}},
-      ()=>{ setTimeout(()=>myUpdate=false,800); setLive(true); }
+      {clients:S.clients,events:S.events,providers:encProviders(S.providers),meta:{title:S.title,subtitle:S.subtitle,services:S.services}},
+      (err)=>{
+        if(err){ console.error('Save failed:',err); myUpdate=false; setLive(false); }
+        else { setTimeout(()=>{ myUpdate=false; }, 1000); setLive(true); }
+      }
     );
-  }, 400);
+  }, 200);
 }
 
 db.ref(SCHED_KEY).on('value', snapshot=>{
@@ -295,7 +302,7 @@ db.ref(SCHED_KEY).on('value', snapshot=>{
       for(const id of[...S.selectedClients])if(!ni.has(id))S.selectedClients.delete(id);
     }
     if(data.events)    S.events    = data.events;
-    if(data.providers) S.providers = data.providers;
+    if(data.providers) S.providers = decProviders(data.providers);
     if(data.meta){
       if(data.meta.title)    S.title    = data.meta.title;
       if(data.meta.subtitle !== undefined) S.subtitle = data.meta.subtitle;
