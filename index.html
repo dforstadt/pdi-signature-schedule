@@ -564,7 +564,12 @@ function renderWeekGrid(){
     container.appendChild(empty);
   }
 
-  S.clients.forEach(function(client,ci){
+  S.clients.filter(function(client){
+    var wkEnd=wk[6],wkStart2=wk[0];
+    var afterStart=!client.startDate||client.startDate<=wkEnd;
+    var beforeEnd=!client.endDate||client.endDate>=wkStart2;
+    return afterStart&&beforeEnd;
+  }).forEach(function(client,ci){
     var rbg=ci%2===0?'var(--bg)':'var(--bg2)';
     var wkTotal=S.events.filter(function(e){return e.clientId===client.id&&wk.includes(e.date);}).length;
 
@@ -576,7 +581,8 @@ function renderWeekGrid(){
     nameCell.style.cssText='background:'+rbg+';border-right:.5px solid var(--bd);padding:12px 14px;cursor:pointer;display:flex;flex-direction:column;justify-content:center';
     nameCell.innerHTML='<div style="font-size:13px;font-weight:600;color:var(--tx)">'+esc(client.name)+'</div>'+
       '<div style="font-size:9px;color:var(--tx3);margin-top:2px">'+wkTotal+' session'+(wkTotal!==1?'s':'')+' this week</div>'+
-      (client.endDate?'<div style="font-size:9px;color:var(--tx-err);margin-top:2px">Ends '+client.endDate+'</div>':'');
+      (client.startDate?'<div style="font-size:9px;color:var(--tx-ok);margin-top:1px">From '+client.startDate+'</div>':'')+
+      (client.endDate?'<div style="font-size:9px;color:var(--tx-err);margin-top:1px">Ends '+client.endDate+'</div>':'');
     nameCell.title='Click to rename';
     nameCell.addEventListener('click',function(){openRenameClient(client.id);});
     row.appendChild(nameCell);
@@ -733,17 +739,22 @@ function removeClient(cid){
   var client=S.clients.find(function(c){return c.id===cid;});
   if(!client)return;
   showModal(
-    '<div style="font-size:15px;font-weight:600;margin-bottom:6px">&#x1F4C5; End schedule for '+esc(client.name)+'</div>'+
-    '<div style="font-size:13px;color:var(--tx2);margin-bottom:16px">Choose a cutoff date. All sessions <strong>after</strong> that date will be removed. Sessions on or before it are kept.</div>'+
-    '<div style="margin-bottom:14px">'+
-      '<div style="font-size:11px;font-weight:500;color:var(--tx2);margin-bottom:6px">Remove sessions after:</div>'+
-      '<input type="date" id="end-date-pick" style="width:100%" value="'+S.selectedDate+'">'+
+    '<div style="font-size:15px;font-weight:600;margin-bottom:16px">Manage: '+esc(client.name)+'</div>'+
+    '<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">'+
+      '<div style="padding:14px;border-radius:var(--r);border:.5px solid var(--bd2);background:var(--bg2)">'+
+        '<div style="font-size:13px;font-weight:600;margin-bottom:4px">&#x1F4C5; Set completion date</div>'+
+        '<div style="font-size:11px;color:var(--tx3);margin-bottom:10px">Client will no longer appear on the calendar after this date. Past sessions are kept.</div>'+
+        '<input type="date" id="end-date-pick" style="width:100%;margin-bottom:8px" value="'+(client.endDate||S.selectedDate)+'">'+
+        '<div id="end-preview" style="font-size:11px;color:var(--tx3);margin-bottom:10px;min-height:14px"></div>'+
+        '<button id="end-sched-btn" data-cid="'+cid+'" style="width:100%;padding:8px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--f)">Set completion date</button>'+
+      '</div>'+
+      '<div style="padding:14px;border-radius:var(--r);border:.5px solid var(--bd-err);background:var(--bg-warn)">'+
+        '<div style="font-size:13px;font-weight:600;color:var(--tx-err);margin-bottom:4px">&#x274C; Permanently delete client</div>'+
+        '<div style="font-size:11px;color:var(--tx3);margin-bottom:10px">Removes this client and ALL their sessions from every date. Cannot be undone.</div>'+
+        '<button id="del-client-btn" data-cid="'+cid+'" style="width:100%;padding:8px;border-radius:var(--r);border:none;background:#E24B4A;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--f)">Delete permanently</button>'+
+      '</div>'+
     '</div>'+
-    '<div id="end-preview" style="font-size:12px;color:var(--tx3);margin-bottom:18px;min-height:16px"></div>'+
-    '<div style="display:flex;gap:8px;justify-content:flex-end">'+
-      cBtn()+
-      '<button id="end-sched-btn" data-cid="'+cid+'" style="padding:8px 20px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--f)">End schedule</button>'+
-    '</div>'
+    cBtn()
   );
   setTimeout(function(){
     var pick=document.getElementById('end-date-pick');
@@ -751,17 +762,27 @@ function removeClient(cid){
     function updatePreview(){
       if(!pick||!preview)return;
       var cutoff=pick.value;
-      var kept=S.events.filter(function(e){return e.clientId===cid&&e.date<=cutoff;}).length;
       var removed=S.events.filter(function(e){return e.clientId===cid&&e.date>cutoff;}).length;
-      var endNote=client&&client.endDate?' (currently ends '+client.endDate+')':'';
-      preview.innerHTML='<span style="color:var(--tx-err)">'+client.name+' will not appear on the calendar after this date'+endNote+'</span>'+
-        (removed>0?' &middot; '+removed+' future session'+(removed!==1?'s':'')+' removed':'');
+      preview.innerHTML=removed>0
+        ?'<span style="color:var(--tx-err)">'+removed+' session'+(removed!==1?'s':'')+' after this date will be removed</span>'
+        :'<span style="color:var(--tx-ok)">No future sessions to remove</span>';
     }
-    if(pick)pick.addEventListener('input',updatePreview);
-    updatePreview();
+    if(pick){pick.addEventListener('input',updatePreview);updatePreview();}
     var eb=document.getElementById('end-sched-btn');
     if(eb)eb.addEventListener('click',function(){endClientAfterDate(eb.dataset.cid);});
+    var db=document.getElementById('del-client-btn');
+    if(db)db.addEventListener('click',function(){confirmDeleteClient(db.dataset.cid);});
   },10);
+}
+function confirmDeleteClient(cid){
+  var client=S.clients.find(function(c){return c.id===cid;});
+  if(!client)return;
+  var cnt=S.events.filter(function(e){return e.clientId===cid;}).length;
+  if(!confirm('Permanently delete '+client.name+' and all '+cnt+' of their sessions? This cannot be undone.'))return;
+  S.clients=S.clients.filter(function(c){return c.id!==cid;});
+  S.events=S.events.filter(function(e){return e.clientId!==cid;});
+  S.selClients.delete(cid);
+  renderAll();saveAll();closeModal();
 }
 function endClientAfterDate(cid){
   var pick=document.getElementById('end-date-pick');
@@ -787,7 +808,34 @@ function confirmRemoveClient(cid){
 }
 function startAddC(){S.addingClient=true;renderGrid();}
 function cancelAddC(){S.addingClient=false;renderGrid();}
-function submitAddC(){var inp=document.getElementById('nc-i');var name=inp&&inp.value.trim();if(!name)return;var id=nid();S.clients.push({id:id,name:name});S.selClients.add(id);S.addingClient=false;renderAll();saveAll();}
+function submitAddC(){var inp=document.getElementById('nc-i');var name=inp&&inp.value.trim();if(!name)return;S.addingClient=false;renderGrid();openAddClientModal(name);}
+function openAddClientModal(prefill){
+  prefill=prefill||'';
+  showModal(
+    '<div style="font-size:15px;font-weight:600;margin-bottom:16px">Add client</div>'+
+    '<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:500;color:var(--tx2);margin-bottom:5px">Name</div>'+
+    '<input type="text" id="ac-name" value="'+esc(prefill)+'" placeholder="Client name..."></div>'+
+    '<div style="margin-bottom:6px"><div style="font-size:11px;font-weight:500;color:var(--tx2);margin-bottom:5px">Start date <span style="font-weight:400;color:var(--tx3)">(client will only appear on or after this date)</span></div>'+
+    '<input type="date" id="ac-start" value="'+S.selectedDate+'"></div>'+
+    '<div style="font-size:11px;color:var(--tx3);margin-bottom:20px">The client column will not show on dates before this.</div>'+
+    '<div style="display:flex;gap:8px;justify-content:flex-end">'+cBtn()+' '+
+    '<button onclick="confirmAddClient()" style="padding:8px 20px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--f)">Add client</button></div>'
+  );
+  setTimeout(function(){
+    var n=document.getElementById('ac-name');
+    if(n){n.focus();if(!prefill)n.select();}
+  },50);
+}
+function confirmAddClient(){
+  var name=document.getElementById('ac-name')&&document.getElementById('ac-name').value.trim();
+  var start=document.getElementById('ac-start')&&document.getElementById('ac-start').value;
+  if(!name){alert('Please enter a name.');return;}
+  if(!start){alert('Please select a start date.');return;}
+  var id=nid();
+  S.clients.push({id:id,name:name,startDate:start});
+  S.selClients.add(id);
+  renderAll();saveAll();closeModal();
+}
 
 // ── Modal helpers ──────────────────────────────────────────────────────────
 var mCtx=null;
