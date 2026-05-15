@@ -657,7 +657,11 @@ function renderGrid(){
   h+='</div>';
 
   // Client columns — skip clients whose schedule has ended
-  S.clients.filter(function(client){return !client.endDate||client.endDate>=S.selectedDate;}).forEach(function(client){
+  S.clients.filter(function(client){
+    var ok1=!client.startDate||S.selectedDate>=client.startDate;
+    var ok2=!client.endDate||S.selectedDate<=client.endDate;
+    return ok1&&ok2;
+  }).forEach(function(client){
     var ce=de.filter(function(e){return e.clientId===client.id;}),
         actE=fp?ce.filter(function(e){return e.provider===fp;}):ce,
         bgE=fp?ce.filter(function(e){return e.provider!==fp;}):[];
