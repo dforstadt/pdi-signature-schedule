@@ -575,7 +575,8 @@ function renderWeekGrid(){
     var nameCell=document.createElement('div');
     nameCell.style.cssText='background:'+rbg+';border-right:.5px solid var(--bd);padding:12px 14px;cursor:pointer;display:flex;flex-direction:column;justify-content:center';
     nameCell.innerHTML='<div style="font-size:13px;font-weight:600;color:var(--tx)">'+esc(client.name)+'</div>'+
-      '<div style="font-size:9px;color:var(--tx3);margin-top:2px">'+wkTotal+' session'+(wkTotal!==1?'s':'')+' this week</div>';
+      '<div style="font-size:9px;color:var(--tx3);margin-top:2px">'+wkTotal+' session'+(wkTotal!==1?'s':'')+' this week</div>'+
+      (client.endDate?'<div style="font-size:9px;color:var(--tx-err);margin-top:2px">Ends '+client.endDate+'</div>':'');
     nameCell.title='Click to rename';
     nameCell.addEventListener('click',function(){openRenameClient(client.id);});
     row.appendChild(nameCell);
@@ -649,8 +650,8 @@ function renderGrid(){
   });
   h+='</div>';
 
-  // Client columns
-  S.clients.forEach(function(client){
+  // Client columns — skip clients whose schedule has ended
+  S.clients.filter(function(client){return !client.endDate||client.endDate>=S.selectedDate;}).forEach(function(client){
     var ce=de.filter(function(e){return e.clientId===client.id;}),
         actE=fp?ce.filter(function(e){return e.provider===fp;}):ce,
         bgE=fp?ce.filter(function(e){return e.provider!==fp;}):[];
@@ -752,9 +753,9 @@ function removeClient(cid){
       var cutoff=pick.value;
       var kept=S.events.filter(function(e){return e.clientId===cid&&e.date<=cutoff;}).length;
       var removed=S.events.filter(function(e){return e.clientId===cid&&e.date>cutoff;}).length;
-      preview.innerHTML=removed>0
-        ?'<span style="color:var(--tx-err)">'+removed+' session'+(removed!==1?'s':'')+' will be removed</span> &middot; <span style="color:var(--tx-ok)">'+kept+' session'+(kept!==1?'s':'')+' kept</span>'
-        :'<span style="color:var(--tx-ok)">No sessions to remove after this date</span>';
+      var endNote=client&&client.endDate?' (currently ends '+client.endDate+')':'';
+      preview.innerHTML='<span style="color:var(--tx-err)">'+client.name+' will not appear on the calendar after this date'+endNote+'</span>'+
+        (removed>0?' &middot; '+removed+' future session'+(removed!==1?'s':'')+' removed':'');
     }
     if(pick)pick.addEventListener('input',updatePreview);
     updatePreview();
@@ -766,8 +767,12 @@ function endClientAfterDate(cid){
   var pick=document.getElementById('end-date-pick');
   var cutoff=pick&&pick.value;
   if(!cutoff){alert('Please select a date.');return;}
+  var client=S.clients.find(function(c){return c.id===cid;});
+  if(!client)return;
   var removed=S.events.filter(function(e){return e.clientId===cid&&e.date>cutoff;}).length;
-  var msg1='Remove '+removed+' session'+(removed!==1?'s':'')+' after '+cutoff+' for this client? Sessions on or before '+cutoff+' will be kept.';if(!confirm(msg1)){return;}
+  var msg='End schedule for '+client.name+' after '+cutoff+'? They will no longer appear on the calendar after this date. '+removed+' future session'+(removed!==1?'s':'')+' will be removed.';
+  if(!confirm(msg)){return;}
+  client.endDate=cutoff;
   S.events=S.events.filter(function(e){return !(e.clientId===cid&&e.date>cutoff);});
   renderAll();saveAll();closeModal();
 }
