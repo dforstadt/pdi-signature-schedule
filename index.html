@@ -92,17 +92,12 @@
       <button class="btn" onclick="openStipendAuth()" id="stipend-btn" style="border-color:#BA751766;color:#BA7517;background:#BA751711"><i class="ti ti-currency-dollar"></i> Stipend Roster</button>
       <button class="btn" onclick="exportToPDF()" id="pdf-btn" style="background:var(--bg-warn);border-color:var(--bd-err);color:var(--tx-err)"><i class="ti ti-file-type-pdf"></i> PDF</button>
       <button class="btn" onclick="exportToWord()" id="word-btn" style="border-color:#2b579a55;color:#2b579a;background:#2b579a11"><i class="ti ti-file-type-doc"></i> Daily Schedule</button>
+      <button class="btn" onclick="openManageProviders()" style="border-color:#7F77DD66;color:#7F77DD;background:#7F77DD11"><i class="ti ti-users"></i> Manage Providers</button>
       <button class="btn" onclick="openShare()"><i class="ti ti-link"></i> Share</button>
     </div>
   </div>
   <div id="cbar" style="display:none;padding:8px 14px;background:var(--bg-warn);border:.5px solid var(--bd-err);border-radius:var(--r);font-size:12px;color:var(--tx-err);margin-bottom:10px"></div>
-  <div class="card" style="min-height:42px">
-    <span style="font-size:11px;color:var(--tx3);font-weight:500;flex-shrink:0">Providers</span>
-    <div id="legend" style="display:flex;gap:6px;flex-wrap:wrap;flex:1"></div>
-    <button onclick="openManageProviders()" style="display:flex;align-items:center;gap:5px;padding:6px 14px;border-radius:20px;border:.5px solid var(--bd2);background:var(--bg2);cursor:pointer;font-size:12px;font-weight:500;color:var(--tx2);font-family:var(--f);white-space:nowrap">
-      <i class="ti ti-settings" style="font-size:13px"></i> Manage Providers
-    </button>
-  </div>
+  <div id="legend" style="display:none"></div>
   <div class="card" style="overflow-x:auto;gap:10px">
     <div style="display:flex;gap:4px;flex-shrink:0;background:var(--bg2);border-radius:var(--r);padding:3px">
       <button id="btn-day" onclick="setView('day')" style="padding:5px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-family:var(--f);font-weight:500;background:#7F77DD;color:#fff">Day</button>
@@ -734,27 +729,85 @@ function openAddClientModal(prefill){
 
 // ── Provider management ────────────────────────────────────────────────────
 function openManageProviders(){
-  showModal(
-    '<div style="font-size:15px;font-weight:600;margin-bottom:18px">Providers</div>'+
-    '<div id="plist" style="max-height:400px;overflow-y:auto;margin-bottom:18px"></div>'+
-    '<div style="background:var(--bg2);border:.5px solid var(--bd);border-radius:var(--rl);padding:14px;margin-bottom:16px">'+
+  var m=document.getElementById('mbox');
+  var modal=document.getElementById('modal');
+  if(!m||!modal)return;
+  buildProvModal();
+  modal.style.display='flex';
+}
+function buildProvModal(){
+  var m=document.getElementById('mbox');if(!m)return;
+  var entries=Object.entries(S.providers);
+
+  // Build rows HTML using safe data attributes - no inline JS
+  var rowsHtml=entries.map(function(e){
+    var name=e[0],color=e[1].color||'#888',ptype=e[1].type||'session',noSti=!!e[1].noStipend;
+    var cnt=S.events.filter(function(ev){return ev.provider===name;}).length;
+    var safeId='pr_'+name.replace(/[^a-z0-9]/gi,'_');
+    return '<div class="prov-mgr-row" data-name="'+esc(name)+'" style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;background:var(--bg2);border:.5px solid var(--bd2);margin-bottom:8px">'+
+      '<input type="color" class="pc-color" value="'+color+'" style="width:30px;height:30px;border:none;border-radius:50%;cursor:pointer;padding:0;flex-shrink:0">'+
+      '<div style="flex:1;min-width:0">'+
+        '<div style="font-size:13px;font-weight:600;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(name)+'</div>'+
+        '<div style="font-size:10px;color:var(--tx3);margin-top:1px">'+cnt+' session'+(cnt!==1?'s':'')+(noSti?' &middot; no stipend':'')+'</div>'+
+      '</div>'+
+      '<select class="pc-type" style="font-size:11px;padding:4px 8px;width:auto;border-radius:20px;border:1.5px solid '+(ptype==='weekly'?'#D4537E':'#7F77DD')+';background:'+(ptype==='weekly'?'#D4537E15':'#7F77DD15')+';color:'+(ptype==='weekly'?'#D4537E':'#7F77DD')+';font-family:var(--f)">'+
+        '<option value="session"'+(ptype==='session'?' selected':'')+'>Session ($150/hr)</option>'+
+        '<option value="weekly"'+(ptype==='weekly'?' selected':'')+'>Weekly ($250/wk)</option>'+
+      '</select>'+
+      '<button class="pc-del" style="padding:5px 10px;border-radius:var(--r);border:.5px solid var(--bd-err);background:var(--bg-warn);cursor:pointer;font-size:11px;font-weight:500;color:var(--tx-err);font-family:var(--f);white-space:nowrap;flex-shrink:0">Remove</button>'+
+    '</div>';
+  }).join('');
+
+  m.innerHTML=
+    '<div style="font-size:15px;font-weight:600;margin-bottom:16px"><i class="ti ti-users" style="font-size:14px;margin-right:8px"></i>Manage Providers</div>'+
+    '<div style="max-height:340px;overflow-y:auto;margin-bottom:16px" id="prov-rows">'+(rowsHtml||'<div style="text-align:center;padding:20px;color:var(--tx3)">No providers yet. Add one below.</div>')+'</div>'+
+    '<div style="background:var(--bg2);border-radius:var(--rl);padding:14px;border:.5px solid var(--bd);margin-bottom:16px">'+
       '<div style="font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:10px">Add provider</div>'+
       '<div style="display:flex;gap:8px;align-items:center">'+
-        '<input type="color" id="np-col" value="#7F77DD" style="width:36px;height:36px;flex-shrink:0;border-radius:8px;cursor:pointer;border:.5px solid var(--bd2);padding:2px">'+
+        '<input type="color" id="np-col" value="#7F77DD" style="width:34px;height:34px;flex-shrink:0;border:none;border-radius:50%;cursor:pointer;padding:0">'+
         '<input type="text" id="np-name" placeholder="Provider name..." style="flex:1">'+
-        '<button id="np-add-btn" style="padding:8px 16px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-family:var(--f);font-weight:500;white-space:nowrap">+ Add</button>'+
+        '<button id="np-add-btn" style="padding:8px 16px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--f);white-space:nowrap">+ Add</button>'+
       '</div>'+
     '</div>'+
-    '<div style="display:flex;justify-content:flex-end"><button onclick="closeModal()" style="padding:8px 24px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--f)">Done</button></div>'
-  );
+    '<div style="display:flex;justify-content:flex-end">'+
+      '<button onclick="closeModal()" style="padding:8px 24px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--f)">Done</button>'+
+    '</div>';
+
+  // Attach listeners after render
   setTimeout(function(){
-    renderProvList();
-    var addBtn=document.getElementById('np-add-btn');
-    if(addBtn)addBtn.addEventListener('click',addProvider);
-    var nameInp=document.getElementById('np-name');
-    if(nameInp)nameInp.addEventListener('keydown',function(e){if(e.key==='Enter')addProvider();});
-    nameInp&&nameInp.focus();
-  },30);
+    m.querySelectorAll('.prov-mgr-row').forEach(function(row){
+      var name=row.dataset.name;
+      row.querySelector('.pc-color').addEventListener('change',function(){
+        if(S.providers[name])S.providers[name].color=this.value;
+        renderLegend();saveAll();
+      });
+      row.querySelector('.pc-type').addEventListener('change',function(){
+        if(S.providers[name])S.providers[name].type=this.value;
+        saveAll();buildProvModal();
+      });
+      row.querySelector('.pc-del').addEventListener('click',function(){
+        deleteProvider(name);
+      });
+    });
+    var addBtn=m.querySelector('#np-add-btn');
+    if(addBtn)addBtn.addEventListener('click',quickAddProvider);
+    var nameInp=m.querySelector('#np-name');
+    if(nameInp){
+      nameInp.focus();
+      nameInp.addEventListener('keydown',function(e){if(e.key==='Enter')quickAddProvider();});
+    }
+  },20);
+}
+
+function quickAddProvider(){
+  var name=document.getElementById('np-name')&&document.getElementById('np-name').value.trim();
+  var color=document.getElementById('np-col')&&document.getElementById('np-col').value||PC[Object.keys(S.providers).length%PC.length];
+  if(!name){alert('Please enter a name.');return;}
+  if(S.providers[name]){alert('"'+name+'" already exists.');return;}
+  S.providers[name]={color:color,type:'session'};
+  document.getElementById('np-name').value='';
+  document.getElementById('np-col').value=PC[Object.keys(S.providers).length%PC.length];
+  saveAll();renderLegend();buildProvModal();
 }
 
 function renderProvList(){
@@ -850,7 +903,7 @@ function deleteProvider(name){
   var cnt=S.events.filter(function(e){return e.provider===name;}).length;
   if(cnt>0){if(!confirm('"'+name+'" has '+cnt+' sessions. Remove provider and sessions?'))return;S.events=S.events.filter(function(e){return e.provider!==name;});}
   delete S.providers[name];if(S.filterProv===name)S.filterProv=null;
-  renderAll();saveAll();renderProvList();
+  renderAll();saveAll();buildProvModal();
 }
 function addProvider(){
   var name=document.getElementById('np-name')&&document.getElementById('np-name').value.trim();
@@ -1294,8 +1347,12 @@ function execCopy(eid){var r=calcCopy(eid);if(!r.toCreate.length)return;r.toCrea
 var _stipendAuthed=false;
 function openStipendPage(){
   var a=document.createElement('a');
-  a.href='stipends.html';a.target='_blank';a.rel='noopener';
-  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  a.setAttribute('href','stipends.html');
+  a.setAttribute('target','_blank');
+  a.style.display='none';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){document.body.removeChild(a);},100);
 } // session memory so they only enter once per tab open
 function openStipendAuth(){
   if(_stipendAuthed){openStipendPage();return;}
