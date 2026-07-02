@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -1058,6 +1058,8 @@ function renderProvList(){
         '<option value="session"'+(ptype==='session'?' selected':'')+'>Session ($150/hr)</option>'+
         '<option value="weekly"'+(ptype==='weekly'?' selected':'')+'>Weekly stipend ($250/wk)</option>'+
       '</select>'+
+      '<label title="Exclude from all stipend calculations" style="display:flex;align-items:center;gap:3px;cursor:pointer;flex-shrink:0;font-size:11px;color:'+(S.providers[name].noStipend?'var(--tx-err)':'var(--tx3)')+'">'+
+        '<input type="checkbox" class="prov-nostipend" '+(S.providers[name].noStipend?'checked':'')+' style="accent-color:var(--tx-err);cursor:pointer;width:12px;height:12px"> No stipend</label>'+
       '<span style="font-size:10px;color:var(--tx3);white-space:nowrap;flex-shrink:0">'+cnt+' session'+(cnt!==1?'s':'')+'</span>'+
       '<button class="ibtn prov-del" style="color:var(--tx-err);flex-shrink:0;font-size:12px;font-weight:500;padding:4px 8px;border:.5px solid var(--bd-err);border-radius:var(--r);background:var(--bg-warn)">Remove</button>';
     row.querySelector('input[type=color]').addEventListener('change',function(){updateProvColor(name,this.value);});
@@ -1069,6 +1071,10 @@ function renderProvList(){
     row.querySelector('.prov-del').addEventListener('click',function(){deleteProvider(name);});
     row.querySelector('.prov-type-sel').addEventListener('change',function(){
       if(S.providers[name])S.providers[name].type=this.value;
+      saveAll();
+    });
+    row.querySelector('.prov-nostipend').addEventListener('change',function(){
+      if(S.providers[name])S.providers[name].noStipend=this.checked;
       saveAll();
     });
     el.appendChild(row);
@@ -1311,63 +1317,209 @@ function exportToStipendExcel(){
   var btn=document.getElementById('stipend-btn');if(btn){btn.innerHTML='...';btn.disabled=true;}
   try{
     var wb=XLSX.utils.book_new();
+
+    // Helper: is provider excluded from stipend?
+    function noStipend(prov){return !!(S.providers[prov]&&S.providers[prov].noStipend);}
+    function provType(prov){return(S.providers[prov]&&S.providers[prov].type)||'session';}
+
+    // Build sorted week list
     var weekMap={};
     S.events.forEach(function(ev){
+      if(noStipend(ev.provider))return;
       var ws=getMon(fromISO(ev.date));
       if(!weekMap[ws])weekMap[ws]=[];weekMap[ws].push(ev);
     });
-    var lineItems=[];var summaryMap={};
     var sortedWeeks=Object.keys(weekMap).sort();
-    sortedWeeks.forEach(function(wStart){
-      var wEvs=weekMap[wStart];
+
+    // Format week label: M/D–M/D/YYYY
+    function wkLabel(wStart){
       var wEnd=addDays(wStart,6);
-      var wLabel=fmtS(wStart)+'–'+fromISO(wEnd).toLocaleDateString('en-US',{month:'numeric',day:'numeric',year:'numeric'});
-      if(!summaryMap[wStart])summaryMap[wStart]={label:wLabel,sigHrs:0,sigCost:0,pdiCost:0};
+      var s=fromISO(wStart),e=fromISO(wEnd);
+      return (s.getMonth()+1)+'/'+s.getDate()+'\u2013'+(e.getMonth()+1)+'/'+e.getDate()+'/'+e.getFullYear();
+    }
+
+    // Track PDI episodes already counted: key = clientId+':'+providerName
+    var pdiCounted={};
+
+    var lineItems=[];
+    var summaryRows=[];
+    var totSigHrs=0,totSigCost=0,totPDICost=0;
+
+    // Weekly Staff Roster tracking
+    var sigHrsByStaff={};   // staff -> week -> hrs
+    var sigStiByStaff={};   // staff -> week -> $
+    var pdiStiByStaff={};   // staff -> week -> $
+    var allWeekSet={};
+    var sigStaffSet={};
+    var weekStiStaffSet={};
+    var pdiStaffSet={};
+
+    sortedWeeks.forEach(function(wStart){
+      allWeekSet[wStart]=true;
+      var wEvs=weekMap[wStart];
+      var wLbl=wkLabel(wStart);
+      var wSigHrs=0,wSigCost=0,wPDICost=0;
+
       var clientsThisWeek=new Set(wEvs.map(function(e){return e.clientId;}));
+
       clientsThisWeek.forEach(function(cid){
         var client=S.clients.find(function(c){return c.id===cid;});
         var cName=client?client.name:cid;
         var cProg=client?(client.program||'PDI'):'PDI';
         var cEvs=wEvs.filter(function(e){return e.clientId===cid;});
+
+        // ── Signature track ──────────────────────────────────────────────
         if(cProg==='Signature'||cProg==='Both'){
-          var sessionProvs={};
+          // Session providers: hrs × $150
+          var sessionProvMap={};
           cEvs.forEach(function(ev){
-            var ptype=(S.providers[ev.provider]&&S.providers[ev.provider].type)||'session';
-            if(ptype==='session'){if(!sessionProvs[ev.provider])sessionProvs[ev.provider]=0;sessionProvs[ev.provider]+=ev.duration;}
+            if(noStipend(ev.provider))return;
+            if(provType(ev.provider)==='session'){
+              if(!sessionProvMap[ev.provider])sessionProvMap[ev.provider]=0;
+              sessionProvMap[ev.provider]+=ev.duration; // 30-min slots
+            }
           });
-          Object.keys(sessionProvs).forEach(function(prov){
-            var hrs=sessionProvs[prov]/2;var amt=hrs*150;
-            summaryMap[wStart].sigHrs+=hrs;summaryMap[wStart].sigCost+=amt;
-            lineItems.push({'Week':wLabel,'Client':cName,'Track':'Signature','Staff':prov,'Stipend Type':'Session','Sessions / Hrs':hrs,'Rate ($)':150,'Amount ($)':amt,'Notes':''});
+          Object.keys(sessionProvMap).sort().forEach(function(prov){
+            var hrs=sessionProvMap[prov]/2;
+            var amt=hrs*150;
+            wSigHrs+=hrs;wSigCost+=amt;
+            lineItems.push({week:wLbl,client:cName,track:'Signature',staff:prov,
+              type:'Session',sessHrs:hrs,rate:150,amount:amt,counted:amt,notes:''});
+            // roster
+            if(!sigHrsByStaff[prov])sigHrsByStaff[prov]={};
+            if(!sigHrsByStaff[prov][wStart])sigHrsByStaff[prov][wStart]=0;
+            sigHrsByStaff[prov][wStart]+=hrs;
+            sigStaffSet[prov]=true;
           });
+
+          // Weekly stipend providers: $250/wk per active Sig client
           if(cEvs.length>0){
-            Object.keys(S.providers).filter(function(p){return(S.providers[p].type||'session')==='weekly';}).forEach(function(prov){
-              summaryMap[wStart].sigCost+=250;
-              lineItems.push({'Week':wLabel,'Client':cName,'Track':'Signature','Staff':prov,'Stipend Type':'Weekly Stipend','Sessions / Hrs':'','Rate ($)':'','Amount ($)':250,'Notes':''});
+            Object.keys(S.providers).sort().forEach(function(prov){
+              if(noStipend(prov))return;
+              if(provType(prov)==='weekly'){
+                wSigCost+=250;
+                lineItems.push({week:wLbl,client:cName,track:'Signature',staff:prov,
+                  type:'Weekly Stipend',sessHrs:'',rate:'',amount:250,counted:250,notes:''});
+                if(!sigStiByStaff[prov])sigStiByStaff[prov]={};
+                if(!sigStiByStaff[prov][wStart])sigStiByStaff[prov][wStart]=0;
+                sigStiByStaff[prov][wStart]+=250;
+                weekStiStaffSet[prov]=true;
+              }
             });
           }
         }
+
+        // ── PDI track — flat $250 once per episode ────────────────────────
         if(cProg==='PDI'||cProg==='Both'){
-          var pdiProvs=new Set(cEvs.map(function(e){return e.provider;}));
+          var pdiProvs=new Set(cEvs.map(function(e){return e.provider;}).filter(function(p){return !noStipend(p);}));
           pdiProvs.forEach(function(prov){
-            summaryMap[wStart].pdiCost+=250;
-            lineItems.push({'Week':wLabel,'Client':cName,'Track':'PDI','Staff':prov,'Stipend Type':'Flat Stipend','Sessions / Hrs':'','Rate ($)':'','Amount ($)':250,'Notes':''});
+            var key=cid+':'+prov;
+            var alreadyCounted=!!pdiCounted[key];
+            var counted=alreadyCounted?0:250;
+            var note=alreadyCounted?'PDI per-episode stipend \u2014 already counted in earlier week of this episode.':'';
+            if(!alreadyCounted)pdiCounted[key]=true;
+            wPDICost+=counted;
+            lineItems.push({week:wLbl,client:cName,track:'PDI',staff:prov,
+              type:'Flat Stipend',sessHrs:'',rate:'',amount:250,counted:counted,notes:note});
+            if(!pdiStiByStaff[prov])pdiStiByStaff[prov]={};
+            if(!pdiStiByStaff[prov][wStart])pdiStiByStaff[prov][wStart]=0;
+            pdiStiByStaff[prov][wStart]+=counted;
+            pdiStaffSet[prov]=true;
           });
         }
       });
+
+      totSigHrs+=wSigHrs;totSigCost+=wSigCost;totPDICost+=wPDICost;
+      summaryRows.push({week:wLbl,sigHrs:wSigHrs,sigCost:wSigCost,pdiCost:wPDICost,combined:wSigCost+wPDICost});
     });
-    var ws1=XLSX.utils.json_to_sheet(lineItems.length?lineItems:[{}]);
-    ws1['!cols']=[{wch:20},{wch:16},{wch:12},{wch:20},{wch:16},{wch:14},{wch:10},{wch:12},{wch:30}];
+
+    // ── Sheet 1: Line Items ────────────────────────────────────────────────
+    var liHdr1=['Staff Stipends \u2014 Signature & PDI Detail'];
+    var liHdr2=['Track = client program. Signature: Session ($150/hr direct service) and Weekly Stipend ($250/wk). PDI = flat $250 stipend (paid once per diagnostic episode). "Counted ($)" = episode-adjusted amount used in all totals.'];
+    var liHdr3=['Week','Client','Track','Staff','Stipend Type','Sessions / Hrs','Rate ($)','Amount ($)','Counted ($)','Notes'];
+    var liData=[liHdr1,liHdr2,[],liHdr3];
+    lineItems.forEach(function(r){
+      liData.push([r.week,r.client,r.track,r.staff,r.type,r.sessHrs,r.rate,r.amount,r.counted,r.notes]);
+    });
+    // Totals
+    var totAllAmt=lineItems.reduce(function(s,r){return s+r.amount;},0);
+    var totAllCounted=lineItems.reduce(function(s,r){return s+r.counted;},0);
+    var totSessHrs=lineItems.filter(function(r){return r.type==='Session';}).reduce(function(s,r){return s+(r.sessHrs||0);},0);
+    liData.push(['','','','TOTAL','',totSessHrs,'',totAllAmt,totAllCounted,'']);
+    var ws1=XLSX.utils.aoa_to_sheet(liData);
+    ws1['!cols']=[{wch:20},{wch:16},{wch:12},{wch:22},{wch:16},{wch:14},{wch:10},{wch:12},{wch:12},{wch:55}];
+    ws1['!merges']=[{s:{r:0,c:0},e:{r:0,c:9}},{s:{r:1,c:0},e:{r:1,c:9}}];
     XLSX.utils.book_append_sheet(wb,ws1,'Line Items');
-    var summaryRows=[];var totH=0,totS=0,totP=0;
-    sortedWeeks.forEach(function(w){var r=summaryMap[w];summaryRows.push({'Week':r.label,'Signature Direct Service Hrs':r.sigHrs,'Signature Cost ($)':r.sigCost,'PDI Cost ($)':r.pdiCost,'Combined Cost ($)':r.sigCost+r.pdiCost});totH+=r.sigHrs;totS+=r.sigCost;totP+=r.pdiCost;});
-    summaryRows.push({'Week':'TOTAL','Signature Direct Service Hrs':totH,'Signature Cost ($)':totS,'PDI Cost ($)':totP,'Combined Cost ($)':totS+totP});
-    var ws2=XLSX.utils.json_to_sheet(summaryRows);ws2['!cols']=[{wch:22},{wch:26},{wch:18},{wch:14},{wch:18}];
+
+    // ── Sheet 2: Summary ──────────────────────────────────────────────────
+    var smHdr1=['Weekly Summary \u2014 Signature & PDI'];
+    var smHdr2=['Signature Hrs = direct service sessions @ $150. Signature Cost includes those sessions plus $250/wk Signature stipends. PDI Cost = flat $250 PDI stipends (once per episode).'];
+    var smHdr3=['Week','Signature','','PDI Cost','Combined Cost'];
+    var smHdr4=['','Direct Service Hrs','Cost','',''];
+    var smData=[smHdr1,smHdr2,[],smHdr3,smHdr4];
+    summaryRows.forEach(function(r){smData.push([r.week,r.sigHrs,r.sigCost,r.pdiCost,r.combined]);});
+    smData.push(['TOTAL',totSigHrs,totSigCost,totPDICost,totSigCost+totPDICost]);
+    var ws2=XLSX.utils.aoa_to_sheet(smData);
+    ws2['!cols']=[{wch:22},{wch:22},{wch:14},{wch:12},{wch:16}];
+    ws2['!merges']=[{s:{r:0,c:0},e:{r:0,c:4}},{s:{r:1,c:0},e:{r:1,c:4}},{s:{r:3,c:1},e:{r:3,c:2}}];
     XLSX.utils.book_append_sheet(wb,ws2,'Summary');
+
+    // ── Sheet 3: Weekly Staff Roster ──────────────────────────────────────
+    var allWeeks=sortedWeeks;
+    var wkLabels=allWeeks.map(wkLabel);
+    var rosterRows=[];
+    rosterRows.push(['Weekly Staff Roster']);
+    rosterRows.push(['Three categories: Signature direct service hours (sessions @ $150), Signature weekly stipends ($250/wk), and PDI flat stipends ($250). A provider may appear in more than one.']);
+    rosterRows.push([]);
+    // Section 1: Sig session hrs
+    rosterRows.push(['SIGNATURE \u2014 Direct Service Hours per Week (sessions @ $150)']);
+    var sigHdr=['Staff / Week'].concat(wkLabels).concat(['Total Hrs']);
+    rosterRows.push(sigHdr);
+    var sigStaff=Object.keys(sigStaffSet).sort();
+    var sigColTotals=allWeeks.map(function(){return 0;});var sigGrandTot=0;
+    sigStaff.forEach(function(s){
+      var row=[s];var tot=0;
+      allWeeks.forEach(function(w,i){var h=(sigHrsByStaff[s]&&sigHrsByStaff[s][w])||0;row.push(h);tot+=h;sigColTotals[i]+=h;});
+      row.push(tot);sigGrandTot+=tot;rosterRows.push(row);
+    });
+    rosterRows.push(['Total'].concat(sigColTotals).concat([sigGrandTot]));
+    rosterRows.push([]);
+    // Section 2: Sig weekly stipend
+    rosterRows.push(['SIGNATURE \u2014 Weekly Stipend $ ($250/wk)']);
+    var wkStiHdr=['Staff / Week'].concat(wkLabels).concat(['Total $']);
+    rosterRows.push(wkStiHdr);
+    var weekStiStaff=Object.keys(weekStiStaffSet).sort();
+    var wkStiColTot=allWeeks.map(function(){return 0;});var wkStiGrand=0;
+    weekStiStaff.forEach(function(s){
+      var row=[s];var tot=0;
+      allWeeks.forEach(function(w,i){var v=(sigStiByStaff[s]&&sigStiByStaff[s][w])||0;row.push(v);tot+=v;wkStiColTot[i]+=v;});
+      row.push(tot);wkStiGrand+=tot;rosterRows.push(row);
+    });
+    rosterRows.push(['Total'].concat(wkStiColTot).concat([wkStiGrand]));
+    rosterRows.push([]);
+    // Section 3: PDI flat stipend
+    rosterRows.push(['PDI \u2014 Flat Stipend $ ($250 each, once per episode)']);
+    var pdiHdr=['Staff / Week'].concat(wkLabels).concat(['Total $']);
+    rosterRows.push(pdiHdr);
+    var pdiStaff=Object.keys(pdiStaffSet).sort();
+    var pdiColTot=allWeeks.map(function(){return 0;});var pdiGrand=0;
+    pdiStaff.forEach(function(s){
+      var row=[s];var tot=0;
+      allWeeks.forEach(function(w,i){var v=(pdiStiByStaff[s]&&pdiStiByStaff[s][w])||0;row.push(v);tot+=v;pdiColTot[i]+=v;});
+      row.push(tot);pdiGrand+=tot;rosterRows.push(row);
+    });
+    rosterRows.push(['Total'].concat(pdiColTot).concat([pdiGrand]));
+
+    var ws3=XLSX.utils.aoa_to_sheet(rosterRows);
+    var rCols=[{wch:24}].concat(allWeeks.map(function(){return{wch:16};})).concat([{wch:10}]);
+    ws3['!cols']=rCols;
+    XLSX.utils.book_append_sheet(wb,ws3,'Weekly Staff Roster');
+
     XLSX.writeFile(wb,'PDI_Signature_Stipends_'+new Date().toISOString().slice(0,10)+'.xlsx');
   }catch(err){alert('Stipend export failed: '+err.message);console.error(err);}
   finally{if(btn){btn.innerHTML='<i class="ti ti-currency-dollar"></i> Stipend Roster';btn.disabled=false;}}
 }
+
 
 // ── Share ──────────────────────────────────────────────────────────────────
 function openShare(){
