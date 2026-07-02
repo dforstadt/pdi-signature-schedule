@@ -750,338 +750,64 @@ function openAddClientModal(prefill){
   var pColors={PDI:'#378ADD',Signature:'#7F77DD',Both:'#1D9E75'};
   showModal(
     '<div style="font-size:15px;font-weight:600;margin-bottom:16px">Add client</div>'+
-    '<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:500;color:var(--tx2);margin-bottom:5px">Name</div><input type="text" id="ac-name" value="'+esc(prefill)+'" placeholder="Client name..."></div>'+
-    '<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:500;color:var(--tx2);margin-bottom:6px">Program</div>'+
-    '<div style="display:flex;gap:6px">'+
-      ['PDI','Signature','Both'].map(function(p){return '<label style="flex:1;display:flex;align-items:center;gap:5px;padding:7px 6px;border-radius:var(--r);border:1.5px solid '+(p==='PDI'?pColors[p]:'var(--bd)')+';cursor:pointer;font-size:12px;color:'+(p==='PDI'?pColors[p]:'var(--tx3)')+'"><input type="radio" name="ac-prog" value="'+p+'" '+(p==='PDI'?'checked':'')+' style="accent-color:'+pColors[p]+';flex-shrink:0"> '+p+'</label>';}).join('')+
+    '<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:500;color:var(--tx2);margin-bottom:5px">Name</div>'+
+    '<input type="text" id="ac-name" value="'+esc(prefill)+'" placeholder="Client name..."></div>'+
+    '<div style="margin-bottom:4px"><div style="font-size:11px;font-weight:500;color:var(--tx2);margin-bottom:6px">Program</div>'+
+    '<div style="display:flex;gap:5px">'+
+      ['PDI','Signature','Both'].map(function(p){
+        var label=p==='Both'?'PDI → Signature':p;
+        return '<label style="flex:1;display:flex;align-items:center;gap:5px;padding:7px 6px;border-radius:var(--r);border:1.5px solid '+(p==='PDI'?pColors[p]:'var(--bd)')+';cursor:pointer;font-size:12px;color:'+(p==='PDI'?pColors[p]:'var(--tx3)')+'">'+
+          '<input type="radio" name="ac-prog" value="'+p+'" '+(p==='PDI'?'checked':'')+' style="accent-color:'+pColors[p]+';flex-shrink:0"> '+label+'</label>';
+      }).join('')+
     '</div></div>'+
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">'+
-      '<div><div style="font-size:11px;font-weight:500;color:var(--tx2);margin-bottom:4px">Admission date</div><input type="date" id="ac-start" value="'+S.selectedDate+'"></div>'+
-      '<div><div style="font-size:11px;font-weight:500;color:var(--tx2);margin-bottom:4px">Discharge date <span style="font-weight:400;color:var(--tx3)">(optional)</span></div><input type="date" id="ac-end"></div>'+
-    '</div>'+
-    '<div style="display:flex;gap:8px;justify-content:flex-end"><button onclick="closeModal()" style="padding:8px 16px;border-radius:var(--r);border:.5px solid var(--bd2);background:transparent;cursor:pointer;font-size:13px;color:var(--tx2);font-family:var(--f)">Cancel</button> <button id="ac-save" style="padding:8px 20px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--f)">Add client</button></div>'
+    '<div id="add-date-fields-pdi">'+
+      '<div style="font-size:11px;font-weight:600;color:#378ADD;margin:12px 0 6px;text-transform:uppercase;letter-spacing:.05em">PDI Episode</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+        '<div><div style="font-size:11px;color:var(--tx2);margin-bottom:3px">Admission</div><input type="date" id="ac-pdi-admit" value="'+S.selectedDate+'"></div>'+
+        '<div><div style="font-size:11px;color:var(--tx2);margin-bottom:3px">Discharge</div><input type="date" id="ac-pdi-discharge"></div>'+
+      '</div></div>'+
+    '<div id="add-date-fields-sig" style="display:none">'+
+      '<div style="font-size:11px;font-weight:600;color:#7F77DD;margin:12px 0 6px;text-transform:uppercase;letter-spacing:.05em">Signature Episode</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+        '<div><div style="font-size:11px;color:var(--tx2);margin-bottom:3px">Admission</div><input type="date" id="ac-sig-admit"></div>'+
+        '<div><div style="font-size:11px;color:var(--tx2);margin-bottom:3px">Discharge</div><input type="date" id="ac-sig-discharge"></div>'+
+      '</div></div>'+
+    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px">'+cBtn()+
+    ' <button id="ac-save" style="padding:8px 20px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--f)">Add client</button></div>'
   );
   setTimeout(function(){
     var n=document.getElementById('ac-name');if(n){n.focus();if(!prefill)n.select();}
+    document.querySelectorAll('input[name="ac-prog"]').forEach(function(r){
+      r.addEventListener('change',function(){
+        var pdi=document.getElementById('add-date-fields-pdi');
+        var sig=document.getElementById('add-date-fields-sig');
+        if(pdi)pdi.style.display=this.value==='Signature'?'none':'block';
+        if(sig)sig.style.display=this.value==='PDI'?'none':'block';
+      });
+    });
     var btn=document.getElementById('ac-save');
     if(btn)btn.addEventListener('click',function(){
       var name=document.getElementById('ac-name')&&document.getElementById('ac-name').value.trim();
-      var start=document.getElementById('ac-start')&&document.getElementById('ac-start').value;
-      var end=(document.getElementById('ac-end')&&document.getElementById('ac-end').value)||null;
-      var prog='PDI';document.querySelectorAll('input[name="ac-prog"]').forEach(function(r){if(r.checked)prog=r.value;});
-      if(!name){alert('Please enter a name.');return;}if(!start){alert('Please select an admission date.');return;}
-      var id=nid();S.clients.push({id:id,name:name,startDate:start,endDate:end,program:prog});S.selClients.add(id);
-      renderAll();saveAll();closeModal();
+      if(!name){alert('Please enter a name.');return;}
+      var prog='PDI';
+      document.querySelectorAll('input[name="ac-prog"]').forEach(function(r){if(r.checked)prog=r.value;});
+      var pdiAdmit   =(document.getElementById('ac-pdi-admit')&&document.getElementById('ac-pdi-admit').value)||null;
+      var pdiDischarge=(document.getElementById('ac-pdi-discharge')&&document.getElementById('ac-pdi-discharge').value)||null;
+      var sigAdmit   =(document.getElementById('ac-sig-admit')&&document.getElementById('ac-sig-admit').value)||null;
+      var sigDischarge=(document.getElementById('ac-sig-discharge')&&document.getElementById('ac-sig-discharge').value)||null;
+      var startDate=prog==='PDI'?pdiAdmit:prog==='Signature'?sigAdmit:pdiAdmit;
+      var endDate  =prog==='PDI'?pdiDischarge:prog==='Signature'?sigDischarge:sigDischarge;
+      var id=nid();
+      S.clients.push({id:id,name:name,program:prog,
+        pdiAdmit:pdiAdmit,pdiDischarge:pdiDischarge,
+        sigAdmit:sigAdmit,sigDischarge:sigDischarge,
+        startDate:startDate,endDate:endDate});
+      S.selClients.add(id);renderAll();saveAll();closeModal();
     });
   },30);
 }
 
 
-// ── Provider management ────────────────────────────────────────────────────
-function openManageProviders(){
-  var m=document.getElementById('mbox');
-  var modal=document.getElementById('modal');
-  if(!m||!modal)return;
-  buildProvModal();
-  modal.style.display='flex';
-}
-function buildProvModal(){
-  var m=document.getElementById('mbox');if(!m)return;
-  var entries=Object.entries(S.providers);
-
-  // Build rows HTML using safe data attributes - no inline JS
-  var rowsHtml=entries.map(function(e){
-    var name=e[0],color=e[1].color||'#888',ptype=e[1].type||'session',noSti=!!e[1].noStipend;
-    var cnt=S.events.filter(function(ev){return ev.provider===name;}).length;
-    var safeId='pr_'+name.replace(/[^a-z0-9]/gi,'_');
-    return '<div class="prov-mgr-row" data-name="'+esc(name)+'" style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;background:var(--bg2);border:.5px solid var(--bd2);margin-bottom:8px">'+
-      '<input type="color" class="pc-color" value="'+color+'" style="width:30px;height:30px;border:none;border-radius:50%;cursor:pointer;padding:0;flex-shrink:0">'+
-      '<div style="flex:1;min-width:0">'+
-        '<div style="font-size:13px;font-weight:600;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(name)+'</div>'+
-        '<div style="font-size:10px;color:var(--tx3);margin-top:1px">'+cnt+' session'+(cnt!==1?'s':'')+(noSti?' &middot; no stipend':'')+'</div>'+
-      '</div>'+
-
-      '<button class="pc-del" style="padding:5px 10px;border-radius:var(--r);border:.5px solid var(--bd-err);background:var(--bg-warn);cursor:pointer;font-size:11px;font-weight:500;color:var(--tx-err);font-family:var(--f);white-space:nowrap;flex-shrink:0">Remove</button>'+
-    '</div>';
-  }).join('');
-
-  m.innerHTML=
-    '<div style="font-size:15px;font-weight:600;margin-bottom:16px"><i class="ti ti-users" style="font-size:14px;margin-right:8px"></i>Manage Providers</div>'+
-    '<div style="max-height:340px;overflow-y:auto;margin-bottom:16px" id="prov-rows">'+(rowsHtml||'<div style="text-align:center;padding:20px;color:var(--tx3)">No providers yet. Add one below.</div>')+'</div>'+
-    '<div style="background:var(--bg2);border-radius:var(--rl);padding:14px;border:.5px solid var(--bd);margin-bottom:16px">'+
-      '<div style="font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:10px">Add provider</div>'+
-      '<div style="display:flex;gap:8px;align-items:center">'+
-        '<input type="color" id="np-col" value="#7F77DD" style="width:34px;height:34px;flex-shrink:0;border:none;border-radius:50%;cursor:pointer;padding:0">'+
-        '<input type="text" id="np-name" placeholder="Provider name..." style="flex:1">'+
-        '<button id="np-add-btn" style="padding:8px 16px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--f);white-space:nowrap">+ Add</button>'+
-      '</div>'+
-    '</div>'+
-    '<div style="display:flex;justify-content:flex-end">'+
-      '<button onclick="closeModal()" style="padding:8px 24px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--f)">Done</button>'+
-    '</div>';
-
-  // Attach listeners after render
-  setTimeout(function(){
-    m.querySelectorAll('.prov-mgr-row').forEach(function(row){
-      var name=row.dataset.name;
-      row.querySelector('.pc-color').addEventListener('change',function(){
-        if(S.providers[name])S.providers[name].color=this.value;
-        renderLegend();saveAll();
-      });
-
-      row.querySelector('.pc-del').addEventListener('click',function(){
-        deleteProvider(name);
-      });
-    });
-    var addBtn=m.querySelector('#np-add-btn');
-    if(addBtn)addBtn.addEventListener('click',quickAddProvider);
-    var nameInp=m.querySelector('#np-name');
-    if(nameInp){
-      nameInp.focus();
-      nameInp.addEventListener('keydown',function(e){if(e.key==='Enter')quickAddProvider();});
-    }
-  },20);
-}
-
-function quickAddProvider(){
-  var name=document.getElementById('np-name')&&document.getElementById('np-name').value.trim();
-  var color=document.getElementById('np-col')&&document.getElementById('np-col').value||PC[Object.keys(S.providers).length%PC.length];
-  if(!name){alert('Please enter a name.');return;}
-  if(S.providers[name]){alert('"'+name+'" already exists.');return;}
-  S.providers[name]={color:color,type:'session'};
-  document.getElementById('np-name').value='';
-  document.getElementById('np-col').value=PC[Object.keys(S.providers).length%PC.length];
-  saveAll();renderLegend();buildProvModal();
-}
-
-function renderProvList(){
-  var el=document.getElementById('plist');if(!el)return;
-  var entries=Object.entries(S.providers);
-  if(!entries.length){
-    el.innerHTML='<div style="text-align:center;padding:24px;color:var(--tx3);font-size:13px">No providers yet. Add one below.</div>';
-    return;
-  }
-  el.innerHTML='<div style="display:flex;flex-direction:column;gap:10px">';
-  entries.forEach(function(entry){
-    var name=entry[0],color=entry[1].color||'#888';
-    var ptype=S.providers[name].type||'session';
-    var noSti=!!S.providers[name].noStipend;
-    var cnt=S.events.filter(function(e){return e.provider===name;}).length;
-    var initial=name.charAt(0).toUpperCase();
-    var card=document.createElement('div');
-    card.style.cssText='background:var(--bg);border:.5px solid var(--bd2);border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)';
-    card.innerHTML=
-      // Top color bar
-      '<div style="height:4px;background:'+color+'"></div>'+
-      '<div style="padding:14px 16px">'+
-        // Row 1: avatar + name + count
-        '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">'+
-          '<div style="width:40px;height:40px;border-radius:50%;background:'+color+';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px;flex-shrink:0">'+initial+'</div>'+
-          '<div style="flex:1;min-width:0">'+
-            '<input type="text" class="prov-name-inp" value="'+esc(name)+'" style="width:100%;font-size:14px;font-weight:600;border:none;background:transparent;color:var(--tx);font-family:var(--f);outline:none;border-bottom:1.5px solid transparent;padding:2px 0">'+
-            '<div style="font-size:11px;color:var(--tx3);margin-top:2px">'+cnt+' session'+(cnt!==1?'s':'')+' on record</div>'+
-          '</div>'+
-          '<input type="color" class="prov-color-inp" value="'+color+'" title="Change color" style="width:28px;height:28px;border:none;border-radius:6px;cursor:pointer;padding:0;background:none;flex-shrink:0">'+
-        '</div>'+
-        // Row 2: badges
-        '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'+
-          '<select class="prov-type-sel" style="padding:5px 10px;border-radius:20px;border:1.5px solid '+(ptype==='weekly'?'#D4537E':'#7F77DD')+';background:'+(ptype==='weekly'?'#D4537E15':'#7F77DD15')+';color:'+(ptype==='weekly'?'#D4537E':'#7F77DD')+';font-size:11px;font-weight:600;font-family:var(--f);cursor:pointer">'+
-            '<option value="session"'+(ptype==='session'?' selected':'')+'>Session ($150/hr)</option>'+
-            '<option value="weekly"'+(ptype==='weekly'?' selected':'')+'>Weekly stipend ($250/wk)</option>'+
-          '</select>'+
-          '<label class="prov-nosti-lbl" style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:11px;font-weight:500;padding:5px 10px;border-radius:20px;border:1.5px solid '+(noSti?'var(--bd-err)':'var(--bd)')+';background:'+(noSti?'var(--bg-warn)':'transparent')+';color:'+(noSti?'var(--tx-err)':'var(--tx3)')+'">'+
-            '<input type="checkbox" class="prov-nostipend" '+(noSti?'checked':'')+' style="accent-color:var(--tx-err);cursor:pointer;width:12px;height:12px"> No stipend</label>'+
-          '<button class="prov-sched-btn" style="display:flex;align-items:center;gap:4px;padding:5px 10px;border-radius:20px;border:1.5px solid var(--bd);background:transparent;cursor:pointer;font-size:11px;font-weight:500;color:var(--tx2);font-family:var(--f)">'+
-            '\uD83D\uDCCB View schedule</button>'+
-          '<button class="prov-del-btn" style="display:flex;align-items:center;gap:4px;padding:5px 10px;border-radius:20px;border:1.5px solid var(--bd-err);background:var(--bg-warn);cursor:pointer;font-size:11px;font-weight:500;color:var(--tx-err);font-family:var(--f);margin-left:auto">'+
-            '\u2715 Remove</button>'+
-        '</div>'+
-      '</div>';
-    el.querySelector('div').appendChild(card);
-
-    // Color input
-    card.querySelector('.prov-color-inp').addEventListener('change',function(){
-      updateProvColor(name,this.value);
-      card.querySelector('div').style.background=this.value; // update top bar
-      card.querySelector('[style*="border-radius:50%"]').style.background=this.value;
-    });
-    // Name input
-    var nameInp=card.querySelector('.prov-name-inp');
-    nameInp.addEventListener('focus',function(){this.style.borderBottomColor='#7F77DD';});
-    nameInp.addEventListener('blur',function(){this.style.borderBottomColor='transparent';renameProvider(name,this.value,'');});
-    nameInp.addEventListener('keydown',function(e){if(e.key==='Enter')this.blur();});
-    // Type
-    card.querySelector('.prov-type-sel').addEventListener('change',function(){
-      if(S.providers[name])S.providers[name].type=this.value;
-      var isWk=this.value==='weekly';
-      this.style.borderColor=isWk?'#D4537E':'#7F77DD';
-      this.style.background=isWk?'#D4537E15':'#7F77DD15';
-      this.style.color=isWk?'#D4537E':'#7F77DD';
-      saveAll();
-    });
-    // No stipend
-    card.querySelector('.prov-nostipend').addEventListener('change',function(){
-      if(S.providers[name])S.providers[name].noStipend=this.checked;
-      var lbl=card.querySelector('.prov-nosti-lbl');
-      if(lbl){lbl.style.borderColor=this.checked?'var(--bd-err)':'var(--bd)';lbl.style.background=this.checked?'var(--bg-warn)':'transparent';lbl.style.color=this.checked?'var(--tx-err)':'var(--tx3)';}
-      saveAll();
-    });
-    // View schedule
-    card.querySelector('.prov-sched-btn').addEventListener('click',function(){closeModal();setTimeout(function(){openProviderRoster(name);},50);});
-    // Remove
-    card.querySelector('.prov-del-btn').addEventListener('click',function(){deleteProvider(name);});
-  });
-  el.innerHTML+='\n</div>';
-}
-function updateProvColor(name,color){if(S.providers[name]){S.providers[name].color=color;renderLegend();renderGrid();saveAll();}}
-function renameProvider(old,nw,sid){
-  nw=(nw||'').trim();if(!nw||nw===old)return;
-  if(S.providers[nw]){alert('"'+nw+'" already exists.');return;}
-  S.providers[nw]={color:S.providers[old].color,type:S.providers[old].type||'session',noStipend:S.providers[old].noStipend};
-  delete S.providers[old];
-  S.events.forEach(function(e){if(e.provider===old)e.provider=nw;});
-  if(S.filterProv===old)S.filterProv=nw;
-  renderAll();saveAll();renderProvList();
-}
-function deleteProvider(name){
-  var cnt=S.events.filter(function(e){return e.provider===name;}).length;
-  if(cnt>0){if(!confirm('"'+name+'" has '+cnt+' sessions. Remove provider and sessions?'))return;S.events=S.events.filter(function(e){return e.provider!==name;});}
-  delete S.providers[name];if(S.filterProv===name)S.filterProv=null;
-  renderAll();saveAll();buildProvModal();
-}
-function addProvider(){
-  var name=document.getElementById('np-name')&&document.getElementById('np-name').value.trim();
-  var color=document.getElementById('np-col')&&document.getElementById('np-col').value||PC[Object.keys(S.providers).length%PC.length];
-  if(!name){alert('Please enter a name.');return;}
-  if(S.providers[name]){alert('"'+name+'" already exists.');return;}
-  S.providers[name]={color:color,type:'session'};
-  document.getElementById('np-name').value='';
-  renderAll();saveAll();renderProvList();
-}
-
-// ── Provider roster + picker ───────────────────────────────────────────────
-function openProviderViewPicker(){
-  var entries=Object.entries(S.providers);
-  if(!entries.length){alert('No providers added yet.');return;}
-  var wk=weekDates(S.weekStart);
-  showModal(
-    '<div style="font-size:15px;font-weight:600;margin-bottom:6px">\uD83D\uDCCB My Schedule</div>'+
-    '<div style="font-size:12px;color:var(--tx3);margin-bottom:16px">Select your name to view and print your weekly sessions for '+fmtRange(S.weekStart)+'.</div>'+
-    '<div id="prov-pick-list" style="display:flex;flex-direction:column;gap:8px;max-height:380px;overflow-y:auto;margin-bottom:16px"></div>'+
-    '<button onclick="closeModal()" style="padding:8px 16px;border-radius:var(--r);border:.5px solid var(--bd2);background:transparent;cursor:pointer;font-size:13px;color:var(--tx2);font-family:var(--f)">Cancel</button>'
-  );
-  setTimeout(function(){
-    var list=document.getElementById('prov-pick-list');if(!list)return;
-    entries.forEach(function(entry){
-      var name=entry[0],color=entry[1].color||'#888';
-      var cnt=S.events.filter(function(e){return e.provider===name&&wk.includes(e.date);}).length;
-      var initial=name.charAt(0).toUpperCase();
-      var card=document.createElement('div');
-      card.style.cssText='display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:12px;border:1.5px solid var(--bd);cursor:pointer;transition:all .15s;background:var(--bg2)';
-      card.innerHTML=
-        '<div style="width:44px;height:44px;border-radius:50%;background:'+color+';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px;flex-shrink:0">'+initial+'</div>'+
-        '<div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--tx)">'+esc(name)+'</div>'+
-          '<div style="font-size:11px;color:var(--tx3);margin-top:2px">'+cnt+' session'+(cnt!==1?'s':'')+' this week</div>'+
-        '</div>'+
-        '<div style="font-size:20px;color:var(--tx3)">\u276F</div>';
-      card.addEventListener('mouseenter',function(){card.style.borderColor=color;card.style.background='var(--bg)';card.style.transform='translateX(4px)';});
-      card.addEventListener('mouseleave',function(){card.style.borderColor='var(--bd)';card.style.background='var(--bg2)';card.style.transform='translateX(0)';});
-      card.addEventListener('click',function(){closeModal();setTimeout(function(){openProviderRoster(name);},60);});
-      list.appendChild(card);
-    });
-  },30);
-}
-
-function openProviderRoster(provName){
-  var wk=weekDates(S.weekStart);
-  var wEvs=S.events.filter(function(e){return e.provider===provName&&wk.includes(e.date);});
-  var color=pc(provName);
-  var win=window.open('','_blank','width=820,height=900,scrollbars=yes');
-  if(!win){alert('Please allow popups for this site.');return;}
-  var pg='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+provName+' Weekly Schedule</title>';
-  pg+='<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Calibri,Arial,sans-serif;padding:32px;color:#111;background:#fafafa}';
-  pg+='.hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid '+color+'}';
-  pg+='.avatar{width:54px;height:54px;border-radius:50%;background:'+color+';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:22px;flex-shrink:0}';
-  pg+='.name{font-size:24px;font-weight:700;color:'+color+';margin:0}';
-  pg+='.sub{font-size:13px;color:#666;margin-top:4px}';
-  pg+='.print-btn{padding:10px 20px;border-radius:8px;border:none;background:'+color+';color:#fff;cursor:pointer;font-size:14px;font-weight:600}';
-  pg+='.day{margin-bottom:20px;border-radius:10px;overflow:hidden;border:1px solid #e5e7eb}';
-  pg+='.day-hdr{font-size:13px;font-weight:700;padding:10px 14px;background:'+color+';color:#fff}';
-  pg+='.day-body{background:#fff;padding:8px}';
-  pg+='.sess{display:flex;gap:12px;padding:10px 12px;border-radius:8px;border:1px solid #f3f4f6;margin-bottom:8px;background:#fafafa;align-items:flex-start}';
-  pg+='.sess:last-child{margin-bottom:0}';
-  pg+='.dot{width:10px;height:10px;border-radius:50%;background:'+color+';flex-shrink:0;margin-top:5px}';
-  pg+='.svc{font-size:14px;font-weight:600;color:#111}';
-  pg+='.client{font-size:12px;color:#6b7280;margin-top:2px}';
-  pg+='.time{font-size:12px;color:#9ca3af;margin-top:3px}';
-  pg+='.empty{padding:16px;text-align:center;color:#9ca3af;font-size:13px;font-style:italic}';
-  pg+='.footer{margin-top:28px;padding-top:12px;border-top:1px solid #e5e7eb;font-size:11px;color:#9ca3af;text-align:center}';
-  pg+='@media print{.print-btn{display:none}}</style></head><body>';
-  var total=0;
-  pg+='<div class="hdr"><div style="display:flex;align-items:center;gap:14px"><div class="avatar">'+provName.charAt(0)+'</div><div><div class="name">'+provName+'</div><div class="sub">Weekly Schedule &mdash; '+fmtRange(S.weekStart)+'</div></div></div>';
-  pg+='<button class="print-btn" onclick="window.print()">Print / Save PDF</button></div>';
-  wk.forEach(function(date){
-    var dayEvs=wEvs.filter(function(e){return e.date===date;}).sort(function(a,b){return a.slotIndex-b.slotIndex;});
-    var d=fromISO(date);
-    var dayLabel=d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
-    var isWkndDay=d.getDay()===0||d.getDay()===6;
-    pg+='<div class="day"><div class="day-hdr" style="background:'+(isWkndDay?'#94a3b8':color)+'">'+dayLabel+'</div><div class="day-body">';
-    if(!dayEvs.length){pg+='<div class="empty">No sessions scheduled</div>';}
-    else{
-      dayEvs.forEach(function(ev){
-        var client=S.clients.find(function(c){return c.id===ev.clientId;});
-        var es=SLOTS[ev.slotIndex+ev.duration];
-        var ts=es?(SLOTS[ev.slotIndex].label+' &ndash; '+es.label):SLOTS[ev.slotIndex].label;
-        pg+='<div class="sess"><div class="dot"></div><div>'+
-          '<div class="svc">'+ev.service+'</div>'+
-          (client?'<div class="client">'+client.name+(client.program?' &middot; '+client.program:'')+'</div>':'')+
-          '<div class="time">'+ts+' &middot; '+(ev.duration*30)+' min</div>'+
-          '</div></div>';
-        total++;
-      });
-    }
-    pg+='</div></div>';
-  });
-  pg+='<div class="footer">'+total+' session'+(total!==1?'s':'')+' this week &mdash; Printed '+new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})+'</div>';
-  pg+='</body></html>';
-  win.document.write(pg);win.document.close();
-}
-
-
-
-// ── Add / Edit modals ──────────────────────────────────────────────────────
-function openAddModal(cid,si){
-  mCtx={type:'add',cid:cid,si:si};
-  showModal(
-    '<div style="font-size:15px;font-weight:500;margin-bottom:4px">Add service</div>'+
-    '<div style="font-size:11px;color:var(--tx3);margin-bottom:18px">'+fmtFull(S.selectedDate)+'</div>'+
-    svcFld()+''+prvFld('')+''+durFld()+
-    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px">'+cBtn()+' '+sBtn('submitAdd()','Add service')+'</div>'
-  );
-}
-function submitAdd(){
-  var svc=document.getElementById('ms')&&document.getElementById('ms').value.trim();
-  var prov=(document.getElementById('mp')&&document.getElementById('mp').value||'').trim();
-  var dur=+(document.getElementById('md')&&document.getElementById('md').value)||2;
-  if(!svc){alert('Please enter a service name.');return;}
-  if(!isMeal(svc)&&!prov){alert('Please select a provider.');return;}
-  mkProv(prov);
-  S.events.push({id:nid(),date:S.selectedDate,clientId:mCtx.cid,slotIndex:mCtx.si,duration:dur,service:svc,provider:prov,flagged:false,status:'scheduled',statusNote:''});
-  renderAll();saveAll();closeModal();
-}
-function setStatus(val){
-  var colors={scheduled:'#7F77DD',completed:'#1D9E75',cancelled:'#E24B4A',rescheduled:'#D85A30'};
-  var grp=document.getElementById('status-btns');if(!grp)return;
-  grp.dataset.status=val;
-  grp.querySelectorAll('button[data-st]').forEach(function(btn){
-    var s=btn.dataset.st,on=s===val;
-    btn.style.borderColor=on?colors[s]:'var(--bd)';
-    btn.style.background=on?(colors[s]+'18'):'transparent';
-    btn.style.color=on?colors[s]:'var(--tx3)';
-  });
-  var nw=document.getElementById('status-note-wrap');
-  if(nw)nw.style.display=(val==='cancelled'||val==='rescheduled')?'block':'none';
-}
 function openEditModal(eid){
   var ev=S.events.find(function(e){return e.id===eid;});if(!ev)return;mCtx={type:'edit',eid:eid};
   var status=ev.status||'scheduled';
@@ -1285,41 +1011,84 @@ function openRenameClient(cid){
   var c=S.clients.find(function(c){return c.id===cid;});if(!c)return;
   var prog=c.program||'PDI';
   var pColors={PDI:'#378ADD',Signature:'#7F77DD',Both:'#1D9E75'};
+
+  // Build program radio buttons
   var pOpts=['PDI','Signature','Both'].map(function(p){
     var on=prog===p;
-    return '<label style="flex:1;display:flex;align-items:center;gap:5px;padding:7px 6px;border-radius:var(--r);border:1.5px solid '+(on?pColors[p]:'var(--bd)')+';cursor:pointer;font-size:12px;color:'+(on?pColors[p]:'var(--tx3)')+'">'+
-      '<input type="radio" name="ec-prog" value="'+p+'" '+(on?'checked':'')+' style="accent-color:'+pColors[p]+';flex-shrink:0"> '+p+'</label>';
+    var label=p==='Both'?'PDI → Signature':p;
+    return '<label style="flex:1;display:flex;align-items:center;gap:5px;padding:7px 8px;border-radius:var(--r);border:1.5px solid '+(on?pColors[p]:'var(--bd)')+';cursor:pointer;font-size:12px;color:'+(on?pColors[p]:'var(--tx3)')+'">'+
+      '<input type="radio" name="ec-prog" value="'+p+'" '+(on?'checked':'')+' style="accent-color:'+pColors[p]+';flex-shrink:0"> '+label+'</label>';
   }).join('');
+
+  // Date fields — show PDI/Sig split for Both, simple for single program
+  var dateFields=
+    '<div id="date-fields-pdi" style="display:'+(prog==='Signature'?'none':'block')+'">'+
+      '<div style="font-size:11px;font-weight:600;color:#378ADD;margin:12px 0 6px;text-transform:uppercase;letter-spacing:.05em">PDI Episode</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+        '<div><div style="font-size:11px;color:var(--tx2);margin-bottom:3px">Admission</div>'+
+          '<input type="date" id="rc-pdi-admit" value="'+(c.pdiAdmit||c.startDate||'')+'"></div>'+
+        '<div><div style="font-size:11px;color:var(--tx2);margin-bottom:3px">Discharge</div>'+
+          '<input type="date" id="rc-pdi-discharge" value="'+(c.pdiDischarge||( prog==='PDI'?c.endDate:'')||'')+'"></div>'+
+      '</div>'+
+    '</div>'+
+    '<div id="date-fields-sig" style="display:'+(prog==='PDI'?'none':'block')+'">'+
+      '<div style="font-size:11px;font-weight:600;color:#7F77DD;margin:12px 0 6px;text-transform:uppercase;letter-spacing:.05em">Signature Episode</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+        '<div><div style="font-size:11px;color:var(--tx2);margin-bottom:3px">Admission</div>'+
+          '<input type="date" id="rc-sig-admit" value="'+(c.sigAdmit||(prog==='Signature'?c.startDate:'')||'')+'"></div>'+
+        '<div><div style="font-size:11px;color:var(--tx2);margin-bottom:3px">Discharge</div>'+
+          '<input type="date" id="rc-sig-discharge" value="'+(c.sigDischarge||(prog==='Signature'?c.endDate:'')||'')+'"></div>'+
+      '</div>'+
+    '</div>';
+
   showModal(
-    '<div style="font-size:15px;font-weight:500;margin-bottom:16px">Edit client</div>'+
+    '<div style="font-size:15px;font-weight:500;margin-bottom:14px">Edit client</div>'+
     '<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:500;color:var(--tx2);margin-bottom:5px">Name</div>'+
     '<input type="text" id="rc1" value="'+esc(c.name)+'"></div>'+
-    '<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:500;color:var(--tx2);margin-bottom:6px">Program</div>'+
+    '<div style="margin-bottom:4px"><div style="font-size:11px;font-weight:500;color:var(--tx2);margin-bottom:6px">Program</div>'+
     '<div style="display:flex;gap:5px">'+pOpts+'</div></div>'+
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">'+
-      '<div><div style="font-size:11px;font-weight:500;color:var(--tx2);margin-bottom:4px">Admission date</div>'+
-      '<input type="date" id="rc-start" value="'+(c.startDate||'')+'"></div>'+
-      '<div><div style="font-size:11px;font-weight:500;color:var(--tx2);margin-bottom:4px">Discharge date <span style="font-weight:400;color:var(--tx3)">(optional)</span></div>'+
-      '<input type="date" id="rc-end" value="'+(c.endDate||'')+'"></div>'+
-    '</div>'+
-    '<div style="display:flex;gap:8px;justify-content:flex-end">'+cBtn()+' <button id="rc-save" style="padding:8px 18px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--f)">Save</button></div>'
+    dateFields+
+    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px">'+cBtn()+
+    ' <button id="rc-save" style="padding:8px 18px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--f)">Save</button></div>'
   );
   setTimeout(function(){
     var i=document.getElementById('rc1');if(i)i.focus();
+    // Toggle date fields when program changes
+    document.querySelectorAll('input[name="ec-prog"]').forEach(function(r){
+      r.addEventListener('change',function(){
+        var pdi=document.getElementById('date-fields-pdi');
+        var sig=document.getElementById('date-fields-sig');
+        if(pdi)pdi.style.display=this.value==='Signature'?'none':'block';
+        if(sig)sig.style.display=this.value==='PDI'?'none':'block';
+      });
+    });
     var btn=document.getElementById('rc-save');
     if(btn)btn.addEventListener('click',function(){submitRename(cid);});
-  },50);
+  },30);
 }
 function submitRename(cid){
-  var name=document.getElementById('rc1')&&document.getElementById('rc1').value.trim();if(!name)return;
-  var start=(document.getElementById('rc-start')&&document.getElementById('rc-start').value)||null;
-  var end=(document.getElementById('rc-end')&&document.getElementById('rc-end').value)||null;
+  var name=document.getElementById('rc1')&&document.getElementById('rc1').value.trim();
+  if(!name)return;
   var prog='PDI';
   document.querySelectorAll('input[name="ec-prog"]').forEach(function(r){if(r.checked)prog=r.value;});
+  var pdiAdmit   =(document.getElementById('rc-pdi-admit')&&document.getElementById('rc-pdi-admit').value)||null;
+  var pdiDischarge=(document.getElementById('rc-pdi-discharge')&&document.getElementById('rc-pdi-discharge').value)||null;
+  var sigAdmit   =(document.getElementById('rc-sig-admit')&&document.getElementById('rc-sig-admit').value)||null;
+  var sigDischarge=(document.getElementById('rc-sig-discharge')&&document.getElementById('rc-sig-discharge').value)||null;
+
   var c=S.clients.find(function(c){return c.id===cid;});
-  if(c){c.name=name;c.program=prog;c.startDate=start;c.endDate=end;}
+  if(c){
+    c.name=name;c.program=prog;
+    c.pdiAdmit=pdiAdmit;c.pdiDischarge=pdiDischarge;
+    c.sigAdmit=sigAdmit;c.sigDischarge=sigDischarge;
+    // Set startDate/endDate for calendar filtering
+    if(prog==='PDI'){c.startDate=pdiAdmit;c.endDate=pdiDischarge;}
+    else if(prog==='Signature'){c.startDate=sigAdmit;c.endDate=sigDischarge;}
+    else{c.startDate=pdiAdmit;c.endDate=sigDischarge;} // Both: full span
+  }
   renderAll();saveAll();closeModal();
 }
+
 
 
 // ── Copy modal ─────────────────────────────────────────────────────────────
