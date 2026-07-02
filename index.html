@@ -101,6 +101,7 @@
       <button class="btn" onclick="openStipendAuth()" id="stipend-btn" style="border-color:#BA751766;color:#BA7517;background:#BA751711"><i class="ti ti-currency-dollar"></i> Stipend Roster</button>
       <button class="btn red" onclick="exportToPDF()" id="pdf-btn"><i class="ti ti-file-type-pdf"></i> PDF</button>
       <button class="btn" onclick="exportToWord()" id="word-btn" style="border-color:#2b579a55;color:#2b579a;background:#2b579a11"><i class="ti ti-file-type-doc"></i> Daily Client Schedule</button>
+      <button class="btn" onclick="openProviderViewPicker()" style="border-color:#1D9E7566;color:#1D9E75;background:#1D9E7511"><i class="ti ti-user"></i> My Schedule</button>
       <button class="btn" onclick="openShare()"><i class="ti ti-link"></i> Share</button>
     </div>
   </div>
@@ -1025,61 +1026,124 @@ function clearConflicts(){S.flaggedConflicts=[];S.events.forEach(function(e){e.f
 // ── Manage providers ───────────────────────────────────────────────────────
 function openManageProviders(){
   showModal(
-    '<div style="font-size:15px;font-weight:500;margin-bottom:6px"><i class="ti ti-users" style="font-size:14px;margin-right:6px"></i>Manage providers</div>'+
-    '<div style="font-size:11px;color:var(--tx3);margin-bottom:14px">Click color to change. Click name to rename. Trash to remove.</div>'+
-    '<div id="plist" style="max-height:280px;overflow-y:auto;margin-bottom:16px"></div>'+
-    '<div style="border-top:.5px solid var(--bd);padding-top:14px;margin-bottom:16px">'+
-    '<div style="font-size:11px;font-weight:500;color:var(--tx2);margin-bottom:8px">Add provider</div>'+
-    '<div style="display:flex;gap:8px;align-items:center">'+
-    '<input type="color" id="np-col" value="#7F77DD" style="width:36px;height:36px;flex-shrink:0">'+
-    '<input type="text" id="np-name" placeholder="Provider name..." onkeydown="if(event.key===\'Enter\')addProvider()" style="flex:1">'+
-    '<button onclick="addProvider()" style="padding:7px 16px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-family:var(--f);font-weight:500">+ Add</button>'+
-    '</div></div>'+
-    '<div style="display:flex;justify-content:flex-end"><button onclick="closeModal()" style="padding:8px 20px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--f)">Done</button></div>'
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">'+
+      '<div style="font-size:15px;font-weight:600">Manage Providers</div>'+
+    '</div>'+
+    '<div id="plist" style="max-height:420px;overflow-y:auto;margin-bottom:18px"></div>'+
+    '<div style="border-top:.5px solid var(--bd);padding-top:16px;margin-bottom:16px">'+
+      '<div style="font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:10px">Add provider</div>'+
+      '<div style="display:flex;gap:8px;align-items:center">'+
+        '<input type="color" id="np-col" value="#7F77DD" style="width:36px;height:36px;flex-shrink:0;border-radius:8px;cursor:pointer">'+
+        '<input type="text" id="np-name" placeholder="Provider name..." style="flex:1">'+
+        '<button id="np-add-btn" style="padding:8px 16px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-family:var(--f);font-weight:500;white-space:nowrap">+ Add</button>'+
+      '</div>'+
+    '</div>'+
+    '<div style="display:flex;justify-content:flex-end">'+
+      '<button onclick="closeModal()" style="padding:8px 24px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--f)">Done</button>'+
+    '</div>'
   );
-  renderProvList();setTimeout(function(){var el=document.getElementById('np-name');if(el)el.focus();},50);
+  renderProvList();
+  setTimeout(function(){
+    var addBtn=document.getElementById('np-add-btn');
+    if(addBtn)addBtn.addEventListener('click',addProvider);
+    var nameInp=document.getElementById('np-name');
+    if(nameInp)nameInp.addEventListener('keydown',function(e){if(e.key==='Enter')addProvider();});
+  },30);
 }
+
 function renderProvList(){
   var el=document.getElementById('plist');if(!el)return;
   var entries=Object.entries(S.providers);
-  if(!entries.length){el.innerHTML='<div style="font-size:12px;color:var(--tx3);text-align:center;padding:10px">No providers yet</div>';return;}
-  el.innerHTML='';
+  if(!entries.length){
+    el.innerHTML='<div style="text-align:center;padding:24px;color:var(--tx3);font-size:13px">No providers yet. Add one below.</div>';
+    return;
+  }
+  el.innerHTML='<div style="display:flex;flex-direction:column;gap:8px">' +
+    entries.map(function(entry){
+      var name=entry[0],color=entry[1].color;
+      var ptype=S.providers[name].type||'session';
+      var noSti=!!S.providers[name].noStipend;
+      var cnt=S.events.filter(function(e){return e.provider===name;}).length;
+      var sid='p_'+name.replace(/[^a-z0-9]/gi,'_');
+      return '<div class="prov-card" data-name="'+esc(name)+'" style="'+
+        'display:flex;flex-direction:column;gap:10px;padding:14px 16px;'+
+        'background:var(--bg2);border:.5px solid var(--bd2);border-radius:10px;'+
+        'border-left:4px solid '+color+'">'+
+        // Row 1: color + name
+        '<div style="display:flex;align-items:center;gap:10px">'+
+          '<input type="color" class="prov-color" value="'+color+'" style="width:28px;height:28px;flex-shrink:0;border:none;border-radius:6px;cursor:pointer;padding:0;background:none" title="Change color">'+
+          '<input type="text" class="prov-name" id="'+sid+'" value="'+esc(name)+'" style="flex:1;font-size:14px;font-weight:600;border:none;background:transparent;color:var(--tx);font-family:var(--f);outline:none;border-bottom:1.5px solid transparent;padding:2px 4px" placeholder="Name...">'+
+          '<span style="font-size:10px;color:var(--tx3);white-space:nowrap;flex-shrink:0">'+cnt+' session'+(cnt!==1?'s':'')+'</span>'+
+        '</div>'+
+        // Row 2: type + no stipend + remove
+        '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'+
+          '<select class="prov-type-sel" style="font-size:11px;padding:4px 8px;border-radius:20px;border:1.5px solid '+(ptype==='weekly'?'#D4537E':'#7F77DD')+';background:'+(ptype==='weekly'?'#D4537E18':'#7F77DD18')+';color:'+(ptype==='weekly'?'#D4537E':'#7F77DD')+';font-family:var(--f);cursor:pointer;font-weight:500">'+
+            '<option value="session"'+(ptype==='session'?' selected':'')+'>&#x1F4CB; Session ($150/hr)</option>'+
+            '<option value="weekly"'+(ptype==='weekly'?' selected':'')+'>&#x1F4C5; Weekly stipend ($250/wk)</option>'+
+          '</select>'+
+          '<label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:11px;color:'+(noSti?'var(--tx-err)':'var(--tx3)')+';padding:4px 8px;border-radius:20px;border:1.5px solid '+(noSti?'var(--bd-err)':'var(--bd)')+';background:'+(noSti?'var(--bg-warn)':'transparent')+'">'+
+            '<input type="checkbox" class="prov-nostipend" '+(noSti?'checked':'')+' style="accent-color:var(--tx-err);cursor:pointer;width:12px;height:12px"> No stipend</label>'+
+          '<button class="prov-roster-btn" style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:20px;border:1.5px solid var(--bd);background:transparent;cursor:pointer;font-size:11px;color:var(--tx3);font-family:var(--f)">'+
+            '&#x1F4CB; View schedule</button>'+
+          '<button class="prov-del ibtn" style="margin-left:auto;display:flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;border:1.5px solid var(--bd-err);background:var(--bg-warn);cursor:pointer;font-size:11px;color:var(--tx-err);font-family:var(--f);font-weight:500">'+
+            '&#x2715; Remove</button>'+
+        '</div>'+
+      '</div>';
+    }).join('') + '</div>';
+
+  // Attach all listeners
   entries.forEach(function(entry){
-    var name=entry[0],color=entry[1].color;
-    var cnt=S.events.filter(function(e){return e.provider===name;}).length;
+    var name=entry[0];
     var sid='p_'+name.replace(/[^a-z0-9]/gi,'_');
-    var row=document.createElement('div');
-    row.className='prov-row';
-    var ptype=S.providers[name].type||'session';
-    row.innerHTML=
-      '<input type="color" value="'+color+'" style="width:32px;height:32px;flex-shrink:0">'+
-      '<input type="text" value="'+esc(name)+'" id="'+sid+'" style="flex:1;min-width:100px;border:none;background:transparent;font-size:13px;padding:2px 4px;outline:none;border-bottom:1.5px solid transparent;font-family:var(--f);color:var(--tx)">'+
-      '<select class="prov-type-sel" style="font-size:11px;padding:3px 6px;border-radius:var(--r);border:.5px solid var(--bd2);background:var(--bg);color:var(--tx2);font-family:var(--f);flex-shrink:0">'+
-        '<option value="session"'+(ptype==='session'?' selected':'')+'>Session ($150/hr)</option>'+
-        '<option value="weekly"'+(ptype==='weekly'?' selected':'')+'>Weekly stipend ($250/wk)</option>'+
-      '</select>'+
-      '<label title="Exclude from all stipend calculations" style="display:flex;align-items:center;gap:3px;cursor:pointer;flex-shrink:0;font-size:11px;color:'+(S.providers[name].noStipend?'var(--tx-err)':'var(--tx3)')+'">'+
-        '<input type="checkbox" class="prov-nostipend" '+(S.providers[name].noStipend?'checked':'')+' style="accent-color:var(--tx-err);cursor:pointer;width:12px;height:12px"> No stipend</label>'+
-      '<span style="font-size:10px;color:var(--tx3);white-space:nowrap;flex-shrink:0">'+cnt+' session'+(cnt!==1?'s':'')+'</span>'+
-      '<button class="ibtn prov-del" style="color:var(--tx-err);flex-shrink:0;font-size:12px;font-weight:500;padding:4px 8px;border:.5px solid var(--bd-err);border-radius:var(--r);background:var(--bg-warn)">Remove</button>';
-    row.querySelector('input[type=color]').addEventListener('change',function(){updateProvColor(name,this.value);});
-    var nameInp=row.querySelector('input[type=text]');
-    nameInp.addEventListener('blur',function(){renameProvider(name,this.value,sid);});
-    nameInp.addEventListener('keydown',function(e){if(e.key==='Enter')this.blur();});
+    var card=el.querySelector('[data-name="'+esc(name)+'"]');
+    if(!card)return;
+
+    card.querySelector('.prov-color').addEventListener('change',function(){
+      updateProvColor(name,this.value);
+    });
+
+    var nameInp=card.querySelector('.prov-name');
     nameInp.addEventListener('focus',function(){this.style.borderBottomColor='#7F77DD';});
-    nameInp.addEventListener('blur',function(){this.style.borderBottomColor='transparent';},true);
-    row.querySelector('.prov-del').addEventListener('click',function(){deleteProvider(name);});
-    row.querySelector('.prov-type-sel').addEventListener('change',function(){
-      if(S.providers[name])S.providers[name].type=this.value;
+    nameInp.addEventListener('blur',function(){
+      this.style.borderBottomColor='transparent';
+      renameProvider(name,this.value,sid);
+    });
+    nameInp.addEventListener('keydown',function(e){if(e.key==='Enter')this.blur();});
+
+    card.querySelector('.prov-type-sel').addEventListener('change',function(){
+      if(S.providers[name]){
+        S.providers[name].type=this.value;
+        var isWk=this.value==='weekly';
+        this.style.borderColor=isWk?'#D4537E':'#7F77DD';
+        this.style.background=isWk?'#D4537E18':'#7F77DD18';
+        this.style.color=isWk?'#D4537E':'#7F77DD';
+      }
       saveAll();
     });
-    row.querySelector('.prov-nostipend').addEventListener('change',function(){
+
+    card.querySelector('.prov-nostipend').addEventListener('change',function(){
       if(S.providers[name])S.providers[name].noStipend=this.checked;
+      var lbl=this.closest('label');
+      if(lbl){
+        lbl.style.color=this.checked?'var(--tx-err)':'var(--tx3)';
+        lbl.style.borderColor=this.checked?'var(--bd-err)':'var(--bd)';
+        lbl.style.background=this.checked?'var(--bg-warn)':'transparent';
+      }
       saveAll();
     });
-    el.appendChild(row);
+
+    card.querySelector('.prov-roster-btn').addEventListener('click',function(){
+      closeModal();
+      setTimeout(function(){openProviderRoster(name);},50);
+    });
+
+    card.querySelector('.prov-del').addEventListener('click',function(){
+      deleteProvider(name);
+    });
   });
 }
+
+
 function updateProvColor(name,color){if(S.providers[name]){S.providers[name].color=color;renderLegend();renderGrid();saveAll();}}
 function renameProvider(old,nw,sid){
   nw=nw.trim();if(!nw||nw===old)return;
@@ -1277,6 +1341,44 @@ function updCP(eid){
   else{p.innerHTML='<i class="ti ti-check" style="font-size:13px;color:var(--tx-ok)"></i> <strong>'+r.toCreate.length+' new session'+(r.toCreate.length>1?'s':'')+'</strong> will be created'+(r.skipped?' <span style="color:var(--tx3)">\u00b7 '+r.skipped+' skipped</span>':'');if(b){b.disabled=false;b.textContent='Copy '+r.toCreate.length+' session'+(r.toCreate.length>1?'s':'');}}
 }
 function execCopy(eid){var r=calcCopy(eid);if(!r.toCreate.length)return;r.toCreate.forEach(function(e){S.events.push(e);});renderAll();saveAll();closeModal();}
+
+// ── Provider view picker ──────────────────────────────────────────────────
+function openProviderViewPicker(){
+  var entries=Object.entries(S.providers);
+  if(!entries.length){alert('No providers added yet.');return;}
+  var cards=entries.map(function(entry){
+    var name=entry[0],color=entry[1].color;
+    var cnt=S.events.filter(function(e){return e.provider===name&&weekDates(S.weekStart).includes(e.date);}).length;
+    return '<div class="prov-pick-card" data-name="'+esc(name)+'" style="'+
+      'display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;'+
+      'border:1.5px solid var(--bd);cursor:pointer;transition:all .15s;background:var(--bg2)">'+
+      '<div style="width:36px;height:36px;border-radius:50%;background:'+color+';flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px">'+
+        esc(name).charAt(0)+
+      '</div>'+
+      '<div style="flex:1">'+
+        '<div style="font-size:14px;font-weight:600;color:var(--tx)">'+esc(name)+'</div>'+
+        '<div style="font-size:11px;color:var(--tx3)">'+cnt+' session'+(cnt!==1?'s':'')+' this week</div>'+
+      '</div>'+
+      '<div style="font-size:18px;color:var(--tx3)">&#x276F;</div>'+
+    '</div>';
+  }).join('');
+  showModal(
+    '<div style="font-size:15px;font-weight:600;margin-bottom:6px">&#x1F4CB; My Schedule</div>'+
+    '<div style="font-size:12px;color:var(--tx3);margin-bottom:16px">Select your name to view and print your weekly sessions.</div>'+
+    '<div id="prov-pick-list" style="display:flex;flex-direction:column;gap:8px;max-height:400px;overflow-y:auto;margin-bottom:16px">'+cards+'</div>'+
+    cBtn()
+  );
+  setTimeout(function(){
+    document.querySelectorAll('.prov-pick-card').forEach(function(card){
+      card.addEventListener('mouseenter',function(){this.style.borderColor=S.providers[this.dataset.name]&&S.providers[this.dataset.name].color||'var(--bd)';this.style.background='var(--bg)';});
+      card.addEventListener('mouseleave',function(){this.style.borderColor='var(--bd)';this.style.background='var(--bg2)';});
+      card.addEventListener('click',function(){
+        closeModal();
+        setTimeout(function(){openProviderRoster(card.dataset.name);},50);
+      });
+    });
+  },30);
+}
 
 // ── Provider weekly roster (printable) ────────────────────────────────────
 function openProviderRoster(provName){
@@ -1523,9 +1625,14 @@ function exportToStipendExcel(){
 
 
 // ── Stipend Roster — password protected ───────────────────────────────────
-var _stipendAuthed=false; // session memory so they only enter once per tab open
+var _stipendAuthed=false;
+function openStipendPage(){
+  var a=document.createElement('a');
+  a.href='stipends.html';a.target='_blank';a.rel='noopener';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+} // session memory so they only enter once per tab open
 function openStipendAuth(){
-  if(_stipendAuthed){window.open('stipends.html','_blank');return;}
+  if(_stipendAuthed){openStipendPage();return;}
   showModal(
     '<div style="text-align:center;margin-bottom:20px">'+
       '<div style="width:48px;height:48px;border-radius:50%;background:#BA751718;border:2px solid #BA751744;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:22px">&#x1F512;</div>'+
@@ -1557,7 +1664,7 @@ function submitStipendAuth(){
   if(pw===STIPEND_PASS){
     _stipendAuthed=true;
     closeModal();
-    window.open('stipends.html','_blank');
+    setTimeout(openStipendPage, 100);
   } else {
     if(err){err.textContent='Incorrect code. Please try again.';}
     var i=document.getElementById('stipend-pw');
