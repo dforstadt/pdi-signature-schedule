@@ -88,9 +88,7 @@
       <button id="conflict-btn" onclick="openConflictLog()" style="display:none;align-items:center;gap:6px;padding:7px 13px;border-radius:var(--r);border:.5px solid var(--bd-err);background:var(--bg-warn);cursor:pointer;font-size:13px;color:var(--tx-err);font-family:var(--f)"></button>
       <button id="undo-btn" onclick="undo()" disabled style="display:flex;align-items:center;gap:6px;padding:7px 13px;border-radius:var(--r);border:.5px solid var(--bd2);background:transparent;cursor:pointer;font-size:13px;color:var(--tx2);font-family:var(--f);opacity:.35"><i class="ti ti-arrow-back-up" style="font-size:14px"></i> Undo</button>
       <button class="btn" onclick="openProviderViewPicker()" style="border-color:#1D9E7566;color:#1D9E75;background:#1D9E7511"><i class="ti ti-user"></i> My Schedule</button>
-      <button class="btn grn" onclick="exportToExcel()" id="xls-btn"><i class="ti ti-table-export"></i> Excel</button>
       <button class="btn" onclick="openStipendAuth()" id="stipend-btn" style="border-color:#BA751766;color:#BA7517;background:#BA751711"><i class="ti ti-currency-dollar"></i> Stipend Roster</button>
-      <button class="btn" onclick="exportToPDF()" id="pdf-btn" style="background:var(--bg-warn);border-color:var(--bd-err);color:var(--tx-err)"><i class="ti ti-file-type-pdf"></i> PDF</button>
       <button class="btn" onclick="exportToWord()" id="word-btn" style="border-color:#2b579a55;color:#2b579a;background:#2b579a11"><i class="ti ti-file-type-doc"></i> Daily Schedule</button>
       <button class="btn" onclick="openManageProviders()" style="border-color:#7F77DD66;color:#7F77DD;background:#7F77DD11"><i class="ti ti-users"></i> Manage Providers</button>
       <button class="btn" onclick="openShare()"><i class="ti ti-link"></i> Share</button>
@@ -317,6 +315,54 @@ function populateWeekClientSelect(){
     S.clients.map(function(c){return '<option value="'+c.id+'"'+(c.id===cur?' selected':'')+'>'+esc(c.name)+'</option>';}).join('');
   if(cur&&cur!=='all')sel.value=cur;
 }
+
+// ── Modal helpers ─────────────────────────────────────────────────────────────
+var mCtx=null;
+function showModal(html){
+  var mbox=document.getElementById('mbox');
+  var modal=document.getElementById('modal');
+  if(!mbox||!modal)return;
+  mbox.innerHTML=html;
+  modal.style.display='flex';
+}
+function closeModal(){
+  var modal=document.getElementById('modal');
+  if(modal)modal.style.display='none';
+  mCtx=null;
+}
+document.addEventListener('DOMContentLoaded',function(){
+  var modal=document.getElementById('modal');
+  if(modal)modal.addEventListener('click',function(e){if(e.target.id==='modal')closeModal();});
+});
+function cBtn(){return '<button onclick="closeModal()" style="padding:8px 16px;border-radius:var(--r);border:.5px solid var(--bd2);background:transparent;cursor:pointer;font-size:13px;color:var(--tx2);font-family:var(--f)">Cancel</button>';}
+function sBtn(fn,lbl){lbl=lbl||'Save';return '<button onclick="'+fn+'" style="padding:8px 18px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--f)">'+lbl+'</button>';}
+function provDL(id){return '<datalist id="'+id+'">'+Object.keys(S.providers).sort(function(a,b){return a.localeCompare(b);}).map(function(p){return '<option value="'+esc(p)+'">';}).join('')+'</datalist>';}
+function svcDL(id){return '<datalist id="'+id+'">'+S.services.slice().sort(function(a,b){return a.localeCompare(b);}).map(function(s){return '<option value="'+esc(s)+'">';}).join('')+'</datalist>';}
+var durOpts=[[1,'30 min'],[2,'1 hr'],[3,'1.5 hrs'],[4,'2 hrs'],[6,'3 hrs'],[8,'4 hrs']];
+function durFld(val){
+  val=val||2;
+  return '<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:500;color:var(--tx2);margin-bottom:5px">Duration</div>'+
+    '<select id="md">'+durOpts.map(function(o){return '<option value="'+o[0]+'"'+(o[0]===val?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select></div>';
+}
+function onSvcInput(v){var pw=document.getElementById('prov-wrap');if(pw)pw.style.display=isMeal(v)?'none':'';}
+function svcFld(val){
+  val=val||'';
+  return '<div style="margin-bottom:14px">'+
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">'+
+    '<div style="font-size:11px;font-weight:500;color:var(--tx2)">Service type</div>'+
+    '<button onclick="openManageSvc()" style="font-size:10px;color:#7F77DD;background:none;border:none;cursor:pointer;font-family:var(--f);display:flex;align-items:center;gap:3px;padding:0"><i class="ti ti-settings" style="font-size:11px"></i> Manage</button></div>'+
+    '<input type="text" id="ms" value="'+esc(val)+'" placeholder="Type or select..." list="sdl" autocomplete="off" oninput="onSvcInput(this.value)">'+svcDL('sdl')+'</div>';
+}
+function prvFld(val){
+  val=val||'';
+  return '<div id="prov-wrap" style="margin-bottom:14px;display:'+(isMeal(val)?'none':'')+'">' +
+    '<div style="font-size:11px;font-weight:500;color:var(--tx2);margin-bottom:5px">Provider</div>'+
+    '<div style="display:flex;align-items:center;gap:8px">'+
+    '<div id="pdot" style="width:11px;height:11px;border-radius:3px;background:'+(pc(val)||'#ccc')+';flex-shrink:0"></div>'+
+    '<input type="text" id="mp" value="'+esc(val)+'" placeholder="Type or select..." list="pdl" autocomplete="off" oninput="updDot(this.value)" style="flex:1"></div>'+
+    provDL('pdl')+'</div>';
+}
+function updDot(v){var d=document.getElementById('pdot');if(d)d.style.background=pc(v)||'#ccc';}
 
 // ── Render ─────────────────────────────────────────────────────────────────
 function renderAll(){
@@ -595,8 +641,11 @@ function renderGrid(){
       '<label style="position:absolute;left:8px;top:50%;transform:translateY(-50%);cursor:pointer"><input type="checkbox" '+(sel?'checked':'')+' onchange="togSel(\''+client.id+'\',this.checked)" onclick="event.stopPropagation()" style="cursor:pointer;accent-color:#7F77DD;width:14px;height:14px"></label>'+
       '<div onclick="openRenameClient(\''+client.id+'\')" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px;overflow:hidden;max-width:100%">'+
         '<span style="font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(client.name)+'</span>'+
-        (client.program?'<span style="font-size:9px;font-weight:600;padding:1px 5px;border-radius:10px;background:'+progColor+'22;color:'+progColor+'">'+client.program+'</span>':'')+
-        '<span style="font-size:9px;opacity:.4">click to edit</span>'+
+        '<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;background:'+progColor+'22;color:'+progColor+';cursor:pointer" title="Click to edit program & dates">'+
+          (client.program||'No program')+
+        '</span>'+
+        (client.startDate?'<span style="font-size:8px;color:var(--tx-ok)">Adm: '+client.startDate+'</span>':'')+
+        (client.endDate?'<span style="font-size:8px;color:var(--tx-err)">Dis: '+client.endDate+'</span>':'')+
       '</div>'+
       '<button onclick="event.stopPropagation();removeClient(\''+client.id+'\')" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--tx3);font-size:15px;padding:3px">&#x2715;</button>'+
     '</div>';
@@ -750,10 +799,7 @@ function buildProvModal(){
         '<div style="font-size:13px;font-weight:600;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(name)+'</div>'+
         '<div style="font-size:10px;color:var(--tx3);margin-top:1px">'+cnt+' session'+(cnt!==1?'s':'')+(noSti?' &middot; no stipend':'')+'</div>'+
       '</div>'+
-      '<select class="pc-type" style="font-size:11px;padding:4px 8px;width:auto;border-radius:20px;border:1.5px solid '+(ptype==='weekly'?'#D4537E':'#7F77DD')+';background:'+(ptype==='weekly'?'#D4537E15':'#7F77DD15')+';color:'+(ptype==='weekly'?'#D4537E':'#7F77DD')+';font-family:var(--f)">'+
-        '<option value="session"'+(ptype==='session'?' selected':'')+'>Session ($150/hr)</option>'+
-        '<option value="weekly"'+(ptype==='weekly'?' selected':'')+'>Weekly ($250/wk)</option>'+
-      '</select>'+
+
       '<button class="pc-del" style="padding:5px 10px;border-radius:var(--r);border:.5px solid var(--bd-err);background:var(--bg-warn);cursor:pointer;font-size:11px;font-weight:500;color:var(--tx-err);font-family:var(--f);white-space:nowrap;flex-shrink:0">Remove</button>'+
     '</div>';
   }).join('');
@@ -781,10 +827,7 @@ function buildProvModal(){
         if(S.providers[name])S.providers[name].color=this.value;
         renderLegend();saveAll();
       });
-      row.querySelector('.pc-type').addEventListener('change',function(){
-        if(S.providers[name])S.providers[name].type=this.value;
-        saveAll();buildProvModal();
-      });
+
       row.querySelector('.pc-del').addEventListener('click',function(){
         deleteProvider(name);
       });
@@ -1485,36 +1528,61 @@ function exportToWord(){
   var btn=document.getElementById('word-btn');if(btn){btn.innerHTML='...';btn.disabled=true;}
   try{
     var selIds=[...S.selClients];
-    var selClients=selIds.length>0?S.clients.filter(function(c){return selIds.includes(c.id);}):S.clients;
-    var de=S.events.filter(function(e){return e.date===S.selectedDate;});
+    var today=S.selectedDate;
+    // Only active (not discharged, already admitted) clients on selected date
+    var activeClients=S.clients.filter(function(c){
+      if(selIds.length>0&&!selIds.includes(c.id))return false;
+      var afterStart=!c.startDate||today>=c.startDate;
+      var beforeEnd=!c.endDate||today<=c.endDate;
+      return afterStart&&beforeEnd;
+    });
+    var de=S.events.filter(function(e){return e.date===today;});
     var pages='';
-    selClients.forEach(function(client,ci){
+    activeClients.forEach(function(client,ci){
       var evs=de.filter(function(e){return e.clientId===client.id;}).sort(function(a,b){return a.slotIndex-b.slotIndex;});
       var pb=ci>0?'<p style="page-break-before:always;font-size:1pt;margin:0">&nbsp;</p>':'';
+      var prog=client.program||'PDI';
+      var isPDI=prog==='PDI';
+      var logoB64=isPDI?LOGO_PDI_DATA:LOGO_PDF_DATA;
+      var progColor=prog==='PDI'?'#378ADD':prog==='Signature'?'#7F77DD':'#1D9E75';
+      var progLabel=prog==='Both'?'PDI → Signature':prog;
       var entries='';
-      if(!evs.length){entries='<p style="font-size:10pt;color:#9ca3af;font-style:italic;margin:0 0 8pt 0">No services scheduled for this day.</p>';}
-      else{evs.forEach(function(ev){
-        var es=SLOTS[ev.slotIndex+ev.duration];var ts=es?(SLOTS[ev.slotIndex].label+' &ndash; '+es.label):SLOTS[ev.slotIndex].label;
-        entries+='<table style="border-collapse:collapse;width:100%;margin-bottom:11pt"><tr>'+
-          '<td style="width:18pt;vertical-align:top;padding:1pt 0 0 0;text-align:center"><p style="margin:0;font-size:9pt;color:#111827">&#9679;</p></td>'+
-          '<td style="vertical-align:top;padding:0"><p style="margin:0;font-size:10pt;color:#111827;font-weight:bold">'+ev.service+
-          (!isMeal(ev.service)?' &nbsp;<span style="font-weight:normal;color:#6b7280">&mdash; '+ev.provider+'</span>':'')+
-          (ev.flagged?' <span style="color:#E24B4A;font-size:8pt">\u26A0 Conflict reported</span>':'')+
-          '</p><p style="margin:2pt 0 0 0;font-size:9pt;color:#9ca3af">'+ts+'</p></td></tr></table>';
-      });}
+      if(!evs.length){
+        entries='<p style="font-size:10pt;color:#9ca3af;font-style:italic;margin:0 0 8pt 0">No services scheduled for this day.</p>';
+      } else {
+        evs.forEach(function(ev){
+          var es=SLOTS[ev.slotIndex+ev.duration];
+          var ts=es?(SLOTS[ev.slotIndex].label+' &ndash; '+es.label):SLOTS[ev.slotIndex].label;
+          entries+='<table style="border-collapse:collapse;width:100%;margin-bottom:11pt"><tr>'+
+            '<td style="width:18pt;vertical-align:top;padding:1pt 0 0 0;text-align:center"><p style="margin:0;font-size:9pt;color:#111827">&#9679;</p></td>'+
+            '<td style="vertical-align:top;padding:0">'+
+            '<p style="margin:0;font-size:10pt;color:#111827;font-weight:bold">'+ev.service+
+            (!isMeal(ev.service)?' &nbsp;<span style="font-weight:normal;color:#6b7280">&mdash; '+ev.provider+'</span>':'')+
+            '</p><p style="margin:2pt 0 0 0;font-size:9pt;color:#9ca3af">'+ts+'</p></td></tr></table>';
+        });
+      }
       pages+=pb+
-        '<p style="font-size:8pt;color:#9ca3af;letter-spacing:2pt;text-transform:uppercase;margin:0 0 2pt 0">'+S.title+'</p>'+
-        '<p style="font-size:15pt;font-weight:bold;color:#111827;margin:0 0 1pt 0">'+client.name+'</p>'+
-        '<p style="font-size:9.5pt;color:#6b7280;margin:0 0 18pt 0">'+fmtFull(S.selectedDate)+'</p>'+
-        '<p style="border-bottom:1pt solid #e5e7eb;margin:0 0 16pt 0"></p>'+entries+
+        '<img src="'+logoB64+'" style="height:42pt;object-fit:contain;margin-bottom:8pt;display:block">'+
+        '<p style="font-size:15pt;font-weight:bold;color:#111827;margin:0 0 4pt 0">'+client.name+'</p>'+
+        '<p style="margin:0 0 2pt 0"><span style="font-size:8.5pt;font-weight:bold;color:'+progColor+';background:'+progColor+'22;padding:1pt 8pt;border-radius:3pt">'+progLabel+'</span>'+
+        (client.startDate?' &nbsp;<span style="font-size:8pt;color:#6b7280">Admitted: '+client.startDate+'</span>':'')+
+        (client.endDate?' &nbsp;<span style="font-size:8pt;color:#b91c1c">Discharged: '+client.endDate+'</span>':'')+
+        '</p>'+
+        '<p style="font-size:9.5pt;color:#6b7280;margin:0 0 16pt 0">'+fmtFull(today)+'</p>'+
+        '<p style="border-bottom:1pt solid #e5e7eb;margin:0 0 16pt 0"></p>'+
+        entries+
         '<p style="font-size:7.5pt;color:#d1d5db;text-align:center;margin:32pt 0 0 0">'+S.title+' &mdash; Confidential &mdash; '+new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})+'</p>';
     });
-    var html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>'+S.title+'</title><style>@page{margin:.9in 1.1in .9in 1.1in;}body{font-family:"Roboto","Calibri",sans-serif;font-size:11pt;color:#111827;margin:.9in 1.1in;}p{margin:0;font-family:"Roboto","Calibri",sans-serif;}table{border-collapse:collapse;font-family:"Roboto","Calibri",sans-serif;}</style></head><body>'+pages+'</body></html>';
-    var blob=new Blob(['\ufeff'+html],{type:'application/msword'});
+    if(!pages){alert('No active clients on '+today+'.');return;}
+    var html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">'+
+      '<head><meta charset="utf-8"><title>'+S.title+'</title>'+
+      '<style>@page{margin:.9in 1.1in .9in 1.1in;}body{font-family:"Roboto","Calibri",sans-serif;font-size:11pt;color:#111827;}p{margin:0;}table{border-collapse:collapse;}</style>'+
+      '</head><body>'+pages+'</body></html>';
+    var blob=new Blob(['﻿'+html],{type:'application/msword'});
     var url=URL.createObjectURL(blob);
-    var a=document.createElement('a');a.href=url;a.download='Schedule_'+S.selectedDate.replace(/-/g,'')+'.doc';
+    var a=document.createElement('a');a.href=url;a.download='Schedule_'+today.replace(/-/g,'')+'.doc';
     document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
-  }catch(err){alert('Word export failed: '+err.message);}
+  }catch(err){alert('Export failed: '+err.message);console.error(err);}
   finally{if(btn){btn.innerHTML='<i class="ti ti-file-type-doc"></i> Daily Client Schedule';btn.disabled=false;}}
 }
 
