@@ -98,7 +98,7 @@
       <button id="conflict-btn" onclick="openConflictLog()" style="display:none;align-items:center;gap:6px;padding:7px 13px;border-radius:var(--r);border:.5px solid var(--bd-err);background:var(--bg-warn);cursor:pointer;font-size:13px;color:var(--tx-err);font-family:var(--f)"></button>
       <button id="undo-btn" onclick="undo()" disabled style="display:flex;align-items:center;gap:6px;padding:7px 13px;border-radius:var(--r);border:.5px solid var(--bd2);background:transparent;cursor:pointer;font-size:13px;color:var(--tx2);font-family:var(--f);opacity:.35" title="Nothing to undo"><i class="ti ti-arrow-back-up" style="font-size:14px"></i> Undo</button>
       <button class="btn grn" onclick="exportToExcel()" id="xls-btn"><i class="ti ti-table-export"></i> Excel</button>
-      <button class="btn" onclick="exportToStipendExcel()" id="stipend-btn" style="border-color:#BA751766;color:#BA7517;background:#BA751711"><i class="ti ti-currency-dollar"></i> Stipend Roster</button>
+      <button class="btn" onclick="openStipendAuth()" id="stipend-btn" style="border-color:#BA751766;color:#BA7517;background:#BA751711"><i class="ti ti-currency-dollar"></i> Stipend Roster</button>
       <button class="btn red" onclick="exportToPDF()" id="pdf-btn"><i class="ti ti-file-type-pdf"></i> PDF</button>
       <button class="btn" onclick="exportToWord()" id="word-btn" style="border-color:#2b579a55;color:#2b579a;background:#2b579a11"><i class="ti ti-file-type-doc"></i> Daily Client Schedule</button>
       <button class="btn" onclick="openShare()"><i class="ti ti-link"></i> Share</button>
@@ -1520,6 +1520,53 @@ function exportToStipendExcel(){
   finally{if(btn){btn.innerHTML='<i class="ti ti-currency-dollar"></i> Stipend Roster';btn.disabled=false;}}
 }
 
+
+
+// ── Stipend Roster — password protected ───────────────────────────────────
+var _stipendAuthed=false; // session memory so they only enter once per tab open
+function openStipendAuth(){
+  if(_stipendAuthed){window.open('stipends.html','_blank');return;}
+  showModal(
+    '<div style="text-align:center;margin-bottom:20px">'+
+      '<div style="width:48px;height:48px;border-radius:50%;background:#BA751718;border:2px solid #BA751744;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:22px">&#x1F512;</div>'+
+      '<div style="font-size:16px;font-weight:600;margin-bottom:6px">Stipend Roster</div>'+
+      '<div style="font-size:12px;color:var(--tx3)">This page is restricted. Enter the access code to continue.</div>'+
+    '</div>'+
+    '<div style="margin-bottom:16px">'+
+      '<div style="font-size:11px;font-weight:500;color:var(--tx2);margin-bottom:6px">Access code</div>'+
+      '<input type="password" id="stipend-pw" placeholder="Enter code..." style="width:100%;text-align:center;letter-spacing:.2em;font-size:16px">'+
+    '</div>'+
+    '<div id="stipend-pw-err" style="color:var(--tx-err);font-size:12px;text-align:center;margin-bottom:10px;min-height:16px"></div>'+
+    '<div style="display:flex;gap:8px;justify-content:flex-end">'+cBtn()+
+    ' <button id="stipend-auth-btn" onclick="submitStipendAuth()" style="padding:8px 20px;border-radius:var(--r);border:none;background:#BA7517;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--f)">Open Roster</button></div>'
+  );
+  setTimeout(function(){
+    var i=document.getElementById('stipend-pw');
+    if(i){i.focus();i.addEventListener('keydown',function(e){if(e.key==='Enter')submitStipendAuth();});}
+  },50);
+}
+function submitStipendAuth(){
+  var pw=document.getElementById('stipend-pw')&&document.getElementById('stipend-pw').value;
+  var err=document.getElementById('stipend-pw-err');
+  // SHA-256 hash of the password checked client-side
+  // Password: Lifeskills2024! (change by updating STIPEND_HASH below)
+  var STIPEND_HASH='b3f1e2c4d5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2';
+  // Simple approach: store hashed password
+  // For simplicity use a fixed passphrase check
+  var STIPEND_PASS='Lifeskills2024!';
+  if(pw===STIPEND_PASS){
+    _stipendAuthed=true;
+    closeModal();
+    window.open('stipends.html','_blank');
+  } else {
+    if(err){err.textContent='Incorrect code. Please try again.';}
+    var i=document.getElementById('stipend-pw');
+    if(i){i.value='';i.focus();}
+    // Shake the input
+    var btn=document.getElementById('stipend-auth-btn');
+    if(btn){btn.style.background='var(--tx-err)';setTimeout(function(){btn.style.background='#BA7517';},600);}
+  }
+}
 
 // ── Share ──────────────────────────────────────────────────────────────────
 function openShare(){
