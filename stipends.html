@@ -132,6 +132,10 @@ td.money.zero{color:var(--tx3);}
 </div>
 
 <!-- FILTERS -->
+<div style="background:#fffbeb;border-bottom:1px solid #fde68a;padding:10px 32px;font-size:12px;color:#92400e;display:flex;align-items:center;gap:10px">
+  <span style="font-size:16px">&#x2139;&#xFE0F;</span>
+  <span><strong>Stipend rules:</strong> Providers marked <strong>No Stipend</strong> are excluded. Providers set to <strong>Weekly</strong> type always receive the PDI flat stipend ($250/episode) plus the Signature weekly stipend ($250/wk). Session-type providers receive PDI flat stipend only when they have sessions, plus Signature session fees ($150/hr). Configure in <strong>Manage Providers</strong> on the calendar.</span>
+</div>
 <div class="filters">
   <label>Track:</label>
   <select id="flt-track" onchange="render()">
@@ -367,14 +371,22 @@ function computeStipends(){
 
       // ── PDI ────────────────────────────────────────────────────────────
       if(cProg==='PDI'||cProg==='Both'){
-        if(fltTrack==='Signature')return; // filtered out
+        if(fltTrack==='Signature')return;
 
-        var pdiProvs=new Set(cEvs.map(function(e){return e.provider;}).filter(function(p){return !noStipend(p);}));
+        // Build eligible PDI providers:
+        // 1. Weekly-type providers (Ockman/Gus/Nicole) ALWAYS get PDI stipend once per episode
+        // 2. Session-type providers only if they have sessions with this client
+        var pdiProvs=new Set();
+        cEvs.forEach(function(ev){if(!noStipend(ev.provider))pdiProvs.add(ev.provider);});
+        Object.keys(DATA.providers).forEach(function(prov){
+          if(!noStipend(prov)&&provType(prov)==='weekly')pdiProvs.add(prov);
+        });
+
         pdiProvs.forEach(function(prov){
           var key=cid+':'+prov;
           var already=!!pdiCounted[key];
           var counted=already?0:250;
-          var note=already?'PDI per-episode stipend \u2014 already counted in earlier week of this episode.':'';
+          var note=already?'PDI per-episode stipend — already counted in earlier week of this episode.':'';
           if(!already)pdiCounted[key]=true;
           wPDICost+=counted;
           lineItems.push({week:wLbl,wStart:wStart,client:cName,track:'PDI',staff:prov,type:'Flat Stipend',sessHrs:'',rate:'',amount:250,counted:counted,notes:note});
@@ -382,7 +394,6 @@ function computeStipends(){
           if(!pdiStiByStaff[prov][wStart])pdiStiByStaff[prov][wStart]=0;
           pdiStiByStaff[prov][wStart]+=counted;
           pdiStaffSet[prov]=true;
-          // by client
           if(counted>0){
             if(!byClientPDI[cid].staffAmt[prov])byClientPDI[cid].staffAmt[prov]=0;
             byClientPDI[cid].staffAmt[prov]+=counted;
