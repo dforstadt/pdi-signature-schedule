@@ -880,6 +880,21 @@ function openEditModal(eid){
     });}
   },10);
 }
+function setStatus(val){
+  var grp=document.getElementById('status-btns');
+  if(!grp)return;
+  grp.dataset.status=val;
+  var colors={scheduled:'#7F77DD',completed:'#1D9E75',cancelled:'#E24B4A',rescheduled:'#D85A30'};
+  grp.querySelectorAll('button[data-st]').forEach(function(btn){
+    var st=btn.dataset.st,on=st===val,c=colors[st];
+    btn.style.borderColor=on?c:'var(--bd)';
+    btn.style.background=on?(c+'18'):'transparent';
+    btn.style.color=on?c:'var(--tx3)';
+  });
+  var noteWrap=document.getElementById('status-note-wrap');
+  if(noteWrap)noteWrap.style.display=(val==='cancelled'||val==='rescheduled')?'block':'none';
+}
+
 function submitEdit(eid){
   var svc=document.getElementById('ms')&&document.getElementById('ms').value.trim();
   var prov=(document.getElementById('mp')&&document.getElementById('mp').value||'').trim();
