@@ -1719,9 +1719,8 @@ function exportToStipendExcel(){
 
 
 
-</script>
-</body>
-</html>function openManageProviders(){
+
+function openManageProviders(){
   var m=document.getElementById('mbox'),modal=document.getElementById('modal');
   if(!m||!modal)return;
   buildProvModal();modal.style.display='flex';
@@ -1754,7 +1753,7 @@ function buildProvModal(){
       '<div style="font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:10px">Add provider</div>'+
       '<div style="display:flex;gap:8px;align-items:center">'+
         '<input type="color" id="np-col" value="#7F77DD" style="width:34px;height:34px;flex-shrink:0;border:none;border-radius:50%;cursor:pointer;padding:0">'+
-        '<input type="text" id="np-name" placeholder="Provider name..." style="flex:1" onkeydown="if(event.key==='Enter')addProvider()">'+
+        '<input type="text" id="np-name" placeholder="Provider name..." style="flex:1" >'+
         '<button onclick="addProvider()" style="padding:8px 16px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--f);white-space:nowrap">+ Add</button>'+
       '</div>'+
     '</div>'+
@@ -1818,4 +1817,6 @@ function saveStipendType(){
   }
   saveAll();buildProvModal();
 }
-
+</script>
+</body>
+</html>
