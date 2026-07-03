@@ -657,7 +657,7 @@ function renderGrid(){
       var cov=ce.some(function(e){return si>=e.slotIndex&&si<e.slotIndex+e.duration;});
       var oh=s.m===0,bd='border-bottom:'+(oh?'.5px solid var(--bd)':'.5px dashed var(--bd)');
       if(cov){h+='<div style="height:'+SH+'px;'+bd+'"></div>';}
-      else{h+='<div class="slot" data-cid="'+client.id+'" data-si="'+si+'" style="'+bd+';'+(we?'background:rgba(254,242,242,.3)':'')+'"><span class="ph">+</span></div>';}
+      else{h+='<div class="slot" onclick="handleSlotClick(this)" data-cid="'+client.id+'" data-si="'+si+'" style="'+bd+';'+(we?'background:rgba(254,242,242,.3)':'')+'"><span class="ph">+</span></div>';}
     });
     bgE.forEach(function(ev){
       h+='<div style="position:absolute;top:'+(ev.slotIndex*SH+2)+'px;left:3px;right:3px;height:'+(ev.duration*SH-4)+'px;background:var(--bg2);border:.5px solid var(--bd);border-radius:var(--r);z-index:1;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:4px 8px"><span style="font-size:10px;color:var(--tx3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(ev.provider)+'</span></div>';
@@ -685,6 +685,33 @@ function renderGrid(){
   grid.innerHTML=h;attachListeners();
 }
 
+function handleSlotClick(cell){
+  if(S.drag)return;
+  var cid=cell.dataset.cid, si=+cell.dataset.si;
+  mCtx={type:'add',cid:cid,si:si};
+  showModal(
+    '<div style="font-size:15px;font-weight:500;margin-bottom:4px">Add service</div>'+
+    '<div style="font-size:11px;color:var(--tx3);margin-bottom:18px">'+fmtFull(S.selectedDate)+'</div>'+
+    svcFld()+''+prvFld('')+''+durFld(2)+
+    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px">'+cBtn()+
+    ' <button id="add-svc-btn" style="padding:8px 18px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--f)">Add service</button></div>'
+  );
+  setTimeout(function(){
+    var btn=document.getElementById('add-svc-btn');
+    if(btn)btn.addEventListener('click',function(){
+      var svc=document.getElementById('ms')&&document.getElementById('ms').value.trim();
+      var prov=(document.getElementById('mp')&&document.getElementById('mp').value||'').trim();
+      var dur=+(document.getElementById('md')&&document.getElementById('md').value)||2;
+      if(!svc){alert('Please enter a service name.');return;}
+      if(!isMeal(svc)&&!prov){alert('Please select a provider.');return;}
+      mkProv(prov);
+      S.events.push({id:nid(),date:S.selectedDate,clientId:mCtx.cid,slotIndex:mCtx.si,
+        duration:dur,service:svc,provider:prov,flagged:false,status:'scheduled',statusNote:''});
+      renderAll();saveAll();closeModal();
+    });
+    var ms=document.getElementById('ms');if(ms)ms.focus();
+  },30);
+}
 function attachListeners(){
   document.querySelectorAll('.ecard').forEach(function(card){
     var wasDrag=false;card.setAttribute('draggable','true');
@@ -693,34 +720,6 @@ function attachListeners(){
     card.addEventListener('click',function(e){if(wasDrag)return;e.stopPropagation();openEditModal(card.dataset.eid);});
   });
   document.querySelectorAll('.slot').forEach(function(cell){
-    (function(cid,si){
-      cell.addEventListener('click',function(){
-        if(S.drag)return;
-        mCtx={type:'add',cid:cid,si:si};
-        showModal(
-          '<div style="font-size:15px;font-weight:500;margin-bottom:4px">Add service</div>'+
-          '<div style="font-size:11px;color:var(--tx3);margin-bottom:18px">'+fmtFull(S.selectedDate)+'</div>'+
-          svcFld()+''+prvFld('')+''+durFld(2)+
-          '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px">'+cBtn()+
-          ' <button id="add-svc-btn" style="padding:8px 18px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--f)">Add service</button></div>'
-        );
-        setTimeout(function(){
-          var btn=document.getElementById('add-svc-btn');
-          if(btn)btn.addEventListener('click',function(){
-            var svc=document.getElementById('ms')&&document.getElementById('ms').value.trim();
-            var prov=(document.getElementById('mp')&&document.getElementById('mp').value||'').trim();
-            var dur=+(document.getElementById('md')&&document.getElementById('md').value)||2;
-            if(!svc){alert('Please enter a service name.');return;}
-            if(!isMeal(svc)&&!prov){alert('Please select a provider.');return;}
-            mkProv(prov);
-            S.events.push({id:nid(),date:S.selectedDate,clientId:mCtx.cid,slotIndex:mCtx.si,
-              duration:dur,service:svc,provider:prov,flagged:false,status:'scheduled',statusNote:''});
-            renderAll();saveAll();closeModal();
-          });
-          var ms=document.getElementById('ms');if(ms)ms.focus();
-        },30);
-      });
-    })(cell.dataset.cid,+cell.dataset.si);
     cell.addEventListener('dragenter',function(e){e.preventDefault();cell.classList.add('drop-target');});
     cell.addEventListener('dragover',function(e){e.preventDefault();e.dataTransfer.dropEffect='move';cell.classList.add('drop-target');});
     cell.addEventListener('dragleave',function(){cell.classList.remove('drop-target');});
@@ -1241,6 +1240,80 @@ function submitStipendAuth(){
 }
 
 // ── Share ──────────────────────────────────────────────────────────────────
+function openProviderViewPicker(){
+  var entries=Object.entries(S.providers);
+  if(!entries.length){alert('No providers added yet.');return;}
+  var wk=weekDates(S.weekStart);
+  showModal(
+    '<div style="font-size:15px;font-weight:600;margin-bottom:6px">My Schedule</div>'+
+    '<div style="font-size:12px;color:var(--tx3);margin-bottom:16px">Select your name to view and print your weekly sessions for '+fmtRange(S.weekStart)+'.</div>'+
+    '<div id="prov-pick-list" style="display:flex;flex-direction:column;gap:8px;max-height:380px;overflow-y:auto;margin-bottom:16px"></div>'+
+    cBtn()
+  );
+  setTimeout(function(){
+    var list=document.getElementById('prov-pick-list');if(!list)return;
+    entries.forEach(function(entry){
+      var name=entry[0],color=entry[1].color||'#888';
+      var cnt=S.events.filter(function(e){return e.provider===name&&wk.includes(e.date);}).length;
+      var card=document.createElement('div');
+      card.style.cssText='display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:12px;border:1.5px solid var(--bd);cursor:pointer;background:var(--bg2);transition:all .15s';
+      card.innerHTML='<div style="width:44px;height:44px;border-radius:50%;background:'+color+';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px;flex-shrink:0">'+name.charAt(0).toUpperCase()+'</div>'+
+        '<div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--tx)">'+esc(name)+'</div>'+
+        '<div style="font-size:11px;color:var(--tx3)">'+cnt+' session'+(cnt!==1?'s':'')+' this week</div></div>'+
+        '<div style="font-size:20px;color:var(--tx3)">❯</div>';
+      card.addEventListener('mouseenter',function(){card.style.borderColor=color;card.style.background='var(--bg)';});
+      card.addEventListener('mouseleave',function(){card.style.borderColor='var(--bd)';card.style.background='var(--bg2)';});
+      card.addEventListener('click',function(){closeModal();setTimeout(function(){openProviderRoster(name);},60);});
+      list.appendChild(card);
+    });
+  },30);
+}
+function openProviderRoster(provName){
+  var wk=weekDates(S.weekStart);
+  var wEvs=S.events.filter(function(e){return e.provider===provName&&wk.includes(e.date);});
+  var color=pc(provName);
+  var win=window.open('','_blank','width=820,height=900,scrollbars=yes');
+  if(!win){alert('Please allow popups for this site.');return;}
+  var pg='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+provName+' Weekly Schedule</title>';
+  pg+='<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Calibri,Arial,sans-serif;padding:32px;color:#111;background:#fafafa}';
+  pg+='.hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid '+color+'}';
+  pg+='.avatar{width:54px;height:54px;border-radius:50%;background:'+color+';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:22px;flex-shrink:0}';
+  pg+='.nm{font-size:24px;font-weight:700;color:'+color+';margin:0}.sub{font-size:13px;color:#666;margin-top:4px}';
+  pg+='.print-btn{padding:10px 20px;border-radius:8px;border:none;background:'+color+';color:#fff;cursor:pointer;font-size:14px;font-weight:600}';
+  pg+='.day{margin-bottom:20px;border-radius:10px;overflow:hidden;border:1px solid #e5e7eb}';
+  pg+='.dh{font-size:13px;font-weight:700;padding:10px 14px;background:'+color+';color:#fff}';
+  pg+='.db{background:#fff;padding:8px}';
+  pg+='.sess{display:flex;gap:12px;padding:10px 12px;border-radius:8px;border:1px solid #f3f4f6;margin-bottom:8px;background:#fafafa;align-items:flex-start}';
+  pg+='.sess:last-child{margin-bottom:0}.dot{width:10px;height:10px;border-radius:50%;background:'+color+';flex-shrink:0;margin-top:5px}';
+  pg+='.sv{font-size:14px;font-weight:600;color:#111}.cl{font-size:12px;color:#6b7280;margin-top:2px}.tm{font-size:12px;color:#9ca3af;margin-top:3px}';
+  pg+='.empty{padding:16px;text-align:center;color:#9ca3af;font-size:13px;font-style:italic}';
+  pg+='.footer{margin-top:28px;padding-top:12px;border-top:1px solid #e5e7eb;font-size:11px;color:#9ca3af;text-align:center}';
+  pg+='@media print{.print-btn{display:none}}</style></head><body>';
+  var total=0;
+  pg+='<div class="hdr"><div style="display:flex;align-items:center;gap:14px"><div class="avatar">'+provName.charAt(0)+'</div><div><div class="nm">'+provName+'</div><div class="sub">Weekly Schedule &mdash; '+fmtRange(S.weekStart)+'</div></div></div>';
+  pg+='<button class="print-btn" onclick="window.print()">Print / Save PDF</button></div>';
+  wk.forEach(function(date){
+    var dayEvs=wEvs.filter(function(e){return e.date===date;}).sort(function(a,b){return a.slotIndex-b.slotIndex;});
+    var d=fromISO(date);
+    var isWkndDay=d.getDay()===0||d.getDay()===6;
+    pg+='<div class="day"><div class="dh" style="background:'+(isWkndDay?'#94a3b8':color)+'">'+d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})+'</div><div class="db">';
+    if(!dayEvs.length){pg+='<div class="empty">No sessions</div>';}
+    else{dayEvs.forEach(function(ev){
+      var client=S.clients.find(function(c){return c.id===ev.clientId;});
+      var es=SLOTS[ev.slotIndex+ev.duration];
+      var ts=es?(SLOTS[ev.slotIndex].label+' &ndash; '+es.label):SLOTS[ev.slotIndex].label;
+      pg+='<div class="sess"><div class="dot"></div><div><div class="sv">'+ev.service+'</div>';
+      if(client)pg+='<div class="cl">'+client.name+(client.program?' &middot; '+client.program:'')+'</div>';
+      pg+='<div class="tm">'+ts+' &middot; '+(ev.duration*30)+' min</div></div></div>';
+      total++;
+    });}
+    pg+='</div></div>';
+  });
+  pg+='<div class="footer">'+total+' session'+(total!==1?'s':'')+' this week &mdash; Printed '+new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})+'</div>';
+  pg+='</body></html>';
+  win.document.write(pg);win.document.close();
+}
+
 function openShare(){
   showModal(
     '<div style="font-size:15px;font-weight:500;margin-bottom:10px">Share schedule</div>'+
