@@ -101,6 +101,17 @@ td.money.zero{color:var(--tx3);}
 .empty{padding:60px;text-align:center;color:var(--tx3);}
 .spin{display:inline-block;width:24px;height:24px;border:2.5px solid var(--bd2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
+.approve-btn{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;border:1.5px solid var(--bd2);background:transparent;cursor:pointer;font-size:11px;font-weight:600;font-family:var(--f);color:var(--tx3);transition:all .15s;}
+.approve-btn.approved{background:#1D9E7518;color:var(--green);border-color:#1D9E7566;}
+.approve-btn:hover:not(.approved){background:var(--bg2);}
+.excel-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--r,8px);border:1.5px solid #1D9E7566;background:#1D9E7511;cursor:pointer;font-size:13px;font-weight:600;font-family:var(--f);color:var(--green,#1D9E75);transition:all .15s;}
+.excel-btn:hover{background:#1D9E7522;}
+.staff-week-tbl{width:100%;border-collapse:collapse;font-size:13px;}
+.staff-week-tbl thead th{background:#0d1117;color:#fff;padding:10px 14px;text-align:left;font-size:11px;font-weight:500;letter-spacing:.04em;white-space:nowrap;}
+.staff-week-tbl tbody td{padding:9px 14px;border-bottom:.5px solid var(--bd);color:var(--tx2);vertical-align:middle;}
+.staff-week-tbl tbody tr:nth-child(even) td{background:var(--bg);}
+.staff-week-tbl .total-row td{background:#0d1117;color:#fff;font-weight:600;border-bottom:none;}
+.staff-week-tbl .total-row td.money{color:#86efac;}
 @media print{.hdr,.nav,.filters{position:static!important;}.nav-tab:not(.active){display:none;}}
 </style>
 </head>
@@ -129,6 +140,7 @@ td.money.zero{color:var(--tx3);}
   <div class="nav-tab" onclick="showTab('lineitems')">Line Items</div>
   <div class="nav-tab" onclick="showTab('roster')">Weekly Staff Roster</div>
   <div class="nav-tab" onclick="showTab('byclient')">By Client</div>
+  <div class="nav-tab" onclick="showTab('bystaff')">By Therapist by Week</div>
 </div>
 
 <!-- FILTERS -->
@@ -208,6 +220,10 @@ td.money.zero{color:var(--tx3);}
   <div id="tab-byclient" class="hidden">
     <div id="byclient-content"></div>
   </div>
+
+  <div id="tab-bystaff" class="hidden">
+    <div id="bystaff-content"></div>
+  </div>
 </div>
 
 <script>
@@ -243,7 +259,7 @@ FB.on('value',function(snap){
   document.getElementById('live-dot').className='live-dot on';
   document.getElementById('live-lbl').textContent='Live';
   document.getElementById('loading').classList.add('hidden');
-  render();
+  loadApprovals(function(){render();});
 },function(){
   document.getElementById('live-dot').className='live-dot off';
   document.getElementById('live-lbl').textContent='Offline';
@@ -271,7 +287,7 @@ function showTab(tab){
   currentTab=tab;
   document.querySelectorAll('.nav-tab').forEach(function(el){el.classList.remove('active');});
   document.querySelectorAll('[id^="tab-"]').forEach(function(el){el.classList.add('hidden');});
-  var tabs=['summary','lineitems','roster','byclient'];
+  var tabs=['summary','lineitems','roster','byclient','bystaff'];
   var idx=tabs.indexOf(tab);
   if(idx>-1){document.querySelectorAll('.nav-tab')[idx].classList.add('active');}
   var el=document.getElementById('tab-'+tab);
@@ -438,8 +454,151 @@ function computeStipends(){
 }
 
 // ── RENDER ─────────────────────────────────────────────────────────────────
+var approvals={};// key: 'staff::weekStart' -> true/false
+
+function saveApprovals(){
+  try{firebase.database().ref('schedule_v3/stipend_approvals').set(approvals);}catch(e){}
+}
+function loadApprovals(cb){
+  try{firebase.database().ref('schedule_v3/stipend_approvals').once('value',function(s){
+    approvals=s.val()||{};cb();
+  });}catch(e){cb();}
+}
+function toggleApproval(key){
+  approvals[key]=!approvals[key];
+  saveApprovals();
+  var btn=document.getElementById('apv-'+key.replace(/[^a-zA-Z0-9]/g,'_'));
+  if(btn){
+    btn.className='approve-btn'+(approvals[key]?' approved':'');
+    btn.innerHTML=approvals[key]?'&#x2713; Approved':'Approve';
+  }
+}
+
+function renderByStaff(D){
+  var el=document.getElementById('bystaff-content');if(!el)return;
+
+  // Build staff × week matrix from lineItems
+  var staffMap={};// staff -> {week -> {sigHrs, sigAmt, pdiAmt, total}}
+  D.lineItems.forEach(function(r){
+    if(!staffMap[r.staff])staffMap[r.staff]={};
+    var wk=r.week;
+    if(!staffMap[r.staff][wk])staffMap[r.staff][wk]={sigHrs:0,sigAmt:0,pdiAmt:0,total:0};
+    if(r.track==='Signature'){
+      if(r.type==='Session'){staffMap[r.staff][wk].sigHrs+=r.sessHrs||0;staffMap[r.staff][wk].sigAmt+=r.amount||0;}
+      if(r.type==='Weekly stipend'){staffMap[r.staff][wk].sigAmt+=r.amount||0;}
+    }
+    if(r.track==='PDI'){staffMap[r.staff][wk].pdiAmt+=r.amount||0;}
+    staffMap[r.staff][wk].total=(staffMap[r.staff][wk].sigAmt||0)+(staffMap[r.staff][wk].pdiAmt||0);
+  });
+
+  var staffList=Object.keys(staffMap).sort();
+  var weeks=D.sortedWeeks.slice().sort();
+
+  function fmt$(v){return v?'$'+v.toFixed(2):'-';}
+  function fmtH(v){return v?v.toFixed(1)+' hr':'-';}
+  function wLbl(w){
+    var d=new Date(w+'T12:00:00');
+    var e=new Date(d);e.setDate(e.getDate()+6);
+    return d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' – '+e.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  }
+  function apvKey(staff,wk){return staff+'::'+wk;}
+
+  var html='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">'+
+    '<div><h3 style="font-size:15px;font-weight:600;margin-bottom:3px">Stipend by Therapist by Week</h3>'+
+    '<p style="font-size:12px;color:var(--tx3)">Approve each therapist's weekly stipend amount. Approvals are saved to Firebase and visible to all users.</p></div>'+
+    '<div style="display:flex;gap:8px">'+
+      '<button class="excel-btn" onclick="exportByStaffExcel()">&#x2193; Export to Excel</button>'+
+    '</div></div>';
+
+  staffList.forEach(function(staff){
+    var rows=staffMap[staff];
+    var totalAmt=0,totalSig=0,totalPdi=0,totalHrs=0;
+    html+='<div class="tbl-wrap" style="margin-bottom:20px">'+
+      '<div class="tbl-hdr"><div><div class="staff-name" style="font-size:14px;font-weight:600">'+staff+'</div></div></div>'+
+      '<table class="staff-week-tbl">'+
+      '<thead><tr>'+
+        '<th>Week</th><th>Sig. Hours</th><th>Sig. Stipend</th><th>PDI Stipend</th>'+
+        '<th style="text-align:right">Total</th><th style="text-align:center">Approval</th>'+
+      '</tr></thead><tbody>';
+    weeks.forEach(function(wk){
+      var r=rows[wk];
+      if(!r||(!r.sigHrs&&!r.sigAmt&&!r.pdiAmt))return;
+      totalAmt+=r.total;totalSig+=r.sigAmt;totalPdi+=r.pdiAmt;totalHrs+=r.sigHrs;
+      var key=apvKey(staff,wk);
+      var apvd=!!approvals[key];
+      var keyId='apv-'+key.replace(/[^a-zA-Z0-9]/g,'_');
+      html+='<tr>'+
+        '<td style="font-weight:500">'+wLbl(wk)+'</td>'+
+        '<td>'+fmtH(r.sigHrs)+'</td>'+
+        '<td class="money">'+fmt$(r.sigAmt)+'</td>'+
+        '<td class="money">'+fmt$(r.pdiAmt)+'</td>'+
+        '<td class="money" style="font-weight:700;color:var(--green)">'+fmt$(r.total)+'</td>'+
+        '<td style="text-align:center">'+
+          '<button id="'+keyId+'" class="approve-btn'+(apvd?' approved':'')+'" onclick="toggleApproval(''+key+'')">'+
+            (apvd?'&#x2713; Approved':'Approve')+
+          '</button>'+
+        '</td>'+
+      '</tr>';
+    });
+    html+='<tr class="total-row">'+
+      '<td>Total</td><td>'+fmtH(totalHrs)+'</td>'+
+      '<td class="money">'+fmt$(totalSig)+'</td><td class="money">'+fmt$(totalPdi)+'</td>'+
+      '<td class="money" style="color:#86efac">'+fmt$(totalAmt)+'</td>'+
+      '<td></td></tr>';
+    html+='</tbody></table></div>';
+  });
+
+  el.innerHTML=html||'<div class="empty">No stipend data for selected filters.</div>';
+}
+
+function exportByStaffExcel(){
+  // Build CSV data
+  var D=window._lastD;if(!D)return;
+  var staffMap={};
+  D.lineItems.forEach(function(r){
+    if(!staffMap[r.staff])staffMap[r.staff]={};
+    var wk=r.week;
+    if(!staffMap[r.staff][wk])staffMap[r.staff][wk]={sigHrs:0,sigAmt:0,pdiAmt:0,total:0};
+    if(r.track==='Signature'){
+      if(r.type==='Session'){staffMap[r.staff][wk].sigHrs+=r.sessHrs||0;staffMap[r.staff][wk].sigAmt+=r.amount||0;}
+      if(r.type==='Weekly stipend'){staffMap[r.staff][wk].sigAmt+=r.amount||0;}
+    }
+    if(r.track==='PDI'){staffMap[r.staff][wk].pdiAmt+=r.amount||0;}
+    staffMap[r.staff][wk].total=(staffMap[r.staff][wk].sigAmt||0)+(staffMap[r.staff][wk].pdiAmt||0);
+  });
+  function wLbl(w){
+    var d=new Date(w+'T12:00:00');
+    var e=new Date(d);e.setDate(e.getDate()+6);
+    return d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' - '+e.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  }
+  function apvKey(s,w){return s+'::'+w;}
+  var staffList=Object.keys(staffMap).sort();
+  var weeks=D.sortedWeeks.slice().sort();
+  var rows=[['Therapist','Week','Sig Hours','Sig Stipend','PDI Stipend','Total','Approved']];
+  staffList.forEach(function(staff){
+    var rmap=staffMap[staff];
+    weeks.forEach(function(wk){
+      var r=rmap[wk];
+      if(!r||(!r.sigHrs&&!r.sigAmt&&!r.pdiAmt))return;
+      var apvd=approvals[apvKey(staff,wk)]?'Yes':'No';
+      rows.push([staff,wLbl(wk),r.sigHrs.toFixed(2),r.sigAmt.toFixed(2),r.pdiAmt.toFixed(2),r.total.toFixed(2),apvd]);
+    });
+    // Totals row
+    var tHrs=0,tSig=0,tPdi=0,tTot=0;
+    weeks.forEach(function(wk){var r=rmap[wk];if(!r)return;tHrs+=r.sigHrs;tSig+=r.sigAmt;tPdi+=r.pdiAmt;tTot+=r.total;});
+    rows.push([staff,'TOTAL',tHrs.toFixed(2),tSig.toFixed(2),tPdi.toFixed(2),tTot.toFixed(2),'']);
+    rows.push([]);
+  });
+  var csv=rows.map(function(r){return r.map(function(c){return'"'+String(c||'').replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');a.href=url;a.download='Stipend_By_Therapist_By_Week.csv';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+}
+
 function render(){
   var D=computeStipends();
+  window._lastD=D;
   renderSummary(D);
   renderLineItems(D);
   renderRoster(D);
