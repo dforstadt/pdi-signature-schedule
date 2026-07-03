@@ -203,43 +203,50 @@ function normName(n){
 }
 
 function mergeClients(fbClients){
-  var merged=[];
-  var seenNorm=new Set();
-
-  // First pass: historical data
-  HIST.forEach(function(c){
-    var key=normName(c.name);
-    seenNorm.add(key);
-    merged.push({
-      id:c.id,name:c.name,source:'historical',
+  // Historical data is authoritative — 27 clients, 15 PDI eps, 20 Sig eps
+  var merged=HIST.map(function(c){
+    return{id:c.id,name:c.name,source:'historical',
       pdiAdmit:c.pdiAdmit,pdiDisch:c.pdiDisch,
-      sigAdmit:c.sigAdmit,sigDisch:c.sigDisch
-    });
+      sigAdmit:c.sigAdmit,sigDisch:c.sigDisch};
   });
 
-  // Second pass: Firebase clients — skip if already in historical (by normalized name)
-  // But update dates if Firebase has more recent discharge info
+  // Firebase: match by name (exact, case-insensitive) and update discharge dates
+  // OR add genuinely new clients that have explicit episode dates entered
   fbClients.forEach(function(c){
     if(!c.name)return;
-    var key=normName(c.name);
-    var existing=merged.find(function(m){return normName(m.name)===key;});
+    var cName=c.name.toLowerCase().trim();
+
+    // Try exact name match first
+    var existing=merged.find(function(m){return m.name.toLowerCase().trim()===cName;});
+
+    // If no exact match, try first-name + last-initial match
+    if(!existing){
+      var parts=c.name.trim().split(/\s+/);
+      if(parts.length>=2){
+        var fn=parts[0].toLowerCase(),li=parts[parts.length-1][0].toLowerCase();
+        existing=merged.find(function(m){
+          var mp=m.name.trim().split(/\s+/);
+          return mp[0].toLowerCase()===fn&&mp[mp.length-1][0].toLowerCase()===li;
+        });
+      }
+    }
+
     if(existing){
-      // Update discharge dates from Firebase if more recent/complete
+      // Update any missing discharge dates from calendar
       if(c.pdiDischarge&&!existing.pdiDisch)existing.pdiDisch=c.pdiDischarge;
       if(c.sigDischarge&&!existing.sigDisch)existing.sigDisch=c.sigDischarge;
       if(c.pdiAdmit&&!existing.pdiAdmit)existing.pdiAdmit=c.pdiAdmit;
       if(c.sigAdmit&&!existing.sigAdmit)existing.sigAdmit=c.sigAdmit;
       return;
     }
-    // New client not in historical
-    seenNorm.add(key);
-    var prog=c.program||'PDI';
+
+    // Genuinely new client — only add if they have explicit episode dates
+    // (prevents inferring episodes from program field alone)
+    if(!c.pdiAdmit&&!c.sigAdmit)return;
     merged.push({
       id:c.id,name:c.name,source:'calendar',
-      pdiAdmit:c.pdiAdmit||( prog==='PDI'||prog==='Both'?c.startDate:null),
-      pdiDisch:c.pdiDischarge||( prog==='PDI'?c.endDate:null),
-      sigAdmit:c.sigAdmit||( prog==='Signature'||prog==='Both'?c.startDate:null),
-      sigDisch:c.sigDischarge||( prog==='Signature'?c.endDate:null)
+      pdiAdmit:c.pdiAdmit||null,pdiDisch:c.pdiDischarge||null,
+      sigAdmit:c.sigAdmit||null,sigDisch:c.sigDischarge||null
     });
   });
 
@@ -411,15 +418,18 @@ function renderTable(){
 }
 
 FB.on('value',function(snap){
-  document.getElementById('live-dot').className='live-dot on';
-  document.getElementById('live-lbl').textContent='Live';
-  var raw=snap.val(),fb=[];
-  if(raw&&raw.blob){try{var d=JSON.parse(raw.blob);if(Array.isArray(d.clients))fb=d.clients;}catch(e){}}
-  render(compute(mergeClients(fb)));
-},function(){
+  try{
+    document.getElementById('live-dot').className='live-dot on';
+    document.getElementById('live-lbl').textContent='Live';
+    var raw=snap.val(),fb=[];
+    if(raw&&raw.blob){try{var d=JSON.parse(raw.blob);if(Array.isArray(d.clients))fb=d.clients;}catch(e){console.error('Parse err:',e);}}
+    render(compute(mergeClients(fb)));
+  }catch(err){console.error('Render err:',err);}
+},function(err){
+  console.error('FB err:',err);
   document.getElementById('live-dot').className='live-dot';
   document.getElementById('live-lbl').textContent='Offline — historical data only';
-  render(compute(mergeClients([])));
+  try{render(compute(mergeClients([])));}catch(e){console.error(e);}
 });
 </script>
 </body>
