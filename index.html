@@ -1280,33 +1280,47 @@ function submitStipendAuth(){
 function openProviderViewPicker(){
   var entries=Object.entries(S.providers);
   if(!entries.length){alert('No providers added yet.');return;}
+  var weekOpts='';
+  for(var i=0;i<9;i++){
+    var ws=addDays(S.weekStart,-i*7);
+    var lbl=(i===0?'This week: ':'')+fmtRange(ws);
+    weekOpts+='<option value="'+ws+'"'+(i===0?' selected':'')+'>'+lbl+'</option>';
+  }
   var wk=weekDates(S.weekStart);
+  var cards=entries.map(function(entry,idx){
+    var name=entry[0],color=entry[1].color||'#888';
+    var cnt=S.events.filter(function(e){return e.provider===name&&wk.includes(e.date);}).length;
+    return '<div onclick="rosterPickClick('+idx+')" style="display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:12px;border:1.5px solid var(--bd);cursor:pointer;background:var(--bg2);margin-bottom:8px">'+
+      '<div style="width:44px;height:44px;border-radius:50%;background:'+color+';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px;flex-shrink:0">'+name.charAt(0).toUpperCase()+'</div>'+
+      '<div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--tx)">'+esc(name)+'</div>'+
+      '<div style="font-size:11px;color:var(--tx3);margin-top:2px">'+cnt+' session'+(cnt!==1?'s':'')+' this week</div></div>'+
+      '<div style="font-size:18px;color:var(--tx3)">❯</div></div>'+
+      '<div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--tx)">'+esc(name)+'</div>'+
+      '<div style="font-size:11px;color:var(--tx3);margin-top:2px">'+cnt+' session'+(cnt!==1?'s':'')+' this week</div></div>'+
+      '<div style="font-size:18px;color:var(--tx3)">❯</div></div>';
+  }).join('');
+  window._provNames=entries.map(function(e){return e[0];});
   showModal(
-    '<div style="font-size:15px;font-weight:600;margin-bottom:6px">My Schedule</div>'+
-    '<div style="font-size:12px;color:var(--tx3);margin-bottom:16px">Select your name to view and print your weekly sessions for '+fmtRange(S.weekStart)+'.</div>'+
-    '<div id="prov-pick-list" style="display:flex;flex-direction:column;gap:8px;max-height:380px;overflow-y:auto;margin-bottom:16px"></div>'+
+    '<div style="font-size:15px;font-weight:600;margin-bottom:6px"> My Schedule</div>'+
+    '<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--bg2);border-radius:var(--r);border:.5px solid var(--bd);margin-bottom:14px">'+
+      '<div style="font-size:11px;font-weight:500;color:var(--tx2);white-space:nowrap">Week:</div>'+
+      '<select id="roster-week-sel" style="flex:1;font-size:12px;padding:5px 8px;border-radius:var(--r);border:.5px solid var(--bd2);background:var(--bg);color:var(--tx);font-family:var(--f)">'+weekOpts+'</select>'+
+    '</div>'+
+    '<div id="prov-pick-list" style="max-height:360px;overflow-y:auto;margin-bottom:12px">'+cards+'</div>'+
     cBtn()
   );
-  setTimeout(function(){
-    var list=document.getElementById('prov-pick-list');if(!list)return;
-    entries.forEach(function(entry){
-      var name=entry[0],color=entry[1].color||'#888';
-      var cnt=S.events.filter(function(e){return e.provider===name&&wk.includes(e.date);}).length;
-      var card=document.createElement('div');
-      card.style.cssText='display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:12px;border:1.5px solid var(--bd);cursor:pointer;background:var(--bg2);transition:all .15s';
-      card.innerHTML='<div style="width:44px;height:44px;border-radius:50%;background:'+color+';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px;flex-shrink:0">'+name.charAt(0).toUpperCase()+'</div>'+
-        '<div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--tx)">'+esc(name)+'</div>'+
-        '<div style="font-size:11px;color:var(--tx3)">'+cnt+' session'+(cnt!==1?'s':'')+' this week</div></div>'+
-        '<div style="font-size:20px;color:var(--tx3)">❯</div>';
-      card.addEventListener('mouseenter',function(){card.style.borderColor=color;card.style.background='var(--bg)';});
-      card.addEventListener('mouseleave',function(){card.style.borderColor='var(--bd)';card.style.background='var(--bg2)';});
-      card.addEventListener('click',function(){closeModal();setTimeout(function(){openProviderRoster(name);},60);});
-      list.appendChild(card);
-    });
-  },30);
 }
-function openProviderRoster(provName){
-  var wk=weekDates(S.weekStart);
+function rosterPickClick(idx){
+  var name=window._provNames&&window._provNames[idx];if(!name)return;
+  var sel=document.getElementById('roster-week-sel');
+  var wk=sel?sel.value:S.weekStart;
+  closeModal();
+  setTimeout(function(){openProviderRoster(name,wk);},60);
+}
+
+function openProviderRoster(provName,weekStartOverride){
+  var useWeek=weekStartOverride||S.weekStart;
+  var wk=weekDates(useWeek);
   var wEvs=S.events.filter(function(e){return e.provider===provName&&wk.includes(e.date);});
   var color=pc(provName);
   var win=window.open('','_blank','width=820,height=900,scrollbars=yes');
@@ -1327,7 +1341,7 @@ function openProviderRoster(provName){
   pg+='.footer{margin-top:28px;padding-top:12px;border-top:1px solid #e5e7eb;font-size:11px;color:#9ca3af;text-align:center}';
   pg+='@media print{.print-btn{display:none}}</style></head><body>';
   var total=0;
-  pg+='<div class="hdr"><div style="display:flex;align-items:center;gap:14px"><div class="avatar">'+provName.charAt(0)+'</div><div><div class="nm">'+provName+'</div><div class="sub">Weekly Schedule &mdash; '+fmtRange(S.weekStart)+'</div></div></div>';
+  pg+='<div class="hdr"><div style="display:flex;align-items:center;gap:14px"><div class="avatar">'+provName.charAt(0)+'</div><div><div class="nm">'+provName+'</div><div class="sub">Weekly Schedule &mdash; '+fmtRange(useWeek)+'</div></div></div>';
   pg+='<button class="print-btn" onclick="window.print()">Print / Save PDF</button></div>';
   wk.forEach(function(date){
     var dayEvs=wEvs.filter(function(e){return e.date===date;}).sort(function(a,b){return a.slotIndex-b.slotIndex;});
@@ -1713,62 +1727,60 @@ function exportToStipendExcel(){
   buildProvModal();modal.style.display='flex';
 }
 function buildProvModal(){
-  var m=document.getElementById('mbox');if(!m)return;
   var entries=Object.entries(S.providers);
   var stL={'none':'No stipend','session':'Session fees','weekly':'PDI + Weekly','pdi_weekly':'PDI + Weekly'};
   var stC={'none':'#6b7280','session':'#1D9E75','weekly':'#D4537E','pdi_weekly':'#D4537E'};
-  var rows=entries.map(function(e){
+  // Store provider names in a global lookup so inline onclick can reference by index
+  window._provNames=entries.map(function(e){return e[0];});
+  var rows=entries.map(function(e,idx){
     var name=e[0],color=e[1].color||'#888',stype=e[1].stipendType||'session';
     var cnt=S.events.filter(function(ev){return ev.provider===name;}).length;
     var bl=stL[stype]||'Session fees',bc=stC[stype]||'#1D9E75';
-    return '<div class="prov-mgr-row" data-name="'+esc(name)+'" style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;background:var(--bg2);border:.5px solid var(--bd2);margin-bottom:8px;border-left:3px solid '+color+'">'+
-      '<input type="color" class="pc-color" value="'+color+'" style="width:28px;height:28px;border:none;border-radius:50%;cursor:pointer;padding:0;flex-shrink:0">'+
+    return '<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;background:var(--bg2);border:.5px solid var(--bd2);margin-bottom:8px;border-left:3px solid '+color+'">'+
+      '<div style="width:28px;height:28px;border-radius:50%;background:'+color+';flex-shrink:0;cursor:pointer;position:relative" title="Change color">'+
+        '<input type="color" value="'+color+'" onchange="provColChange('+idx+',this.value)" style="opacity:0;position:absolute;inset:0;width:100%;height:100%;cursor:pointer;border:none;padding:0">'+
+      '</div>'+
       '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--tx)">'+esc(name)+'</div>'+
       '<div style="font-size:10px;color:var(--tx3)">'+cnt+' session'+(cnt!==1?'s':'')+'</div></div>'+
       '<span style="font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;background:'+bc+'18;color:'+bc+';border:1px solid '+bc+'44;white-space:nowrap;flex-shrink:0">'+bl+'</span>'+
-      '<button class="pc-edit-btn" style="padding:5px 10px;border-radius:var(--r);border:.5px solid var(--bd2);background:var(--bg);cursor:pointer;font-size:11px;color:var(--tx2);font-family:var(--f);flex-shrink:0">Edit</button>'+
-      '<button class="pc-del-btn" style="padding:5px 10px;border-radius:var(--r);border:.5px solid var(--bd-err);background:var(--bg-warn);cursor:pointer;font-size:11px;font-weight:500;color:var(--tx-err);font-family:var(--f);flex-shrink:0">Remove</button>'+
+      '<button onclick="openEditStipend(_provNames['+idx+'])" style="padding:5px 10px;border-radius:var(--r);border:.5px solid var(--bd2);background:var(--bg);cursor:pointer;font-size:11px;color:var(--tx2);font-family:var(--f);flex-shrink:0">Edit</button>'+
+      '<button onclick="deleteProvider(_provNames['+idx+'])" style="padding:5px 10px;border-radius:var(--r);border:.5px solid var(--bd-err);background:var(--bg-warn);cursor:pointer;font-size:11px;font-weight:500;color:var(--tx-err);font-family:var(--f);flex-shrink:0">Remove</button>'+
     '</div>';
   }).join('');
-  m.innerHTML=
+  showModal(
     '<div style="font-size:15px;font-weight:600;margin-bottom:16px">Manage Providers</div>'+
     '<div style="max-height:360px;overflow-y:auto;margin-bottom:16px">'+(rows||'<div style="text-align:center;padding:20px;color:var(--tx3)">No providers yet.</div>')+'</div>'+
     '<div style="background:var(--bg2);border-radius:var(--rl);padding:14px;border:.5px solid var(--bd);margin-bottom:16px">'+
       '<div style="font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:10px">Add provider</div>'+
       '<div style="display:flex;gap:8px;align-items:center">'+
         '<input type="color" id="np-col" value="#7F77DD" style="width:34px;height:34px;flex-shrink:0;border:none;border-radius:50%;cursor:pointer;padding:0">'+
-        '<input type="text" id="np-name" placeholder="Provider name..." style="flex:1">'+
-        '<button id="np-add-btn" style="padding:8px 16px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--f);white-space:nowrap">+ Add</button>'+
-      '</div></div>'+
-    '<div style="display:flex;justify-content:flex-end"><button onclick="closeModal()" style="padding:8px 24px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--f)">Done</button></div>';
-  setTimeout(function(){
-    m.querySelectorAll('.prov-mgr-row').forEach(function(row){
-      var name=row.dataset.name;
-      row.querySelector('.pc-color').addEventListener('change',function(){
-        if(S.providers[name]){S.providers[name].color=this.value;row.style.borderLeftColor=this.value;}
-        renderLegend();saveAll();
-      });
-      row.querySelector('.pc-edit-btn').addEventListener('click',function(){openEditStipend(name);});
-      row.querySelector('.pc-del-btn').addEventListener('click',function(){deleteProvider(name);});
-    });
-    var ab=m.querySelector('#np-add-btn');if(ab)ab.addEventListener('click',addProvider);
-    var ni=m.querySelector('#np-name');
-    if(ni){ni.focus();ni.addEventListener('keydown',function(e){if(e.key==='Enter')addProvider();});}
-  },20);
+        '<input type="text" id="np-name" placeholder="Provider name..." style="flex:1" onkeydown="if(event.key==='Enter')addProvider()">'+
+        '<button onclick="addProvider()" style="padding:8px 16px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--f);white-space:nowrap">+ Add</button>'+
+      '</div>'+
+    '</div>'+
+    '<div style="display:flex;justify-content:flex-end"><button onclick="closeModal()" style="padding:8px 24px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--f)">Done</button></div>'
+  );
+  setTimeout(function(){var i=document.getElementById('np-name');if(i)i.focus();},30);
 }
+function provColChange(idx,val){
+  var name=window._provNames&&window._provNames[idx];
+  if(name&&S.providers[name]){S.providers[name].color=val;renderLegend();saveAll();}
+}
+
 function openEditStipend(name){
   var p=S.providers[name];if(!p)return;
   var stype=p.stipendType||'session',color=p.color||'#888';
   var opts=[
-    {val:'none',       label:'Not eligible',           desc:'Excluded from all stipend calculations.',color:'#6b7280'},
-    {val:'session',    label:'Session fees ($150/hr)',  desc:'Signature: $150/hr per session. PDI: $250 flat when sessions present.',color:'#1D9E75'},
-    {val:'pdi_weekly', label:'PDI + Weekly ($250)',     desc:'PDI: $250 once per episode per client (automatic). Signature: $250/week per active client.',color:'#D4537E'},
+    {val:'none',label:'Not eligible',desc:'Excluded from all stipend calculations.',c:'#6b7280'},
+    {val:'session',label:'Session fees ($150/hr)',desc:'Signature: $150/hr per session. PDI: $250 flat stipend when sessions are present.',c:'#1D9E75'},
+    {val:'pdi_weekly',label:'PDI + Weekly ($250)',desc:'PDI: $250 once per episode per client (automatic). Signature: $250/week per active client.',c:'#D4537E'},
   ];
+  window._editStipendName=name;
   var cards=opts.map(function(o){
-    var on=stype===o.val||( stype==='weekly'&&o.val==='pdi_weekly');
-    return '<label style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-radius:10px;border:2px solid '+(on?o.color:'var(--bd)')+';background:'+(on?o.color+'12':'var(--bg2)')+';cursor:pointer;margin-bottom:8px">'+
-      '<input type="radio" name="st-type" value="'+o.val+'" '+(on?'checked':'')+' style="accent-color:'+o.color+';margin-top:3px;flex-shrink:0">'+
-      '<div><div style="font-size:13px;font-weight:600;color:'+(on?o.color:'var(--tx)')+'">'+o.label+'</div>'+
+    var on=stype===o.val||(stype==='weekly'&&o.val==='pdi_weekly');
+    return '<label style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-radius:10px;border:2px solid '+(on?o.c:'var(--bd)')+';background:'+(on?o.c+'12':'var(--bg2)')+';cursor:pointer;margin-bottom:8px">'+
+      '<input type="radio" name="st-type" value="'+o.val+'" '+(on?'checked':'')+' style="accent-color:'+o.c+';margin-top:3px;flex-shrink:0">'+
+      '<div><div style="font-size:13px;font-weight:600;color:'+(on?o.c:'var(--tx)')+'">'+o.label+'</div>'+
       '<div style="font-size:11px;color:var(--tx3);margin-top:2px">'+o.desc+'</div></div></label>';
   }).join('');
   showModal(
@@ -1778,8 +1790,8 @@ function openEditStipend(name){
     '<div style="font-size:12px;font-weight:500;color:var(--tx2);margin-bottom:10px">Stipend eligibility</div>'+
     cards+
     '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">'+
-      '<button onclick="buildProvModal()" style="padding:8px 16px;border-radius:var(--r);border:.5px solid var(--bd2);background:transparent;cursor:pointer;font-size:13px;color:var(--tx2);font-family:var(--f)">\u2190 Back</button>'+
-      '<button id="sv-st-btn" style="padding:8px 20px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--f)">Save</button></div>'
+      '<button onclick="buildProvModal()" style="padding:8px 16px;border-radius:var(--r);border:.5px solid var(--bd2);background:transparent;cursor:pointer;font-size:13px;color:var(--tx2);font-family:var(--f)">← Back</button>'+
+      '<button onclick="saveStipendType()" style="padding:8px 20px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--f)">Save</button></div>'
   );
   setTimeout(function(){
     document.querySelectorAll('input[name="st-type"]').forEach(function(r){
@@ -1793,43 +1805,17 @@ function openEditStipend(name){
         });
       });
     });
-    var sb=document.getElementById('sv-st-btn');
-    if(sb)sb.addEventListener('click',function(){
-      var sel=document.querySelector('input[name="st-type"]:checked');if(!sel)return;
-      if(S.providers[name]){
-        S.providers[name].stipendType=sel.value;
-        S.providers[name].noStipend=sel.value==='none';
-        S.providers[name].type=sel.value==='pdi_weekly'?'weekly':'session';
-      }
-      saveAll();buildProvModal();
-    });
   },20);
 }
-
-function openAddModal(cid,si){
-  mCtx={type:'add',cid:cid,si:si};
-  showModal(
-    '<div style="font-size:15px;font-weight:500;margin-bottom:4px">Add service</div>'+
-    '<div style="font-size:11px;color:var(--tx3);margin-bottom:18px">'+fmtFull(S.selectedDate)+'</div>'+
-    svcFld()+''+prvFld('')+''+durFld(2)+
-    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px">'+cBtn()+
-    ' <button id="add-svc-btn" style="padding:8px 18px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--f)">Add service</button></div>'
-  );
-  setTimeout(function(){
-    var btn=document.getElementById('add-svc-btn');
-    if(btn)btn.addEventListener('click',submitAdd);
-    var ms=document.getElementById('ms');if(ms)ms.focus();
-  },30);
-}
-function submitAdd(){
-  var svc=document.getElementById('ms')&&document.getElementById('ms').value.trim();
-  var prov=(document.getElementById('mp')&&document.getElementById('mp').value||'').trim();
-  var dur=+(document.getElementById('md')&&document.getElementById('md').value)||2;
-  if(!svc){alert('Please enter a service name.');return;}
-  if(!isMeal(svc)&&!prov){alert('Please select a provider.');return;}
-  mkProv(prov);
-  S.events.push({id:nid(),date:S.selectedDate,clientId:mCtx.cid,slotIndex:mCtx.si,
-    duration:dur,service:svc,provider:prov,flagged:false,status:'scheduled',statusNote:''});
-  renderAll();saveAll();closeModal();
+function saveStipendType(){
+  var name=window._editStipendName;
+  var sel=document.querySelector('input[name="st-type"]:checked');
+  if(!sel||!name)return;
+  if(S.providers[name]){
+    S.providers[name].stipendType=sel.value;
+    S.providers[name].noStipend=sel.value==='none';
+    S.providers[name].type=sel.value==='pdi_weekly'?'weekly':'session';
+  }
+  saveAll();buildProvModal();
 }
 
