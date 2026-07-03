@@ -331,16 +331,19 @@ function showModal(html){
   modal.style.display='flex';
 }
 function deleteProvider(name){
-  if(!name||!S.providers[name]){buildProvModal();return;}
+  if(!name){alert('Provider not found.');return;}
+  if(!S.providers[name]){alert('"'+name+'" not found in providers.');buildProvModal();return;}
   var cnt=S.events.filter(function(e){return e.provider===name;}).length;
   var msg=cnt>0?
-    '"'+name+'" has '+cnt+' session'+(cnt!==1?'s':'')+'. Remove provider AND their sessions?':
+    'Remove "'+name+'"? They have '+cnt+' session'+(cnt!==1?'s':'')+'. This will also remove their sessions.':
     'Remove "'+name+'" from providers?';
   if(!confirm(msg))return;
   if(cnt>0)S.events=S.events.filter(function(e){return e.provider!==name;});
   delete S.providers[name];
   if(S.filterProv===name)S.filterProv=null;
-  renderAll();saveAll();buildProvModal();
+  renderAll();saveAll();
+  // Rebuild modal after deletion
+  setTimeout(function(){buildProvModal();},50);
 }
 
 function closeModal(){
@@ -1733,10 +1736,30 @@ function exportToStipendExcel(){
 
 
 
+var _mgmtAuthed=false;
 function openManageProviders(){
-  var m=document.getElementById('mbox'),modal=document.getElementById('modal');
-  if(!m||!modal)return;
-  buildProvModal();modal.style.display='flex';
+  if(_mgmtAuthed){showModal('');buildProvModal();return;}
+  showModal(
+    '<div style="text-align:center;margin-bottom:20px">'+
+    '<div style="font-size:36px;margin-bottom:8px"></div>'+
+    '<div style="font-size:15px;font-weight:600;margin-bottom:6px">Manage Providers</div>'+
+    '<div style="font-size:12px;color:var(--tx3)">Enter the access code to continue.</div>'+
+    '</div>'+
+    '<div style="margin-bottom:8px"><input type="password" id="mgmt-pw" placeholder="Access code..." style="text-align:center;letter-spacing:.15em;font-size:15px"></div>'+
+    '<div id="mgmt-err" style="color:var(--tx-err);font-size:12px;text-align:center;min-height:18px;margin-bottom:12px"></div>'+
+    '<div style="display:flex;gap:8px;justify-content:flex-end">'+cBtn()+
+    ' <button id="mgmt-go" style="padding:8px 20px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--f)">Continue</button></div>'
+  );
+  setTimeout(function(){
+    var inp=document.getElementById('mgmt-pw');if(inp)inp.focus();
+    function tryAuth(){
+      var pw=inp&&inp.value;
+      if(pw==='Lifeskills2024!'){_mgmtAuthed=true;buildProvModal();}
+      else{var err=document.getElementById('mgmt-err');if(err)err.textContent='Incorrect code.';if(inp){inp.value='';inp.focus();}}
+    }
+    var btn=document.getElementById('mgmt-go');if(btn)btn.addEventListener('click',tryAuth);
+    if(inp)inp.addEventListener('keydown',function(e){if(e.key==='Enter')tryAuth();});
+  },30);
 }
 function buildProvModal(){
   var entries=Object.entries(S.providers);
@@ -1777,7 +1800,17 @@ function buildProvModal(){
 function provColChange(idx,val){
   var name=window._provNames&&window._provNames[idx];
   if(name&&S.providers[name]){S.providers[name].color=val;renderLegend();saveAll();}
-}
+}'<div style="background:var(--bg2);border-radius:var(--rl);padding:14px;border:.5px solid var(--bd);margin-bottom:16px">'+
+    '<div style="font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:10px">Add provider from staff roster</div>'+
+    (function(){var roster=["Alexandria Marullo", "Anisha Hume", "Anthony", "Brian", "David Ockman", "Despina Karfis", "Dr. Flannery", "Dr. Forstadt", "Esther Entin", "Gregory Fortune", "Gus Hernandez", "Mirella Ezeta", "Nicole", "PBWI", "Paul Lazar", "Rabbi Gaines", "Robert Bruno", "Sandra Bernstein", "Tara Alhadeff", "Tech Team", "Thomas Young"];var avail=roster.filter(function(n){return!S.providers[n];});return avail.length?
+      '<div style="display:flex;gap:8px;align-items:center">'+
+        '<input type="color" id="np-col" value="#7F77DD" style="width:34px;height:34px;flex-shrink:0;border:none;border-radius:50%;cursor:pointer;padding:0">'+
+        '<select id="np-name" style="flex:1"><option value="">Select name...</option>'+
+        avail.map(function(n){return '<option value="'+n+'">'+n+'</option>';}).join('')+
+        '</select>'+
+        '<button onclick="addProvider()" style="padding:8px 16px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--f);white-space:nowrap">+ Add</button>'+
+      '</div>':
+      '<div style="font-size:12px;color:var(--tx3);text-align:center;padding:8px 0">All staff members already added</div>';})()+'</div>'+
 
 function openEditStipend(name){
   var p=S.providers[name];if(!p)return;
