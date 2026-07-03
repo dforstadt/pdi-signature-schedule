@@ -193,21 +193,22 @@ function mlbl(k){return new Date(k+'-15').toLocaleDateString('en-US',{month:'sho
 function set(id,v){var el=document.getElementById(id);if(el)el.innerHTML=v;}
 
 // Build client episode list from Firebase calendar data
-// Only uses EXPLICIT pdiAdmit / sigAdmit fields set in the edit-client modal
+// Uses program field as authoritative source — stale date fields for wrong program are ignored
 function buildEpisodes(fbClients){
-  return fbClients.filter(function(c){
-    // Only include clients that have at least one explicit episode date
-    return c.pdiAdmit||c.sigAdmit;
-  }).map(function(c){
-    return{
-      id:c.id,
-      name:c.name,
-      pdiAdmit:c.pdiAdmit||null,
-      pdiDisch:c.pdiDischarge||c.pdiDisch||null,
-      sigAdmit:c.sigAdmit||null,
-      sigDisch:c.sigDischarge||c.sigDisch||null
-    };
-  });
+  return fbClients.map(function(c){
+    var prog=c.program||'';
+    // program field determines which episode dates are valid
+    var hasPDI=prog==='PDI'||prog==='Both';
+    var hasSig=prog==='Signature'||prog==='Both';
+    // Only use episode dates when they match the program
+    var pdiAdmit  =hasPDI?(c.pdiAdmit||null):null;
+    var pdiDisch  =hasPDI?(c.pdiDischarge||c.pdiDisch||null):null;
+    var sigAdmit  =hasSig?(c.sigAdmit||null):null;
+    var sigDisch  =hasSig?(c.sigDischarge||c.sigDisch||null):null;
+    // Only include if at least one valid episode date exists
+    if(!pdiAdmit&&!sigAdmit)return null;
+    return{id:c.id,name:c.name,pdiAdmit:pdiAdmit,pdiDisch:pdiDisch,sigAdmit:sigAdmit,sigDisch:sigDisch};
+  }).filter(function(c){return c!==null;});
 }
 
 function compute(episodes){
