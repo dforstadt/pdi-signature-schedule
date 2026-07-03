@@ -869,35 +869,6 @@ function submitEdit(eid){
 function delEv(eid){S.events=S.events.filter(function(e){return e.id!==eid;});renderAll();saveAll();closeModal();}
 
 // ── Conflict reporting ─────────────────────────────────────────────────────
-// ── Add / Edit modals ─────────────────────────────────────────────────────
-function openAddModal(cid,si){
-  mCtx={type:'add',cid:cid,si:si};
-  showModal(
-    '<div style="font-size:15px;font-weight:500;margin-bottom:4px">Add service</div>'+
-    '<div style="font-size:11px;color:var(--tx3);margin-bottom:18px">'+fmtFull(S.selectedDate)+'</div>'+
-    svcFld()+''+prvFld('')+''+durFld(2)+
-    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px">'+cBtn()+
-    ' <button id="add-svc-btn" style="padding:8px 18px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--f)">Add service</button></div>'
-  );
-  setTimeout(function(){
-    var btn=document.getElementById('add-svc-btn');
-    if(btn)btn.addEventListener('click',submitAdd);
-    var ms=document.getElementById('ms');if(ms)ms.focus();
-  },30);
-}
-function submitAdd(){
-  var svc=document.getElementById('ms')&&document.getElementById('ms').value.trim();
-  var prov=(document.getElementById('mp')&&document.getElementById('mp').value||'').trim();
-  var dur=+(document.getElementById('md')&&document.getElementById('md').value)||2;
-  if(!svc){alert('Please enter a service name.');return;}
-  if(!isMeal(svc)&&!prov){alert('Please select a provider.');return;}
-  mkProv(prov);
-  S.events.push({id:nid(),date:S.selectedDate,clientId:mCtx.cid,slotIndex:mCtx.si,
-    duration:dur,service:svc,provider:prov,flagged:false,status:'scheduled',statusNote:''});
-  renderAll();saveAll();closeModal();
-}
-
-
 function flagConflict(eid){
   var ev=S.events.find(function(e){return e.id===eid;});if(!ev)return;
   var c=S.clients.find(function(c){return c.id===ev.clientId;});
@@ -1684,5 +1655,32 @@ function openEditStipend(name){
       saveAll();buildProvModal();
     });
   },20);
+}
+
+function openAddModal(cid,si){
+  mCtx={type:'add',cid:cid,si:si};
+  showModal(
+    '<div style="font-size:15px;font-weight:500;margin-bottom:4px">Add service</div>'+
+    '<div style="font-size:11px;color:var(--tx3);margin-bottom:18px">'+fmtFull(S.selectedDate)+'</div>'+
+    svcFld()+''+prvFld('')+''+durFld(2)+
+    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px">'+cBtn()+
+    ' <button id="add-svc-btn" style="padding:8px 18px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--f)">Add service</button></div>'
+  );
+  setTimeout(function(){
+    var btn=document.getElementById('add-svc-btn');
+    if(btn)btn.addEventListener('click',submitAdd);
+    var ms=document.getElementById('ms');if(ms)ms.focus();
+  },30);
+}
+function submitAdd(){
+  var svc=document.getElementById('ms')&&document.getElementById('ms').value.trim();
+  var prov=(document.getElementById('mp')&&document.getElementById('mp').value||'').trim();
+  var dur=+(document.getElementById('md')&&document.getElementById('md').value)||2;
+  if(!svc){alert('Please enter a service name.');return;}
+  if(!isMeal(svc)&&!prov){alert('Please select a provider.');return;}
+  mkProv(prov);
+  S.events.push({id:nid(),date:S.selectedDate,clientId:mCtx.cid,slotIndex:mCtx.si,
+    duration:dur,service:svc,provider:prov,flagged:false,status:'scheduled',statusNote:''});
+  renderAll();saveAll();closeModal();
 }
 
