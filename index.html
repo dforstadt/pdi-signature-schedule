@@ -1129,12 +1129,32 @@ function openCopyModal(eid){
       '<input type="checkbox" id="cdc-'+i+'" '+(on?'checked':'')+' onchange="updCP(\''+eid+'\')" style="accent-color:#7F77DD;cursor:pointer">'+
       '<span style="font-size:10px;font-weight:500">'+d+'</span></label>';
   }).join('');
-  var crs=S.clients.map(function(c){
+  // Only show active clients (not discharged, already admitted) based on selected week range
+  var wkDates=weekDates(S.weekStart);
+  var lastDay=wkDates[wkDates.length-1];
+  var activeClients=S.clients.filter(function(c){
+    var started=!c.startDate||lastDay>=c.startDate;
+    var notEnded=!c.endDate||S.selectedDate<=c.endDate;
+    return started&&notEnded;
+  });
+  var dischargedClients=S.clients.filter(function(c){
+    return c.endDate&&S.selectedDate>c.endDate;
+  });
+  var crs=activeClients.map(function(c){
     var on=c.id===ev.clientId;
+    var prog=c.program||'PDI';
+    var progColor=prog==='PDI'?'#378ADD':prog==='Signature'?'#7F77DD':'#1D9E75';
     return '<label class="copy-row'+(on?' on':'')+'" id="ccl-'+c.id+'">'+
       '<input type="checkbox" id="ccc-'+c.id+'" '+(on?'checked':'')+' onchange="updCP(\''+eid+'\')" style="accent-color:#7F77DD;cursor:pointer;width:14px;height:14px">'+
-      '<span style="font-size:13px">'+esc(c.name)+'</span></label>';
-  }).join('');
+      '<span style="font-size:13px">'+esc(c.name)+'</span>'+
+      (c.program?'<span style="font-size:9px;font-weight:600;padding:1px 5px;border-radius:8px;background:'+progColor+'22;color:'+progColor+';margin-left:4px">'+prog+'</span>':'')+
+      '</label>';
+  }).join('')+
+  (dischargedClients.length?
+    '<div style="font-size:11px;color:var(--tx3);margin-top:8px;padding:6px 8px;background:var(--bg2);border-radius:var(--r);border:.5px solid var(--bd)">'+
+    '⛔ '+dischargedClients.length+' discharged client'+(dischargedClients.length!==1?'s':'')+' hidden ('+
+    dischargedClients.map(function(c){return esc(c.name);}).join(', ')+
+    ')</div>':'');
   var wrs=[0,1,2,3].map(function(o){
     var m=addDays(S.weekStart,o*7);
     var l=o===0?fmtS(m)+' \u00b7 this week':o===1?fmtS(m)+' \u00b7 next week':fmtS(m);
