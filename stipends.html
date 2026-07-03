@@ -260,8 +260,9 @@ function wkLabel(wStart){
   return(s.getMonth()+1)+'/'+s.getDate()+'\u2013'+(e.getMonth()+1)+'/'+e.getDate()+'/'+e.getFullYear();
 }
 function fmtMoney(n){return n===0?'\u2014':'$'+n.toLocaleString();}
-function noStipend(prov){return!!(DATA.providers[prov]&&DATA.providers[prov].noStipend);}
-function provType(prov){return(DATA.providers[prov]&&DATA.providers[prov].type)||'session';}
+function noStipend(prov){var p=DATA.providers[prov];if(!p)return false;var st=p.stipendType;if(st)return st==='none';return!!p.noStipend;}
+function provType(prov){var p=DATA.providers[prov];if(!p)return 'session';var st=p.stipendType;if(st==='weekly'||st==='pdi_weekly')return 'weekly';return p.type||'session';}
+function isPDIWeekly(prov){var p=DATA.providers[prov];return!!(p&&p.stipendType==='pdi_weekly');}
 function clientName(cid){var c=DATA.clients.find(function(c){return c.id===cid;});return c?c.name:cid;}
 function clientProg(cid){var c=DATA.clients.find(function(c){return c.id===cid;});return c?(c.program||'PDI'):'PDI';}
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -330,6 +331,8 @@ function computeStipends(){
         var sessionProvMap={};
         cEvs.forEach(function(ev){
           if(noStipend(ev.provider))return;
+          // Exclude group sessions from stipend calculations
+          if(ev.service&&ev.service.toLowerCase().indexOf('group')>-1)return;
           if(provType(ev.provider)==='session'){
             if(!sessionProvMap[ev.provider])sessionProvMap[ev.provider]=0;
             sessionProvMap[ev.provider]+=ev.duration;
@@ -377,9 +380,14 @@ function computeStipends(){
         // 1. Weekly-type providers (Ockman/Gus/Nicole) ALWAYS get PDI stipend once per episode
         // 2. Session-type providers only if they have sessions with this client
         var pdiProvs=new Set();
-        cEvs.forEach(function(ev){if(!noStipend(ev.provider))pdiProvs.add(ev.provider);});
+        cEvs.forEach(function(ev){
+          if(noStipend(ev.provider))return;
+          // Exclude group sessions from PDI stipend eligibility check
+          if(ev.service&&ev.service.toLowerCase().indexOf('group')>-1)return;
+          pdiProvs.add(ev.provider);
+        });
         Object.keys(DATA.providers).forEach(function(prov){
-          if(!noStipend(prov)&&provType(prov)==='weekly')pdiProvs.add(prov);
+          if(!noStipend(prov)&&isPDIWeekly(prov))pdiProvs.add(prov);
         });
 
         pdiProvs.forEach(function(prov){
