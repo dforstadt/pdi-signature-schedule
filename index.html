@@ -330,6 +330,19 @@ function showModal(html){
   mbox.innerHTML=html;
   modal.style.display='flex';
 }
+function deleteProvider(name){
+  if(!name||!S.providers[name]){buildProvModal();return;}
+  var cnt=S.events.filter(function(e){return e.provider===name;}).length;
+  var msg=cnt>0?
+    '"'+name+'" has '+cnt+' session'+(cnt!==1?'s':'')+'. Remove provider AND their sessions?':
+    'Remove "'+name+'" from providers?';
+  if(!confirm(msg))return;
+  if(cnt>0)S.events=S.events.filter(function(e){return e.provider!==name;});
+  delete S.providers[name];
+  if(S.filterProv===name)S.filterProv=null;
+  renderAll();saveAll();buildProvModal();
+}
+
 function closeModal(){
   var modal=document.getElementById('modal');
   if(modal)modal.style.display='none';
