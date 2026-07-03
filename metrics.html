@@ -268,14 +268,17 @@ function mergeClients(fbClients){
       if(c.sigDischarge&&!existing.sigDisch)existing.sigDisch=c.sigDischarge;
       return;
     }
-    // New client — only add if they have explicit episode admit dates
-    if(c.pdiAdmit||c.sigAdmit){
-      merged.push({
-        id:c.id,name:c.name,source:'calendar',
-        pdiAdmit:c.pdiAdmit||null,pdiDisch:c.pdiDischarge||null,
-        sigAdmit:c.sigAdmit||null,sigDisch:c.sigDischarge||null
-      });
-    }
+    // Only add genuinely new clients with explicit episode dates
+    // AND whose first name doesn't match any historical client (prevents duplicates)
+    if(!c.pdiAdmit&&!c.sigAdmit)return;
+    var fn=c.name.toLowerCase().split(' ')[0];
+    var nameConflict=merged.some(function(m){return m.name.toLowerCase().split(' ')[0]===fn;});
+    if(nameConflict)return; // Skip - likely a duplicate of a historical client
+    merged.push({
+      id:c.id,name:c.name,source:'calendar',
+      pdiAdmit:c.pdiAdmit||null,pdiDisch:c.pdiDischarge||null,
+      sigAdmit:c.sigAdmit||null,sigDisch:c.sigDischarge||null
+    });
   });
   return merged;
 }
@@ -287,8 +290,11 @@ function compute(all){
   var pdiEps=all.filter(function(c){return c.pdiAdmit;});
   // Sig episodes = clients with sigAdmit
   var sigEps=all.filter(function(c){return c.sigAdmit;});
-  // Conversions = clients with BOTH
-  var conv=all.filter(function(c){return c.pdiAdmit&&c.sigAdmit;});
+  // Conversions: only PDI clients admitted April 2026+ (when Signature program opened)
+  // Earlier PDI clients (2025) had no Signature option so should not be in denominator
+  var SIG_LAUNCH='2026-04-01';
+  var convEligible=pdiEps.filter(function(c){return c.pdiAdmit>=SIG_LAUNCH;});
+  var conv=all.filter(function(c){return c.pdiAdmit&&c.sigAdmit&&c.pdiAdmit>=SIG_LAUNCH;});
 
   // PDI stats
   var pdiActive=pdiEps.filter(function(c){return!c.pdiDisch||c.pdiDisch>=today;});
@@ -314,7 +320,7 @@ function compute(all){
   sigEps.forEach(function(c){var k=mk(c.sigAdmit);if(k){sigMonths[k]=(sigMonths[k]||0)+1;}});
 
   return{
-    all:all,pdiEps:pdiEps,sigEps:sigEps,conv:conv,
+    all:all,pdiEps:pdiEps,sigEps:sigEps,conv:conv,convEligible:convEligible,
     pdiActive:pdiActive,pdiDisch:pdiDisch,pdiYTD:pdiYTD,
     sigActive:sigActive,sigDisch:sigDisch,sigYTD:sigYTD,
     pdiLosAvg:pdiLosAvg,pdiLosVals:pdiLosVals,
@@ -347,12 +353,14 @@ function render(M){
   set('sig-los-sub',M.sigLosVals.length?('Range: '+Math.min.apply(null,M.sigLosVals)+'–'+Math.max.apply(null,M.sigLosVals)+' days ('+M.sigLosVals.length+' completed)'):'No completed Signature episodes');
 
   // Conversion
-  var convRate=M.pdiEps.length>0?Math.round(M.conv.length/M.pdiEps.length*100):0;
+  var convRate=M.convEligible.length>0?Math.round(M.conv.length/M.convEligible.length*100):0;
   set('conv-pct',convRate+'%');
-  set('conv-desc','<strong>'+M.conv.length+' of '+M.pdiEps.length+' PDI clients</strong> transitioned to Signature.<br><br>'+
-    '<span class="conv-badge" style="background:#378ADD22;color:#378ADD">PDI Only: '+(M.pdiEps.length-M.conv.length)+'</span>'+
+  set('conv-desc',
+    '<strong>'+M.conv.length+' of '+M.convEligible.length+' eligible PDI clients</strong> transitioned to Signature.<br>'+
+    '<span style="font-size:11px;opacity:.7">(Eligible = PDI clients admitted April 2026 or later, when Signature opened)</span><br><br>'+
+    '<span class="conv-badge" style="background:#378ADD22;color:#378ADD">PDI Only (Apr 2026+): '+(M.convEligible.length-M.conv.length)+'</span>'+
     '<span class="conv-badge" style="background:#7F77DD22;color:#7F77DD">Converted to Sig: '+M.conv.length+'</span>'+
-    '<span class="conv-badge" style="background:#1D9E7522;color:#1D9E75">Sig Only (no PDI): '+(M.sigEps.length-M.conv.length)+'</span>');
+    '<span class="conv-badge" style="background:#6b728022;color:#6b7280">Pre-Apr 2026 PDI: '+(M.pdiEps.length-M.convEligible.length)+'</span>');
 
   Chart.defaults.font.family="'Plus Jakarta Sans',sans-serif";
   Chart.defaults.color='#6b7280';
