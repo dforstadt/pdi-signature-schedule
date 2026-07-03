@@ -91,7 +91,7 @@
       <button id="undo-btn" onclick="undo()" disabled style="display:flex;align-items:center;gap:6px;padding:7px 13px;border-radius:var(--r);border:.5px solid var(--bd2);background:transparent;cursor:pointer;font-size:13px;color:var(--tx2);font-family:var(--f);opacity:.35"><i class="ti ti-arrow-back-up" style="font-size:14px"></i> Undo</button>
       <button class="btn" onclick="openProviderViewPicker()" style="border-color:#1D9E7566;color:#1D9E75;background:#1D9E7511"><i class="ti ti-user"></i> My Schedule</button>
       <button class="btn" onclick="openStipendAuth()" id="stipend-btn" style="border-color:#BA751766;color:#BA7517;background:#BA751711"><i class="ti ti-currency-dollar"></i> Stipend Roster</button>
-      <button class="btn" onclick="exportToWord()" id="word-btn" style="border-color:#2b579a55;color:#2b579a;background:#2b579a11"><i class="ti ti-file-type-doc"></i> Daily Schedule</button>
+      <button class="btn" onclick="exportToWord()" id="word-btn" style="border-color:#2b579a55;color:#2b579a;background:#2b579a11"><i class="ti ti-file-type-doc"></i> Client Daily Schedules</button>
       <button class="btn" onclick="openManageProviders()" style="border-color:#7F77DD66;color:#7F77DD;background:#7F77DD11"><i class="ti ti-users"></i> Manage Providers</button>
       <button class="btn" onclick="openShare()"><i class="ti ti-link"></i> Share</button>
     </div>
@@ -1339,38 +1339,47 @@ function exportToWord(){
       var evs=de.filter(function(e){return e.clientId===client.id;}).sort(function(a,b){return a.slotIndex-b.slotIndex;});
       var pb=ci>0?'<p style="page-break-before:always;font-size:1pt;margin:0">&nbsp;</p>':'';
       var prog=client.program||'PDI';
-      var logoSrc=(prog==='PDI'||prog==='Both')?LOGO_PDI_DATA:LOGO_PDF_DATA;
-      var progColor=prog==='PDI'?'#378ADD':prog==='Signature'?'#7F77DD':'#1D9E75';
-      var progLabel=prog==='Both'?'PDI → Signature':prog;
+      // Logo reflects the program — no need to label it separately
+      var logoSrc=(prog==='Signature')?LOGO_PDF_DATA:LOGO_PDI_DATA;
       var entries='';
-      if(!evs.length){entries='<p style="font-size:10pt;color:#9ca3af;font-style:italic;margin:0">No services scheduled.</p>';}
-      else{evs.forEach(function(ev){
-        var es=SLOTS[ev.slotIndex+ev.duration];
-        var ts=es?(SLOTS[ev.slotIndex].label+' &ndash; '+es.label):SLOTS[ev.slotIndex].label;
-        entries+='<table style="border-collapse:collapse;width:100%;margin-bottom:10pt"><tr>'+
-          '<td style="width:16pt;vertical-align:top;padding-top:1pt;text-align:center"><p style="margin:0;font-size:9pt">&#9679;</p></td>'+
-          '<td><p style="margin:0;font-size:10pt;font-weight:bold">'+ev.service+
-          (!isMeal(ev.service)?' <span style="font-weight:normal;color:#6b7280">&mdash; '+ev.provider+'</span>':'')+
-          '</p><p style="margin:2pt 0 0;font-size:9pt;color:#9ca3af">'+ts+'</p></td></tr></table>';
-      });}
+      if(!evs.length){
+        entries='<p style="font-size:10pt;color:#9ca3af;font-style:italic;margin:0">No services scheduled.</p>';
+      } else {
+        evs.forEach(function(ev){
+          var es=SLOTS[ev.slotIndex+ev.duration];
+          var ts=es?(SLOTS[ev.slotIndex].label+' &ndash; '+es.label):SLOTS[ev.slotIndex].label;
+          entries+='<table style="border-collapse:collapse;width:100%;margin-bottom:10pt"><tr>'+
+            '<td style="width:16pt;vertical-align:top;padding-top:1pt;text-align:center">'+
+            '<p style="margin:0;font-size:9pt;color:#111827">&#9679;</p></td>'+
+            '<td style="vertical-align:top;padding:0">'+
+            '<p style="margin:0;font-size:10pt;color:#111827;font-weight:bold">'+ev.service+
+            (!isMeal(ev.service)?' &nbsp;<span style="font-weight:normal;color:#6b7280">&mdash; '+ev.provider+'</span>':'')+
+            '</p><p style="margin:2pt 0 0;font-size:9pt;color:#9ca3af">'+ts+'</p>'+
+            '</td></tr></table>';
+        });
+      }
       pages+=pb+
-        '<img src="'+logoSrc+'" style="height:38pt;object-fit:contain;margin-bottom:8pt;display:block">'+
-        '<p style="font-size:16pt;font-weight:bold;color:#111;margin:0 0 4pt">'+client.name+'</p>'+
-        '<p style="margin:0 0 4pt"><span style="font-size:9pt;font-weight:bold;color:'+progColor+';background:'+progColor+'22;padding:1pt 7pt;border-radius:3pt">'+progLabel+'</span>'+
-        (client.startDate?' &nbsp;<span style="font-size:8pt;color:#6b7280">Admitted: '+client.startDate+'</span>':'')+
-        (client.endDate?' &nbsp;<span style="font-size:8pt;color:#b91c1c">Discharged: '+client.endDate+'</span>':'')+
-        '</p><p style="font-size:9.5pt;color:#6b7280;margin:0 0 14pt">'+fmtFull(today)+'</p>'+
-        '<p style="border-bottom:1pt solid #e5e7eb;margin:0 0 14pt"></p>'+entries+
-        '<p style="font-size:7.5pt;color:#d1d5db;text-align:center;margin-top:28pt">'+S.title+' &mdash; Confidential &mdash; '+new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})+'</p>';
+        '<img src="'+logoSrc+'" style="height:42pt;object-fit:contain;margin-bottom:12pt;display:block">'+
+        '<p style="font-size:16pt;font-weight:bold;color:#111827;margin:0 0 4pt">'+client.name+'</p>'+
+        '<p style="font-size:10pt;color:#6b7280;margin:0 0 18pt">'+fmtFull(today)+'</p>'+
+        '<p style="border-bottom:1pt solid #e5e7eb;margin:0 0 16pt"></p>'+
+        entries+
+        '<p style="font-size:7.5pt;color:#d1d5db;text-align:center;margin-top:32pt">'+
+        S.title+' &mdash; Confidential &mdash; '+
+        new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})+'</p>';
     });
     if(!pages){alert('No active clients on this date.');return;}
-    var html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>'+S.title+'</title><style>@page{margin:.9in 1.1in;}body,p,table{font-family:"Calibri",sans-serif;font-size:11pt;}</style></head><body>'+pages+'</body></html>';
+    var html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">'+
+      '<head><meta charset="utf-8"><title>'+S.title+'</title>'+
+      '<style>@page{margin:.9in 1.1in .9in 1.1in;}body,p,table{font-family:"Calibri",sans-serif;font-size:11pt;color:#111827;}</style>'+
+      '</head><body>'+pages+'</body></html>';
     var blob=new Blob(['﻿'+html],{type:'application/msword'});
     var url=URL.createObjectURL(blob);
-    var a=document.createElement('a');a.href=url;a.download='Schedule_'+today.replace(/-/g,'')+'.doc';
+    var a=document.createElement('a');a.href=url;
+    a.download='ClientSchedule_'+today.replace(/-/g,'')+'.doc';
     document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
-  }catch(err){alert('Export failed: '+err.message);}
-  finally{if(btn){btn.innerHTML='<i class="ti ti-file-type-doc"></i> Daily Client Schedule';btn.disabled=false;}}
+  }catch(err){alert('Export failed: '+err.message);console.error(err);}
+  finally{if(btn){btn.innerHTML='<i class="ti ti-file-type-doc"></i> Client Daily Schedules';btn.disabled=false;}}
 }
 function exportToStipendExcel(){
   if(typeof XLSX==='undefined'){alert('Still loading.');return;}
