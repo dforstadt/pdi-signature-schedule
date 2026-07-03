@@ -505,7 +505,7 @@ function renderByStaff(D){
 
   var html='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">'+
     '<div><h3 style="font-size:15px;font-weight:600;margin-bottom:3px">Stipend by Therapist by Week</h3>'+
-    '<p style="font-size:12px;color:var(--tx3)">Approve each therapist's weekly stipend amount. Approvals are saved to Firebase and visible to all users.</p></div>'+
+    '<p style="font-size:12px;color:var(--tx3)">Approve each therapist\u2019s weekly stipend amount. Approvals are saved to Firebase and visible to all users.</p></div>'+
     '<div style="display:flex;gap:8px">'+
       '<button class="excel-btn" onclick="exportByStaffExcel()">&#x2193; Export to Excel</button>'+
     '</div></div>';
@@ -534,7 +534,7 @@ function renderByStaff(D){
         '<td class="money">'+fmt$(r.pdiAmt)+'</td>'+
         '<td class="money" style="font-weight:700;color:var(--green)">'+fmt$(r.total)+'</td>'+
         '<td style="text-align:center">'+
-          '<button id="'+keyId+'" class="approve-btn'+(apvd?' approved':'')+'" onclick="toggleApproval(''+key+'')">'+
+          '<button id="'+keyId+'" class="approve-btn'+(apvd?' approved':'')+'" onclick="toggleApproval(this.dataset.key)" data-key="'+key+'">'
             (apvd?'&#x2713; Approved':'Approve')+
           '</button>'+
         '</td>'+
