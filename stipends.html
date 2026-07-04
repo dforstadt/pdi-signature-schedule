@@ -297,99 +297,99 @@ function showTab(tab){
 // ── COMPUTE STIPENDS ────────────────────────────────────────────────────────
 function computeStipends(){
   var fltTrack=document.getElementById('flt-track').value;
-  var fltFrom=document.getElementById('flt-from').value;
-  var fltTo=document.getElementById('flt-to').value;
+  var fltFrom =document.getElementById('flt-from').value;
+  var fltTo   =document.getElementById('flt-to').value;
 
-  // ── Provider helpers ────────────────────────────────────────────────────
-  function noStipend(p){
-    var pr=DATA.providers[p];if(!pr)return false;
-    return pr.stipendType?pr.stipendType==='none':!!pr.noStipend;
-  }
-  function isWeeklyProv(p){
-    var pr=DATA.providers[p];if(!pr)return false;
-    var st=pr.stipendType;return st==='weekly'||st==='pdi_weekly';
-  }
-  function isSessionProv(p){
-    return !noStipend(p)&&!isWeeklyProv(p);
-  }
+  // ── Provider helpers ─────────────────────────────────────────────────────
+  function noStipend(p){var pr=DATA.providers[p];if(!pr)return false;return pr.stipendType?pr.stipendType==='none':!!pr.noStipend;}
+  function isWeeklyProv(p){var pr=DATA.providers[p];if(!pr)return false;var st=pr.stipendType;return st==='weekly'||st==='pdi_weekly';}
+  function isSessionProv(p){return !noStipend(p)&&!isWeeklyProv(p);}
 
-  // ── Event helpers ────────────────────────────────────────────────────────
+  // ── Event helpers ─────────────────────────────────────────────────────────
   function isCompleted(ev){return(ev.status||'').toLowerCase()==='completed';}
   function isGroup(ev){return ev.service&&ev.service.toLowerCase().indexOf('group')>-1;}
-  function isBillableSig(ev){return isCompleted(ev)&&!isGroup(ev);}
+  function isBillable(ev){return isCompleted(ev)&&!isGroup(ev);}
 
-  // ── Date helpers ─────────────────────────────────────────────────────────
+  // ── Date helpers ──────────────────────────────────────────────────────────
   function toISO(d){return d?String(d).slice(0,10):null;}
-  function weekEnd(wStart){
-    var d=new Date(wStart+'T12:00:00');d.setDate(d.getDate()+6);return d.toISOString().slice(0,10);
-  }
+  function today(){return new Date().toISOString().slice(0,10);}
+  function weekEnd(ws){var d=new Date(ws+'T12:00:00');d.setDate(d.getDate()+6);return d.toISOString().slice(0,10);}
 
-  // ── Determine all relevant weeks (from events) ───────────────────────────
+  // ── Weeks derived from all events ─────────────────────────────────────────
   var weekSet={};
-  DATA.events.forEach(function(ev){
-    if(!ev.date)return;
-    var ws=getMon(fromISO(ev.date));
-    weekSet[ws]=true;
-  });
+  DATA.events.forEach(function(ev){if(ev.date)weekSet[getMon(fromISO(ev.date))]=true;});
   var allWeeks=Object.keys(weekSet).sort();
-
-  // Apply date filters
   if(fltFrom)allWeeks=allWeeks.filter(function(w){return w>=getMon(fromISO(fltFrom));});
   if(fltTo)  allWeeks=allWeeks.filter(function(w){return w<=getMon(fromISO(fltTo));});
 
-  // ── Weekly-stipend providers (Ockman, Nicole, Gus) ──────────────────────
-  var weeklyProviders=Object.keys(DATA.providers).filter(function(p){
-    return !noStipend(p)&&isWeeklyProv(p);
-  });
+  // ── Weekly-type providers (Ockman, Nicole, Gus) ───────────────────────────
+  var weeklyProviders=Object.keys(DATA.providers).filter(function(p){return !noStipend(p)&&isWeeklyProv(p);});
 
   var lineItems=[];
-  var pdiCounted={};  // key = clientId+':'+providerName -> true (once per episode)
+  var pdiCounted={};  // cid+':'+prov → true — ensures $250 paid once per PDI episode
 
-  // Roster tracking for renderRoster
+  // Roster accumulators
   var sigHrsByStaff={},sigStiByStaff={},pdiStiByStaff={};
   var sigStaffSet={},weekStiStaffSet={},pdiStaffSet={};
   var byClientSig={},byClientPDI={};
 
-  function clientName(cid){
-    var c=DATA.clients.find(function(c){return c.id===cid;});return c?c.name:'';
-  }
-  function clientProg(cid){
-    var c=DATA.clients.find(function(c){return c.id===cid;});return c?(c.program||''):'';
-  }
+  // ── Pre-compute PDI providers per client (once per client, not per week) ──
+  // Rule: Ockman/Nicole/Gus always + any session provider with a COMPLETED
+  // non-group session whose date falls within the client's PDI episode
+  // (pdiAdmit ≤ session.date ≤ pdiDischarge or today if still active)
+  var pdiProvsByClient={};
+  DATA.clients.forEach(function(client){
+    var prog=client.program||'';
+    if(prog!=='PDI'&&prog!=='Both')return;
+    var pdiAdmit=toISO(client.pdiAdmit);
+    if(!pdiAdmit)return;
+    var pdiDisch=toISO(client.pdiDischarge||client.pdiDisch)||today();
+    var provs=new Set();
+    // Ockman/Nicole/Gus always
+    weeklyProviders.forEach(function(p){provs.add(p);});
+    // Session providers: ONLY sessions that occurred DURING the PDI episode
+    DATA.events.forEach(function(ev){
+      if(ev.clientId!==client.id)return;
+      if(!isBillable(ev))return;
+      if(!ev.date||ev.date<pdiAdmit||ev.date>pdiDisch)return; // must be within PDI episode dates
+      if(!ev.provider||!ev.provider.trim())return;
+      if(noStipend(ev.provider)||!isSessionProv(ev.provider))return;
+      provs.add(ev.provider);
+    });
+    pdiProvsByClient[client.id]=provs;
+  });
 
   allWeeks.forEach(function(wStart){
     var wEnd=weekEnd(wStart);
     var wLbl=wkLabel(wStart);
-    var wEvs=DATA.events.filter(function(ev){
-      return ev.date&&getMon(fromISO(ev.date))===wStart;
-    });
+    var wEvs=DATA.events.filter(function(ev){return ev.date&&getMon(fromISO(ev.date))===wStart;});
 
-    // ── SIGNATURE ────────────────────────────────────────────────────────
+    // ════════════════════════════════════════════════════════════════
+    // SIGNATURE
+    // ════════════════════════════════════════════════════════════════
     if(fltTrack!=='PDI'){
 
-      // All active Signature clients this week (based on admission/discharge dates)
-      // A client is active if: sigAdmit <= wEnd AND (no sigDischarge OR sigDischarge >= wStart)
-      var activeSigClients=DATA.clients.filter(function(c){
+      // Active Signature clients this week: sigAdmit ≤ wEnd AND (no sigDisch OR sigDisch ≥ wStart)
+      var activeSig=DATA.clients.filter(function(c){
         var prog=c.program||'';
         if(prog!=='Signature'&&prog!=='Both')return false;
         var admit=toISO(c.sigAdmit);
         var disch=toISO(c.sigDischarge||c.sigDisch);
-        if(!admit)return false;
-        if(admit>wEnd)return false;          // not yet admitted
-        if(disch&&disch<wStart)return false; // already discharged
+        if(!admit||admit>wEnd)return false;
+        if(disch&&disch<wStart)return false;
         return true;
       });
 
-      activeSigClients.forEach(function(client){
+      activeSig.forEach(function(client){
         var cid=client.id,cName=client.name;
+        var sigAdmit=toISO(client.sigAdmit);
+        var sigDisch =toISO(client.sigDischarge||client.sigDisch)||today();
         if(!byClientSig[cid])byClientSig[cid]={staffHrs:{},weeklyStaff:new Set(),sigHrs:0,sessAmt:0,wklyAmt:0};
 
-        // Weekly stipend — $250/wk per active Sig client for Ockman/Nicole/Gus
+        // ── Weekly stipend: $250/wk per active Sig client (Ockman/Nicole/Gus) ──
         weeklyProviders.forEach(function(prov){
-          lineItems.push({
-            week:wLbl,wStart:wStart,client:cName,track:'Signature',
-            staff:prov,type:'Weekly Stipend',sessHrs:'',rate:'',amount:250,counted:250,notes:''
-          });
+          lineItems.push({week:wLbl,wStart:wStart,client:cName,track:'Signature',
+            staff:prov,type:'Weekly Stipend',sessHrs:'',rate:'',amount:250,counted:250,notes:''});
           if(!sigStiByStaff[prov])sigStiByStaff[prov]={};
           sigStiByStaff[prov][wStart]=(sigStiByStaff[prov][wStart]||0)+250;
           weekStiStaffSet[prov]=true;
@@ -397,25 +397,22 @@ function computeStipends(){
           byClientSig[cid].wklyAmt+=250;
         });
 
-        // Session fees — $150 per COMPLETED non-group session by session-type providers
-        var cEvs=wEvs.filter(function(ev){return ev.clientId===cid;});
+        // ── Session fees: $150/completed session, ONLY within Signature episode dates ──
         var sessMap={};
-        cEvs.forEach(function(ev){
+        wEvs.forEach(function(ev){
+          if(ev.clientId!==cid)return;
+          if(!isBillable(ev))return;                           // completed, non-group
+          if(!ev.date||ev.date<sigAdmit||ev.date>sigDisch)return; // must be in Sig episode
           if(!ev.provider||!ev.provider.trim())return;
-          if(!isBillableSig(ev))return;   // COMPLETED only, no groups
           if(!isSessionProv(ev.provider))return;
           if(!sessMap[ev.provider])sessMap[ev.provider]=0;
-          sessMap[ev.provider]+=ev.duration; // slots (each = 30 min)
+          sessMap[ev.provider]+=ev.duration;                  // slots; /2 = hours
         });
         Object.keys(sessMap).forEach(function(prov){
-          var slots=sessMap[prov];
-          var hrs=slots/2;
-          var amt=hrs*150;
-          lineItems.push({
-            week:wLbl,wStart:wStart,client:cName,track:'Signature',
+          var slots=sessMap[prov],hrs=slots/2,amt=hrs*150;
+          lineItems.push({week:wLbl,wStart:wStart,client:cName,track:'Signature',
             staff:prov,type:'Session',sessHrs:hrs,rate:150,amount:amt,counted:amt,
-            notes:slots+' completed slot'+(slots!==1?'s':'')+' \u00d7 30 min = '+hrs+' hr'+(hrs!==1?'s':'')
-          });
+            notes:slots+' completed slot'+(slots!==1?'s':'')+' \u00d7 30\u202fmin'});
           if(!sigHrsByStaff[prov])sigHrsByStaff[prov]={};
           sigHrsByStaff[prov][wStart]=(sigHrsByStaff[prov][wStart]||0)+hrs;
           sigStaffSet[prov]=true;
@@ -427,93 +424,67 @@ function computeStipends(){
       });
     }
 
-    // ── PDI ──────────────────────────────────────────────────────────────
+    // ════════════════════════════════════════════════════════════════
+    // PDI — $250 flat per provider per episode, paid exactly once
+    // The first week a PDI client appears in allWeeks is when the stipend fires.
+    // Subsequent weeks show $0 (already paid).
+    // ════════════════════════════════════════════════════════════════
     if(fltTrack!=='Signature'){
 
-      // PDI clients active this week (based on pdiAdmit/pdiDischarge)
-      var activePDIClients=DATA.clients.filter(function(c){
+      // Active PDI clients this week: pdiAdmit ≤ wEnd AND (no pdiDisch OR pdiDisch ≥ wStart)
+      var activePDI=DATA.clients.filter(function(c){
         var prog=c.program||'';
         if(prog!=='PDI'&&prog!=='Both')return false;
         var admit=toISO(c.pdiAdmit);
         var disch=toISO(c.pdiDischarge||c.pdiDisch);
-        if(!admit)return false;
-        if(admit>wEnd)return false;
+        if(!admit||admit>wEnd)return false;
         if(disch&&disch<wStart)return false;
         return true;
       });
 
-      activePDIClients.forEach(function(client){
+      activePDI.forEach(function(client){
         var cid=client.id,cName=client.name;
         if(!byClientPDI[cid])byClientPDI[cid]={staffAmt:{}};
+        var provs=pdiProvsByClient[cid]||new Set();
 
-        // Build set of providers for this PDI episode:
-        // 1. Always: Ockman, Nicole, Gus (weeklyProviders)
-        // 2. Any session-type provider with COMPLETED non-group sessions with this client
-        //    during any week of this episode (not just this week)
-        var pdiProvs=new Set();
-
-        // Add weekly providers always
-        weeklyProviders.forEach(function(p){pdiProvs.add(p);});
-
-        // Add session providers who had COMPLETED non-group sessions with this client
-        // Look across ALL events for this client (entire episode), not just this week
-        DATA.events.forEach(function(ev){
-          if(ev.clientId!==cid)return;
-          if(!ev.provider||!ev.provider.trim())return;
-          if(!isCompleted(ev))return;
-          if(isGroup(ev))return;
-          if(noStipend(ev.provider))return;
-          if(!isSessionProv(ev.provider))return;
-          pdiProvs.add(ev.provider);
-        });
-
-        // $250 flat per provider per episode — pay once, show $0 if already counted
-        pdiProvs.forEach(function(prov){
+        provs.forEach(function(prov){
           var key=cid+':'+prov;
           var already=!!pdiCounted[key];
           var counted=already?0:250;
-          var note=already?'Already paid in earlier week of this episode.':'';
           if(!already)pdiCounted[key]=true;
-
-          lineItems.push({
-            week:wLbl,wStart:wStart,client:cName,track:'PDI',
-            staff:prov,type:'Flat Stipend',sessHrs:'',rate:'',
-            amount:250,counted:counted,notes:note
-          });
+          lineItems.push({week:wLbl,wStart:wStart,client:cName,track:'PDI',
+            staff:prov,type:'Flat Stipend',sessHrs:'',rate:'',amount:250,counted:counted,
+            notes:already?'Already counted in earlier week of this PDI episode.':''});
           if(!pdiStiByStaff[prov])pdiStiByStaff[prov]={};
           pdiStiByStaff[prov][wStart]=(pdiStiByStaff[prov][wStart]||0)+counted;
           pdiStaffSet[prov]=true;
           if(counted>0){
-            if(!byClientPDI[cid].staffAmt[prov])byClientPDI[cid].staffAmt[prov]=0;
-            byClientPDI[cid].staffAmt[prov]+=counted;
+            byClientPDI[cid].staffAmt[prov]=(byClientPDI[cid].staffAmt[prov]||0)+counted;
           }
         });
       });
     }
   });
 
-  // ── Summary by week ──────────────────────────────────────────────────────
-  var summaryByWeek={};
+  // ── Weekly summary ────────────────────────────────────────────────────────
+  var sumMap={};
   lineItems.forEach(function(li){
-    if(!summaryByWeek[li.wStart])summaryByWeek[li.wStart]={week:li.week,wStart:li.wStart,sigHrs:0,sigCost:0,pdiCost:0};
+    if(!sumMap[li.wStart])sumMap[li.wStart]={week:li.week,wStart:li.wStart,sigHrs:0,sigCost:0,pdiCost:0};
     if(li.track==='Signature'){
-      if(li.type==='Session'){summaryByWeek[li.wStart].sigHrs+=li.sessHrs||0;summaryByWeek[li.wStart].sigCost+=li.counted||li.amount;}
-      else{summaryByWeek[li.wStart].sigCost+=li.counted||li.amount;}
+      if(li.type==='Session'){sumMap[li.wStart].sigHrs+=li.sessHrs||0;sumMap[li.wStart].sigCost+=li.amount;}
+      else{sumMap[li.wStart].sigCost+=li.amount;}
     }else{
-      summaryByWeek[li.wStart].pdiCost+=li.counted||0;
+      sumMap[li.wStart].pdiCost+=li.counted||0;
     }
   });
-  var summaryFinal=allWeeks.filter(function(w){return summaryByWeek[w];}).map(function(w){
-    var r=summaryByWeek[w];
-    return{week:r.week,wStart:w,sigHrs:r.sigHrs,sigCost:r.sigCost,pdiCost:r.pdiCost,combined:r.sigCost+r.pdiCost};
+  var summaryFinal=allWeeks.filter(function(w){return sumMap[w];}).map(function(w){
+    var r=sumMap[w];return{week:r.week,wStart:w,sigHrs:r.sigHrs,sigCost:r.sigCost,pdiCost:r.pdiCost,combined:r.sigCost+r.pdiCost};
   });
 
-  return{
-    lineItems:lineItems,summaryFinal:summaryFinal,sortedWeeks:allWeeks,
+  return{lineItems:lineItems,summaryFinal:summaryFinal,sortedWeeks:allWeeks,
     sigHrsByStaff:sigHrsByStaff,sigStiByStaff:sigStiByStaff,pdiStiByStaff:pdiStiByStaff,
     sigStaffSet:sigStaffSet,weekStiStaffSet:weekStiStaffSet,pdiStaffSet:pdiStaffSet,
-    byClientSig:byClientSig,byClientPDI:byClientPDI,fltTrack:fltTrack
-  };
+    byClientSig:byClientSig,byClientPDI:byClientPDI,fltTrack:fltTrack};
 }
 
 // ── RENDER ─────────────────────────────────────────────────────────────────
