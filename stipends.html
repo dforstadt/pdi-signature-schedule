@@ -302,8 +302,15 @@ function computeStipends(){
 
   // Build week map from all events (excluding no-stipend providers)
   var weekMap={};
+  // Only billable statuses: scheduled and completed
+  // Cancelled and rescheduled sessions are NOT counted toward stipends
+  function isBillable(ev){
+    var st=(ev.status||'scheduled').toLowerCase();
+    return st==='scheduled'||st==='completed';
+  }
   DATA.events.forEach(function(ev){
-    if(!ev.provider||!ev.provider.trim())return; // skip blank provider
+    if(!ev.provider||!ev.provider.trim())return;
+    if(!isBillable(ev))return; // exclude cancelled / rescheduled
     if(noStipend(ev.provider))return;
     var ws=getMon(fromISO(ev.date));
     if(!weekMap[ws])weekMap[ws]=[];
@@ -359,7 +366,8 @@ function computeStipends(){
           var hrs=sessionProvMap[prov]/2;
           var amt=hrs*150;
           wSigHrs+=hrs;wSigCost+=amt;
-          lineItems.push({week:wLbl,wStart:wStart,client:cName,track:'Signature',staff:prov,type:'Session',sessHrs:hrs,rate:150,amount:amt,counted:amt,notes:''});
+          var evCount=Object.values(sessionProvMap).length;
+          lineItems.push({week:wLbl,wStart:wStart,client:cName,track:'Signature',staff:prov,type:'Session',sessHrs:hrs,rate:150,amount:amt,counted:amt,notes:hrs*2+' billable slot(s) from calendar'});
           if(!sigHrsByStaff[prov])sigHrsByStaff[prov]={};
           if(!sigHrsByStaff[prov][wStart])sigHrsByStaff[prov][wStart]=0;
           sigHrsByStaff[prov][wStart]+=hrs;
@@ -402,9 +410,10 @@ function computeStipends(){
           if(!prov||!prov.trim())return;
           if(!noStipend(prov)&&isPDIWeekly(prov))pdiProvs.add(prov);
         });
-        // Add any session provider who has direct (non-group) hours with this client
+        // Add any session provider with direct (non-group) billable hours with this client
         cEvs.forEach(function(ev){
           if(!ev.provider||!ev.provider.trim())return;
+          if(!isBillable(ev))return; // skip cancelled/rescheduled
           if(noStipend(ev.provider))return;
           if(ev.service&&ev.service.toLowerCase().indexOf('group')>-1)return;
           pdiProvs.add(ev.provider);
