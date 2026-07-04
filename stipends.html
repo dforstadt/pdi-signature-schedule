@@ -215,7 +215,7 @@ td.money.zero{color:var(--tx3);}
   <div class="nav-tab" onclick="showTab('lineitems')">Line Items</div>
   <div class="nav-tab" onclick="showTab('roster')">Weekly Staff Roster</div>
   <div class="nav-tab" onclick="showTab('byclient')">By Client</div>
-  <div class="nav-tab" onclick="showTab('bystaff')">By Therapist by Week</div>
+  <div class="nav-tab" onclick="showTab('bystaff')">Stipend Approval</div>
 </div>
 
 <!-- FILTERS -->
@@ -432,6 +432,8 @@ function computeStipends(){
   // record is missing or has the wrong stipendType in the calendar.
   // Names must match exactly what is used in the calendar provider list.
   var WEEKLY_CORE=['David Ockman','Nicole','Gus Hernandez'];
+  // Providers who receive Signature session fees only — excluded from PDI flat stipend
+  var PDI_EXCLUDED=['Rabbi Gaines'];
 
   // Build weeklyProviders: core three + any other pdi_weekly providers in DATA.providers
   var weeklyProviders=[];
@@ -506,6 +508,7 @@ function computeStipends(){
       if(!evDate||evDate<pdiAdmit.slice(0,10)||evDate>pdiDisch.slice(0,10))return;
       if(!ev.provider||!ev.provider.trim())return;
       if(noStipend(ev.provider)||!isSessionProv(ev.provider))return;
+      if(PDI_EXCLUDED.indexOf(ev.provider)>-1)return; // excluded from PDI flat stipend
       provs.add(ev.provider);
     });
     pdiProvsByClient[client.id]=provs;
@@ -1167,7 +1170,7 @@ function renderByClient(D){
   // ── SIGNATURE section ──────────────────────────────────────────────────
   if(D.fltTrack!=='PDI'&&sigClients.length){
     html+='<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--tx3);margin:0 0 8px;padding:16px 16px 0">'+
-      'Signature \u2014 Session Hours & Weekly Stipend by Client</div>';
+      'Signature \u2014 Session Hours & Weekly Stipend by Client (cumulative for selected filter period)</div>';
     html+='<div style="overflow:auto;margin-bottom:20px"><table style="width:100%;border-collapse:collapse;font-size:12px">'+
       '<thead><tr style="background:#0d1117;color:#fff">'+
       '<th style="padding:7px 12px;text-align:left;font-size:10px;font-weight:500;position:sticky;left:0;background:#0d1117">Client</th>'+
@@ -1214,7 +1217,7 @@ function renderByClient(D){
   // ── PDI section ────────────────────────────────────────────────────────
   if(D.fltTrack!=='Signature'&&pdiClients.length){
     html+='<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--tx3);margin:0 0 8px;padding:0 16px">'+
-      'PDI \u2014 Flat Stipend by Client ($250 per provider per episode)</div>';
+      'PDI \u2014 Flat Stipend by Client ($250 per provider, once per PDI episode, shown in discharge week)</div>';
     html+='<div style="overflow:auto;margin-bottom:20px"><table style="width:100%;border-collapse:collapse;font-size:12px">'+
       '<thead><tr style="background:#0d1117;color:#fff">'+
       '<th style="padding:7px 12px;text-align:left;font-size:10px;font-weight:500;position:sticky;left:0;background:#0d1117">Client</th>'+
