@@ -431,7 +431,30 @@ function computeStipends(){
   noStipend=function(p){return WEEKLY_CORE.indexOf(p)>-1?false:_noStipend(p);};
 
   var lineItems=[];
-  var pdiCounted={};  // cid+':'+prov → true — ensures $250 paid once per PDI episode
+
+  // Pre-compute the PDI stipend trigger week for each PDI client.
+  // Rule: fire the flat $250 in the week containing pdiDischarge.
+  // If still active (no discharge), fire in the current/last event week for that client.
+  var pdiStipendWeek={};  // clientId -> ISO Monday of the week to fire
+  DATA.clients.forEach(function(client){
+    var prog=client.program||'';
+    if(prog!=='PDI'&&prog!=='Both')return;
+    var admit=toISO(client.pdiAdmit);if(!admit)return;
+    var disch=toISO(client.pdiDischarge||client.pdiDisch);
+    if(disch){
+      // Fire in the week containing discharge date
+      pdiStipendWeek[client.id]=getMon(fromISO(disch));
+    } else {
+      // Still active — find the latest event week for this client during PDI
+      var lastWk=admit;
+      DATA.events.forEach(function(ev){
+        if(ev.clientId!==client.id||!ev.date)return;
+        var evMon=getMon(fromISO(ev.date));
+        if(evMon>lastWk)lastWk=evMon;
+      });
+      pdiStipendWeek[client.id]=lastWk;
+    }
+  });
 
   // Roster accumulators
   var sigHrsByStaff={},sigStiByStaff={},pdiStiByStaff={};
@@ -536,42 +559,35 @@ function computeStipends(){
     }
 
     // ════════════════════════════════════════════════════════════════
-    // PDI — $250 flat per provider per episode, paid exactly once
-    // The first week a PDI client appears in allWeeks is when the stipend fires.
-    // Subsequent weeks show $0 (already paid).
+    // PDI — $250 flat per provider per episode, triggered on discharge week
+    // The stipend fires ONCE in the week that contains pdiDischarge.
+    // For still-active PDI clients, fires in their latest event week.
     // ════════════════════════════════════════════════════════════════
     if(fltTrack!=='Signature'){
 
-      // Active PDI clients this week: pdiAdmit ≤ wEnd AND (no pdiDisch OR pdiDisch ≥ wStart)
-      var activePDI=DATA.clients.filter(function(c){
+      // Only PDI clients whose stipend trigger week is THIS week
+      var pdiThisWeek=DATA.clients.filter(function(c){
         var prog=c.program||'';
         if(prog!=='PDI'&&prog!=='Both')return false;
-        var admit=toISO(c.pdiAdmit);
-        var disch=toISO(c.pdiDischarge||c.pdiDisch);
-        if(!admit||admit>wEnd)return false;
-        if(disch&&disch<wStart)return false;
-        return true;
+        if(!c.pdiAdmit)return false;
+        return pdiStipendWeek[c.id]===wStart;
       });
 
-      activePDI.forEach(function(client){
+      pdiThisWeek.forEach(function(client){
         var cid=client.id,cName=client.name;
         if(!byClientPDI[cid])byClientPDI[cid]={staffAmt:{}};
         var provs=pdiProvsByClient[cid]||new Set();
+        var disch=toISO(client.pdiDischarge||client.pdiDisch);
+        var note=disch?'PDI discharge: '+disch:'PDI episode active — stipend in latest event week';
 
         provs.forEach(function(prov){
-          var key=cid+':'+prov;
-          var already=!!pdiCounted[key];
-          var counted=already?0:250;
-          if(!already)pdiCounted[key]=true;
           lineItems.push({week:wLbl,wStart:wStart,client:cName,track:'PDI',
-            staff:prov,type:'Flat Stipend',sessHrs:'',rate:'',amount:250,counted:counted,
-            notes:already?'Already counted in earlier week of this PDI episode.':''});
+            staff:prov,type:'Flat Stipend',sessHrs:'',rate:'',amount:250,counted:250,
+            notes:note});
           if(!pdiStiByStaff[prov])pdiStiByStaff[prov]={};
-          pdiStiByStaff[prov][wStart]=(pdiStiByStaff[prov][wStart]||0)+counted;
+          pdiStiByStaff[prov][wStart]=(pdiStiByStaff[prov][wStart]||0)+250;
           pdiStaffSet[prov]=true;
-          if(counted>0){
-            byClientPDI[cid].staffAmt[prov]=(byClientPDI[cid].staffAmt[prov]||0)+counted;
-          }
+          byClientPDI[cid].staffAmt[prov]=(byClientPDI[cid].staffAmt[prov]||0)+250;
         });
       });
     }
@@ -585,7 +601,7 @@ function computeStipends(){
       if(li.type==='Session'){sumMap[li.wStart].sigHrs+=li.sessHrs||0;sumMap[li.wStart].sigCost+=li.amount;}
       else{sumMap[li.wStart].sigCost+=li.amount;}
     }else{
-      sumMap[li.wStart].pdiCost+=li.counted||0;
+      sumMap[li.wStart].pdiCost+=li.counted||li.amount||0;
     }
   });
   var summaryFinal=allWeeks.filter(function(w){return sumMap[w];}).map(function(w){
