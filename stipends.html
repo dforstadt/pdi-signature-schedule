@@ -5,9 +5,74 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PDI / Signature — Stipend Roster</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" async></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js">
+// ── Week navigation ────────────────────────────────────────────────────────
+var _wkOffset=0;
+function getMondayISO(offset){
+  var d=new Date(),day=d.getDay();
+  d.setDate(d.getDate()-day+(day===0?-6:1)+offset*7);
+  return d.toISOString().slice(0,10);
+}
+function fmtWeekRange(mon){
+  var d=new Date(mon+'T12:00:00'),e=new Date(mon+'T12:00:00');
+  e.setDate(e.getDate()+6);
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+
+    ' – '+e.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+}
+function setWeekFilter(mon){
+  var sun=new Date(mon+'T12:00:00');sun.setDate(sun.getDate()+6);
+  var sunISO=sun.toISOString().slice(0,10);
+  var fe=document.getElementById('flt-from'),te=document.getElementById('flt-to');
+  if(fe)fe.value=mon;
+  if(te)te.value=sunISO;
+  var lbl=document.getElementById('wk-range-lbl');
+  if(lbl)lbl.textContent=fmtWeekRange(mon);
+  updateNavBtns();
+  if(window._fbLoaded)render();
+}
+function shiftWeek(dir){
+  _wkOffset+=dir;
+  if(_wkOffset>0)_wkOffset=0;
+  setWeekFilter(getMondayISO(_wkOffset));
+}
+function clearWeekFilter(){
+  _wkOffset=0;
+  var fe=document.getElementById('flt-from'),te=document.getElementById('flt-to');
+  if(fe)fe.value='';if(te)te.value='';
+  var lbl=document.getElementById('wk-range-lbl');
+  if(lbl)lbl.textContent='All weeks';
+  var tp=document.getElementById('wk-picker');
+  if(tp)tp.style.display='none';
+  var ft=document.getElementById('flt-track');
+  if(ft)ft.value='all';
+  updateNavBtns();
+  if(window._fbLoaded)render();
+}
+function toggleWeekPicker(){
+  var p=document.getElementById('wk-picker');
+  if(p)p.style.display=p.style.display==='none'?'flex':'none';
+}
+function onDateChange(){
+  var from=document.getElementById('flt-from'),to=document.getElementById('flt-to');
+  var lbl=document.getElementById('wk-range-lbl');
+  if(from&&to&&from.value&&to.value&&lbl){
+    var d=new Date(from.value+'T12:00:00'),e=new Date(to.value+'T12:00:00');
+    lbl.textContent=d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+
+      ' – '+e.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  }else if(lbl)lbl.textContent='All weeks';
+  updateNavBtns();
+  if(window._fbLoaded)render();
+}
+function updateNavBtns(){
+  var nb=document.getElementById('wk-next');
+  if(nb)nb.disabled=_wkOffset>=0;
+}
+window.addEventListener('DOMContentLoaded',function(){
+  setWeekFilter(getMondayISO(0));
+});
+</script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -274,6 +339,7 @@ FB.on('value',function(snap){
   document.getElementById('live-dot').className='live-dot on';
   document.getElementById('live-lbl').textContent='Live';
   document.getElementById('loading').classList.add('hidden');
+  window._fbLoaded=true;
   loadApprovals(function(){render();});
 },function(){
   document.getElementById('live-dot').className='live-dot off';
@@ -893,6 +959,7 @@ function renderSummary(D){
 
   // Build charts after DOM update
   setTimeout(function(){
+    if(typeof Chart==='undefined'){setTimeout(function(){renderSummary(window._lastD||{summaryFinal:[],lineItems:[]});},500);return;}
     Chart.defaults.font.family="'Plus Jakarta Sans',sans-serif";
     Chart.defaults.color='#6b7280';
     function mkStacked(id,labels,ds){
@@ -1032,7 +1099,7 @@ function renderByClient(D){
   var pdiStaffArr=Array.from(allPDIStaff).sort();
 
   function thStyle(){return 'padding:7px 10px;text-align:right;font-size:10px;font-weight:500;white-space:nowrap;';}
-  function tdStyle(v){return 'padding:6px 10px;text-align:right;font-size:11px;border-top:.5px solid var(--bd);color:'+(v?'var(--tx)':'var(--tx3)')+';}
+  function tdStyle(v){return 'padding:6px 10px;text-align:right;border-top:.5px solid var(--bd);color:'+(v?'var(--tx)':'var(--tx3)')+';';}
 
   var html='';
 
