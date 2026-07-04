@@ -11,15 +11,19 @@
 // ── Week navigation ────────────────────────────────────────────────────────
 var _wkOffset=0;
 function getMondayISO(offset){
-  var d=new Date(),day=d.getDay();
-  d.setDate(d.getDate()-day+(day===0?-6:1)+offset*7);
+  // Returns the start of the billing period (Saturday) containing today + offset weeks
+  var d=new Date();
+  var day=d.getDay(); // 0=Sun..6=Sat
+  var diff=(day+1)%7; // days since last Saturday
+  d.setDate(d.getDate()-diff+offset*7);
   return d.toISOString().slice(0,10);
 }
-function fmtWeekRange(mon){
-  var d=new Date(mon+'T12:00:00'),e=new Date(mon+'T12:00:00');
-  e.setDate(e.getDate()+6);
-  return d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+
-    ' – '+e.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+function fmtWeekRange(sat){
+  // Billing period: Saturday through Friday
+  var d=new Date(sat+'T12:00:00'),e=new Date(sat+'T12:00:00');
+  e.setDate(e.getDate()+6); // +6 days = Friday
+  return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})+
+    ' – '+e.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
 }
 function setWeekFilter(mon){
   var sun=new Date(mon+'T12:00:00');sun.setDate(sun.getDate()+6);
@@ -395,14 +399,32 @@ function computeStipends(){
   // ── Date helpers ──────────────────────────────────────────────────────────
   function toISO(d){return d?String(d).slice(0,10):null;}
   function today(){return new Date().toISOString().slice(0,10);}
+  // Billing period: Saturday – Friday
+  // getSat returns the Saturday on or before a given date
+  function getSat(date){
+    var d=new Date(date);
+    var day=d.getDay(); // 0=Sun..6=Sat
+    var diff=(day+1)%7; // Sat→0, Sun→1, Mon→2, ..., Fri→6
+    d.setDate(d.getDate()-diff);
+    return d.toISOString().slice(0,10);
+  }
   function weekEnd(ws){var d=new Date(ws+'T12:00:00');d.setDate(d.getDate()+6);return d.toISOString().slice(0,10);}
 
-  // ── Weeks derived from all events ─────────────────────────────────────────
+  // ── Weeks derived from events + PDI discharge dates (Sat–Fri billing periods)
   var weekSet={};
-  DATA.events.forEach(function(ev){if(ev.date)weekSet[getMon(fromISO(ev.date))]=true;});
+  DATA.events.forEach(function(ev){
+    if(ev.date)weekSet[getSat(fromISO(ev.date))]=true;
+  });
+  // Always include PDI discharge weeks so they appear even with no events that week
+  DATA.clients.forEach(function(c){
+    var prog=c.program||'';
+    if(prog!=='PDI'&&prog!=='Both')return;
+    var disch=toISO(c.pdiDischarge||c.pdiDisch);
+    if(disch)weekSet[getSat(fromISO(disch))]=true;
+  });
   var allWeeks=Object.keys(weekSet).sort();
-  if(fltFrom)allWeeks=allWeeks.filter(function(w){return w>=getMon(fromISO(fltFrom));});
-  if(fltTo)  allWeeks=allWeeks.filter(function(w){return w<=getMon(fromISO(fltTo));});
+  if(fltFrom)allWeeks=allWeeks.filter(function(w){return w>=getSat(fromISO(fltFrom));});
+  if(fltTo)  allWeeks=allWeeks.filter(function(w){return w<=getSat(fromISO(fltTo));});
 
   // ── Weekly-type providers: Ockman, Nicole, Gus ──────────────────────────────
   // These three ALWAYS receive the weekly Signature stipend and PDI flat stipend.
@@ -442,15 +464,15 @@ function computeStipends(){
     var admit=toISO(client.pdiAdmit);if(!admit)return;
     var disch=toISO(client.pdiDischarge||client.pdiDisch);
     if(disch){
-      // Fire in the week containing discharge date
-      pdiStipendWeek[client.id]=getMon(fromISO(disch));
+      // Fire in the billing period (Sat–Fri) containing discharge date
+      pdiStipendWeek[client.id]=getSat(fromISO(disch));
     } else {
       // Still active — find the latest event week for this client during PDI
-      var lastWk=admit;
+      var lastWk=getSat(fromISO(admit));
       DATA.events.forEach(function(ev){
         if(ev.clientId!==client.id||!ev.date)return;
-        var evMon=getMon(fromISO(ev.date));
-        if(evMon>lastWk)lastWk=evMon;
+        var evSat=getSat(fromISO(ev.date));
+        if(evSat>lastWk)lastWk=evSat;
       });
       pdiStipendWeek[client.id]=lastWk;
     }
@@ -492,7 +514,7 @@ function computeStipends(){
   allWeeks.forEach(function(wStart){
     var wEnd=weekEnd(wStart);
     var wLbl=wkLabel(wStart);
-    var wEvs=DATA.events.filter(function(ev){return ev.date&&getMon(fromISO(ev.date))===wStart;});
+    var wEvs=DATA.events.filter(function(ev){return ev.date&&getSat(fromISO(ev.date))===wStart;});
 
     // ════════════════════════════════════════════════════════════════
     // SIGNATURE
