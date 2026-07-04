@@ -303,6 +303,7 @@ function computeStipends(){
   // Build week map from all events (excluding no-stipend providers)
   var weekMap={};
   DATA.events.forEach(function(ev){
+    if(!ev.provider||!ev.provider.trim())return; // skip blank provider
     if(noStipend(ev.provider))return;
     var ws=getMon(fromISO(ev.date));
     if(!weekMap[ws])weekMap[ws]=[];
@@ -370,22 +371,22 @@ function computeStipends(){
           byClientSig[cid].sessAmt+=amt;
         });
 
-        // Weekly stipend providers — per active Sig client
-        if(cEvs.length>0){
-          Object.keys(DATA.providers).sort().forEach(function(prov){
-            if(noStipend(prov))return;
-            if(provType(prov)==='weekly'){
-              wSigCost+=250;
-              lineItems.push({week:wLbl,wStart:wStart,client:cName,track:'Signature',staff:prov,type:'Weekly Stipend',sessHrs:'',rate:'',amount:250,counted:250,notes:''});
-              if(!sigStiByStaff[prov])sigStiByStaff[prov]={};
-              if(!sigStiByStaff[prov][wStart])sigStiByStaff[prov][wStart]=0;
-              sigStiByStaff[prov][wStart]+=250;
-              weekStiStaffSet[prov]=true;
-              byClientSig[cid].weeklyStaff.add(prov);
-              byClientSig[cid].wklyAmt+=250;
-            }
-          });
-        }
+        // Weekly stipend — $250/wk per pdi_weekly provider per active Sig client
+        // Applies regardless of whether client had sessions this week (active inpatient)
+        Object.keys(DATA.providers).sort().forEach(function(prov){
+          if(!prov||!prov.trim())return;
+          if(noStipend(prov))return;
+          if(provType(prov)==='weekly'){
+            wSigCost+=250;
+            lineItems.push({week:wLbl,wStart:wStart,client:cName,track:'Signature',staff:prov,type:'Weekly Stipend',sessHrs:'',rate:'',amount:250,counted:250,notes:''});
+            if(!sigStiByStaff[prov])sigStiByStaff[prov]={};
+            if(!sigStiByStaff[prov][wStart])sigStiByStaff[prov][wStart]=0;
+            sigStiByStaff[prov][wStart]+=250;
+            weekStiStaffSet[prov]=true;
+            byClientSig[cid].weeklyStaff.add(prov);
+            byClientSig[cid].wklyAmt+=250;
+          }
+        });
       }
 
       // ── PDI ────────────────────────────────────────────────────────────
@@ -393,17 +394,20 @@ function computeStipends(){
         if(fltTrack==='Signature')return;
 
         // Build eligible PDI providers:
-        // 1. Weekly-type providers (Ockman/Gus/Nicole) ALWAYS get PDI stipend once per episode
-        // 2. Session-type providers only if they have sessions with this client
+        // 1. Dr. Ockman, Nicole, Gus (isPDIWeekly) ALWAYS get $250 flat per PDI episode
+        // 2. Any session-type provider who had a direct service hour (non-group) this PDI episode
         var pdiProvs=new Set();
+        // Always add pdi_weekly providers (Ockman, Nicole, Gus)
+        Object.keys(DATA.providers).forEach(function(prov){
+          if(!prov||!prov.trim())return;
+          if(!noStipend(prov)&&isPDIWeekly(prov))pdiProvs.add(prov);
+        });
+        // Add any session provider who has direct (non-group) hours with this client
         cEvs.forEach(function(ev){
+          if(!ev.provider||!ev.provider.trim())return;
           if(noStipend(ev.provider))return;
-          // Exclude group sessions from PDI stipend eligibility check
           if(ev.service&&ev.service.toLowerCase().indexOf('group')>-1)return;
           pdiProvs.add(ev.provider);
-        });
-        Object.keys(DATA.providers).forEach(function(prov){
-          if(!noStipend(prov)&&isPDIWeekly(prov))pdiProvs.add(prov);
         });
 
         pdiProvs.forEach(function(prov){
@@ -465,13 +469,11 @@ function loadApprovals(cb){
   });}catch(e){cb();}
 }
 function toggleApproval(key){
+  if(!key)return;
   approvals[key]=!approvals[key];
   saveApprovals();
-  var btn=document.getElementById('apv-'+key.replace(/[^a-zA-Z0-9]/g,'_'));
-  if(btn){
-    btn.className='approve-btn'+(approvals[key]?' approved':'');
-    btn.innerHTML=approvals[key]?'&#x2713; Approved':'Approve';
-  }
+  // Re-render the tab so all buttons refresh
+  if(window._lastD)renderByStaff(window._lastD);
 }
 
 function renderByStaff(D){
@@ -618,36 +620,107 @@ function renderFilterBadges(D){
 }
 
 function renderSummary(D){
-  var totSigHrs=D.summaryFinal.reduce(function(s,r){return s+r.sigHrs;},0);
-  var totSigCost=D.summaryFinal.reduce(function(s,r){return s+r.sigCost;},0);
-  var totPDICost=D.summaryFinal.reduce(function(s,r){return s+r.pdiCost;},0);
-  var totCombined=totSigCost+totPDICost;
-  var wkCount=D.summaryFinal.length;
+  var tot=D.summaryFinal;
+  function fmt$(v){return v?'$'+v.toFixed(2):'-';}
+  function fmtH(v){return v?v.toFixed(1)+' hr':'-';}
 
-  document.getElementById('summary-cards').innerHTML=
-    '<div class="card purple"><div class="card-label">Weeks Tracked</div><div class="card-val">'+wkCount+'</div><div class="card-sub">calendar weeks with activity</div></div>'+
-    '<div class="card green"><div class="card-label">Signature Direct Service Hrs</div><div class="card-val">'+totSigHrs+'</div><div class="card-sub">$'+totSigCost.toLocaleString()+' Signature total</div></div>'+
-    '<div class="card blue"><div class="card-label">PDI Flat Stipends</div><div class="card-val">$'+totPDICost.toLocaleString()+'</div><div class="card-sub">across '+D.sortedWeeks.length+' weeks</div></div>'+
-    '<div class="card gold"><div class="card-label">Combined Total</div><div class="card-val">$'+totCombined.toLocaleString()+'</div><div class="card-sub">all tracks</div></div>';
+  // Grand totals
+  var gSigHrs=tot.reduce(function(s,r){return s+r.sigHrs;},0);
+  var gSigCost=tot.reduce(function(s,r){return s+r.sigCost;},0);
+  var gPDICost=tot.reduce(function(s,r){return s+r.pdiCost;},0);
+  var gTot=gSigCost+gPDICost;
 
-  var rows='';
-  D.summaryFinal.forEach(function(r){
-    rows+='<tr>'+
-      '<td>'+esc(r.week)+'</td>'+
-      '<td class="num">'+r.sigHrs+'</td>'+
-      '<td class="money '+(r.sigCost?'amt':'zero')+'">'+fmtMoney(r.sigCost)+'</td>'+
-      '<td class="money '+(r.pdiCost?'amt':'zero')+'">'+fmtMoney(r.pdiCost)+'</td>'+
-      '<td class="money '+(r.combined?'amt':'zero')+'">'+fmtMoney(r.combined)+'</td>'+
-    '</tr>';
+  // Monthly rollup
+  var monthMap={};
+  tot.forEach(function(r){
+    var m=r.wStart.slice(0,7);
+    if(!monthMap[m])monthMap[m]={sigHrs:0,sigCost:0,pdiCost:0};
+    monthMap[m].sigHrs+=r.sigHrs;monthMap[m].sigCost+=r.sigCost;monthMap[m].pdiCost+=r.pdiCost;
   });
-  rows+='<tr class="total-row">'+
-    '<td>TOTAL</td>'+
-    '<td class="num">'+totSigHrs+'</td>'+
-    '<td class="money">$'+totSigCost.toLocaleString()+'</td>'+
-    '<td class="money">$'+totPDICost.toLocaleString()+'</td>'+
-    '<td class="money">$'+totCombined.toLocaleString()+'</td>'+
-  '</tr>';
-  document.getElementById('summary-tbody').innerHTML=rows;
+
+  // Quarterly rollup
+  var qMap={};
+  tot.forEach(function(r){
+    var m=parseInt(r.wStart.slice(5,7));
+    var y=r.wStart.slice(0,4);
+    var q=Math.ceil(m/3);
+    var k=y+' Q'+q;
+    if(!qMap[k])qMap[k]={sigHrs:0,sigCost:0,pdiCost:0};
+    qMap[k].sigHrs+=r.sigHrs;qMap[k].sigCost+=r.sigCost;qMap[k].pdiCost+=r.pdiCost;
+  });
+
+  function mLbl(k){return new Date(k+'-15').toLocaleDateString('en-US',{month:'long',year:'numeric'});}
+
+  function tblHead(){
+    return '<table style="width:100%;border-collapse:collapse;font-size:13px">'+
+      '<thead><tr style="background:#0d1117;color:#fff">'+
+        '<th style="padding:9px 14px;text-align:left;font-size:10px;font-weight:500;letter-spacing:.04em">Period</th>'+
+        '<th style="padding:9px 14px;text-align:right;font-size:10px;font-weight:500;letter-spacing:.04em">Sig Hours</th>'+
+        '<th style="padding:9px 14px;text-align:right;font-size:10px;font-weight:500;letter-spacing:.04em">Sig Stipend</th>'+
+        '<th style="padding:9px 14px;text-align:right;font-size:10px;font-weight:500;letter-spacing:.04em">PDI Stipend</th>'+
+        '<th style="padding:9px 14px;text-align:right;font-size:10px;font-weight:500;letter-spacing:.04em">Total</th>'+
+      '</tr></thead><tbody>';
+  }
+  function tblRow(lbl,r,bold){
+    var s=bold?'font-weight:700':'';
+    var bg=bold?'background:var(--bg2)':'';
+    return '<tr style="'+bg+'">'+
+      '<td style="padding:8px 14px;border-bottom:.5px solid var(--bd);'+s+'">'+lbl+'</td>'+
+      '<td style="padding:8px 14px;border-bottom:.5px solid var(--bd);text-align:right;'+s+'">'+fmtH(r.sigHrs)+'</td>'+
+      '<td style="padding:8px 14px;border-bottom:.5px solid var(--bd);text-align:right;'+s+'">'+fmt$(r.sigCost)+'</td>'+
+      '<td style="padding:8px 14px;border-bottom:.5px solid var(--bd);text-align:right;'+s+'">'+fmt$(r.pdiCost)+'</td>'+
+      '<td style="padding:8px 14px;border-bottom:.5px solid var(--bd);text-align:right;font-weight:700;color:var(--green)">'+fmt$(r.sigCost+r.pdiCost)+'</td>'+
+    '</tr>';
+  }
+  function totRow(lbl,r){
+    return '<tr style="background:#0d1117;color:#fff">'+
+      '<td style="padding:9px 14px;font-weight:700">'+lbl+'</td>'+
+      '<td style="padding:9px 14px;text-align:right">'+fmtH(r.sigHrs)+'</td>'+
+      '<td style="padding:9px 14px;text-align:right">'+fmt$(r.sigCost)+'</td>'+
+      '<td style="padding:9px 14px;text-align:right">'+fmt$(r.pdiCost)+'</td>'+
+      '<td style="padding:9px 14px;text-align:right;font-weight:700;color:#86efac">'+fmt$(r.sigCost+r.pdiCost)+'</td>'+
+    '</tr>';
+  }
+
+  // Stat cards
+  var cards='<div class="cards" style="margin-bottom:24px">'+
+    '<div class="card"><div class="card-label">Total Sig Hours</div><div class="card-value">'+fmtH(gSigHrs)+'</div></div>'+
+    '<div class="card"><div class="card-label">Total Sig Stipend</div><div class="card-value">'+fmt$(gSigCost)+'</div></div>'+
+    '<div class="card"><div class="card-label">Total PDI Stipend</div><div class="card-value">'+fmt$(gPDICost)+'</div></div>'+
+    '<div class="card green"><div class="card-label">Grand Total</div><div class="card-value">'+fmt$(gTot)+'</div></div>'+
+  '</div>';
+
+  // By Quarter
+  var qKeys=Object.keys(qMap).sort();
+  var qHtml=tblHead();
+  qKeys.forEach(function(k){qHtml+=tblRow(k,qMap[k],false);});
+  qHtml+=totRow('All Quarters',{sigHrs:gSigHrs,sigCost:gSigCost,pdiCost:gPDICost});
+  qHtml+='</tbody></table>';
+
+  // By Month
+  var mKeys=Object.keys(monthMap).sort();
+  var mHtml=tblHead();
+  mKeys.forEach(function(k){mHtml+=tblRow(mLbl(k),monthMap[k],false);});
+  mHtml+=totRow('All Months',{sigHrs:gSigHrs,sigCost:gSigCost,pdiCost:gPDICost});
+  mHtml+='</tbody></table>';
+
+  // By Week
+  var wHtml=tblHead();
+  tot.forEach(function(r){wHtml+=tblRow(r.week,r,false);});
+  wHtml+=totRow('All Weeks',{sigHrs:gSigHrs,sigCost:gSigCost,pdiCost:gPDICost});
+  wHtml+='</tbody></table>';
+
+  function section(title,html){
+    return '<div style="margin-bottom:24px">'+
+      '<h3 style="font-size:13px;font-weight:600;color:var(--tx2);margin-bottom:10px">'+title+'</h3>'+
+      '<div class="tbl-wrap">'+html+'</div></div>';
+  }
+
+  var el=document.getElementById('tab-summary');
+  if(el)el.innerHTML=cards+
+    section('By Quarter',qHtml)+
+    section('By Month',mHtml)+
+    section('By Week',wHtml);
 }
 
 function renderLineItems(D){
