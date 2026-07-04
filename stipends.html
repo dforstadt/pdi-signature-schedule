@@ -36,7 +36,12 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;mi
 .nav-tab:hover{color:var(--tx);}
 .nav-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
 /* ── Filters ── */
-.filters{display:flex;align-items:center;gap:10px;padding:14px 32px;background:#fff;border-bottom:1px solid var(--bd);flex-wrap:wrap;}
+.filters{display:flex;align-items:center;gap:8px;padding:12px 32px;background:#fff;border-bottom:1px solid var(--bd);flex-wrap:wrap;}
+.wk-nav-btn{width:32px;height:32px;border-radius:8px;border:.5px solid var(--bd2);background:transparent;cursor:pointer;font-size:18px;color:var(--tx2);display:flex;align-items:center;justify-content:center;font-family:var(--f);transition:all .15s;}
+.wk-nav-btn:hover{background:var(--bg2);border-color:var(--accent);}
+.wk-nav-btn:disabled{opacity:.35;cursor:not-allowed;}
+.wk-range-display{padding:5px 12px;border-radius:8px;border:.5px solid var(--bd2);background:var(--bg2);cursor:pointer;font-size:12px;font-weight:500;color:var(--tx2);white-space:nowrap;min-width:160px;display:flex;align-items:center;transition:all .15s;}
+.wk-range-display:hover{border-color:var(--accent);background:#fff;}
 .filters label{font-size:11px;font-weight:500;color:var(--tx3);}
 .filters select,.filters input{padding:6px 10px;border-radius:6px;border:.5px solid var(--bd2);background:var(--bg);color:var(--tx);font-family:var(--f);font-size:12px;}
 .filters select:focus,.filters input:focus{outline:2px solid var(--accent);border-color:var(--accent);}
@@ -149,17 +154,26 @@ td.money.zero{color:var(--tx3);}
   <span><strong>Stipend rules:</strong> Providers marked <strong>No Stipend</strong> are excluded. Providers set to <strong>Weekly</strong> type always receive the PDI flat stipend ($250/episode) plus the Signature weekly stipend ($250/wk). Session-type providers receive PDI flat stipend only when they have sessions, plus Signature session fees ($150/hr). Configure in <strong>Manage Providers</strong> on the calendar.</span>
 </div>
 <div class="filters">
-  <label>Track:</label>
-  <select id="flt-track" onchange="render()">
+  <!-- Week navigator -->
+  <button class="wk-nav-btn" id="wk-prev" onclick="shiftWeek(-1)" title="Previous week">‹</button>
+  <button class="wk-nav-btn" id="wk-next" onclick="shiftWeek(1)" title="Next week">›</button>
+  <div class="wk-range-display" id="wk-range-display" onclick="toggleWeekPicker()" title="Click to pick date range">
+    <span id="wk-range-lbl">All weeks</span>
+    <span style="font-size:10px;color:var(--tx3);margin-left:6px">▾</span>
+  </div>
+  <div id="wk-picker" style="display:none;align-items:center;gap:6px">
+    <input type="date" id="flt-from" onchange="onDateChange()" style="font-size:12px;padding:4px 8px;border-radius:6px;border:.5px solid var(--bd2)">
+    <span style="color:var(--tx3);font-size:12px">–</span>
+    <input type="date" id="flt-to" onchange="onDateChange()" style="font-size:12px;padding:4px 8px;border-radius:6px;border:.5px solid var(--bd2)">
+  </div>
+  <button onclick="clearWeekFilter()" style="padding:5px 12px;border-radius:6px;border:.5px solid var(--bd2);background:transparent;cursor:pointer;font-size:12px;font-family:var(--f);color:var(--tx3)">All weeks</button>
+  <div style="width:1px;height:20px;background:var(--bd2);margin:0 4px"></div>
+  <label style="font-size:11px;font-weight:500;color:var(--tx3)">Track:</label>
+  <select id="flt-track" onchange="render()" style="font-size:12px;padding:4px 8px;border-radius:6px;border:.5px solid var(--bd2)">
     <option value="all">All tracks</option>
     <option value="Signature">Signature only</option>
     <option value="PDI">PDI only</option>
   </select>
-  <label>From week:</label>
-  <input type="date" id="flt-from" onchange="render()">
-  <label>To week:</label>
-  <input type="date" id="flt-to" onchange="render()">
-  <button onclick="document.getElementById('flt-from').value='';document.getElementById('flt-to').value='';document.getElementById('flt-track').value='all';render();" style="padding:6px 12px;border-radius:6px;border:.5px solid var(--bd2);background:transparent;cursor:pointer;font-size:12px;font-family:var(--f);color:var(--tx3)">Clear</button>
   <div id="filter-badges" style="display:flex;gap:6px;margin-left:auto"></div>
 </div>
 
@@ -322,8 +336,31 @@ function computeStipends(){
   if(fltFrom)allWeeks=allWeeks.filter(function(w){return w>=getMon(fromISO(fltFrom));});
   if(fltTo)  allWeeks=allWeeks.filter(function(w){return w<=getMon(fromISO(fltTo));});
 
-  // ── Weekly-type providers (Ockman, Nicole, Gus) ───────────────────────────
-  var weeklyProviders=Object.keys(DATA.providers).filter(function(p){return !noStipend(p)&&isWeeklyProv(p);});
+  // ── Weekly-type providers: Ockman, Nicole, Gus ──────────────────────────────
+  // These three ALWAYS receive the weekly Signature stipend and PDI flat stipend.
+  // They are hardcoded so they are never accidentally excluded if their provider
+  // record is missing or has the wrong stipendType in the calendar.
+  // Names must match exactly what is used in the calendar provider list.
+  var WEEKLY_CORE=['David Ockman','Nicole','Gus Hernandez'];
+
+  // Build weeklyProviders: core three + any other pdi_weekly providers in DATA.providers
+  var weeklyProviders=[];
+  // Add core providers first (use calendar color if available, otherwise default)
+  WEEKLY_CORE.forEach(function(p){weeklyProviders.push(p);});
+  // Add any additional pdi_weekly providers configured in the calendar
+  Object.keys(DATA.providers).forEach(function(p){
+    if(WEEKLY_CORE.indexOf(p)===-1&&!noStipend(p)&&isWeeklyProv(p))weeklyProviders.push(p);
+  });
+
+  // Override isWeeklyProv to also catch the core three regardless of their record
+  var _isWeeklyProv=isWeeklyProv;
+  isWeeklyProv=function(p){return WEEKLY_CORE.indexOf(p)>-1||_isWeeklyProv(p);};
+  // Override isSessionProv: core weekly providers are never session providers
+  var _isSessionProv=isSessionProv;
+  isSessionProv=function(p){return WEEKLY_CORE.indexOf(p)===-1&&_isSessionProv(p);};
+  // Override noStipend: core weekly providers are never excluded
+  var _noStipend=noStipend;
+  noStipend=function(p){return WEEKLY_CORE.indexOf(p)>-1?false:_noStipend(p);};
 
   var lineItems=[];
   var pdiCounted={};  // cid+':'+prov → true — ensures $250 paid once per PDI episode
@@ -869,6 +906,81 @@ function renderByClient(D){
   }
   document.getElementById('byclient-content').innerHTML=h||'<div class="empty">No data for selected filters.</div>';
 }
+
+// ── Week navigation ────────────────────────────────────────────────────────
+var _wkOffset=0; // 0 = current week, -1 = one week back, etc.
+
+function getMondayISO(offset){
+  var d=new Date();
+  var day=d.getDay(); // 0=Sun
+  var diff=d.getDate()-day+(day===0?-6:1); // this Monday
+  d.setDate(diff+offset*7);
+  return d.toISOString().slice(0,10);
+}
+function fmtWeekRange(monISO){
+  var d=new Date(monISO+'T12:00:00');
+  var e=new Date(monISO+'T12:00:00');e.setDate(e.getDate()+6);
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+
+    ' – '+e.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+}
+function setWeekFilter(monISO){
+  var sunISO=new Date(monISO+'T12:00:00');sunISO.setDate(sunISO.getDate()+6);
+  var sunStr=sunISO.toISOString().slice(0,10);
+  var fromEl=document.getElementById('flt-from');
+  var toEl=document.getElementById('flt-to');
+  if(fromEl)fromEl.value=monISO;
+  if(toEl)toEl.value=sunStr;
+  var lbl=document.getElementById('wk-range-lbl');
+  if(lbl)lbl.textContent=fmtWeekRange(monISO);
+  updateNavBtns();
+  render();
+}
+function shiftWeek(dir){
+  _wkOffset+=dir;
+  setWeekFilter(getMondayISO(_wkOffset));
+}
+function clearWeekFilter(){
+  _wkOffset=0;
+  var fromEl=document.getElementById('flt-from');
+  var toEl=document.getElementById('flt-to');
+  if(fromEl)fromEl.value='';
+  if(toEl)toEl.value='';
+  var lbl=document.getElementById('wk-range-lbl');
+  if(lbl)lbl.textContent='All weeks';
+  document.getElementById('flt-track').value='all';
+  document.getElementById('wk-picker').style.display='none';
+  updateNavBtns();
+  render();
+}
+function toggleWeekPicker(){
+  var p=document.getElementById('wk-picker');
+  if(p)p.style.display=p.style.display==='none'?'flex':'none';
+}
+function onDateChange(){
+  var from=document.getElementById('flt-from').value;
+  var to=document.getElementById('flt-to').value;
+  var lbl=document.getElementById('wk-range-lbl');
+  if(from&&to&&lbl){
+    var d=new Date(from+'T12:00:00'),e=new Date(to+'T12:00:00');
+    lbl.textContent=d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+
+      ' – '+e.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  }else if(lbl){lbl.textContent='All weeks';}
+  updateNavBtns();
+  render();
+}
+function updateNavBtns(){
+  var from=document.getElementById('flt-from')&&document.getElementById('flt-from').value;
+  // Enable prev always; disable next if showing current week or later
+  var nextBtn=document.getElementById('wk-next');
+  var prevBtn=document.getElementById('wk-prev');
+  if(nextBtn)nextBtn.disabled=!from||_wkOffset>=0;
+  if(prevBtn)prevBtn.disabled=false;
+}
+// Init: show current week on load
+document.addEventListener('DOMContentLoaded',function(){
+  setWeekFilter(getMondayISO(0));
+});
+
 </script>
 </body>
 </html>
