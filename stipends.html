@@ -812,469 +812,124 @@ function toggleProvApproval(apvKey,btnId){
 }
 
 function exportByStaffExcel(){
-  // Build CSV data
-  var D=window._lastD;if(!D)return;
+  var D=window._lastD;if(!D||!D.lineItems.length){alert('No data to export for the current filter period.');return;}
+
+  // Build staff -> weekISO -> amounts (keyed by wStart, not display label)
   var staffMap={};
-  D.lineItems.forEach(function(r){
-    if(!staffMap[r.staff])staffMap[r.staff]={};
-    var wk=r.week;
-    if(!staffMap[r.staff][wk])staffMap[r.staff][wk]={sigHrs:0,sigAmt:0,pdiAmt:0,total:0};
-    if(r.track==='Signature'){
-      if(r.type==='Session'){staffMap[r.staff][wk].sigHrs+=r.sessHrs||0;staffMap[r.staff][wk].sigAmt+=r.amount||0;}
-      if(r.type==='Weekly stipend'){staffMap[r.staff][wk].sigAmt+=r.amount||0;}
+  D.lineItems.forEach(function(li){
+    var prov=li.staff;
+    if(!prov)return;
+    if(!staffMap[prov])staffMap[prov]={};
+    var wk=li.wStart; // ISO date of billing period Saturday
+    if(!staffMap[prov][wk])staffMap[prov][wk]={sigHrs:0,sigSess:0,sigWkly:0,pdi:0};
+    if(li.track==='Signature'){
+      if(li.type==='Session'){
+        staffMap[prov][wk].sigHrs+=(li.sessHrs||0);
+        staffMap[prov][wk].sigSess+=(li.amount||0);
+      } else {
+        staffMap[prov][wk].sigWkly+=(li.amount||0);
+      }
+    } else {
+      staffMap[prov][wk].pdi+=(li.counted||0);
     }
-    if(r.track==='PDI'){staffMap[r.staff][wk].pdiAmt+=r.amount||0;}
-    staffMap[r.staff][wk].total=(staffMap[r.staff][wk].sigAmt||0)+(staffMap[r.staff][wk].pdiAmt||0);
   });
-  function wLbl(w){
-    var d=new Date(w+'T12:00:00');
-    var e=new Date(d);e.setDate(e.getDate()+6);
-    return d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' - '+e.toLocaleDateString('en-US',{month:'short',day:'numeric'});
-  }
-  function apvKey(s,w){return s+'::'+w;}
+
   var staffList=Object.keys(staffMap).sort();
   var weeks=D.sortedWeeks.slice().sort();
-  var rows=[['Therapist','Week','Sig Hours','Sig Stipend','PDI Stipend','Total','Approved']];
+
+  // Billing period label: Sat – Fri
+  function wLbl(iso){
+    var d=new Date(iso+'T12:00:00'),e=new Date(iso+'T12:00:00');
+    e.setDate(e.getDate()+6);
+    return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})+
+      ' \u2013 '+e.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+  }
+
+  function apvKey(staff,wkISO){return 'staff::'+staff+'::'+wkISO;}
+
+  var rows=[];
+
+  // Header
+  rows.push(['PDI / Signature Staff Stipend Approval Report']);
+  rows.push(['Generated: '+new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})]);
+  rows.push(['Billing period: Saturday \u2013 Friday']);
+  rows.push([]);
+
+  // Column headers
+  rows.push([
+    'Therapist',
+    'Billing Period',
+    'Sig Direct Hours',
+    'Session Fees ($)',
+    'Weekly Stipend ($)',
+    'PDI Flat Stipend ($)',
+    'Period Total ($)',
+    'Approval Status',
+    'Approved By'
+  ]);
+
+  var grandSigHrs=0,grandSigSess=0,grandSigWkly=0,grandPDI=0,grandTot=0;
+
   staffList.forEach(function(staff){
-    var rmap=staffMap[staff];
-    weeks.forEach(function(wk){
-      var r=rmap[wk];
-      if(!r||(!r.sigHrs&&!r.sigAmt&&!r.pdiAmt))return;
-      var apvd=approvals[apvKey(staff,wk)]?'Yes':'No';
-      rows.push([staff,wLbl(wk),r.sigHrs.toFixed(2),r.sigAmt.toFixed(2),r.pdiAmt.toFixed(2),r.total.toFixed(2),apvd]);
+    var wdata=staffMap[staff];
+    var activeWeeks=weeks.filter(function(wk){
+      var r=wdata[wk];return r&&(r.sigSess+r.sigWkly+r.pdi)>0;
     });
-    // Totals row
-    var tHrs=0,tSig=0,tPdi=0,tTot=0;
-    weeks.forEach(function(wk){var r=rmap[wk];if(!r)return;tHrs+=r.sigHrs;tSig+=r.sigAmt;tPdi+=r.pdiAmt;tTot+=r.total;});
-    rows.push([staff,'TOTAL',tHrs.toFixed(2),tSig.toFixed(2),tPdi.toFixed(2),tTot.toFixed(2),'']);
+    if(!activeWeeks.length)return;
+
+    var tSigHrs=0,tSigSess=0,tSigWkly=0,tPDI=0;
+
+    activeWeeks.forEach(function(wk){
+      var r=wdata[wk];
+      var wTotal=r.sigSess+r.sigWkly+r.pdi;
+      var apvd=!!approvals[apvKey(staff,wk)];
+      tSigHrs+=r.sigHrs;tSigSess+=r.sigSess;tSigWkly+=r.sigWkly;tPDI+=r.pdi;
+      rows.push([
+        staff,
+        wLbl(wk),
+        r.sigHrs?r.sigHrs.toFixed(2):'',
+        r.sigSess?r.sigSess.toFixed(2):'',
+        r.sigWkly?r.sigWkly.toFixed(2):'',
+        r.pdi?r.pdi.toFixed(2):'',
+        wTotal.toFixed(2),
+        apvd?'APPROVED':'Pending',
+        apvd?'Finance':'—'
+      ]);
+    });
+
+    var staffTotal=tSigSess+tSigWkly+tPDI;
+    var allApvd=activeWeeks.every(function(wk){return !!approvals[apvKey(staff,wk)];});
+    // Staff subtotal row
+    rows.push([
+      staff+' TOTAL','',
+      tSigHrs?tSigHrs.toFixed(2):'',
+      tSigSess?tSigSess.toFixed(2):'',
+      tSigWkly?tSigWkly.toFixed(2):'',
+      tPDI?tPDI.toFixed(2):'',
+      staffTotal.toFixed(2),
+      allApvd?'ALL APPROVED':'Partial/Pending',
+      ''
+    ]);
     rows.push([]);
-  });
-  var csv=rows.map(function(r){return r.map(function(c){return'"'+String(c||'').replace(/"/g,'""')+'"';}).join(',');}).join('\n');
-  var blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
-  var url=URL.createObjectURL(blob);
-  var a=document.createElement('a');a.href=url;a.download='Stipend_By_Therapist_By_Week.csv';
-  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
-}
 
-function render(){
-  var D=computeStipends();
-  window._lastD=D;
-  renderSummary(D);
-  renderLineItems(D);
-  renderRoster(D);
-  renderByClient(D);
-  renderByStaff(D);
-  renderFilterBadges(D);
-}
-
-function renderFilterBadges(D){
-  var totSigCost=D.summaryFinal.reduce(function(s,r){return s+r.sigCost;},0);
-  var totPDICost=D.summaryFinal.reduce(function(s,r){return s+r.pdiCost;},0);
-  var el=document.getElementById('filter-badges');
-  el.innerHTML=
-    '<span class="badge sig">Sig: $'+totSigCost.toLocaleString()+'</span>'+
-    '<span class="badge pdi">PDI: $'+totPDICost.toLocaleString()+'</span>'+
-    '<span class="badge total">Total: $'+(totSigCost+totPDICost).toLocaleString()+'</span>';
-}
-
-function renderSummary(D){
-  var tot=D.summaryFinal;
-  var charts=window._summaryCharts||{};
-  // Destroy old charts before rebuilding
-  Object.values(charts).forEach(function(ch){try{ch.destroy();}catch(e){}});
-  window._summaryCharts={};
-
-  function fmt$(v){return v||v===0?'$'+(+v).toFixed(2):'-';}
-  function fmtH(v){return v||v===0?(+v).toFixed(1)+' hr':'-';}
-
-  // Grand totals
-  var gSigHrs=tot.reduce(function(s,r){return s+r.sigHrs;},0);
-  var gSigCost=tot.reduce(function(s,r){return s+r.sigCost;},0);
-  var gPDICost=tot.reduce(function(s,r){return s+r.pdiCost;},0);
-  var gTot=gSigCost+gPDICost;
-
-  // Monthly rollup
-  var monthMap={};
-  tot.forEach(function(r){
-    var m=r.wStart.slice(0,7);
-    if(!monthMap[m])monthMap[m]={sigHrs:0,sigCost:0,pdiCost:0};
-    monthMap[m].sigHrs+=r.sigHrs;monthMap[m].sigCost+=r.sigCost;monthMap[m].pdiCost+=r.pdiCost;
-  });
-  // Quarterly rollup
-  var qMap={};
-  tot.forEach(function(r){
-    var mo=parseInt(r.wStart.slice(5,7)),yr=r.wStart.slice(0,4);
-    var q=yr+' Q'+Math.ceil(mo/3);
-    if(!qMap[q])qMap[q]={sigHrs:0,sigCost:0,pdiCost:0};
-    qMap[q].sigHrs+=r.sigHrs;qMap[q].sigCost+=r.sigCost;qMap[q].pdiCost+=r.pdiCost;
+    grandSigHrs+=tSigHrs;grandSigSess+=tSigSess;
+    grandSigWkly+=tSigWkly;grandPDI+=tPDI;
+    grandTot+=staffTotal;
   });
 
-  function mLbl(k){return new Date(k+'-15').toLocaleDateString('en-US',{month:'short',year:'2-digit'});}
-  function tblHead(){
-    return '<table style="width:100%;border-collapse:collapse;font-size:12px">'+
-      '<thead><tr style="background:#0d1117;color:#fff">'+
-      '<th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:500">Period</th>'+
-      '<th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:500">Sig Hours</th>'+
-      '<th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:500">Sig Stipend</th>'+
-      '<th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:500">PDI Stipend</th>'+
-      '<th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:500">Total</th>'+
-      '</tr></thead><tbody>';
-  }
-  function tblRow(lbl,r,bold){
-    var s=bold?'font-weight:700;':'';
-    var bg=bold?'background:var(--bg2)':'';
-    return '<tr style="'+bg+'">'+
-      '<td style="padding:7px 12px;border-top:.5px solid var(--bd);'+s+'">'+lbl+'</td>'+
-      '<td style="padding:7px 12px;border-top:.5px solid var(--bd);text-align:right">'+fmtH(r.sigHrs)+'</td>'+
-      '<td style="padding:7px 12px;border-top:.5px solid var(--bd);text-align:right">'+fmt$(r.sigCost)+'</td>'+
-      '<td style="padding:7px 12px;border-top:.5px solid var(--bd);text-align:right">'+fmt$(r.pdiCost)+'</td>'+
-      '<td style="padding:7px 12px;border-top:.5px solid var(--bd);text-align:right;font-weight:700;color:var(--green)">'+fmt$(r.sigCost+r.pdiCost)+'</td>'+
-    '</tr>';
-  }
-  function totRow(lbl,r){
-    return '<tr style="background:#0d1117;color:#fff">'+
-      '<td style="padding:8px 12px;font-weight:700">'+lbl+'</td>'+
-      '<td style="padding:8px 12px;text-align:right">'+fmtH(r.sigHrs)+'</td>'+
-      '<td style="padding:8px 12px;text-align:right">'+fmt$(r.sigCost)+'</td>'+
-      '<td style="padding:8px 12px;text-align:right">'+fmt$(r.pdiCost)+'</td>'+
-      '<td style="padding:8px 12px;text-align:right;font-weight:700;color:#86efac">'+fmt$(r.sigCost+r.pdiCost)+'</td>'+
-    '</tr>';
-  }
-  function section(title,body){
-    return '<div style="margin-bottom:20px"><h3 style="font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:8px">'+title+'</h3>'+
-      '<div style="background:#fff;border:.5px solid var(--bd);border-radius:var(--rl);overflow:auto">'+body+'</table></div></div>';
-  }
+  // Grand total
+  rows.push([]);
+  rows.push([
+    'GRAND TOTAL','',
+    grandSigHrs.toFixed(2),
+    grandSigSess.toFixed(2),
+    grandSigWkly.toFixed(2),
+    grandPDI.toFixed(2),
+    grandTot.toFixed(2),
+    '','']);
 
-  // Weekly chart data
-  var wLabels=tot.map(function(r){return r.week;});
-  var wSig=tot.map(function(r){return r.sigCost;});
-  var wPDI=tot.map(function(r){return r.pdiCost;});
-
-  // Monthly chart data
-  var mKeys=Object.keys(monthMap).sort();
-  var mLabels=mKeys.map(mLbl);
-  var mSig=mKeys.map(function(k){return monthMap[k].sigCost;});
-  var mPDI=mKeys.map(function(k){return monthMap[k].pdiCost;});
-
-  // By-quarter chart data
-  var qKeys=Object.keys(qMap).sort();
-  var qSig=qKeys.map(function(k){return qMap[k].sigCost;});
-  var qPDI=qKeys.map(function(k){return qMap[k].pdiCost;});
-
-  // Staff totals for pie
-  var staffTotals={};
-  D.lineItems.forEach(function(li){
-    if(!staffTotals[li.staff])staffTotals[li.staff]=0;
-    staffTotals[li.staff]+=(li.track==='PDI'?li.counted:li.amount)||0;
-  });
-  var staffKeys=Object.keys(staffTotals).sort(function(a,b){return staffTotals[b]-staffTotals[a];}).slice(0,12);
-  var COLORS=['#7F77DD','#378ADD','#1D9E75','#E24B4A','#BA7517','#9333ea',
-              '#0891b2','#16a34a','#dc2626','#d97706','#6366f1','#0d9488'];
-
-  // Quarter table rows
-  var qTblRows='';
-  qKeys.forEach(function(k){qTblRows+=tblRow(k,qMap[k],false);});
-  // Month table rows
-  var mTblRows='';
-  mKeys.forEach(function(k){mTblRows+=tblRow(mLbl(k),monthMap[k],false);});
-  // Week table rows
-  var wTblRows='';
-  tot.forEach(function(r){wTblRows+=tblRow(r.week,r,false);});
-
-  var el=document.getElementById('tab-summary');
-  if(!el)return;
-
-  el.innerHTML=
-    '<div style="padding:12px 16px 0;display:flex;justify-content:flex-end">'+
-    '<button class="excel-btn" onclick="exportSummaryExcel()">\u2193 Export Summary</button></div>'+
-    // ── Stat cards ──
-    '<div class="cards" style="margin-bottom:20px">'+
-      '<div class="card"><div class="card-label">Sig Hours Billed</div><div class="card-value">'+fmtH(gSigHrs)+'</div></div>'+
-      '<div class="card"><div class="card-label">Sig Stipend Total</div><div class="card-value">'+fmt$(gSigCost)+'</div></div>'+
-      '<div class="card"><div class="card-label">PDI Stipend Total</div><div class="card-value">'+fmt$(gPDICost)+'</div></div>'+
-      '<div class="card green"><div class="card-label">Grand Total</div><div class="card-value">'+fmt$(gTot)+'</div></div>'+
-    '</div>'+
-
-    // ── Charts row 1: Weekly cost bars + Staff breakdown pie ──
-    '<div style="display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:20px">'+
-      '<div style="background:#fff;border:.5px solid var(--bd);border-radius:var(--rl);padding:18px">'+
-        '<h3 style="font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:12px">Weekly Stipend Cost (Signature + PDI)</h3>'+
-        '<div style="position:relative;height:180px"><canvas id="ch-weekly"></canvas></div>'+
-      '</div>'+
-      '<div style="background:#fff;border:.5px solid var(--bd);border-radius:var(--rl);padding:18px">'+
-        '<h3 style="font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:12px">Stipend by Provider</h3>'+
-        '<div style="position:relative;height:180px"><canvas id="ch-staff"></canvas></div>'+
-      '</div>'+
-    '</div>'+
-
-    // ── Charts row 2: Monthly totals bar ──
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px">'+
-      '<div style="background:#fff;border:.5px solid var(--bd);border-radius:var(--rl);padding:18px">'+
-        '<h3 style="font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:12px">Monthly Totals</h3>'+
-        '<div style="position:relative;height:160px"><canvas id="ch-monthly"></canvas></div>'+
-      '</div>'+
-      '<div style="background:#fff;border:.5px solid var(--bd);border-radius:var(--rl);padding:18px">'+
-        '<h3 style="font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:12px">Signature Hours by Week</h3>'+
-        '<div style="position:relative;height:160px"><canvas id="ch-hours"></canvas></div>'+
-      '</div>'+
-    '</div>'+
-
-    // ── Tables ──
-    section('By Quarter',tblHead()+qTblRows+totRow('Quarter Total',{sigHrs:gSigHrs,sigCost:gSigCost,pdiCost:gPDICost}))+
-    section('By Month',tblHead()+mTblRows+totRow('Month Total',{sigHrs:gSigHrs,sigCost:gSigCost,pdiCost:gPDICost}))+
-    section('By Week',tblHead()+wTblRows+totRow('Week Total',{sigHrs:gSigHrs,sigCost:gSigCost,pdiCost:gPDICost}));
-
-  // Build charts after DOM update
-  setTimeout(function(){
-    if(typeof Chart==='undefined'){setTimeout(function(){renderSummary(window._lastD||{summaryFinal:[],lineItems:[]});},500);return;}
-    Chart.defaults.font.family="'Plus Jakarta Sans',sans-serif";
-    Chart.defaults.color='#6b7280';
-    function mkStacked(id,labels,ds){
-      var ctx=document.getElementById(id);if(!ctx)return;
-      window._summaryCharts[id]=new Chart(ctx,{type:'bar',
-        data:{labels:labels,datasets:ds},
-        options:{responsive:true,maintainAspectRatio:false,
-          plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}}},
-          scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:9},maxRotation:45}},
-                  y:{stacked:true,beginAtZero:true,ticks:{callback:function(v){return'$'+v.toLocaleString();}},grid:{color:'#f3f4f6'}}}}});
-    }
-    mkStacked('ch-weekly',wLabels,[
-      {label:'Signature',data:wSig,backgroundColor:'#7F77DD',borderRadius:3},
-      {label:'PDI',data:wPDI,backgroundColor:'#378ADD',borderRadius:3}
-    ]);
-    mkStacked('ch-monthly',mLabels,[
-      {label:'Signature',data:mSig,backgroundColor:'#7F77DD',borderRadius:3},
-      {label:'PDI',data:mPDI,backgroundColor:'#378ADD',borderRadius:3}
-    ]);
-    // Hours chart
-    var chHrs=document.getElementById('ch-hours');
-    if(chHrs)window._summaryCharts['ch-hours']=new Chart(chHrs,{type:'bar',
-      data:{labels:wLabels,datasets:[{label:'Sig Hours',data:wSig.map(function(_,i){return tot[i].sigHrs;}),backgroundColor:'#1D9E75',borderRadius:3}]},
-      options:{responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:false}},
-        scales:{x:{grid:{display:false},ticks:{font:{size:9},maxRotation:45}},
-                y:{beginAtZero:true,grid:{color:'#f3f4f6'}}}}});
-    // Staff doughnut
-    var chStaff=document.getElementById('ch-staff');
-    if(chStaff)window._summaryCharts['ch-staff']=new Chart(chStaff,{type:'doughnut',
-      data:{labels:staffKeys,datasets:[{data:staffKeys.map(function(k){return staffTotals[k];}),
-        backgroundColor:COLORS,borderWidth:0}]},
-      options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
-        plugins:{legend:{position:'right',labels:{boxWidth:10,font:{size:9},padding:4}}}}});
-  },50);
+  dlCSV(rows,'Stipend_Approval_Report.csv');
 }
-
-function renderLineItems(D){
-  // Store raw events for debug
-  window._debugEvents=DATA.events;
-  window._debugClients=DATA.clients;
-
-  var rows='';
-  D.lineItems.forEach(function(li){
-    rows+='<tr>'+
-      '<td>'+esc(li.week)+'</td>'+
-      '<td>'+esc(li.client)+'</td>'+
-      '<td><span class="track-'+(li.track==='Signature'?'sig':'pdi')+'">'+li.track+'</span></td>'+
-      '<td>'+esc(li.staff)+'</td>'+
-      '<td>'+esc(li.type)+'</td>'+
-      '<td class="num">'+(li.sessHrs!==''?li.sessHrs:'')+'</td>'+
-      '<td class="num">'+(li.rate!==''?'$'+li.rate:'')+'</td>'+
-      '<td class="money">$'+li.amount+'</td>'+
-      '<td class="money '+(li.counted===0?'zero':'amt')+'">'+
-        (li.counted===0?'<span class="counted-zero">$0 (dup.)</span>':('$'+li.counted))+
-      '</td>'+
-      '<td class="note-cell">'+(li.notes?esc(li.notes):'')+'</td>'+
-    '</tr>';
-  });
-  // Totals
-  var totAmt=D.lineItems.reduce(function(s,r){return s+r.amount;},0);
-  var totCounted=D.lineItems.reduce(function(s,r){return s+r.counted;},0);
-  var totHrs=D.lineItems.filter(function(r){return r.type==='Session';}).reduce(function(s,r){return s+(r.sessHrs||0);},0);
-  rows+='<tr class="total-row"><td colspan="4">TOTAL</td><td></td><td class="num">'+totHrs+'</td><td></td><td class="money">$'+totAmt.toLocaleString()+'</td><td class="money">$'+totCounted.toLocaleString()+'</td><td></td></tr>';
-  document.getElementById('li-tbody').innerHTML=rows;
-}
-
-function renderRosterSection(title, staffSet, dataByStaff, sortedWeeks, unit){
-  var staff=Object.keys(staffSet).sort();
-  if(!staff.length)return'';
-  var wkLabels=sortedWeeks.map(wkLabel);
-  var h='<div class="section-div"><h3>'+title+'</h3></div>';
-  h+='<div class="tbl-wrap roster-wrap"><table class="roster-tbl"><thead><tr>';
-  h+='<th class="corner">Staff / Week</th>';
-  wkLabels.forEach(function(w){h+='<th class="wk">'+w+'</th>';});
-  h+='<th class="tot">Total</th></tr></thead><tbody>';
-  var colTots=sortedWeeks.map(function(){return 0;});
-  var grandTot=0;
-  staff.forEach(function(s){
-    h+='<tr><td class="staff">'+esc(s)+'</td>';
-    var tot=0;
-    sortedWeeks.forEach(function(w,i){
-      var v=(dataByStaff[s]&&dataByStaff[s][w])||0;
-      h+='<td class="wkval'+(v===0?' zero':'')+'">'+( v===0?'\u2014':(unit==='$'?'$'+v:v))+'</td>';
-      tot+=v;colTots[i]+=v;
-    });
-    h+='<td class="rowtot">'+(unit==='$'?'$'+tot:tot)+'</td></tr>';
-    grandTot+=tot;
-  });
-  h+='<tr class="total-row"><td>Total</td>';
-  colTots.forEach(function(v){h+='<td class="num">'+(unit==='$'?'$'+v:v)+'</td>';});
-  h+='<td>'+(unit==='$'?'$'+grandTot:grandTot)+'</td></tr>';
-  h+='</tbody></table></div>';
-  return h;
-}
-
-function renderRoster(D){
-  var h='';
-  if(D.fltTrack!=='PDI')h+=renderRosterSection('SIGNATURE \u2014 Direct Service Hours per Week (sessions @ $150)',D.sigStaffSet,D.sigHrsByStaff,D.sortedWeeks,'hrs');
-  if(D.fltTrack!=='PDI')h+=renderRosterSection('SIGNATURE \u2014 Weekly Stipend $ ($250/wk)',D.weekStiStaffSet,D.sigStiByStaff,D.sortedWeeks,'$');
-  if(D.fltTrack!=='Signature')h+=renderRosterSection('PDI \u2014 Flat Stipend $ ($250 each, once per episode)',D.pdiStaffSet,D.pdiStiByStaff,D.sortedWeeks,'$');
-  var rosterWrap='<div style="display:flex;justify-content:flex-end;padding:12px 0 8px">'+
-    '<button class="excel-btn" onclick="exportRosterExcel()">\u2193 Export Staff Roster</button></div>';
-  document.getElementById('roster-content').innerHTML=rosterWrap+(h||'<div class="empty">No data for selected filters.</div>');
-}
-
-function renderByClient(D){
-  var el=document.getElementById('byclient-content');if(!el)return;
-  function fmt$(v){return v?'$'+(+v).toFixed(2):'-';}
-
-  // All Signature clients — from DATA.clients (shows ALL, not just those with events this filter)
-  var sigClients=DATA.clients.filter(function(c){
-    var p=c.program||'';return p==='Signature'||p==='Both';
-  }).map(function(c){return c.id;});
-
-  // All PDI clients
-  var pdiClients=DATA.clients.filter(function(c){
-    var p=c.program||'';return p==='PDI'||p==='Both';
-  }).map(function(c){return c.id;});
-
-  function cName(cid){var c=DATA.clients.find(function(c){return c.id===cid;});return c?c.name:cid;}
-
-  // Collect all session providers across Sig clients
-  var allSigStaff=new Set();
-  sigClients.forEach(function(cid){
-    var b=D.byClientSig[cid];
-    if(b)Object.keys(b.staffHrs).forEach(function(p){allSigStaff.add(p);});
-  });
-  var sigStaffArr=Array.from(allSigStaff).sort();
-
-  // Collect all PDI providers across PDI clients
-  var allPDIStaff=new Set();
-  pdiClients.forEach(function(cid){
-    var b=D.byClientPDI[cid];
-    if(b)Object.keys(b.staffAmt).forEach(function(p){allPDIStaff.add(p);});
-  });
-  // Always include weekly providers in PDI column
-  ['David Ockman','Nicole','Gus Hernandez'].forEach(function(p){allPDIStaff.add(p);});
-  var pdiStaffArr=Array.from(allPDIStaff).sort();
-
-  function thStyle(){return 'padding:7px 10px;text-align:right;font-size:10px;font-weight:500;white-space:nowrap;';}
-  function tdStyle(v){return 'padding:6px 10px;text-align:right;border-top:.5px solid var(--bd);color:'+(v?'var(--tx)':'var(--tx3)')+';';}
-
-  var html='';
-
-  // ── SIGNATURE section ──────────────────────────────────────────────────
-  if(D.fltTrack!=='PDI'&&sigClients.length){
-    html+='<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--tx3);margin:0 0 8px;padding:16px 16px 0">'+
-      'Signature \u2014 Session Hours & Weekly Stipend by Client (cumulative for selected filter period)</div>';
-    html+='<div style="overflow:auto;margin-bottom:20px"><table style="width:100%;border-collapse:collapse;font-size:12px">'+
-      '<thead><tr style="background:#0d1117;color:#fff">'+
-      '<th style="padding:7px 12px;text-align:left;font-size:10px;font-weight:500;position:sticky;left:0;background:#0d1117">Client</th>'+
-      '<th style="'+thStyle()+'">Weekly $</th>'+
-      '<th style="'+thStyle()+'">Sess $</th>'+
-      '<th style="'+thStyle()+'">Sig Total</th>';
-    sigStaffArr.forEach(function(p){html+='<th style="'+thStyle()+'">'+p.split(' ').pop()+'</th>';});
-    html+='</tr></thead><tbody>';
-
-    var sigColTotals={wkly:0,sess:0,tot:0};
-    var staffColTotals={};
-
-    sigClients.forEach(function(cid,ri){
-      var b=D.byClientSig[cid]||{staffHrs:{},wklyAmt:0,sessAmt:0};
-      var rowBg=ri%2===0?'':'background:var(--bg)';
-      var wkly=b.wklyAmt||0,sess=b.sessAmt||0,tot=wkly+sess;
-      sigColTotals.wkly+=wkly;sigColTotals.sess+=sess;sigColTotals.tot+=tot;
-      html+='<tr style="'+rowBg+'">'+
-        '<td style="padding:6px 12px;border-top:.5px solid var(--bd);font-weight:600;position:sticky;left:0;background:'+(ri%2===0?'#fff':'var(--bg)')+'">'+cName(cid)+'</td>'+
-        '<td style="'+tdStyle(wkly)+'">'+fmt$(wkly)+'</td>'+
-        '<td style="'+tdStyle(sess)+'">'+fmt$(sess)+'</td>'+
-        '<td style="padding:6px 10px;text-align:right;border-top:.5px solid var(--bd);font-weight:700;color:var(--green)">'+fmt$(tot)+'</td>';
-      sigStaffArr.forEach(function(p){
-        var hrs=b.staffHrs&&b.staffHrs[p]||0;
-        if(!staffColTotals[p])staffColTotals[p]=0;
-        staffColTotals[p]+=hrs;
-        html+='<td style="'+tdStyle(hrs)+'">'+(hrs?hrs.toFixed(1)+' hr':'\u2013')+'</td>';
-      });
-      html+='</tr>';
-    });
-
-    // Total row
-    html+='<tr style="background:#0d1117;color:#fff">'+
-      '<td style="padding:8px 12px;font-weight:700;position:sticky;left:0;background:#0d1117">Total</td>'+
-      '<td style="padding:8px 10px;text-align:right">'+fmt$(sigColTotals.wkly)+'</td>'+
-      '<td style="padding:8px 10px;text-align:right">'+fmt$(sigColTotals.sess)+'</td>'+
-      '<td style="padding:8px 10px;text-align:right;font-weight:700;color:#86efac">'+fmt$(sigColTotals.tot)+'</td>';
-    sigStaffArr.forEach(function(p){
-      html+='<td style="padding:8px 10px;text-align:right">'+((staffColTotals[p]||0).toFixed(1)+' hr')+'</td>';
-    });
-    html+='</tr></tbody></table></div>';
-  }
-
-  // ── PDI section ────────────────────────────────────────────────────────
-  if(D.fltTrack!=='Signature'&&pdiClients.length){
-    html+='<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--tx3);margin:0 0 8px;padding:0 16px">'+
-      'PDI \u2014 Flat Stipend by Client ($250 per provider, once per PDI episode, shown in discharge week)</div>';
-    html+='<div style="overflow:auto;margin-bottom:20px"><table style="width:100%;border-collapse:collapse;font-size:12px">'+
-      '<thead><tr style="background:#0d1117;color:#fff">'+
-      '<th style="padding:7px 12px;text-align:left;font-size:10px;font-weight:500;position:sticky;left:0;background:#0d1117">Client</th>'+
-      '<th style="'+thStyle()+'">PDI Total</th>';
-    pdiStaffArr.forEach(function(p){html+='<th style="'+thStyle()+'">'+p.split(' ').pop()+'</th>';});
-    html+='</tr></thead><tbody>';
-
-    var pdiColTotal=0;
-    var pdiStaffColTotals={};
-    pdiClients.forEach(function(cid,ri){
-      var b=D.byClientPDI[cid]||{staffAmt:{}};
-      var tot=Object.values(b.staffAmt).reduce(function(s,v){return s+v;},0);
-      pdiColTotal+=tot;
-      var rowBg=ri%2===0?'':'background:var(--bg)';
-      html+='<tr style="'+rowBg+'">'+
-        '<td style="padding:6px 12px;border-top:.5px solid var(--bd);font-weight:600;position:sticky;left:0;background:'+(ri%2===0?'#fff':'var(--bg)')+'">'+cName(cid)+'</td>'+
-        '<td style="padding:6px 10px;text-align:right;border-top:.5px solid var(--bd);font-weight:700;color:var(--green)">'+fmt$(tot)+'</td>';
-      pdiStaffArr.forEach(function(p){
-        var v=b.staffAmt&&b.staffAmt[p]||0;
-        if(!pdiStaffColTotals[p])pdiStaffColTotals[p]=0;
-        pdiStaffColTotals[p]+=v;
-        html+='<td style="'+tdStyle(v)+'">'+(v?fmt$(v):'\u2013')+'</td>';
-      });
-      html+='</tr>';
-    });
-
-    html+='<tr style="background:#0d1117;color:#fff">'+
-      '<td style="padding:8px 12px;font-weight:700;position:sticky;left:0;background:#0d1117">Total</td>'+
-      '<td style="padding:8px 10px;text-align:right;font-weight:700;color:#86efac">'+fmt$(pdiColTotal)+'</td>';
-    pdiStaffArr.forEach(function(p){
-      html+='<td style="padding:8px 10px;text-align:right">'+((pdiStaffColTotals[p]||0)?fmt$(pdiStaffColTotals[p]||0):'\u2013')+'</td>';
-    });
-    html+='</tr></tbody></table></div>';
-  }
-
-  var bcBtn='<div style="display:flex;justify-content:flex-end;padding:12px 0 8px">'+
-    '<button class="excel-btn" onclick="exportByClientExcel()">\u2193 Export By Client</button></div>';
-  el.innerHTML=bcBtn+(html||'<div style="padding:40px;text-align:center;color:var(--tx3)">No client data for selected filters.</div>');
-}
-
-// ── Export helpers ─────────────────────────────────────────────────────────
-function dlCSV(rows, filename){
-  var csv=rows.map(function(r){
-    return r.map(function(c){return '"'+String(c==null?'':c).replace(/"/g,'""')+'"';}).join(',');
-  }).join('\n');
-  var blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
-  var url=URL.createObjectURL(blob);
-  var a=document.createElement('a');a.href=url;a.download=filename;
-  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
-}
-function fmt2(v){return v||v===0?(+v).toFixed(2):'';}
-function fmtH2(v){return v||v===0?(+v).toFixed(1)+' hr':'';}
 
 function exportSummaryExcel(){
   var D=window._lastD;if(!D)return;
