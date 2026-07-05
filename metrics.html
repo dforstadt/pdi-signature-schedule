@@ -155,9 +155,13 @@ tbody tr:nth-child(even) td{background:var(--bg);}
       </table>
     </div>
     <div style="margin-top:10px;font-size:11px;color:var(--tx3);text-align:right">
-      Only clients with PDI or Signature admission dates entered in the calendar are counted in metrics.
+      Metrics include all clients from program inception (Aug 2025). Historical clients (pre-calendar) are embedded from submitted stipend records; calendar clients override historical when matched by name.
       <a href="index.html" style="color:var(--pdi)">Update dates in calendar →</a>
     </div>
+    <details style="margin-top:24px;background:#fff;border:.5px solid var(--bd);border-radius:var(--rl);padding:16px;">
+      <summary style="font-size:12px;font-weight:600;cursor:pointer;color:var(--tx2)">&#x1F50D; Raw calendar data (all clients) &mdash; use this to diagnose incorrect entries</summary>
+      <div id="raw-debug" style="margin-top:12px;font-size:11px;font-family:monospace;overflow:auto;max-height:300px;"></div>
+    </details>
   </div>
 </div>
 
@@ -192,23 +196,57 @@ function mk(s){return s?s.slice(0,7):null;}
 function mlbl(k){return new Date(k+'-15').toLocaleDateString('en-US',{month:'short',year:'2-digit'});}
 function set(id,v){var el=document.getElementById(id);if(el)el.innerHTML=v;}
 
-// Build client episode list from Firebase calendar data
-// Uses program field as authoritative source — stale date fields for wrong program are ignored
+// Historical clients — program inception through calendar start
+// These clients may not be in the calendar but are documented in the submitted stipend records
+var HIST_CLIENTS=[{"id": "hist_matthew_h", "name": "Matthew H", "program": "PDI", "pdiAdmit": "2025-08-12", "pdiDischarge": "2025-08-21", "sigAdmit": null, "sigDischarge": null, "_source": "historical"}, {"id": "hist_leslie_k", "name": "Leslie K", "program": "PDI", "pdiAdmit": "2025-09-25", "pdiDischarge": "2025-10-03", "sigAdmit": null, "sigDischarge": null, "_source": "historical"}, {"id": "hist_abbegail_m", "name": "Abbegail M", "program": "PDI", "pdiAdmit": "2025-10-08", "pdiDischarge": "2025-10-18", "sigAdmit": null, "sigDischarge": null, "_source": "historical"}, {"id": "hist_alex_r", "name": "Alex R", "program": "PDI", "pdiAdmit": "2025-12-03", "pdiDischarge": "2025-12-12", "sigAdmit": null, "sigDischarge": null, "_source": "historical"}, {"id": "hist_francis_r", "name": "Francis R", "program": "PDI", "pdiAdmit": "2026-05-13", "pdiDischarge": "2026-05-22", "sigAdmit": null, "sigDischarge": null, "_source": "historical"}, {"id": "hist_thomas_w", "name": "Thomas W", "program": "PDI", "pdiAdmit": "2026-06-05", "pdiDischarge": "2026-06-16", "sigAdmit": null, "sigDischarge": null, "_source": "historical"}, {"id": "hist_norman_p", "name": "Norman P", "program": "PDI", "pdiAdmit": "2026-06-15", "pdiDischarge": "2026-06-25", "sigAdmit": null, "sigDischarge": null, "_source": "historical"}, {"id": "hist_carlos_l", "name": "Carlos L", "program": "Both", "pdiAdmit": "2026-03-23", "pdiDischarge": "2026-03-31", "sigAdmit": "2026-04-01", "sigDischarge": "2026-04-01", "_source": "historical"}, {"id": "hist_jessica_c", "name": "Jessica C", "program": "Both", "pdiAdmit": "2026-04-04", "pdiDischarge": "2026-04-21", "sigAdmit": "2026-04-14", "sigDischarge": "2026-04-14", "_source": "historical"}, {"id": "hist_george_w", "name": "George W", "program": "Both", "pdiAdmit": "2026-04-11", "pdiDischarge": "2026-04-22", "sigAdmit": "2026-04-24", "sigDischarge": "2026-05-18", "_source": "historical"}, {"id": "hist_marc_c", "name": "Marc C", "program": "Both", "pdiAdmit": "2026-04-17", "pdiDischarge": "2026-04-28", "sigAdmit": "2026-05-01", "sigDischarge": "2026-07-06", "_source": "historical"}, {"id": "hist_michael_f", "name": "Michael F", "program": "Both", "pdiAdmit": "2026-05-08", "pdiDischarge": "2026-05-18", "sigAdmit": "2026-05-19", "sigDischarge": null, "_source": "historical"}, {"id": "hist_kevin_c", "name": "Kevin C", "program": "Both", "pdiAdmit": "2026-05-14", "pdiDischarge": "2026-05-26", "sigAdmit": "2026-05-27", "sigDischarge": "2026-06-12", "_source": "historical"}, {"id": "hist_layla_s", "name": "Layla S", "program": "Both", "pdiAdmit": "2026-05-18", "pdiDischarge": "2026-05-28", "sigAdmit": "2026-05-29", "sigDischarge": "2026-06-08", "_source": "historical"}, {"id": "hist_blake_p", "name": "Blake P", "program": "Both", "pdiAdmit": "2026-06-04", "pdiDischarge": "2026-06-12", "sigAdmit": "2026-06-13", "sigDischarge": "2026-06-26", "_source": "historical"}, {"id": "hist_tomas_w", "name": "Tomas W", "program": "Signature", "pdiAdmit": null, "pdiDischarge": null, "sigAdmit": "2026-05-26", "sigDischarge": "2026-06-18", "_source": "historical"}, {"id": "hist_jarrod_w", "name": "Jarrod W", "program": "Signature", "pdiAdmit": null, "pdiDischarge": null, "sigAdmit": "2026-05-29", "sigDischarge": "2026-06-29", "_source": "historical"}, {"id": "hist_emma_t", "name": "Emma T", "program": "Signature", "pdiAdmit": null, "pdiDischarge": null, "sigAdmit": "2026-06-01", "sigDischarge": "2026-06-22", "_source": "historical"}, {"id": "hist_david_r", "name": "David R", "program": "Signature", "pdiAdmit": null, "pdiDischarge": null, "sigAdmit": "2026-06-05", "sigDischarge": "2026-07-01", "_source": "historical"}, {"id": "hist_joseph_g", "name": "Joseph G", "program": "Signature", "pdiAdmit": null, "pdiDischarge": null, "sigAdmit": "2026-06-08", "sigDischarge": null, "_source": "historical"}, {"id": "hist_arianna_b", "name": "Arianna B", "program": "Signature", "pdiAdmit": null, "pdiDischarge": null, "sigAdmit": "2026-06-15", "sigDischarge": null, "_source": "historical"}, {"id": "hist_alex_a", "name": "Alex A", "program": "Signature", "pdiAdmit": null, "pdiDischarge": null, "sigAdmit": "2026-06-18", "sigDischarge": null, "_source": "historical"}, {"id": "hist_peter_s", "name": "Peter S", "program": "Signature", "pdiAdmit": null, "pdiDischarge": null, "sigAdmit": "2026-06-19", "sigDischarge": null, "_source": "historical"}, {"id": "hist_george_r", "name": "George R", "program": "Signature", "pdiAdmit": null, "pdiDischarge": null, "sigAdmit": "2026-06-20", "sigDischarge": null, "_source": "historical"}, {"id": "hist_angela_t", "name": "Angela T", "program": "Signature", "pdiAdmit": null, "pdiDischarge": null, "sigAdmit": "2026-06-25", "sigDischarge": null, "_source": "historical"}, {"id": "hist_chayse_b", "name": "Chayse B", "program": "Signature", "pdiAdmit": null, "pdiDischarge": null, "sigAdmit": "2026-06-29", "sigDischarge": null, "_source": "historical"}, {"id": "hist_louis_r", "name": "Louis R", "program": "Signature", "pdiAdmit": null, "pdiDischarge": null, "sigAdmit": "2026-07-01", "sigDischarge": null, "_source": "historical"}];
+
+// Build episode list merging historical records + live Firebase calendar data
+// Historical records are the baseline; calendar takes precedence for matching clients
 function buildEpisodes(fbClients){
-  return fbClients.map(function(c){
+  // Normalize a Firebase client to episode record
+  function normalize(c){
     var prog=c.program||'';
-    // program field determines which episode dates are valid
     var hasPDI=prog==='PDI'||prog==='Both';
     var hasSig=prog==='Signature'||prog==='Both';
-    // Only use episode dates when they match the program
     var pdiAdmit  =hasPDI?(c.pdiAdmit||null):null;
     var pdiDisch  =hasPDI?(c.pdiDischarge||c.pdiDisch||null):null;
     var sigAdmit  =hasSig?(c.sigAdmit||null):null;
     var sigDisch  =hasSig?(c.sigDischarge||c.sigDisch||null):null;
-    // Only include if at least one valid episode date exists
     if(!pdiAdmit&&!sigAdmit)return null;
-    return{id:c.id,name:c.name,pdiAdmit:pdiAdmit,pdiDisch:pdiDisch,sigAdmit:sigAdmit,sigDisch:sigDisch};
-  }).filter(function(c){return c!==null;});
+    return{id:c.id,name:c.name,pdiAdmit:pdiAdmit,pdiDisch:pdiDisch,
+           sigAdmit:sigAdmit,sigDisch:sigDisch,source:'calendar'};
+  }
+
+  // Build calendar episodes, keyed by lowercase name for dedup
+  var calEps={};
+  fbClients.forEach(function(c){
+    var ep=normalize(c);
+    if(ep)calEps[c.name.toLowerCase().trim()]=ep;
+  });
+
+  // Start with historical clients; override with calendar data if name matches
+  var result=[];
+  HIST_CLIENTS.forEach(function(h){
+    var key=h.name.toLowerCase().trim();
+    if(calEps[key]){
+      // Calendar record exists — use it (more up-to-date discharge dates etc.)
+      result.push(calEps[key]);
+      delete calEps[key]; // don't double-count
+    } else {
+      // Historical only — use hist record directly
+      result.push({
+        id:h.id,name:h.name,
+        pdiAdmit:h.pdiAdmit||null,pdiDisch:h.pdiDischarge||null,
+        sigAdmit:h.sigAdmit||null,sigDisch:h.sigDischarge||null,
+        source:'historical'
+      });
+    }
+  });
+
+  // Add any calendar clients NOT in historical (new clients after calendar started)
+  Object.values(calEps).forEach(function(ep){result.push(ep);});
+
+  return result;
 }
 
 function compute(episodes){
@@ -304,6 +342,26 @@ function render(M){
 
   allClients=M.episodes;
   renderTable();
+  // Show raw debug data
+  var dbg=document.getElementById('raw-debug');
+  if(dbg){
+    dbg.innerHTML='<table style="width:100%;border-collapse:collapse">'+
+      '<tr style="background:#f3f4f6"><th style="padding:4px 8px;text-align:left">Name</th><th style="padding:4px 8px;text-align:left">program</th><th style="padding:4px 8px;text-align:left">pdiAdmit</th><th style="padding:4px 8px;text-align:left">sigAdmit</th><th style="padding:4px 8px;text-align:left">Counted as</th></tr>'+
+      (window._rawClients||[]).map(function(c){
+        var prog=c.program||'(none)';
+        var hasPDI=prog==='PDI'||prog==='Both';
+        var hasSig=prog==='Signature'||prog==='Both';
+        var counted=(hasPDI&&c.pdiAdmit?'PDI ':'')+((hasSig&&c.sigAdmit)?'Signature':'');
+        if(!counted)counted='(excluded — no matching dates)';
+        var flagJack=c.name&&c.name.toLowerCase().indexOf('jack')>-1?'style="background:#fef3c7"':'';
+        return '<tr '+flagJack+'><td style="padding:3px 8px;border-top:.5px solid #e5e7eb">'+c.name+'</td>'+
+          '<td style="padding:3px 8px;border-top:.5px solid #e5e7eb">'+prog+'</td>'+
+          '<td style="padding:3px 8px;border-top:.5px solid #e5e7eb">'+(c.pdiAdmit||'–')+'</td>'+
+          '<td style="padding:3px 8px;border-top:.5px solid #e5e7eb">'+(c.sigAdmit||'–')+'</td>'+
+          '<td style="padding:3px 8px;border-top:.5px solid #e5e7eb;font-weight:600;color:'+(counted.includes('PDI')?'var(--pdi)':counted.includes('Sig')?'var(--sig)':'var(--tx3)')+'">'+counted+'</td></tr>';
+      }).join('')+
+    '</table>';
+  }
 }
 
 function mkBar(id,labels,data,color){
@@ -368,6 +426,13 @@ firebase.database().ref('schedule_v3').on('value',function(snap){
   document.getElementById('llbl').textContent='Live';
   var raw=snap.val(),clients=[];
   if(raw&&raw.blob){try{var d=JSON.parse(raw.blob);if(Array.isArray(d.clients))clients=d.clients;}catch(e){console.error(e);}}
+  // Debug: log all clients with their raw Firebase fields
+  console.group('Firebase clients raw data:');
+  clients.forEach(function(c){
+    console.log(c.name+' | program:'+c.program+' | pdiAdmit:'+c.pdiAdmit+' | sigAdmit:'+c.sigAdmit);
+  });
+  console.groupEnd();
+  window._rawClients=clients;
   render(compute(buildEpisodes(clients)));
 },function(err){
   document.getElementById('ldot').className='ldot';
