@@ -102,6 +102,23 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);min-height:100vh;
   </div>
 </div>
 
+<!-- Password gate -->
+<div id="pw-gate" style="position:fixed;inset:0;background:#0d1117;display:flex;align-items:center;justify-content:center;z-index:9999">
+  <div style="background:#1a2333;border:.5px solid rgba(255,255,255,.1);border-radius:16px;padding:40px;width:360px;text-align:center">
+    <div style="font-size:36px;margin-bottom:16px">&#x1F4B0;</div>
+    <div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:6px">Financial Model</div>
+    <div style="font-size:12px;color:rgba(255,255,255,.4);margin-bottom:28px">PDI / Signature Revenue &amp; Expense Reconciliation</div>
+    <input type="password" id="pw-input" placeholder="Access code"
+      style="width:100%;padding:12px 16px;border-radius:10px;border:.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:#fff;font-size:15px;letter-spacing:.12em;text-align:center;font-family:var(--f);outline:none;margin-bottom:8px">
+    <div id="pw-err" style="font-size:12px;color:#fca5a5;min-height:20px;margin-bottom:12px"></div>
+    <button id="pw-btn"
+      style="width:100%;padding:12px;border-radius:10px;border:none;background:#1D9E75;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--f)">
+      Enter
+    </button>
+    <div style="margin-top:16px;font-size:11px;color:rgba(255,255,255,.2)">Lifeskills Behavioral Health &mdash; Confidential</div>
+  </div>
+</div>
+
 <div class="wrap">
   <div id="loading" style="padding:60px;text-align:center">
     <div class="spin"></div>
@@ -134,6 +151,33 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);min-height:100vh;
 </style>
 
 <script>
+// ── Password gate ─────────────────────────────────────────────────────────
+(function(){
+  var PASS='Lifeskills2024!';
+  var gate=document.getElementById('pw-gate');
+  var inp=document.getElementById('pw-input');
+  var btn=document.getElementById('pw-btn');
+  var err=document.getElementById('pw-err');
+  // Check session
+  try{if(sessionStorage.getItem('fin_auth')==='1'&&gate)gate.style.display='none';}catch(e){}
+  function tryAuth(){
+    if(inp&&inp.value===PASS){
+      try{sessionStorage.setItem('fin_auth','1');}catch(e){}
+      if(gate)gate.style.display='none';
+    } else {
+      if(err)err.textContent='Incorrect code.';
+      if(inp){inp.value='';inp.focus();}
+    }
+  }
+  if(btn)btn.addEventListener('click',tryAuth);
+  if(inp)inp.addEventListener('keydown',function(e){if(e.key==='Enter')tryAuth();});
+  // Focus input after short delay
+  setTimeout(function(){
+    var g=document.getElementById('pw-gate');
+    if(g&&g.style.display!=='none'&&inp)inp.focus();
+  },100);
+})();
+
 firebase.initializeApp({
   apiKey:"AIzaSyCERxntgytkfCHWN7EoAVYVmLBcfWyYZ5A",
   authDomain:"pdi-signature-schedule.firebaseapp.com",
