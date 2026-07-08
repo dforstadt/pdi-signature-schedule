@@ -95,6 +95,7 @@
       <button class="btn" onclick="exportToWord()" id="word-btn" style="border-color:#2b579a55;color:#2b579a;background:#2b579a11"><i class="ti ti-file-type-doc"></i> Client Daily Schedules</button>
       <button class="btn" onclick="openManageProviders()" style="border-color:#7F77DD66;color:#7F77DD;background:#7F77DD11"><i class="ti ti-users"></i> Manage Providers</button>
       <a href="metrics.html" target="_blank" class="btn" style="border-color:#37ADD044;color:#37ADD0;background:#37ADD011;text-decoration:none"><i class="ti ti-chart-bar"></i> Metrics</a>
+      <a href="financial.html" target="_blank" style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:var(--r);border:.5px solid #1D9E7566;color:#1D9E75;background:#1D9E7511;font-size:12px;font-weight:600;font-family:var(--f);text-decoration:none"><i class="ti ti-currency-dollar"></i> Financial Model</a>
       <button class="btn" onclick="openShare()"><i class="ti ti-link"></i> Share</button>
     </div>
   </div>
@@ -344,6 +345,16 @@ function deleteProvider(name){
   renderAll();saveAll();
   // Rebuild modal after deletion
   setTimeout(function(){buildProvModal();},50);
+}
+function addProvider(){
+  var sel=document.getElementById('np-name');
+  var name=sel&&sel.value&&sel.value.trim();
+  if(!name){alert('Please select a provider from the list.');return;}
+  if(S.providers[name]){alert('"'+name+'" is already added.');return;}
+  var color=document.getElementById('np-col')&&document.getElementById('np-col').value||'#7F77DD';
+  S.providers[name]={color:color,type:'session',stipendType:'session',noStipend:false};
+  renderAll();saveAll();
+  buildProvModal();
 }
 
 function closeModal(){
@@ -1140,12 +1151,16 @@ function submitRename(cid){
   var c=S.clients.find(function(c){return c.id===cid;});
   if(c){
     c.name=name;c.program=prog;
-    c.pdiAdmit=pdiAdmit;c.pdiDischarge=pdiDischarge;
-    c.sigAdmit=sigAdmit;c.sigDischarge=sigDischarge;
+    // Only save episode dates relevant to the selected program
+    // Hidden fields retain old values — explicitly null them out when program doesn't match
+    c.pdiAdmit    = (prog==='PDI'||prog==='Both') ? pdiAdmit     : null;
+    c.pdiDischarge= (prog==='PDI'||prog==='Both') ? pdiDischarge  : null;
+    c.sigAdmit    = (prog==='Signature'||prog==='Both') ? sigAdmit     : null;
+    c.sigDischarge= (prog==='Signature'||prog==='Both') ? sigDischarge  : null;
     // Set startDate/endDate for calendar filtering
-    if(prog==='PDI'){c.startDate=pdiAdmit;c.endDate=pdiDischarge;}
-    else if(prog==='Signature'){c.startDate=sigAdmit;c.endDate=sigDischarge;}
-    else{c.startDate=pdiAdmit;c.endDate=sigDischarge;} // Both: full span
+    if(prog==='PDI'){c.startDate=c.pdiAdmit;c.endDate=c.pdiDischarge;}
+    else if(prog==='Signature'){c.startDate=c.sigAdmit;c.endDate=c.sigDischarge;}
+    else{c.startDate=c.pdiAdmit;c.endDate=c.sigDischarge;}
   }
   renderAll();saveAll();closeModal();
 }
@@ -1789,7 +1804,7 @@ function buildProvModal(){
       '<div style="font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:10px">Add provider</div>'+
       '<div style="display:flex;gap:8px;align-items:center">'+
         '<input type="color" id="np-col" value="#7F77DD" style="width:34px;height:34px;flex-shrink:0;border:none;border-radius:50%;cursor:pointer;padding:0">'+
-        '<input type="text" id="np-name" placeholder="Provider name..." style="flex:1" >'+
+        (function(){var r=["Alexandria Marullo", "Anisha Hume", "Anthony", "Brian", "David Ockman", "Despina Karfis", "Dr. Flannery", "Dr. Forstadt", "Esther Entin", "Gregory Fortune", "Gus Hernandez", "Mirella Ezeta", "Nicole", "PBWI", "Paul Lazar", "Rabbi Gaines", "Robert Bruno", "Sandra Bernstein", "Tara Alhadeff", "Tech Team", "Thomas Young"];var av=r.filter(function(n){return!S.providers[n];});return av.length?'<select id="np-name" style="flex:1"><option value="">Select provider...</option>'+av.map(function(n){return'<option value="'+n+'">'+n+'</option>';}).join('')+'</select>':'<span style="flex:1;font-size:12px;color:var(--tx3);padding:4px">All staff members already added</span>';})()+''+
         '<button onclick="addProvider()" style="padding:8px 16px;border-radius:var(--r);border:none;background:#7F77DD;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--f);white-space:nowrap">+ Add</button>'+
       '</div>'+
     '</div>'+
