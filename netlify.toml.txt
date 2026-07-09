@@ -1,11 +1,12 @@
 [build]
   publish = "."
 
-# Redirect root URL to portal
+# Force redirect root to portal — overrides default index.html behaviour
 [[redirects]]
   from = "/"
   to = "/portal.html"
   status = 301
+  force = true
 
 [[headers]]
   for = "/*"
