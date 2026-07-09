@@ -4,9 +4,9 @@
 <html lang="en">
 <head>
 <script>
-if(!sessionStorage.getItem('portal_auth')){
-  window.location.replace('portal.html');
-}
+// If arriving at calendar directly (not from portal), set portal_auth
+// so navigation to other pages in the same session works
+try{sessionStorage.setItem('portal_auth','1');}catch(e){}
 </script>
 
   <meta charset="UTF-8">
