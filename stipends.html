@@ -103,6 +103,8 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.82),rgba(
 .hdr-text h1{font-size:16px;font-weight:700;letter-spacing:-.3px;}
 .hdr-text p{font-size:11px;color:rgba(255,255,255,.45);margin-top:2px;}
 .hdr-right{margin-left:auto;display:flex;align-items:center;gap:12px;}
+.nav-link{display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:20px;border:1px solid rgba(160,135,100,.35);background:rgba(255,252,245,.12);color:rgba(255,252,245,.75);font-size:11px;font-weight:600;text-decoration:none;font-family:var(--f);transition:all .15s;white-space:nowrap;}
+.nav-link:hover{background:rgba(255,252,245,.22);color:#fff;border-color:rgba(160,135,100,.6);}
 .live-dot{width:7px;height:7px;border-radius:50%;background:#888;flex-shrink:0;}
 .live-dot.on{background:var(--green);}
 .live-dot.off{background:var(--red);}
@@ -210,7 +212,12 @@ td.money.zero{color:var(--tx3);}
     <h1>Stipend Roster</h1>
     <p>Live from PDI / Signature Schedule</p>
   </div>
-  <div class="hdr-right">
+  <div class="hdr-right"><div style="display:flex;gap:6px;align-items:center;margin-left:0">
+    <a href="index.html" class="nav-link" title="Calendar">&#x1F4C5; Calendar</a>
+    <a href="stipends.html" class="nav-link" title="Stipends">&#x1F4B0; Stipends</a>
+    <a href="metrics.html" class="nav-link" title="Metrics">&#x1F4CA; Metrics</a>
+    <a href="financial.html" class="nav-link" title="Financial">&#x1F4C8; Financial</a>
+  </div>
     <div class="live-dot" id="live-dot"></div>
     <span id="live-lbl">Connecting...</span>
   </div>
