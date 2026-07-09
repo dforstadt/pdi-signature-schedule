@@ -63,6 +63,7 @@ function attempt(){
     localStorage.setItem(SK,'1');
     window.location.replace(RET);
   } else {
+    alert('DEBUG — You typed: [' + v + ']  Expected: [' + PW + ']  Match: ' + (v===PW));
     document.getElementById('err').textContent = 'Incorrect access code.';
     document.getElementById('pw').value = '';
     document.getElementById('pw').focus();
