@@ -232,7 +232,7 @@ td.money.zero{color:var(--tx3);}
     <div class="gate-sub">Enter the stipend access code to continue.</div>
     <input type="password" class="gate-input" id="stip-gate-pw" placeholder="Access code" autocomplete="current-password">
     <div class="gate-err" id="stip-gate-err"></div>
-    <button class="gate-btn" onclick="tryGate('stip-gate','StipendLS2024!','stip_auth')">Continue</button>
+    <button class="gate-btn" onclick="tryGate('stip-gate')">Continue</button>
   </div>
 </div>
 <div class="hdr">
@@ -1305,11 +1305,24 @@ function exportByClientExcel(){
 }
 </script>
 
+
 <script id="gate-js">
-function tryGate(gid, pass, skey){
+// Gate passwords stored in JS variables — avoids HTML attribute escaping issues
+var GATE_PASSES={
+  'stip-gate': 'StipendLS2024!',
+  'fin-gate':  'FinanceLS2024!'
+};
+var GATE_SKEYS={
+  'stip-gate': 'stip_auth',
+  'fin-gate':  'fin_auth'
+};
+
+function tryGate(gid){
+  var pass=GATE_PASSES[gid];
+  var skey=GATE_SKEYS[gid];
   var inp=document.getElementById(gid+'-pw');
   var err=document.getElementById(gid+'-err');
-  if(!inp)return;
+  if(!inp||!pass)return;
   if(inp.value===pass){
     try{sessionStorage.setItem(skey,'1');}catch(e){}
     document.getElementById(gid).style.display='none';
@@ -1323,20 +1336,17 @@ function tryGate(gid, pass, skey){
     setTimeout(function(){c.style.transform='none';},160);
   }
 }
-function initGate(gid,skey,pw,onEnter){
+
+function initGate(gid){
+  var skey=GATE_SKEYS[gid];
   var el=document.getElementById(gid);if(!el)return;
-  try{
-    if(sessionStorage.getItem(skey)==='1'){el.style.display='none';if(onEnter)onEnter();return;}
-  }catch(e){}
+  try{if(sessionStorage.getItem(skey)==='1'){el.style.display='none';return;}}catch(e){}
   el.style.display='flex';
-  // Allow Enter key
   var inp=document.getElementById(gid+'-pw');
-  if(inp)inp.addEventListener('keydown',function(e){
-    if(e.key==='Enter')tryGate(gid,pw,skey);
-  });
+  if(inp)inp.addEventListener('keydown',function(e){if(e.key==='Enter')tryGate(gid);});
   setTimeout(function(){if(inp)inp.focus();},80);
 }
 </script>
-<script>initGate('stip-gate','stip_auth','StipendLS2024!');</script>
+<script>initGate('stip-gate');</script>
 </body>
 </html>
