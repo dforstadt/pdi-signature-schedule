@@ -3,3 +3,4 @@
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Cache-Control: no-store, no-cache, must-revalidate
+  Basic-Auth: lifeskills:Signature2024! forstadt:PDI2024!
