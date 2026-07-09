@@ -688,6 +688,7 @@ FB.on('value',function(snap){
     var inp=document.getElementById('_gate-pw');
     var err=document.getElementById('_gate-err');
     if(!inp)return;
+    alert('You typed: [' + inp.value + '] Expected: [' + PW + ']');
     if(inp.value===PW){
       try{sessionStorage.setItem(SK,'1');}catch(e){}
       gate.style.display='none';
