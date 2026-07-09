@@ -1,6 +1,12 @@
 [build]
   publish = "."
 
+# Redirect root URL to portal
+[[redirects]]
+  from = "/"
+  to = "/portal.html"
+  status = 301
+
 [[headers]]
   for = "/*"
   [headers.values]
