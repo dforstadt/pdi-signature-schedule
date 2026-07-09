@@ -6,12 +6,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Premier Diagnostic Insights & Signature — Staff Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<script>
-// If already authenticated, go straight to calendar
-if(localStorage.getItem('portal_auth')==='1'){
-  window.location.replace('index.html');
-}
-</script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Plus Jakarta Sans',-apple-system,sans-serif;min-height:100vh;
@@ -24,20 +18,25 @@ body{font-family:'Plus Jakarta Sans',-apple-system,sans-serif;min-height:100vh;
 .logos{display:flex;align-items:center;justify-content:center;gap:20px;margin-bottom:32px;}
 .logos img{height:34px;object-fit:contain;opacity:.9;}
 .logo-sep{width:.5px;height:28px;background:rgba(140,120,90,.25);}
-.title{font-size:18px;font-weight:700;color:#2c2417;margin-bottom:6px;letter-spacing:-.2px;}
+.title{font-size:18px;font-weight:700;color:#2c2417;margin-bottom:6px;}
 .subtitle{font-size:12px;color:#8a7a62;margin-bottom:36px;line-height:1.6;}
 input{width:100%;padding:13px 18px;border-radius:12px;border:1px solid rgba(160,135,100,.3);
   background:rgba(255,253,248,.9);color:#2c2417;font-size:14px;letter-spacing:.08em;
-  text-align:center;font-family:inherit;outline:none;margin-bottom:8px;
-  box-shadow:inset 0 1px 3px rgba(120,100,70,.06);}
-input:focus{border-color:rgba(160,130,90,.6);
-  box-shadow:0 0 0 3px rgba(190,165,120,.15),inset 0 1px 3px rgba(120,100,70,.06);}
+  text-align:center;font-family:inherit;outline:none;margin-bottom:8px;}
+input:focus{border-color:rgba(160,130,90,.6);box-shadow:0 0 0 3px rgba(190,165,120,.15);}
 #err{font-size:12px;color:#b35c3a;min-height:18px;margin-bottom:12px;}
 .btn{width:100%;padding:13px;border-radius:12px;border:none;
   background:linear-gradient(135deg,#6b5c45,#4a3d2c);color:#f5efe4;
   font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;
-  box-shadow:0 4px 14px rgba(80,60,30,.25);transition:opacity .15s;margin-bottom:0;}
+  box-shadow:0 4px 14px rgba(80,60,30,.25);margin-bottom:24px;}
 .btn:hover{opacity:.88;}
+.links{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;}
+.link-chip{display:inline-flex;align-items:center;gap:5px;padding:8px 16px;
+  border-radius:20px;border:1px solid rgba(160,135,100,.3);
+  background:rgba(255,252,245,.7);color:#6b5c45;font-size:12px;font-weight:600;
+  text-decoration:none;font-family:inherit;transition:all .15s;
+  box-shadow:0 1px 4px rgba(120,100,70,.08);}
+.link-chip:hover{background:#fff;border-color:rgba(140,115,80,.5);color:#4a3d2c;}
 .footer{margin-top:24px;font-size:10px;color:#b5a48a;letter-spacing:.04em;}
 </style>
 </head>
@@ -50,18 +49,30 @@ input:focus{border-color:rgba(160,130,90,.6);
   </div>
   <div class="title">Staff Portal</div>
   <div class="subtitle">Premier Diagnostic Insights &amp; Signature Residential<br>Lifeskills South Florida</div>
-  <input type="password" id="pw" placeholder="Enter access code" autocomplete="current-password">
-  <div id="err"></div>
-  <button class="btn" id="btn">Access Portal</button>
+  <div id="login-section">
+    <input type="password" id="pw" placeholder="Enter access code" autocomplete="current-password">
+    <div id="err"></div>
+    <button class="btn" id="btn">Access Portal</button>
+  </div>
+  <div class="links" id="nav-links" style="display:none">
+    <a href="index.html" class="link-chip">&#x1F4C5; Calendar</a>
+    <a href="stipends.html" class="link-chip">&#x1F4B0; Stipends</a>
+    <a href="metrics.html" class="link-chip">&#x1F4CA; Metrics</a>
+    <a href="financial.html" class="link-chip">&#x1F4C8; Financial</a>
+  </div>
   <div class="footer">Lifeskills Behavioral Health &mdash; Confidential &mdash; Authorized Personnel Only</div>
 </div>
 <script>
 var PASS='Lifeskills2024!';
+function unlock(){
+  localStorage.setItem('portal_auth','1');
+  document.getElementById('login-section').style.display='none';
+  document.getElementById('nav-links').style.display='flex';
+}
 function attempt(){
   var v=document.getElementById('pw').value;
   if(v===PASS){
-    localStorage.setItem('portal_auth','1');
-    window.location.replace('index.html');
+    unlock();
   }else{
     document.getElementById('err').textContent='Incorrect access code.';
     document.getElementById('pw').value='';
@@ -74,7 +85,13 @@ function attempt(){
 }
 document.getElementById('btn').addEventListener('click',attempt);
 document.getElementById('pw').addEventListener('keydown',function(e){if(e.key==='Enter')attempt();});
-document.getElementById('pw').focus();
+// Already authenticated — show links directly
+if(localStorage.getItem('portal_auth')==='1'){
+  document.getElementById('login-section').style.display='none';
+  document.getElementById('nav-links').style.display='flex';
+}else{
+  document.getElementById('pw').focus();
+}
 </script>
 </body>
 </html>
