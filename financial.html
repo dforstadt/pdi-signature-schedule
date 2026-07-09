@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+if(!sessionStorage.getItem('portal_auth')){
+  window.location.replace('portal.html');
+}
+</script>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PDI / Signature — Financial Reconciliation</title>
@@ -190,6 +196,50 @@ firebase.initializeApp({
 var db=firebase.database();
 var FB=db.ref('schedule_v3');
 var FINREF=db.ref('schedule_v3/financial_items');
+var FINOVER=db.ref('schedule_v3/financial_overrides');
+
+function saveOverride(input){
+  var ok=input.dataset.ok;
+  var field=input.dataset.field;
+  var val=input.value!==''?+input.value:null;
+  if(!lineOverrides[ok])lineOverrides[ok]={};
+  lineOverrides[ok][field]=val;
+  FINOVER.child(ok.replace(/[:.]/g,'_')).set(lineOverrides[ok]);
+  // Recompute totals inline without full re-render
+  var row=input.closest('.svc-row');
+  if(row){
+    var inputs=row.querySelectorAll('input.rate-input');
+    var qty=0,rate=0;
+    inputs.forEach(function(inp){
+      if(inp.dataset.field==='qty')qty=+inp.value||0;
+      if(inp.dataset.field==='rate')rate=+inp.value||0;
+    });
+    var tot=row.querySelector('.svc-total');
+    if(tot)tot.textContent=qty&&rate?('$'+(qty*rate).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})):'—';
+    // Update the client summary row
+    var card=row.closest('.client-card');
+    if(card)updateClientSummary(card);
+  }
+}
+
+function updateClientSummary(card){
+  // Recompute totals from all inputs in the card
+  var totalExp=0;
+  card.querySelectorAll('.svc-row').forEach(function(row){
+    var inputs=row.querySelectorAll('input.rate-input');
+    var qty=0,rate=0;
+    inputs.forEach(function(inp){
+      if(inp.dataset.field==='qty')qty=+inp.value||0;
+      if(inp.dataset.field==='rate')rate=+inp.value||0;
+    });
+    totalExp+=qty*rate;
+  });
+  // Also add revenue from the cs-val elements
+  var csVals=card.querySelectorAll('.cs-val');
+  if(csVals.length>=2){
+    csVals[1].textContent='$'+totalExp.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  }
+}
 
 var HIST=[{"id": "hist_matthew_h", "name": "Matthew H", "program": "PDI", "pdiAdmit": "2025-08-12", "pdiDischarge": "2025-08-21", "sigAdmit": null, "sigDischarge": null, "_source": "historical"}, {"id": "hist_leslie_k", "name": "Leslie K", "program": "PDI", "pdiAdmit": "2025-09-25", "pdiDischarge": "2025-10-03", "sigAdmit": null, "sigDischarge": null, "_source": "historical"}, {"id": "hist_abbegail_m", "name": "Abbegail M", "program": "PDI", "pdiAdmit": "2025-10-08", "pdiDischarge": "2025-10-18", "sigAdmit": null, "sigDischarge": null, "_source": "historical"}, {"id": "hist_alex_r", "name": "Alex R", "program": "PDI", "pdiAdmit": "2025-12-03", "pdiDischarge": "2025-12-12", "sigAdmit": null, "sigDischarge": null, "_source": "historical"}, {"id": "hist_francis_r", "name": "Francis R", "program": "PDI", "pdiAdmit": "2026-05-13", "pdiDischarge": "2026-05-22", "sigAdmit": null, "sigDischarge": null, "_source": "historical"}, {"id": "hist_thomas_w", "name": "Thomas W", "program": "PDI", "pdiAdmit": "2026-06-05", "pdiDischarge": "2026-06-16", "sigAdmit": null, "sigDischarge": null, "_source": "historical"}, {"id": "hist_norman_p", "name": "Norman P", "program": "PDI", "pdiAdmit": "2026-06-15", "pdiDischarge": "2026-06-25", "sigAdmit": null, "sigDischarge": null, "_source": "historical"}, {"id": "hist_carlos_l", "name": "Carlos L", "program": "Both", "pdiAdmit": "2026-03-23", "pdiDischarge": "2026-03-31", "sigAdmit": "2026-04-01", "sigDischarge": "2026-04-01", "_source": "historical"}, {"id": "hist_jessica_c", "name": "Jessica C", "program": "Both", "pdiAdmit": "2026-04-04", "pdiDischarge": "2026-04-21", "sigAdmit": "2026-04-14", "sigDischarge": "2026-04-14", "_source": "historical"}, {"id": "hist_george_w", "name": "George W", "program": "Both", "pdiAdmit": "2026-04-11", "pdiDischarge": "2026-04-22", "sigAdmit": "2026-04-24", "sigDischarge": "2026-05-18", "_source": "historical"}, {"id": "hist_marc_c", "name": "Marc C", "program": "Both", "pdiAdmit": "2026-04-17", "pdiDischarge": "2026-04-28", "sigAdmit": "2026-05-01", "sigDischarge": "2026-07-06", "_source": "historical"}, {"id": "hist_michael_f", "name": "Michael F", "program": "Both", "pdiAdmit": "2026-05-08", "pdiDischarge": "2026-05-18", "sigAdmit": "2026-05-19", "sigDischarge": null, "_source": "historical"}, {"id": "hist_kevin_c", "name": "Kevin C", "program": "Both", "pdiAdmit": "2026-05-14", "pdiDischarge": "2026-05-26", "sigAdmit": "2026-05-27", "sigDischarge": "2026-06-12", "_source": "historical"}, {"id": "hist_layla_s", "name": "Layla S", "program": "Both", "pdiAdmit": "2026-05-18", "pdiDischarge": "2026-05-28", "sigAdmit": "2026-05-29", "sigDischarge": "2026-06-08", "_source": "historical"}, {"id": "hist_blake_p", "name": "Blake P", "program": "Both", "pdiAdmit": "2026-06-04", "pdiDischarge": "2026-06-12", "sigAdmit": "2026-06-13", "sigDischarge": "2026-06-26", "_source": "historical"}, {"id": "hist_tomas_w", "name": "Tomas W", "program": "Signature", "pdiAdmit": null, "pdiDischarge": null, "sigAdmit": "2026-05-26", "sigDischarge": "2026-06-18", "_source": "historical"}, {"id": "hist_jarrod_w", "name": "Jarrod W", "program": "Signature", "pdiAdmit": null, "pdiDischarge": null, "sigAdmit": "2026-05-29", "sigDischarge": "2026-06-29", "_source": "historical"}, {"id": "hist_emma_t", "name": "Emma T", "program": "Signature", "pdiAdmit": null, "pdiDischarge": null, "sigAdmit": "2026-06-01", "sigDischarge": "2026-06-22", "_source": "historical"}, {"id": "hist_david_r", "name": "David R", "program": "Signature", "pdiAdmit": null, "pdiDischarge": null, "sigAdmit": "2026-06-05", "sigDischarge": "2026-07-01", "_source": "historical"}, {"id": "hist_joseph_g", "name": "Joseph G", "program": "Signature", "pdiAdmit": null, "pdiDischarge": null, "sigAdmit": "2026-06-08", "sigDischarge": null, "_source": "historical"}, {"id": "hist_arianna_b", "name": "Arianna B", "program": "Signature", "pdiAdmit": null, "pdiDischarge": null, "sigAdmit": "2026-06-15", "sigDischarge": null, "_source": "historical"}, {"id": "hist_alex_a", "name": "Alex A", "program": "Signature", "pdiAdmit": null, "pdiDischarge": null, "sigAdmit": "2026-06-18", "sigDischarge": null, "_source": "historical"}, {"id": "hist_peter_s", "name": "Peter S", "program": "Signature", "pdiAdmit": null, "pdiDischarge": null, "sigAdmit": "2026-06-19", "sigDischarge": null, "_source": "historical"}, {"id": "hist_george_r", "name": "George R", "program": "Signature", "pdiAdmit": null, "pdiDischarge": null, "sigAdmit": "2026-06-20", "sigDischarge": null, "_source": "historical"}, {"id": "hist_angela_t", "name": "Angela T", "program": "Signature", "pdiAdmit": null, "pdiDischarge": null, "sigAdmit": "2026-06-25", "sigDischarge": null, "_source": "historical"}, {"id": "hist_chayse_b", "name": "Chayse B", "program": "Signature", "pdiAdmit": null, "pdiDischarge": null, "sigAdmit": "2026-06-29", "sigDischarge": null, "_source": "historical"}, {"id": "hist_louis_r", "name": "Louis R", "program": "Signature", "pdiAdmit": null, "pdiDischarge": null, "sigAdmit": "2026-07-01", "sigDischarge": null, "_source": "historical"}];
 
@@ -199,14 +249,36 @@ var RATES={
   sig_per_week:21000,
   forstadt_oversight:9900,
   psych_assist:2133.33,
-  brain_mapping:3288,
-  medical_eval:6750,
-  medical_fu_pdi:null,  // user-defined
+  brain_mapping_old:3288,      // Pre-Neurologics (before Jessica C, pdiAdmit < 2026-04-04)
+  brain_mapping_neuro:6250,    // Neurologics (Jessica C, pdiAdmit >= 2026-04-04)
+  medical_eval:6750,           // Dr. Flannery (started with Carlos L, pdiAdmit >= 2026-03-23)
+  medical_fu_pdi:null,
   pbwi_wellness:300,
-  hp_sig_only:null,     // user-defined
+  hp_sig_only:null,
   pbwi_medical_fu_sig:1350,
   neurofeedback_sig:2538
 };
+
+// Vendor / provider history cutoff dates
+var NEUROLOGICS_START='2026-04-04'; // Jessica C PDI admit — Neurologics brain mapping
+var FLANNERY_START='2026-03-23';    // Carlos L PDI admit — Dr. Flannery medical evals
+
+function brainMappingRate(pdiAdmit){
+  return pdiAdmit>=NEUROLOGICS_START?RATES.brain_mapping_neuro:RATES.brain_mapping_old;
+}
+function brainMappingVendor(pdiAdmit){
+  return pdiAdmit>=NEUROLOGICS_START?'Neurologics ($6,250)':'Prior vendor ($3,288)';
+}
+function medEvalRate(pdiAdmit){
+  if(pdiAdmit>=FLANNERY_START)return RATES.medical_eval; // Dr. Flannery
+  return getRate('medical_eval_shaeffer');               // Dr. Shaeffer — rate TBD
+}
+function medEvalProvider(pdiAdmit){
+  return pdiAdmit>=FLANNERY_START?'Dr. Flannery':'Dr. Shaeffer';
+}
+function medEvalEditable(pdiAdmit){
+  return pdiAdmit<FLANNERY_START; // Shaeffer rate still pending
+}
 
 // User-editable rates stored locally
 var userRates={};
@@ -215,7 +287,8 @@ function setRate(code,val){userRates[code]=val;try{localStorage.setItem('fin_rat
 try{var sr=localStorage.getItem('fin_rates');if(sr)userRates=JSON.parse(sr);}catch(e){}
 
 var DATA={clients:[],events:[],providers:{}};
-var manualItems={};  // clientId -> [{id,desc,qty,rate,track}]
+var manualItems={};   // clientId -> [{id,desc,qty,rate,track}]
+var lineOverrides={};  // overKey -> {qty, rate}  — persisted to Firebase
 var curFilt='all';
 
 function fmt$(v){if(v===null||v===undefined||v==='')return'–';return'$'+(+v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
@@ -270,34 +343,50 @@ function buildFinancials(client){
   var calClient=DATA.clients.find(function(c){return c.name.toLowerCase().trim()===client.name.toLowerCase().trim();});
   if(calClient)calEvs=eventsFor(calClient.id);
 
+  var _clientKey=client.id||(client.name.toLowerCase().replace(/[^a-z0-9]/g,'_'));
+
   // PDI episode
   if(client.pdiAdmit){
     result.revenue+=RATES.pdi_episode;
     var pdiEvs=calEvs.filter(function(e){return e.date&&e.date>=client.pdiAdmit&&e.date<=(client.pdiDisch||today());});
 
     // Dr. Forstadt oversight
-    result.expenses.push({code:'forstadt_oversight',name:'Dr. Forstadt — Oversight & Testing',track:'PDI',qty:1,rate:RATES.forstadt_oversight,total:RATES.forstadt_oversight,source:'model',verified:true});
+    result.expenses.push({_clientKey:_clientKey,code:'forstadt_oversight',name:'Dr. Forstadt — Oversight & Testing',track:'PDI',qty:1,rate:RATES.forstadt_oversight,total:RATES.forstadt_oversight,source:'model',verified:true});
 
     // Psychometric assistant — if testing service found in calendar
     var hasTesting=hasTestingProvider(pdiEvs);
-    result.expenses.push({code:'psych_assist',name:'Psychometric Assistant',track:'PDI',qty:hasTesting?1:0,rate:RATES.psych_assist,total:hasTesting?RATES.psych_assist:0,source:hasTesting?'calendar':'placeholder',verified:hasTesting,optional:!hasTesting});
+    result.expenses.push({_clientKey:_clientKey,code:'psych_assist',name:'Psychometric Assistant',track:'PDI',qty:hasTesting?1:0,rate:RATES.psych_assist,total:hasTesting?RATES.psych_assist:0,source:hasTesting?'calendar':'placeholder',verified:hasTesting,optional:!hasTesting});
 
-    // Brain mapping
+    // Brain mapping — rate depends on vendor history (Neurologics started with Jessica C)
     var bm=hasBrainMapping(pdiEvs);
-    result.expenses.push({code:'brain_mapping',name:'Brain Mapping (qEEG)',track:'PDI',qty:bm?1:0,rate:RATES.brain_mapping,total:bm?RATES.brain_mapping:0,source:bm?'calendar':'placeholder',verified:bm,optional:!bm});
+    var bmRate=brainMappingRate(client.pdiAdmit);
+    var bmVendor=brainMappingVendor(client.pdiAdmit);
+    result.expenses.push({_clientKey:_clientKey,code:'brain_mapping',name:'Brain Mapping — '+bmVendor,track:'PDI',qty:bm?1:0,rate:bmRate,total:bm?bmRate:0,source:bm?'calendar':'placeholder',verified:bm,optional:!bm});
 
-    // Medical evaluation
+    // Medical evaluation — Dr. Flannery started with Carlos L (pdiAdmit >= 2026-03-23)
     var me=hasMedicalEval(pdiEvs);
-    result.expenses.push({code:'medical_eval',name:'Medical Evaluation',track:'PDI',qty:me?1:0,rate:RATES.medical_eval,total:me?RATES.medical_eval:0,source:me?'calendar':'placeholder',verified:me,optional:!me});
+    var meRate=medEvalRate(client.pdiAdmit);
+    var meNote=medEvalNote(client.pdiAdmit);
+    var meProvider=medEvalProvider(client.pdiAdmit);
+    var meEditable=medEvalEditable(client.pdiAdmit);
+    var meTotal=meRate&&me?meRate:null;
+    result.expenses.push({
+      code:meEditable?'medical_eval_shaeffer':'medical_eval',
+      name:'Medical Evaluation — '+meProvider,
+      track:'PDI',qty:me?1:0,rate:meRate,total:meTotal,
+      source:me?'calendar':'placeholder',verified:me,optional:!me,
+      rateEditable:meEditable,
+      note:meEditable?'Dr. Shaeffer fee pending — enter rate when available':''
+    });
 
     // Medical follow-up during PDI
     var mfu=medicalFuCount(pdiEvs);
     var mfuRate=getRate('medical_fu_pdi');
-    result.expenses.push({code:'medical_fu_pdi',name:'Medical Follow-up Visit (PDI)',track:'PDI',qty:mfu,rate:mfuRate,total:mfu&&mfuRate?mfu*mfuRate:null,source:mfu?'calendar':'placeholder',verified:mfu>0,rateEditable:true,optional:true});
+    result.expenses.push({_clientKey:_clientKey,code:'medical_fu_pdi',name:'Medical Follow-up Visit (PDI)',track:'PDI',qty:mfu,rate:mfuRate,total:mfu&&mfuRate?mfu*mfuRate:null,source:mfu?'calendar':'placeholder',verified:mfu>0,rateEditable:true,optional:true});
 
     // PBWI Wellness during PDI
     var pbwi=pbwiSessions(pdiEvs).length;
-    result.expenses.push({code:'pbwi_wellness_pdi',name:'PBWI Wellness Sessions (PDI)',track:'PDI',qty:pbwi,rate:RATES.pbwi_wellness,total:pbwi*RATES.pbwi_wellness,source:pbwi?'calendar':'placeholder',verified:pbwi>0,optional:true});
+    result.expenses.push({_clientKey:_clientKey,code:'pbwi_wellness_pdi',name:'PBWI Wellness Sessions (PDI)',track:'PDI',qty:pbwi,rate:RATES.pbwi_wellness,total:pbwi*RATES.pbwi_wellness,source:pbwi?'calendar':'placeholder',verified:pbwi>0,optional:true});
   }
 
   // Signature episode
@@ -309,19 +398,19 @@ function buildFinancials(client){
     // H&P for Signature-only admits (no PDI episode)
     if(!client.pdiAdmit){
       var hpRate=getRate('hp_sig_only');
-      result.expenses.push({code:'hp_sig_only',name:'H&P (Signature Admission)',track:'Signature',qty:1,rate:hpRate,total:hpRate||null,source:'placeholder',verified:false,rateEditable:true,optional:false});
+      result.expenses.push({_clientKey:_clientKey,code:'hp_sig_only',name:'H&P (Signature Admission)',track:'Signature',qty:1,rate:hpRate,total:hpRate||null,source:'placeholder',verified:false,rateEditable:true,optional:false});
     }
 
     // PBWI Wellness during Signature
     var pbwiSig=pbwiSessions(sigEvs).length;
-    result.expenses.push({code:'pbwi_wellness_sig',name:'PBWI Wellness Sessions',track:'Signature',qty:pbwiSig,rate:RATES.pbwi_wellness,total:pbwiSig*RATES.pbwi_wellness,source:pbwiSig?'calendar':'placeholder',verified:pbwiSig>0,optional:true});
+    result.expenses.push({_clientKey:_clientKey,code:'pbwi_wellness_sig',name:'PBWI Wellness Sessions',track:'Signature',qty:pbwiSig,rate:RATES.pbwi_wellness,total:pbwiSig*RATES.pbwi_wellness,source:pbwiSig?'calendar':'placeholder',verified:pbwiSig>0,optional:true});
 
     // PBWI Medical follow-up — placeholder per week (calendar-verified when present)
     var pbwiMed=completedNonGroup(sigEvs).filter(function(e){return e.provider&&e.provider.toLowerCase().includes('pbwi')&&e.service&&/medical|follow/i.test(e.service);}).length;
-    result.expenses.push({code:'pbwi_medical_fu_sig',name:'PBWI Medical Follow-up',track:'Signature',qty:pbwiMed||sigWeeks,rate:RATES.pbwi_medical_fu_sig,total:(pbwiMed||sigWeeks)*RATES.pbwi_medical_fu_sig,source:pbwiMed?'calendar':'placeholder',verified:pbwiMed>0,note:pbwiMed?pbwiMed+' sessions from calendar':'~'+sigWeeks+' wk placeholder'});
+    result.expenses.push({_clientKey:_clientKey,code:'pbwi_medical_fu_sig',name:'PBWI Medical Follow-up',track:'Signature',qty:pbwiMed||sigWeeks,rate:RATES.pbwi_medical_fu_sig,total:(pbwiMed||sigWeeks)*RATES.pbwi_medical_fu_sig,source:pbwiMed?'calendar':'placeholder',verified:pbwiMed>0,note:pbwiMed?pbwiMed+' sessions from calendar':'~'+sigWeeks+' wk placeholder'});
 
     // Neurofeedback — placeholder
-    result.expenses.push({code:'neurofeedback_sig',name:'Neurofeedback',track:'Signature',qty:sigWeeks*2,rate:RATES.neurofeedback_sig/2,total:sigWeeks*RATES.neurofeedback_sig,source:'placeholder',verified:false,note:'~'+sigWeeks+' wk × $2,538',optional:true});
+    result.expenses.push({_clientKey:_clientKey,code:'neurofeedback_sig',name:'Neurofeedback',track:'Signature',qty:sigWeeks*2,rate:RATES.neurofeedback_sig/2,total:sigWeeks*RATES.neurofeedback_sig,source:'placeholder',verified:false,note:'~'+sigWeeks+' wk × $2,538',optional:true});
 
     // Weekly program summary line
     result.sigWeeks=sigWeeks;
@@ -330,9 +419,19 @@ function buildFinancials(client){
   // Manual items
   var manItems=(manualItems[client.id]||[]).concat(manualItems[client.name]||[]);
   manItems.forEach(function(item){
-    result.expenses.push({code:'manual_'+item.id,name:item.desc,track:item.track||'Manual',qty:+item.qty||1,rate:+item.rate||0,total:(+item.qty||1)*(+item.rate||0),source:'manual',verified:true,manualId:item.id,clientKey:item.clientKey});
+    result.expenses.push({_clientKey:_clientKey,code:'manual_'+item.id,name:item.desc,track:item.track||'Manual',qty:+item.qty||1,rate:+item.rate||0,total:(+item.qty||1)*(+item.rate||0),source:'manual',verified:true,manualId:item.id,clientKey:item.clientKey});
   });
 
+  // Apply saved overrides to expense totals
+  result.expenses.forEach(function(e){
+    var overKey=e._clientKey+'::'+e.code;
+    var ov=lineOverrides[overKey];
+    if(ov){
+      var q=ov.qty!=null?ov.qty:(e.qty||0);
+      var r=ov.rate!=null?ov.rate:(e.rate||0);
+      e.total=q*r||0;
+    }
+  });
   result.total_expense=result.expenses.reduce(function(s,e){return s+(e.total||0);},0);
   result.net=result.revenue-result.total_expense;
   return result;
@@ -374,37 +473,53 @@ function renderClients(){
     var cid=client.id||(client.name.toLowerCase().replace(/[^a-z0-9]/g,'_'));
 
     // Expense rows
-    function svcRow(e){
-      var srcIcon=e.source==='calendar'?'<span class="svc-status cal">\u25cf Calendar</span>':
-                  e.source==='manual'?'<span class="svc-status cal">\u270f Manual</span>':
-                  '<span class="svc-status placeholder">\u25a1 Placeholder</span>';
-      var rateCell=e.rateEditable?
-        '<input class="rate-input" type="number" placeholder="Rate $" value="'+(getRate(e.code)||'')+
-        '" data-code="'+e.code+'" onchange="updateRate(this.dataset.code,this.value)" min="0" step="0.01">':
-        '<span class="svc-rate">'+fmt$(e.rate)+'</span>';
-      var totalDisp=e.total!=null?
-        '<span class="svc-total">'+fmt$(e.total)+'</span>':
+    function svcRow(e,clientKey){
+      var srcBadge=e.source==='calendar'?
+        '<span class="svc-status cal">\u25cf Cal</span>':
+        e.source==='manual'?
+        '<span class="svc-status cal">\u270f Manual</span>':
+        '<span class="svc-status placeholder">\u25a1 Placeholder</span>';
+
+      // Always editable rate and qty
+      var overKey=clientKey+'::'+e.code;
+      var savedQty=lineOverrides[overKey]&&lineOverrides[overKey].qty!=null?lineOverrides[overKey].qty:null;
+      var savedRate=lineOverrides[overKey]&&lineOverrides[overKey].rate!=null?lineOverrides[overKey].rate:null;
+      var dispQty=savedQty!=null?savedQty:e.qty||0;
+      var dispRate=savedRate!=null?savedRate:(e.rate||'');
+      var calcTotal=(+dispQty)*(+dispRate);
+
+      var qtyInput='<input class="rate-input" type="number" min="0" step="1" value="'+dispQty+
+        '" data-ok="'+overKey+'" data-field="qty" onchange="saveOverride(this)" style="width:48px;text-align:center">';
+
+      var rateInput='<input class="rate-input" type="number" min="0" step="0.01" placeholder="Rate $" value="'+(dispRate)+
+        '" data-ok="'+overKey+'" data-field="rate" onchange="saveOverride(this)">';
+
+      var totalDisp=calcTotal>0?
+        '<span class="svc-total">'+fmt$(calcTotal)+'</span>':
         '<span class="svc-total" style="color:var(--tx3)">\u2014</span>';
+
       var delBtn=e.manualId?
         '<button class="del-btn" data-ckey="'+e.clientKey+'" data-mid="'+e.manualId+
         '" onclick="delManual(this.dataset.ckey,this.dataset.mid)">\u2715</button>':'';
-      var rowStyle=e.optional&&!e.verified&&e.source==='placeholder'?'style="opacity:.55"':'';
+
+      var rowStyle=(e.optional&&!e.verified&&e.source==='placeholder'&&!savedRate)?'style="opacity:.6"':'';
+
       return '<div class="svc-row" '+rowStyle+'>'+
         '<span class="svc-name">'+(e.name)+
           (e.note?' <span style="color:var(--tx3);font-size:10px">('+e.note+')</span>':'')+
         '</span>'+
-        srcIcon+
-        '<span class="svc-qty">'+(e.qty||0)+'</span>'+
-        rateCell+
+        srcBadge+
+        qtyInput+
+        rateInput+
         totalDisp+
         delBtn+
       '</div>';
     }
 
     // Group by track
-    var pdiRows=fin.expenses.filter(function(e){return e.track==='PDI';}).map(svcRow).join('');
-    var sigRows=fin.expenses.filter(function(e){return e.track==='Signature';}).map(svcRow).join('');
-    var manRows=fin.expenses.filter(function(e){return e.track==='Manual';}).map(svcRow).join('');
+    var pdiRows=fin.expenses.filter(function(e){return e.track==='PDI';}).map(function(e){return svcRow(e,cid);}).join('');
+    var sigRows=fin.expenses.filter(function(e){return e.track==='Signature';}).map(function(e){return svcRow(e,cid);}).join('');
+    var manRows=fin.expenses.filter(function(e){return e.track==='Manual';}).map(function(e){return svcRow(e,cid);}).join('');
 
     // Revenue breakdown
     var revLines='';
@@ -522,6 +637,12 @@ FB.on('value',function(snap){
   if(raw&&raw.financial_items){
     Object.keys(raw.financial_items).forEach(function(k){
       if(Array.isArray(raw.financial_items[k]))manualItems[k]=raw.financial_items[k];
+    });
+  }
+  if(raw&&raw.financial_overrides){
+    Object.keys(raw.financial_overrides).forEach(function(k){
+      // Restore key (was stored with _ replacing : and .)
+      lineOverrides[k]=raw.financial_overrides[k];
     });
   }
   document.getElementById('loading').style.display='none';
