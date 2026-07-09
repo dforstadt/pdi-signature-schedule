@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,7 +7,7 @@
 <title>Financial Model — Access</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script>
-if(sessionStorage.getItem('fin_auth')==='1'){window.location.replace('financial.html');}
+if(localStorage.getItem('fin_auth')==='1'){window.location.replace('financial.html');}
 </script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -60,7 +61,7 @@ var RET = 'financial.html';
 function attempt(){
   var v = document.getElementById('pw').value;
   if(v === PW){
-    sessionStorage.setItem(SK,'1');
+    localStorage.setItem(SK,'1');
     window.location.replace(RET);
   } else {
     document.getElementById('err').textContent = 'Incorrect access code.';
