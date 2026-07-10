@@ -217,31 +217,6 @@ td.money.zero{color:var(--tx3);}
 </style>
 </head>
 <body>
-<div id="Z9gate" style="position:fixed;inset:0;background:rgba(245,241,235,.97);display:flex;align-items:center;justify-content:center;z-index:99999;font-family:sans-serif">
-<div style="background:#fff;border-radius:16px;padding:40px;width:320px;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.15)">
-<div style="font-size:16px;font-weight:700;color:#2c2417;margin-bottom:8px">Stipend Roster</div>
-<div style="font-size:12px;color:#8a7a62;margin-bottom:20px">Leadership access only</div>
-<input type="password" id="Z9pw" placeholder="Access code" style="width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;font-size:14px;text-align:center;margin-bottom:8px">
-<div id="Z9err" style="font-size:12px;color:#c00;min-height:18px;margin-bottom:8px"></div>
-<button onclick="Z9go()" style="width:100%;padding:10px;border-radius:8px;border:none;background:#4a3d2c;color:#fff;font-size:14px;font-weight:600;cursor:pointer">Continue</button>
-</div></div>
-<script>
-function Z9go(){
-  var v=document.getElementById('Z9pw').value;
-  if(v==='Leadership'){
-    sessionStorage.setItem('Z9','1');
-    document.getElementById('Z9gate').style.display='none';
-  } else {
-    document.getElementById('Z9err').textContent='You typed: ['+v+']';
-    document.getElementById('Z9pw').value='';
-    document.getElementById('Z9pw').focus();
-  }
-}
-document.getElementById('Z9pw').addEventListener('keydown',function(e){if(e.key==='Enter')Z9go();});
-if(sessionStorage.getItem('Z9')==='1'){document.getElementById('Z9gate').style.display='none';}
-else{setTimeout(function(){document.getElementById('Z9pw').focus();},100);}
-</script>
-
 
 <!-- HEADER -->
 
