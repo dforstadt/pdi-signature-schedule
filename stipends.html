@@ -298,7 +298,7 @@ td.money.zero{color:var(--tx3);}
       </table>
     </div>
   
-<div style="margin-top:24px"><div style="font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--tx3);margin-bottom:8px;display:flex;align-items:center;gap:10px">Client Census<div style="flex:1;height:.5px;background:var(--bd2)"></div></div><p style="font-size:11px;color:var(--tx3);margin-bottom:10px">Active Signature clients per billing week — verifies flat fee ($250/client) for Ockman, Nicole Williams &amp; Gus. PDI discharge weeks in blue.</p><div class="tbl-wrap" id="census-table-wrap"></div></div>
+<div style="margin-top:24px"><div style="font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--tx3);margin-bottom:8px;display:flex;align-items:center;gap:10px">Client Census<div style="flex:1;height:.5px;background:var(--bd2)"></div></div><p style="font-size:11px;color:var(--tx3);margin-bottom:10px">Active Signature clients per billing week — flat fee ($250/client) for Ockman, Nicole Williams &amp; Gus. PDI discharge weeks in blue.</p><div class="tbl-wrap" id="census-table-wrap"></div></div>
 </div>
 
   <!-- LINE ITEMS TAB -->
@@ -674,7 +674,7 @@ function computeStipends(){
     var r=sumMap[w];return{week:r.week,wStart:w,sigHrs:r.sigHrs,sigCost:r.sigCost,pdiCost:r.pdiCost,combined:r.sigCost+r.pdiCost};
   });
 
-  return{lineItems:lineItems,summaryFinal:summaryFinal,censusFinal:censusFinal,sortedWeeks:allWeeks,
+  return{lineItems:lineItems,summaryFinal:summaryFinal,sortedWeeks:allWeeks,
     sigHrsByStaff:sigHrsByStaff,sigStiByStaff:sigStiByStaff,pdiStiByStaff:pdiStiByStaff,
     sigStaffSet:sigStaffSet,weekStiStaffSet:weekStiStaffSet,pdiStaffSet:pdiStaffSet,
     byClientSig:byClientSig,byClientPDI:byClientPDI,fltTrack:fltTrack};
@@ -1303,20 +1303,30 @@ function exportByClientExcel(){
 
 
 <script>
-(function(){
+(function waitForRender(){
   var _orig=window.render;
-  if(typeof _orig!=='function'){setTimeout(arguments.callee,200);return;}
+  if(typeof _orig!=='function'){setTimeout(waitForRender,100);return;}
   window.render=function(){
     _orig();
     var D=window._lastD;
     var el=document.getElementById('census-table-wrap');
-    if(!el||!D||!D.censusFinal)return;
-    var rows=D.censusFinal;
+    if(!el||!D)return;
+    // Build census from lineItems
+    var items=D.lineItems||[];
+    var weekMap={};
+    items.forEach(function(li){
+      if(!weekMap[li.wStart])weekMap[li.wStart]={week:li.week,wStart:li.wStart,sigClients:{},pdiDischarges:{}};
+      if(li.track==='Signature'&&li.type==='Weekly Stipend')weekMap[li.wStart].sigClients[li.client]=1;
+      if(li.track==='PDI'&&li.type==='Flat Stipend')weekMap[li.wStart].pdiDischarges[li.client]=1;
+    });
+    var rows=Object.values(weekMap).sort(function(a,b){return a.wStart>b.wStart?-1:1;});
     if(!rows.length){el.innerHTML='<p style="padding:16px;color:#888;font-size:12px">No data yet.</p>';return;}
     var h='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:#1e170e;color:#fff"><th style="padding:8px 12px;text-align:left;font-size:10px">Billing Week</th><th style="padding:8px 12px;text-align:center;font-size:10px">Census</th><th style="padding:8px 12px;text-align:right;font-size:10px">Flat/Provider</th><th style="padding:8px 12px;text-align:left;font-size:10px">Signature Clients</th><th style="padding:8px 12px;text-align:left;font-size:10px">PDI Discharges</th></tr></thead><tbody>';
-    rows.slice().reverse().forEach(function(r){
-      var bg=r.pdiDischarges.length?'background:rgba(55,138,221,.05)':'';
-      h+='<tr style="'+bg+'"><td style="padding:7px 12px;border-top:.5px solid #e5e7eb;font-weight:500;white-space:nowrap">'+r.week+'</td><td style="padding:7px 12px;border-top:.5px solid #e5e7eb;text-align:center;font-weight:700;font-size:14px">'+r.sigCount+'</td><td style="padding:7px 12px;border-top:.5px solid #e5e7eb;text-align:right;color:#1D9E75;font-weight:600">$'+r.flatPerProv.toLocaleString()+'</td><td style="padding:7px 12px;border-top:.5px solid #e5e7eb;color:#3a3f4a;font-size:11px">'+(r.sigClients.join(', ')||'&mdash;')+'</td><td style="padding:7px 12px;border-top:.5px solid #e5e7eb;color:#378ADD;font-size:11px">'+(r.pdiDischarges.join(', ')||'&mdash;')+'</td></tr>';
+    rows.forEach(function(r){
+      var clients=Object.keys(r.sigClients);
+      var discharges=Object.keys(r.pdiDischarges);
+      var bg=discharges.length?'background:rgba(55,138,221,.05)':'';
+      h+='<tr style="'+bg+'"><td style="padding:7px 12px;border-top:.5px solid #e5e7eb;font-weight:500;white-space:nowrap">'+r.week+'</td><td style="padding:7px 12px;border-top:.5px solid #e5e7eb;text-align:center;font-weight:700;font-size:14px">'+clients.length+'</td><td style="padding:7px 12px;border-top:.5px solid #e5e7eb;text-align:right;color:#1D9E75;font-weight:600">$'+(clients.length*250).toLocaleString()+'</td><td style="padding:7px 12px;border-top:.5px solid #e5e7eb;color:#3a3f4a;font-size:11px">'+(clients.join(', ')||'&mdash;')+'</td><td style="padding:7px 12px;border-top:.5px solid #e5e7eb;color:#378ADD;font-size:11px">'+(discharges.join(', ')||'&mdash;')+'</td></tr>';
     });
     h+='</tbody></table>';
     el.innerHTML=h;
