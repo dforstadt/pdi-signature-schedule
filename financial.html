@@ -13,6 +13,13 @@
   }
 })();
 </script>
+<script>
+if(sessionStorage.getItem('_fk')!=='y'){
+  var p=window.prompt('Leadership Access Required:\nEnter password:');
+  if(p==='Finance2024'){sessionStorage.setItem('_fk','y');}
+  else{window.location.replace('index.html');}
+}
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PDI / Signature — Financial Reconciliation</title>
