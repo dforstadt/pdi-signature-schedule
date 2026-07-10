@@ -598,7 +598,7 @@ function computeStipends(){
           sessCount[ev.provider]+=1;             // event count
         });
         Object.keys(sessMap).forEach(function(prov){
-          var slots=sessMap[prov],hrs=slots/2,amt=hrs*150;
+          var slots=sessMap[prov],hrs=slots,amt=hrs*150;
           var evCt=sessCount[prov]||0;
           lineItems.push({week:wLbl,wStart:wStart,client:cName,track:'Signature',
             staff:prov,type:'Session',sessHrs:hrs,rate:150,amount:amt,counted:amt,
