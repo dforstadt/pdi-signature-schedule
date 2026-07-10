@@ -13,8 +13,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js">
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <style>
     :root{
   --bg:#faf8f4;--bg2:#f3ede4;--tx:#2c2417;--tx2:#4a3d2c;--tx3:#8a7a62;
@@ -203,10 +202,6 @@ firebase.initializeApp({
   appId:"1:545049861408:web:1e0bf60ab88497f67a8b45"
 });
 
-// ── Firebase Anonymous Auth ─────────────────────────────────────────────────
-// Required for private Firebase access (.read: "auth != null")
-firebase.auth().signInAnonymously()
-  .catch(function(err){ console.warn('Firebase anon auth error:', err.code); });
 var db = firebase.database();
 var FB = db.ref('schedule_v3');
 
