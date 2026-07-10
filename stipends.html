@@ -784,13 +784,7 @@ function renderByStaff(D){
             (tPDI?'&nbsp;'+fmt$(tPDI)+' PDI':'')+
           '</div>'+
         '</div>'+
-        '<div style="text-align:right">'+
-          '<div style="font-size:20px;font-weight:700;color:var(--green)">'+fmt$(staffTotal)+'</div>'+
-          '<div style="font-size:10px;color:var(--tx3);margin-top:2px">'+
-            (allApvd?'<span style="color:var(--green)">\u2713 All weeks approved</span>':
-             anyApvd?'<span style="color:var(--amber)">Partial approval</span>':
-             '<span>No approvals</span>')+
-          '</div>'+
+        
         '</div>'+
       '</div>'+
       // Week-by-week table with approval per row
