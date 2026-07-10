@@ -424,6 +424,11 @@ function fmt$(v){return v||v===0?'$'+(+v).toFixed(2):'-';}
 var PROV_DISPLAY={"Nicole":"Nicole Williams","David Ockman":"David Ockman","Gus Hernandez":"Gus Hernandez","Tara":"Tara Alhadeff","Dr. Mirella":"Mirella Ezeta","Rabbi":"Rabbi Brandon Gaines","Sandy":"Sandra Bernstein","Dr. Hume":"Anisha Hume","Dr. Despina":"Despina Karfis","Dr. Greg":"Gregory Fortune","Dr. Paul":"Paul Lazar","T.D":"Thomas Young","Tamas":"Tamas Biro","Esther":"Esther Entin","Dr. Bruno":"Robert Bruno","Gina":"Gina","Dr. Alex":"Dr. Alex","Dr. Flavia":"Dr. Flavia"};
 function displayName(p){return PROV_DISPLAY[p]||p;}
 
+function isoOffset(iso,days){
+  try{var d=new Date(iso+'T12:00:00');d.setDate(d.getDate()+days);return d.toISOString().slice(0,10);}
+  catch(e){return iso;}
+}
+
 function computeStipends(){
   var fltTrack=document.getElementById('flt-track').value;
   var fltFrom =document.getElementById('flt-from').value;
@@ -453,13 +458,6 @@ function computeStipends(){
     return d.toISOString().slice(0,10);
   }
   function weekEnd(ws){var d=new Date(ws+'T12:00:00');d.setDate(d.getDate()+6);return d.toISOString().slice(0,10);}
-  function daysBetween(isoA,isoB){
-    // Returns isoB - isoA in whole days (positive if B is after A)
-    try{
-      var a=fromISO(isoA),b=fromISO(isoB);
-      return Math.round((b-a)/(1000*60*60*24));
-    }catch(e){return 0;}
-  }
 
   // ── Weeks derived from events + PDI discharge dates (Sat–Fri billing periods)
   var weekSet={};
@@ -584,14 +582,16 @@ function computeStipends(){
         var admit=toISO(c.sigAdmit);
         var disch=toISO(c.sigDischarge||c.sigDisch);
         if(!admit)return false;
-        // Must overlap with this billing period at all
         if(admit>wEnd)return false;
         if(disch&&disch<wStart)return false;
-        // Flat fee requires >= 5 days present in this Fri-Thu period
-        var presFrom=admit>wStart?admit:wStart;
-        var presTo=disch&&disch<wEnd?disch:wEnd;
-        var daysPresent=daysBetween(presFrom,presTo)+1;
-        return daysPresent>=5;
+        // Flat fee: client must be present for >= 5 days in the Fri-Thu period
+        // Must be admitted by Sunday (wStart+2) to get 5 days (Sun-Thu)
+        // Must not be discharged before Tuesday (wStart+4) to get 5 days (Fri-Tue)
+        var admitCutoff=isoOffset(wStart,2); // Sunday
+        var dischCutoff=isoOffset(wStart,4); // Tuesday
+        if(admit>admitCutoff)return false;
+        if(disch&&disch<dischCutoff)return false;
+        return true;
       });
 
       activeSig.forEach(function(client){
