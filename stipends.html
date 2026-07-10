@@ -2,9 +2,10 @@
 <html lang="en">
 <head>
 <script>
+alert('FILE VERSION 4 LOADED');
 if(sessionStorage.getItem('_sk')!=='y'){
-  var p=window.prompt('Leadership Access Required:\nEnter password:');
-  if(p==='Stipend2024'){sessionStorage.setItem('_sk','y');}
+  var p=window.prompt('Enter code:');
+  if(p==='1234'){sessionStorage.setItem('_sk','y');}
   else{window.location.replace('index.html');}
 }
 </script>
