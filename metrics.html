@@ -468,13 +468,6 @@ firebase.database().ref('schedule_v3').on('value',function(snap){
   document.getElementById('llbl').textContent='Live';
   var raw=snap.val(),clients=[];
   if(raw&&raw.blob){try{var d=JSON.parse(raw.blob);if(Array.isArray(d.clients))clients=d.clients;}catch(e){console.error(e);}}
-  // Debug: log all clients with their raw Firebase fields
-  console.group('Firebase clients raw data:');
-  clients.forEach(function(c){
-    console.log(c.name+' | program:'+c.program+' | pdiAdmit:'+c.pdiAdmit+' | sigAdmit:'+c.sigAdmit);
-  });
-  console.groupEnd();
-  window._rawClients=clients;
   render(compute(buildEpisodes(clients)));
 },function(err){
   document.getElementById('ldot').className='ldot';
