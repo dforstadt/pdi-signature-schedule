@@ -11,17 +11,17 @@
 // ── Week navigation ────────────────────────────────────────────────────────
 var _wkOffset=0;
 function getMondayISO(offset){
-  // Returns the start of the billing period (Saturday) containing today + offset weeks
+  // Returns the start of the billing period (Friday) containing today + offset weeks
   var d=new Date();
   var day=d.getDay(); // 0=Sun..6=Sat
-  var diff=(day+1)%7; // days since last Saturday
+  var diff=(day+2)%7; // days since last Friday
   d.setDate(d.getDate()-diff+offset*7);
   return d.toISOString().slice(0,10);
 }
 function fmtWeekRange(sat){
-  // Billing period: Saturday through Friday
+  // Billing period: Friday through Thursday
   var d=new Date(sat+'T12:00:00'),e=new Date(sat+'T12:00:00');
-  e.setDate(e.getDate()+6); // +6 days = Friday
+  e.setDate(e.getDate()+6); // +6 days = Thursday
   return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})+
     ' – '+e.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
 }
@@ -41,7 +41,7 @@ function shiftWeek(dir){
   if(_wkOffset>0)_wkOffset=0;
   clearWeekFilter();
   var _fe=document.getElementById('flt-from');
-  if(_fe&&!_fe.value)_fe.value='2026-04-01';
+  if(_fe&&!_fe.value)_fe.value='2026-03-27';
 }
 function clearWeekFilter(){
   _wkOffset=0;
@@ -442,12 +442,13 @@ function computeStipends(){
   // ── Date helpers ──────────────────────────────────────────────────────────
   function toISO(d){return d?String(d).slice(0,10):null;}
   function today(){return new Date().toISOString().slice(0,10);}
-  // Billing period: Saturday – Friday
+  // Billing period: Friday – Thursday
   // getSat returns the Saturday on or before a given date
   function getSat(date){
+    // Billing period starts on FRIDAY
     var d=new Date(date);
     var day=d.getDay(); // 0=Sun..6=Sat
-    var diff=(day+1)%7; // Sat→0, Sun→1, Mon→2, ..., Fri→6
+    var diff=(day+2)%7; // Fri→0, Sat→1, Sun→2, Mon→3, Tue→4, Wed→5, Thu→6
     d.setDate(d.getDate()-diff);
     return d.toISOString().slice(0,10);
   }
@@ -477,7 +478,7 @@ function computeStipends(){
   var WEEKLY_CORE=['David Ockman','Nicole','Gus Hernandez'];
   // Providers who receive Signature session fees only — excluded from PDI flat stipend
   var PDI_EXCLUDED=['Rabbi Gaines','Rabbi Brandon Gaines','Rabbi'];
-  var PDI_STIP_START='2025-12-06';
+  var PDI_STIP_START='2025-12-12';
 
   // Build weeklyProviders: core three + any other pdi_weekly providers in DATA.providers
   var weeklyProviders=[];
