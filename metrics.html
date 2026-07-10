@@ -236,8 +236,13 @@ function buildEpisodes(fbClients){
   HIST_CLIENTS.forEach(function(h){
     var key=h.name.toLowerCase().trim();
     if(calEps[key]){
-      // Calendar record exists — use it (more up-to-date discharge dates etc.)
-      result.push(calEps[key]);
+      // Calendar record exists — merge: calendar wins but fill missing PDI from hist
+      var merged=calEps[key];
+      if(!merged.pdiAdmit && h.pdiAdmit){
+        merged.pdiAdmit=h.pdiAdmit;
+        merged.pdiDisch=h.pdiDischarge||merged.pdiDisch||null;
+      }
+      result.push(merged);
       delete calEps[key]; // don't double-count
     } else {
       // Historical only — use hist record directly
