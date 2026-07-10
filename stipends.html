@@ -412,6 +412,10 @@ function fmtMoney(n){return n===0?'\u2014':'$'+n.toLocaleString();}
 function noStipend(prov){
   var excl=['Anthony Ferkel','Anthony','Alice'];
   for(var i=0;i<excl.length;i++){if(prov===excl[i])return true;}
+
+  // Provider display name map — Firebase name → full real name
+  var PROV_DISPLAY={"Nicole":"Nicole Williams","David Ockman":"David Ockman","Gus Hernandez":"Gus Hernandez","Tara":"Tara Alhadeff","Dr. Mirella":"Mirella Ezeta","Rabbi":"Rabbi Brandon Gaines","Sandy":"Sandra Bernstein","Dr. Hume":"Anisha Hume","Dr. Despina":"Despina Karfis","Dr. Greg":"Gregory Fortune","Dr. Paul":"Paul Lazar","T.D":"Thomas Young","Tamas":"Tamas Biro","Esther":"Esther Entin","Dr. Bruno":"Robert Bruno","Gina":"Gina","Dr. Alex":"Dr. Alex","Dr. Flavia":"Dr. Flavia"};
+  function displayName(p){return PROV_DISPLAY[p]||p;}
   var p=DATA.providers[prov];if(!p)return false;
   var st=p.stipendType;if(st)return st==='none';
   return!!p.noStipend;
@@ -485,7 +489,7 @@ function computeStipends(){
   // They are hardcoded so they are never accidentally excluded if their provider
   // record is missing or has the wrong stipendType in the calendar.
   // Names must match exactly what is used in the calendar provider list.
-  var WEEKLY_CORE=['David Ockman','Nicole Williams','Nicole','Gus Hernandez'];
+  var WEEKLY_CORE=['David Ockman','Nicole','Gus Hernandez'];
   // Providers who receive Signature session fees only — excluded from PDI flat stipend
   var PDI_EXCLUDED=['Rabbi Gaines','Rabbi Brandon Gaines','Rabbi'];
 
@@ -625,7 +629,7 @@ function computeStipends(){
           var slots=sessMap[prov],hrs=slots,amt=hrs*150;
           var evCt=sessCount[prov]||0;
           lineItems.push({week:wLbl,wStart:wStart,client:cName,track:'Signature',
-            staff:prov,type:'Session',sessHrs:hrs,rate:150,amount:amt,counted:amt,
+            staff:displayName(prov),type:'Session',sessHrs:hrs,rate:150,amount:amt,counted:amt,
             notes:evCt+' completed session'+(evCt!==1?'s':'')+' @ $150 each = '+fmt$(amt)});
           if(!sigHrsByStaff[prov])sigHrsByStaff[prov]={};
           sigHrsByStaff[prov][wStart]=(sigHrsByStaff[prov][wStart]||0)+hrs;
