@@ -355,12 +355,8 @@ firebase.initializeApp({
 var db=firebase.database();
 var FB=db.ref('schedule_v3');
 
-firebase.auth().signInAnonymously().catch(function(e){
-  console.warn('Auth failed, trying unauthenticated:', e);
-});
-
-firebase.auth().onAuthStateChanged(function(user){
-  // Listen once auth is settled (signed in or confirmed no auth needed)
+// Start Firebase listener - called after auth attempt (success or fail)
+function _startFBListener(){
 FB.on('value',function(snap){
   var raw=snap.val();
   if(raw&&raw.blob){
@@ -387,6 +383,13 @@ FB.on('value',function(snap){
   window._fbLoaded=true;
   loadApprovals(function(){render();});
 },function(){
+}
+// Try anonymous auth first, fall back to unauthenticated
+firebase.auth().signInAnonymously().then(function(){
+  _startFBListener();
+}).catch(function(e){
+  console.warn('Anonymous auth unavailable, trying direct read:', e);
+  _startFBListener();
 });
 
   document.getElementById('live-dot').className='live-dot off';
