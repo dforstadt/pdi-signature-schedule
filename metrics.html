@@ -8,8 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js">
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -185,10 +184,6 @@ firebase.initializeApp({
   appId:"1:545049861408:web:1e0bf60ab88497f67a8b45"
 });
 
-// ── Firebase Anonymous Auth ─────────────────────────────────────────────────
-// Required for private Firebase access (.read: "auth != null")
-firebase.auth().signInAnonymously()
-  .catch(function(err){ console.warn('Firebase anon auth error:', err.code); });
 
 var allClients=[];
 var curFilt='all';
