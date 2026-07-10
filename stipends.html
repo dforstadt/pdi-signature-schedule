@@ -269,7 +269,7 @@ td.money.zero{color:var(--tx3);}
     <option value="Signature">Signature only</option>
     <option value="PDI">PDI only</option>
   </select>
-  <div id="filter-badges" style="display:flex;gap:6px;margin-left:auto"></div>
+  
 </div>
 
 <!-- CONTENT -->
@@ -878,16 +878,7 @@ function render(){
   renderFilterBadges(D);
 }
 
-function renderFilterBadges(D){
-  var totSigCost=D.summaryFinal.reduce(function(s,r){return s+r.sigCost;},0);
-  var totPDICost=D.summaryFinal.reduce(function(s,r){return s+r.pdiCost;},0);
-  var el=document.getElementById('filter-badges');
-  if(!el)return;
-  el.innerHTML=
-    '<span class="badge sig">Sig: $'+totSigCost.toLocaleString()+'</span>'+
-    '<span class="badge pdi">PDI: $'+totPDICost.toLocaleString()+'</span>'+
-    '<span class="badge total">Total: $'+(totSigCost+totPDICost).toLocaleString()+'</span>';
-}
+function renderFilterBadges(D){}
 
 function renderSummary(D){
   var tot=D.summaryFinal;
