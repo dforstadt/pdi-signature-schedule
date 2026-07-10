@@ -110,6 +110,11 @@ firebase.initializeApp({
   messagingSenderId:"545049861408",
   appId:"1:545049861408:web:1e0bf60ab88497f67a8b45"
 });
+
+// ── Firebase Anonymous Auth ─────────────────────────────────────────────────
+// Required for private Firebase access (.read: "auth != null")
+firebase.auth().signInAnonymously()
+  .catch(function(err){ console.warn('Firebase anon auth error:', err.code); });
 var db=firebase.database();
 var FB=db.ref('schedule_v3');
 var FINREF=db.ref('schedule_v3/financial_items');
