@@ -6,7 +6,7 @@
 <title>Premier Diagnostic Insights & Signature — Staff Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script>
-if(localStorage.getItem('portal_auth')==='1')window.location.replace('index.html');
+if(sessionStorage.getItem('portal_auth')==='1')window.location.replace('index.html');
 </script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -85,7 +85,7 @@ var PASS='Lifeskills2024!';
 function attempt(){
   var v=document.getElementById('pw').value;
   if(v===PASS){
-    localStorage.setItem('portal_auth','1');
+    sessionStorage.setItem('portal_auth','1');
     window.location.replace('index.html');
   }else{
     document.getElementById('err').textContent='Incorrect access code.';
