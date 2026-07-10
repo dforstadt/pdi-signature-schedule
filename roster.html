@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+
+
+
+<script>
+var GATE_PASSES={'stip-gate':'StipendLS2024!','fin-gate':'FinanceLS2024!'};
+var GATE_SKEYS={'stip-gate':'stip_auth','fin-gate':'fin_auth'};
+function tryGate(gid){
+  var pass=GATE_PASSES[gid],skey=GATE_SKEYS[gid];
+  var inp=document.getElementById(gid+'-pw');
+  var err=document.getElementById(gid+'-err');
+  if(!inp)return;
+  if(inp.value===pass){
+    try{sessionStorage.setItem(skey,'1');}catch(e){}
+    var el=document.getElementById(gid);if(el)el.style.display='none';
+    err.textContent='';
+  } else {
+    err.textContent='Incorrect access code.';
+    inp.value='';inp.focus();
+    var el=document.getElementById(gid);
+    if(el){el.style.transition='transform .08s';el.style.transform='translateX(-6px)';
+    setTimeout(function(){el.style.transform='translateX(6px)';},80);
+    setTimeout(function(){el.style.transform='none';},160);}
+  }
+}
+function initGate(gid){
+  var skey=GATE_SKEYS[gid];
+  var el=document.getElementById(gid);if(!el)return;
+  try{if(sessionStorage.getItem(skey)==='1'){el.style.display='none';return;}}catch(e){}
+  el.style.display='flex';
+  var inp=document.getElementById(gid+'-pw');
+  if(inp)inp.addEventListener('keydown',function(e){if(e.key==='Enter')tryGate(gid);});
+  setTimeout(function(){if(inp)inp.focus();},80);
+}
+</script>
+<script>initGate("stip-gate");</script>
+</body>
+</html>
