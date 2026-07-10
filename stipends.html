@@ -507,6 +507,8 @@ function computeStipends(){
     var prog=client.program||'';
     if(prog!=='PDI'&&prog!=='Both')return;
     var admit=toISO(client.pdiAdmit);if(!admit)return;
+    // PDI flat stipend only from Alex R onward (Dec 2025)
+    if(admit<PDI_STIP_START)return;
     var disch=toISO(client.pdiDischarge||client.pdiDisch);
     if(disch){
       // Fire in the billing period (Sat–Fri) containing discharge date
