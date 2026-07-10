@@ -415,7 +415,7 @@ function wkLabel(wStart){
 }
 function fmtMoney(n){return n===0?'\u2014':'$'+n.toLocaleString();}
 function noStipend(prov){
-  var excl=['Alexandria Marullo','Alexandria','Anthony Ferkel','Anthony','Alice'];
+  var excl=['Anthony Ferkel','Anthony','Alice'];
   for(var i=0;i<excl.length;i++){if(prov===excl[i])return true;}
   var p=DATA.providers[prov];if(!p)return false;
   var st=p.stipendType;if(st)return st==='none';
