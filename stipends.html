@@ -412,10 +412,6 @@ function fmtMoney(n){return n===0?'\u2014':'$'+n.toLocaleString();}
 function noStipend(prov){
   var excl=['Anthony Ferkel','Anthony','Alice'];
   for(var i=0;i<excl.length;i++){if(prov===excl[i])return true;}
-
-  // Provider display name map — Firebase name → full real name
-  var PROV_DISPLAY={"Nicole":"Nicole Williams","David Ockman":"David Ockman","Gus Hernandez":"Gus Hernandez","Tara":"Tara Alhadeff","Dr. Mirella":"Mirella Ezeta","Rabbi":"Rabbi Brandon Gaines","Sandy":"Sandra Bernstein","Dr. Hume":"Anisha Hume","Dr. Despina":"Despina Karfis","Dr. Greg":"Gregory Fortune","Dr. Paul":"Paul Lazar","T.D":"Thomas Young","Tamas":"Tamas Biro","Esther":"Esther Entin","Dr. Bruno":"Robert Bruno","Gina":"Gina","Dr. Alex":"Dr. Alex","Dr. Flavia":"Dr. Flavia"};
-  function displayName(p){return PROV_DISPLAY[p]||p;}
   var p=DATA.providers[prov];if(!p)return false;
   var st=p.stipendType;if(st)return st==='none';
   return!!p.noStipend;
@@ -439,6 +435,11 @@ function showTab(tab){
 
 // ── COMPUTE STIPENDS ────────────────────────────────────────────────────────
 function fmt$(v){return v||v===0?'$'+(+v).toFixed(2):'-';}
+
+// Provider display name map — Firebase provider key → full real name
+var PROV_DISPLAY={"Nicole":"Nicole Williams","David Ockman":"David Ockman","Gus Hernandez":"Gus Hernandez","Tara":"Tara Alhadeff","Dr. Mirella":"Mirella Ezeta","Rabbi":"Rabbi Brandon Gaines","Sandy":"Sandra Bernstein","Dr. Hume":"Anisha Hume","Dr. Despina":"Despina Karfis","Dr. Greg":"Gregory Fortune","Dr. Paul":"Paul Lazar","T.D":"Thomas Young","Tamas":"Tamas Biro","Esther":"Esther Entin","Dr. Bruno":"Robert Bruno","Gina":"Gina","Dr. Alex":"Dr. Alex","Dr. Flavia":"Dr. Flavia"};
+function displayName(p){return PROV_DISPLAY[p]||p;}
+
 function computeStipends(){
   var fltTrack=document.getElementById('flt-track').value;
   var fltFrom =document.getElementById('flt-from').value;
