@@ -576,8 +576,10 @@ function computeStipends(){
         if(prog!=='Signature'&&prog!=='Both')return false;
         var admit=toISO(c.sigAdmit);
         var disch=toISO(c.sigDischarge||c.sigDisch);
-        if(!admit||admit>wEnd)return false;
-        if(disch&&disch<wStart)return false;
+        // Flat fee requires full billing week: admitted on or before period start (Friday)
+        if(!admit||admit>wStart)return false;
+        // Must not be discharged before the period ends (Thursday)
+        if(disch&&disch<wEnd)return false;
         return true;
       });
 
