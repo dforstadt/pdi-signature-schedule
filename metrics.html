@@ -206,60 +206,73 @@ function set(id,v){var el=document.getElementById(id);if(el)el.innerHTML=v;}
 
 // Historical clients — program inception through calendar start
 // These clients may not be in the calendar but are documented in the submitted stipend records
-var HIST_CLIENTS=[{"id":"hist_matthew_h","name":"Matthew H","program":"PDI","pdiAdmit":"2025-08-12","pdiDischarge":"2025-08-21","sigAdmit":null,"sigDischarge":null},{"id":"hist_leslie_k","name":"Leslie K","program":"PDI","pdiAdmit":"2025-09-25","pdiDischarge":"2025-10-03","sigAdmit":null,"sigDischarge":null},{"id":"hist_abbegail_m","name":"Abbegail M","program":"PDI","pdiAdmit":"2025-10-08","pdiDischarge":"2025-10-18","sigAdmit":null,"sigDischarge":null},{"id":"hist_alex_r","name":"Alex R","program":"PDI","pdiAdmit":"2025-12-03","pdiDischarge":"2025-12-12","sigAdmit":null,"sigDischarge":null},{"id":"hist_francis_r","name":"Francis R","program":"PDI","pdiAdmit":"2026-05-13","pdiDischarge":"2026-05-22","sigAdmit":null,"sigDischarge":null},{"id":"hist_thomas_w","name":"Thomas W","program":"PDI","pdiAdmit":"2026-06-05","pdiDischarge":"2026-06-16","sigAdmit":null,"sigDischarge":null},{"id":"hist_norman_p","name":"Norman P","program":"PDI","pdiAdmit":"2026-06-15","pdiDischarge":"2026-06-25","sigAdmit":null,"sigDischarge":null},{"id":"hist_carlos_l","name":"Carlos L","program":"Both","pdiAdmit":"2026-03-23","pdiDischarge":"2026-03-31","sigAdmit":"2026-04-01","sigDischarge":"2026-04-01"},{"id":"hist_jessica_c","name":"Jessica C","program":"Both","pdiAdmit":"2026-04-04","pdiDischarge":"2026-04-21","sigAdmit":"2026-04-14","sigDischarge":"2026-04-21"},{"id":"hist_george_w","name":"George W","program":"Both","pdiAdmit":"2026-04-11","pdiDischarge":"2026-04-22","sigAdmit":"2026-04-24","sigDischarge":"2026-05-18"},{"id":"hist_marc_c","name":"Marc C","program":"Both","pdiAdmit":"2026-04-17","pdiDischarge":"2026-04-28","sigAdmit":"2026-05-01","sigDischarge":"2026-07-06"},{"id":"hist_michael_f","name":"Michael F","program":"Both","pdiAdmit":"2026-05-08","pdiDischarge":"2026-05-18","sigAdmit":"2026-05-19","sigDischarge":null},{"id":"hist_kevin_c","name":"Kevin C","program":"Both","pdiAdmit":"2026-05-14","pdiDischarge":"2026-05-26","sigAdmit":"2026-05-27","sigDischarge":"2026-06-12"},{"id":"hist_layla_s","name":"Layla S","program":"Both","pdiAdmit":"2026-05-18","pdiDischarge":"2026-05-28","sigAdmit":"2026-05-29","sigDischarge":"2026-06-08"},{"id":"hist_blake_p","name":"Blake P","program":"Both","pdiAdmit":"2026-06-04","pdiDischarge":"2026-06-12","sigAdmit":"2026-06-13","sigDischarge":"2026-06-26"},{"id":"hist_angela_t","name":"Angela T","program":"Both","pdiAdmit":"2026-07-03","pdiDischarge":null,"sigAdmit":"2026-06-25","sigDischarge":null},{"id":"hist_tomas_w","name":"Tomas W","program":"Signature","pdiAdmit":null,"pdiDischarge":null,"sigAdmit":"2026-05-26","sigDischarge":"2026-06-18"},{"id":"hist_jarrod_w","name":"Jarrod W","program":"Signature","pdiAdmit":null,"pdiDischarge":null,"sigAdmit":"2026-05-29","sigDischarge":"2026-06-29"},{"id":"hist_emma_t","name":"Emma T","program":"Signature","pdiAdmit":null,"pdiDischarge":null,"sigAdmit":"2026-06-01","sigDischarge":"2026-06-22"},{"id":"hist_david_r","name":"David R","program":"Signature","pdiAdmit":null,"pdiDischarge":null,"sigAdmit":"2026-06-05","sigDischarge":"2026-07-01"},{"id":"hist_joseph_g","name":"Joseph G","program":"Signature","pdiAdmit":null,"pdiDischarge":null,"sigAdmit":"2026-06-08","sigDischarge":null},{"id":"hist_arianna_b","name":"Arianna B","program":"Signature","pdiAdmit":null,"pdiDischarge":null,"sigAdmit":"2026-06-15","sigDischarge":null},{"id":"hist_alex_a","name":"Alex A","program":"Signature","pdiAdmit":null,"pdiDischarge":null,"sigAdmit":"2026-06-18","sigDischarge":null},{"id":"hist_peter_s","name":"Peter S","program":"Signature","pdiAdmit":null,"pdiDischarge":null,"sigAdmit":"2026-06-19","sigDischarge":null},{"id":"hist_george_r","name":"George R","program":"Signature","pdiAdmit":null,"pdiDischarge":null,"sigAdmit":"2026-06-20","sigDischarge":null},{"id":"hist_chayse_b","name":"Chayse B","program":"Signature","pdiAdmit":null,"pdiDischarge":null,"sigAdmit":"2026-06-29","sigDischarge":null},{"id":"hist_louis_r","name":"Louis R","program":"Signature","pdiAdmit":null,"pdiDischarge":null,"sigAdmit":"2026-07-01","sigDischarge":null},{"id":"hist_jack_s","name":"Jack S","program":"Signature","pdiAdmit":null,"pdiDischarge":null,"sigAdmit":"2026-07-03","sigDischarge":null},{"id":"hist_william_c","name":"William C","program":"Signature","pdiAdmit":null,"pdiDischarge":null,"sigAdmit":"2026-07-10","sigDischarge":null},{"id":"hist_layla_s_2","name":"Layla S (Readmission)","program":"Signature","pdiAdmit":null,"pdiDischarge":null,"sigAdmit":"2026-07-07","sigDischarge":null}];
+var PRE_CALENDAR=[{"id":"hist_matthew_h","name":"Matthew H","program":"PDI","pdiAdmit":"2025-08-12","pdiDischarge":"2025-08-21","sigAdmit":null,"sigDischarge":null},{"id":"hist_leslie_k","name":"Leslie K","program":"PDI","pdiAdmit":"2025-09-25","pdiDischarge":"2025-10-03","sigAdmit":null,"sigDischarge":null},{"id":"hist_abbegail_m","name":"Abbegail M","program":"PDI","pdiAdmit":"2025-10-08","pdiDischarge":"2025-10-18","sigAdmit":null,"sigDischarge":null},{"id":"hist_alex_r","name":"Alex R","program":"PDI","pdiAdmit":"2025-12-03","pdiDischarge":"2025-12-12","sigAdmit":null,"sigDischarge":null},{"id":"hist_carlos_l","name":"Carlos L","program":"Both","pdiAdmit":"2026-03-23","pdiDischarge":"2026-03-31","sigAdmit":"2026-04-01","sigDischarge":"2026-04-01"},{"id":"hist_jessica_c","name":"Jessica C","program":"Both","pdiAdmit":"2026-04-04","pdiDischarge":"2026-04-21","sigAdmit":"2026-04-14","sigDischarge":"2026-04-21"},{"id":"hist_george_w","name":"George W","program":"Both","pdiAdmit":"2026-04-11","pdiDischarge":"2026-04-22","sigAdmit":"2026-04-24","sigDischarge":"2026-05-18"}];
+var HIST_CLIENTS=PRE_CALENDAR;
 
 // Build episode list merging historical records + live Firebase calendar data
 // Historical records are the baseline; calendar takes precedence for matching clients
 function buildEpisodes(fbClients){
+  // Normalize a Firebase client record into a clean episode object
+  // Respects program field — Signature-only clients cannot have PDI episodes
+  // even if pdiAdmit is set (common calendar data entry artifact)
   function normalize(c){
-    var prog=c.program||'';
+    var prog=(c.program||'').trim();
     var hasPDI=prog==='PDI'||prog==='Both';
     var hasSig=prog==='Signature'||prog==='Both';
-    // Ignore erroneous pdiAdmit on Signature-only clients (calendar data entry artifact)
-    var pdiAdmit=hasPDI?(c.pdiAdmit||null):null;
-    var pdiDisch=hasPDI?(c.pdiDischarge||c.pdiDisch||null):null;
-    var sigAdmit=hasSig?(c.sigAdmit||null):null;
-    var sigDisch=hasSig?(c.sigDischarge||c.sigDisch||null):null;
-    return{id:c.id||c.name,name:c.name,_prog:prog,
-      pdiAdmit:pdiAdmit,pdiDisch:pdiDisch,
-      sigAdmit:sigAdmit,sigDisch:sigDisch};
+    return{
+      id:c.id||('fb_'+c.name),
+      name:c.name,
+      _prog:prog,
+      pdiAdmit:hasPDI?(c.pdiAdmit||null):null,
+      pdiDisch: hasPDI?(c.pdiDischarge||c.pdiDisch||null):null,
+      sigAdmit: hasSig?(c.sigAdmit||null):null,
+      sigDisch:  hasSig?(c.sigDischarge||c.sigDisch||null):null
+    };
   }
 
-  // Build calendar episodes — preserve duplicate names as separate episodes
-  var calEps={};   // first occurrence per name (for HIST merge)
-  var extraEps=[]; // additional occurrences = readmissions
-  fbClients.forEach(function(c){
-    if(!c.name||!c.program)return; // skip incomplete records
+  // Build calendar episode map — first occurrence per name used for PRE_CALENDAR merge
+  // Additional occurrences (e.g. Layla S readmission) are kept as separate episodes
+  var calMap={};
+  var extras=[];
+  (fbClients||[]).forEach(function(c){
+    if(!c.name||!c.program)return; // skip incomplete/test records
     var ep=normalize(c);
     var key=c.name.toLowerCase().trim();
-    if(!calEps[key]){calEps[key]=ep;}
-    else{extraEps.push(ep);} // Layla S readmission etc.
+    if(!calMap[key]){calMap[key]=ep;}
+    else{extras.push(ep);}
   });
 
-  // Merge HIST_CLIENTS: Firebase wins but fills missing PDI from hist
   var result=[];
-  HIST_CLIENTS.forEach(function(h){
+
+  // Pre-calendar historical clients: merge with Firebase if name found
+  PRE_CALENDAR.forEach(function(h){
     var key=h.name.toLowerCase().trim();
-    if(calEps[key]){
-      var merged=calEps[key];
-      if(!merged.pdiAdmit&&h.pdiAdmit){
-        merged.pdiAdmit=h.pdiAdmit;
-        merged.pdiDisch=h.pdiDischarge||merged.pdiDisch||null;
+    if(calMap[key]){
+      // Firebase has this client — use Firebase data, fill missing PDI from hist
+      var ep=calMap[key];
+      if(!ep.pdiAdmit&&h.pdiAdmit){
+        ep.pdiAdmit=h.pdiAdmit;
+        ep.pdiDisch=h.pdiDischarge||ep.pdiDisch||null;
       }
-      result.push(merged);
-      delete calEps[key];
+      if(!ep.sigAdmit&&h.sigAdmit){ep.sigAdmit=h.sigAdmit;}
+      if(!ep.sigDisch&&h.sigDischarge){ep.sigDisch=h.sigDischarge;}
+      result.push(ep);
+      delete calMap[key];
     }else{
-      result.push({id:h.id,name:h.name,_prog:h.program,
+      // Historical only — not in Firebase
+      result.push({
+        id:h.id,name:h.name,_prog:h.program,
         pdiAdmit:h.pdiAdmit||null,pdiDisch:h.pdiDischarge||null,
         sigAdmit:h.sigAdmit||null,sigDisch:h.sigDischarge||null,
-        source:'historical'});
+        source:'historical'
+      });
     }
   });
 
-  // Add Firebase clients not in HIST (new clients)
-  Object.values(calEps).forEach(function(ep){result.push(ep);});
-  // Add readmission episodes
-  extraEps.forEach(function(ep){result.push(ep);});
+  // All remaining Firebase clients (not in PRE_CALENDAR) — fully automated
+  Object.values(calMap).forEach(function(ep){result.push(ep);});
+  // Readmissions (duplicate names = new episodes e.g. Layla S)
+  extras.forEach(function(ep){result.push(ep);});
 
   return result;
 }
