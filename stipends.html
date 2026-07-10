@@ -1,19 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script>
-if(!sessionStorage.getItem('portal_auth')){
-  window.location.replace('portal.html');
-}
-</script>
-
-<script>
-if(sessionStorage.getItem('sa')!=='1'){
-  var p=window.prompt('Enter stipend access code:');
-  if(p==='Stipend2024'){sessionStorage.setItem('sa','1');}
-  else{document.write('<center style="font-family:sans-serif;padding:80px">Access denied. <a href=index.html>Return to calendar</a></center>');document.close();}
-}
-</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PDI / Signature — Stipend Roster</title>
