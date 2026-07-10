@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Firebase Data Fix</title>
+<style>
+body{font-family:sans-serif;max-width:500px;margin:80px auto;text-align:center;background:#faf8f4;color:#2c2417;}
+button{padding:14px 32px;background:#4a3d2c;color:#fff;border:none;border-radius:10px;font-size:16px;cursor:pointer;margin-top:20px;}
+#fix-status{margin-top:20px;font-size:14px;color:#4a3d2c;min-height:24px;}
+</style>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+</head>
+<body>
+<h2>Firebase Data Correction</h2>
+<p>This fixes:<br>• George → George W (with correct dates)<br>• Angela T program = Both, PDI admit 7/3/26<br>• 10 Signature-only clients with erroneous pdiAdmit</p>
+<button onclick="fixFirebaseData()">Run Fix</button>
+<div id="fix-status"></div>
+<script>
+firebase.initializeApp({"apiKey":"AIzaSyCERxntgytkfCHWN7EoAVYVmLBcfWyYZ5A","databaseURL":"https://pdi-signature-schedule-default-rtdb.firebaseio.com","projectId":"pdi-signature-schedule"});
+
+// Firebase data corrections — run once
+async function fixFirebaseData() {
+  const db = firebase.database();
+  const ref = db.ref('schedule_v3');
+  const snap = await ref.once('value');
+  const raw = snap.val();
+  if (!raw || !raw.blob) { console.error('No blob found'); return; }
+  
+  let blob = JSON.parse(raw.blob);
+  let clients = blob.clients || [];
+  let changes = 0;
+
+  clients = clients.map(c => {
+    // Fix George → George W
+    if (c.name === 'George' && !c.program) {
+      changes++;
+      return {...c, name:'George W', program:'Both',
+        pdiAdmit:'2026-04-11', pdiDischarge:'2026-04-22',
+        sigAdmit:'2026-04-24', sigDischarge:'2026-05-18'};
+    }
+    // Fix Angela T
+    if (c.name === 'Angela T') {
+      changes++;
+      return {...c, program:'Both', pdiAdmit:'2026-07-03', pdiDischarge:null};
+    }
+    // Fix Signature-only clients with erroneous pdiAdmit
+    const sigOnly = ['Tomas W','Jarrod W','Emma T','David R','Arianna B',
+                     'Alex A','Peter S','Chayse B','Louis R','Jack S'];
+    if (sigOnly.includes(c.name) && c.pdiAdmit === c.sigAdmit) {
+      changes++;
+      return {...c, program:'Signature', pdiAdmit:null, pdiDischarge:null};
+    }
+    return c;
+  });
+
+  blob.clients = clients;
+  await ref.update({blob: JSON.stringify(blob)});
+  console.log('✓ Firebase fixed:', changes, 'records updated');
+  document.getElementById('fix-status').textContent = '✓ Done — ' + changes + ' records fixed. You can close this page.';
+}
+
+</script>
+</body>
+</html>
