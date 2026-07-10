@@ -364,9 +364,22 @@ FB.on('value',function(snap){
       var d=JSON.parse(raw.blob);
       if(Array.isArray(d.clients)){
   // Merge Firebase clients with hist, deduplicating by name
-  var fbNames=d.clients.map(function(c){return c.name;});
-  var histOnly=DATA.clients.filter(function(c){return fbNames.indexOf(c.name)===-1;});
-  DATA.clients=histOnly.concat(d.clients);
+  // Merge: pre-calendar clients + all Firebase clients (deduped by name, extras kept)
+  var calMap={};var extras=[];
+  (d.clients||[]).forEach(function(c){
+    if(!c.name||!c.program)return;
+    var k=c.name.toLowerCase().trim();
+    if(!calMap[k])calMap[k]=c; else extras.push(c);
+  });
+  var merged=[];
+  PRE_CALENDAR.forEach(function(h){
+    var k=h.name.toLowerCase().trim();
+    if(calMap[k]){merged.push(calMap[k]);delete calMap[k];}
+    else{merged.push(h);}
+  });
+  Object.values(calMap).forEach(function(c){merged.push(c);});
+  extras.forEach(function(c){merged.push(c);});
+  DATA.clients=merged;
 } else { /* keep existing */ }
       if(Array.isArray(d.events))DATA.events=d.events;
       if(d.providers&&typeof d.providers==='object')DATA.providers=d.providers;
