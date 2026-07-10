@@ -972,6 +972,36 @@ function renderSummary(D){
   }
 
 
+  // ── Client Census: week-over-week Signature census & PDI discharges ──
+  var censusData=D.censusFinal||[];
+  var censusEl=document.getElementById('census-table-wrap');
+  if(censusEl){
+    if(!censusData.length){censusEl.innerHTML='<div class="empty">No data</div>';return;}
+    var html='<table style="width:100%;border-collapse:collapse;font-size:12px">';
+    html+='<thead><tr style="background:#1e170e;color:#fff">';
+    html+='<th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:500">Billing Week</th>';
+    html+='<th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:500">Sig Census</th>';
+    html+='<th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:500">Flat/Provider</th>';
+    html+='<th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:500">Active Signature Clients</th>';
+    html+='<th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:500">PDI Discharges</th>';
+    html+='</tr></thead><tbody>';
+    censusData.slice().reverse().forEach(function(r){
+      var clients=r.sigClients.join(', ')||'—';
+      var discharges=r.pdiDischarges.length?r.pdiDischarges.join(', '):'—';
+      var rowBg=r.pdiDischarges.length?'background:rgba(55,138,221,.06)':'';
+      html+='<tr style="'+rowBg+'">';
+      html+='<td style="padding:7px 12px;border-top:.5px solid var(--bd);white-space:nowrap;font-weight:500">'+r.week+'</td>';
+      html+='<td style="padding:7px 12px;border-top:.5px solid var(--bd);text-align:center;font-weight:700;font-size:14px">'+r.sigCount+'</td>';
+      html+='<td style="padding:7px 12px;border-top:.5px solid var(--bd);text-align:right;color:#1D9E75;font-weight:600">$'+r.flatPerProv.toLocaleString()+'</td>';
+      html+='<td style="padding:7px 12px;border-top:.5px solid var(--bd);color:var(--tx2);font-size:11px">'+clients+'</td>';
+      html+='<td style="padding:7px 12px;border-top:.5px solid var(--bd);color:#378ADD;font-size:11px;font-weight:500">'+discharges+'</td>';
+      html+='</tr>';
+    });
+    html+='</tbody></table>';
+    censusEl.innerHTML=html;
+  }
+}
+
 function renderLineItems(D){
   window._debugEvents=DATA.events;window._debugClients=DATA.clients;
   var rows='';
