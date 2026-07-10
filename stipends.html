@@ -8,6 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" async></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js">
 // ── Week navigation ────────────────────────────────────────────────────────
 var _wkOffset=0;
 function getMondayISO(offset){
@@ -354,11 +355,12 @@ firebase.initializeApp({
 var db=firebase.database();
 var FB=db.ref('schedule_v3');
 
-var PRE_CALENDAR=[{"id":"hist_matthew_h","name":"Matthew H","program":"PDI","pdiAdmit":"2025-08-12","pdiDischarge":"2025-08-21","sigAdmit":null,"sigDischarge":null},{"id":"hist_leslie_k","name":"Leslie K","program":"PDI","pdiAdmit":"2025-09-25","pdiDischarge":"2025-10-03","sigAdmit":null,"sigDischarge":null},{"id":"hist_abbegail_m","name":"Abbegail M","program":"PDI","pdiAdmit":"2025-10-08","pdiDischarge":"2025-10-18","sigAdmit":null,"sigDischarge":null},{"id":"hist_alex_r","name":"Alex R","program":"PDI","pdiAdmit":"2025-12-03","pdiDischarge":"2025-12-12","sigAdmit":null,"sigDischarge":null},{"id":"hist_carlos_l","name":"Carlos L","program":"Both","pdiAdmit":"2026-03-23","pdiDischarge":"2026-03-31","sigAdmit":"2026-04-01","sigDischarge":"2026-04-01"},{"id":"hist_jessica_c","name":"Jessica C","program":"Both","pdiAdmit":"2026-04-04","pdiDischarge":"2026-04-21","sigAdmit":"2026-04-14","sigDischarge":"2026-04-21"},{"id":"hist_george_w","name":"George W","program":"Both","pdiAdmit":"2026-04-11","pdiDischarge":"2026-04-22","sigAdmit":"2026-04-24","sigDischarge":"2026-05-18"}];
-DATA={clients:PRE_CALENDAR.slice(),events:[],providers:{},services:[],mealServices:[]};
-var currentTab='summary';
+firebase.auth().signInAnonymously().catch(function(e){
+  console.warn('Auth failed, trying unauthenticated:', e);
+});
 
-// ── Live data ──────────────────────────────────────────────────────────────
+firebase.auth().onAuthStateChanged(function(user){
+  // Listen once auth is settled (signed in or confirmed no auth needed)
 FB.on('value',function(snap){
   var raw=snap.val();
   if(raw&&raw.blob){
@@ -385,6 +387,8 @@ FB.on('value',function(snap){
   window._fbLoaded=true;
   loadApprovals(function(){render();});
 },function(){
+});
+
   document.getElementById('live-dot').className='live-dot off';
   document.getElementById('live-lbl').textContent='Offline';
 });
