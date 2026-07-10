@@ -12,6 +12,47 @@ if(sessionStorage.getItem('_rk')!=='ok'){
   }
 }
 </script>
+<style>
+#_g{position:fixed;inset:0;background:rgba(245,241,235,.97);display:flex;align-items:center;justify-content:center;z-index:99999;font-family:'Plus Jakarta Sans',sans-serif;}
+#_gc{background:#fff;border:1px solid rgba(160,135,100,.3);border-radius:16px;padding:40px;width:360px;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.12);}
+#_gt{font-size:17px;font-weight:700;color:#2c2417;margin-bottom:6px;}
+#_gs{font-size:12px;color:#8a7a62;margin-bottom:24px;}
+#_gi{width:100%;padding:12px;border-radius:10px;border:1px solid rgba(160,135,100,.3);font-size:15px;text-align:center;outline:none;margin-bottom:8px;font-family:inherit;}
+#_ge{font-size:12px;color:#b35c3a;min-height:18px;margin-bottom:10px;}
+#_gb{width:100%;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,#6b5c45,#4a3d2c);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;}
+</style>
+<div id="_g">
+<div id="_gc">
+<div id="_gt">Stipend Roster</div>
+<div id="_gs">Leadership access only</div>
+<input type="password" id="_gi" placeholder="Enter access code" autocomplete="off">
+<div id="_ge"></div>
+<button id="_gb">Continue</button>
+</div>
+</div>
+<script>
+(function(){
+  var KEY='_stk2';
+  var el=document.getElementById('_g');
+  if(!el)return;
+  if(sessionStorage.getItem(KEY)==='1'){el.style.display='none';return;}
+  el.style.display='flex';
+  function go(){
+    var v=document.getElementById('_gi').value;
+    if(v==='Stipend2024'){
+      sessionStorage.setItem(KEY,'1');
+      el.style.display='none';
+    } else {
+      document.getElementById('_ge').textContent='Incorrect code.';
+      document.getElementById('_gi').value='';
+      document.getElementById('_gi').focus();
+    }
+  }
+  document.getElementById('_gb').addEventListener('click',go);
+  document.getElementById('_gi').addEventListener('keydown',function(e){if(e.key==='Enter')go();});
+  setTimeout(function(){document.getElementById('_gi').focus();},100);
+})();
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PDI / Signature — Stipend Roster</title>
