@@ -297,7 +297,7 @@ td.money.zero{color:var(--tx3);}
         <tbody id="summary-tbody"></tbody>
       </table>
     </div>
-  </div>
+  <div style="margin-top:24px"><div style="font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--tx3);margin-bottom:8px;display:flex;align-items:center;gap:10px">Client Census<div style="flex:1;height:.5px;background:var(--bd2)"></div></div><p style="font-size:11px;color:var(--tx3);margin-bottom:10px">Active Signature clients per week. Flat fee ($250/client) applies to Ockman, Nicole Williams, Gus. PDI discharge weeks highlighted.</p><div class="tbl-wrap" id="census-table-wrap"></div></div></div>
 
   <!-- LINE ITEMS TAB -->
   <div id="tab-lineitems" class="hidden">
@@ -574,22 +574,7 @@ function computeStipends(){
         return true;
       });
 
-      // ── Census: capture active Sig clients and PDI discharges this week ──
-      if(!censusMap[wStart]){
-        var pdiDischarges=DATA.clients.filter(function(cl){
-          var prog=(cl.program||'').trim();
-          if(prog!=='PDI'&&prog!=='Both')return false;
-          var pd=toISO(cl.pdiDischarge||cl.pdiDisch);
-          return pd&&pd>=wStart&&pd<=wEnd;
-        }).map(function(cl){return cl.name;});
-        censusMap[wStart]={
-          week:wLbl,wStart:wStart,
-          sigCount:activeSig.length,
-          sigClients:activeSig.map(function(cl){return cl.name;}),
-          pdiDischarges:pdiDischarges,
-          flatPerProv:activeSig.length*250
-        };
-      }
+      if(!censusMap[wStart]){var _pd=DATA.clients.filter(function(cl){var p=(cl.program||'').trim();if(p!=='PDI'&&p!=='Both')return false;var d=toISO(cl.pdiDischarge||cl.pdiDisch);return d&&d>=wStart&&d<=wEnd;}).map(function(cl){return cl.name;});censusMap[wStart]={week:wLbl,wStart:wStart,sigCount:activeSig.length,sigClients:activeSig.map(function(cl){return cl.name;}),pdiDischarges:_pd,flatPerProv:activeSig.length*250};}
       activeSig.forEach(function(client){
         var cid=client.id,cName=client.name;
         var sigAdmit=toISO(client.sigAdmit);
@@ -879,7 +864,29 @@ function render(){
   renderFilterBadges(D);
 }
 
-function renderFilterBadges(D){}
+function renderCensus(D){
+  var el=document.getElementById('census-table-wrap');
+  if(!el)return;
+  var data=D.censusFinal||[];
+  if(!data.length){el.innerHTML='<p style="padding:16px;color:var(--tx3);font-size:12px">No data.</p>';return;}
+  var h='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:#1e170e;color:#fff"><th style="padding:8px 12px;text-align:left;font-size:10px">Billing Week</th><th style="padding:8px 12px;text-align:center;font-size:10px">Census</th><th style="padding:8px 12px;text-align:right;font-size:10px">Flat/Provider</th><th style="padding:8px 12px;text-align:left;font-size:10px">Active Signature Clients</th><th style="padding:8px 12px;text-align:left;font-size:10px">PDI Discharges</th></tr></thead><tbody>';
+  data.slice().reverse().forEach(function(r){
+    var bg=r.pdiDischarges.length?'background:rgba(55,138,221,.05)':'';
+    h+='<tr style="'+bg+'"><td style="padding:7px 12px;border-top:.5px solid var(--bd);font-weight:500;white-space:nowrap">'+r.week+'</td><td style="padding:7px 12px;border-top:.5px solid var(--bd);text-align:center;font-weight:700;font-size:14px">'+r.sigCount+'</td><td style="padding:7px 12px;border-top:.5px solid var(--bd);text-align:right;color:#1D9E75;font-weight:600">$'+r.flatPerProv.toLocaleString()+'</td><td style="padding:7px 12px;border-top:.5px solid var(--bd);color:var(--tx2);font-size:11px">'+(r.sigClients.join(', ')||'&#8212;')+'</td><td style="padding:7px 12px;border-top:.5px solid var(--bd);color:#378ADD;font-size:11px">'+(r.pdiDischarges.join(', ')||'&#8212;')+'</td></tr>';
+  });
+  h+='</tbody></table>';
+  el.innerHTML=h;
+}
+
+function renderFilterBadges(D){},0);
+  var totPDICost=D.summaryFinal.reduce(function(s,r){return s+r.pdiCost;},0);
+  var el=document.getElementById('filter-badges');
+  if(!el)return;
+  el.innerHTML=
+    '<span class="badge sig">Sig: $'+totSigCost.toLocaleString()+'</span>'+
+    '<span class="badge pdi">PDI: $'+totPDICost.toLocaleString()+'</span>'+
+    '<span class="badge total">Total: $'+(totSigCost+totPDICost).toLocaleString()+'</span>';
+}
 
 function renderSummary(D){
   var tot=D.summaryFinal;
@@ -941,36 +948,6 @@ function renderSummary(D){
     var chStaff=document.getElementById('ch-staff');if(chStaff)window._summaryCharts['ch-staff']=new Chart(chStaff,{type:'doughnut',data:{labels:staffKeys,datasets:[{data:staffKeys.map(function(k){return staffTotals[k];}),backgroundColor:COLORS,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'right',labels:{boxWidth:10,font:{size:9},padding:4}}}}});
   },50);
 }
-
-function renderCensus(D){
-  var censusData=D.censusFinal||[];
-  var el=document.getElementById('census-table-wrap');
-  if(!el)return;
-  if(!censusData.length){el.innerHTML='<p style="padding:20px;color:var(--tx3);font-size:12px">No billing periods found.</p>';return;}
-  var html='<table style="width:100%;border-collapse:collapse;font-size:12px">';
-  html+='<thead><tr style="background:#1e170e;color:#fff">';
-  html+='<th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:500">Billing Week</th>';
-  html+='<th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:500">Sig Census</th>';
-  html+='<th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:500">Flat/Provider</th>';
-  html+='<th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:500">Active Signature Clients</th>';
-  html+='<th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:500">PDI Discharges</th>';
-  html+='</tr></thead><tbody>';
-  censusData.slice().reverse().forEach(function(r){
-    var clients=r.sigClients.join(', ')||'—';
-    var discharges=r.pdiDischarges.length?r.pdiDischarges.join(', '):'—';
-    var bg=r.pdiDischarges.length?'background:rgba(55,138,221,.06)':'';
-    html+='<tr style="'+bg+'">';
-    html+='<td style="padding:7px 12px;border-top:.5px solid var(--bd);white-space:nowrap;font-weight:500">'+r.week+'</td>';
-    html+='<td style="padding:7px 12px;border-top:.5px solid var(--bd);text-align:center;font-weight:700;font-size:14px">'+r.sigCount+'</td>';
-    html+='<td style="padding:7px 12px;border-top:.5px solid var(--bd);text-align:right;color:#1D9E75;font-weight:600">$'+r.flatPerProv.toLocaleString()+'</td>';
-    html+='<td style="padding:7px 12px;border-top:.5px solid var(--bd);color:var(--tx2);font-size:11px">'+clients+'</td>';
-    html+='<td style="padding:7px 12px;border-top:.5px solid var(--bd);color:#378ADD;font-size:11px;font-weight:500">'+discharges+'</td>';
-    html+='</tr>';
-  });
-  html+='</tbody></table>';
-  el.innerHTML=html;
-}
-
 
 function renderLineItems(D){
   window._debugEvents=DATA.events;window._debugClients=DATA.clients;
