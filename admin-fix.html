@@ -10,6 +10,7 @@ button{padding:14px 32px;background:#4a3d2c;color:#fff;border:none;border-radius
 </style>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 </head>
 <body>
 <h2>Firebase Data Correction</h2>
@@ -20,6 +21,7 @@ button{padding:14px 32px;background:#4a3d2c;color:#fff;border:none;border-radius
 firebase.initializeApp({"apiKey":"AIzaSyCERxntgytkfCHWN7EoAVYVmLBcfWyYZ5A","databaseURL":"https://pdi-signature-schedule-default-rtdb.firebaseio.com","projectId":"pdi-signature-schedule"});
 
 // Firebase data corrections — run once
+firebase.auth().signInAnonymously();
 async function fixFirebaseData() {
   const db = firebase.database();
   const ref = db.ref('schedule_v3');
