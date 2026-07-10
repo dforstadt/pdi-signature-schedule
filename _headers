@@ -1,0 +1,8 @@
+/stip.html
+  Basic-Auth: leadership:Stipend2024
+
+/financial.html
+  Basic-Auth: leadership:Finance2024
+
+/finance-login.html
+  Basic-Auth: leadership:Finance2024
