@@ -576,11 +576,13 @@ function computeStipends(){
         if(prog!=='Signature'&&prog!=='Both')return false;
         var admit=toISO(c.sigAdmit);
         var disch=toISO(c.sigDischarge||c.sigDisch);
-        // Flat fee requires full billing week: admitted on or before period start (Friday)
-        if(!admit||admit>wStart)return false;
-        // Must not be discharged before the period ends (Thursday)
-        if(disch&&disch<wEnd)return false;
-        return true;
+        if(!admit)return false;
+        // Flat fee requires at least 5 days present in the billing week (Fri-Thu)
+        var effectiveEnd=disch&&disch<wEnd?disch:wEnd;
+        var effectiveStart=admit>wStart?admit:wStart;
+        if(effectiveStart>effectiveEnd)return false;
+        var daysPresent=(new Date(effectiveEnd)-new Date(effectiveStart))/(1000*60*60*24)+1;
+        return daysPresent>=5;
       });
 
       activeSig.forEach(function(client){
