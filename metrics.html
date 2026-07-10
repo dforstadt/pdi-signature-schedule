@@ -213,68 +213,46 @@ var HIST_CLIENTS=PRE_CALENDAR;
 // Build episode list merging historical records + live Firebase calendar data
 // Historical records are the baseline; calendar takes precedence for matching clients
 function buildEpisodes(fbClients){
-  // Normalize a Firebase client record into a clean episode object
-  // Respects program field — Signature-only clients cannot have PDI episodes
-  // even if pdiAdmit is set (common calendar data entry artifact)
-  function normalize(c){
-    var prog=(c.program||'').trim();
-    var hasPDI=prog==='PDI'||prog==='Both';
-    var hasSig=prog==='Signature'||prog==='Both';
+  /* Classification rules:
+     - program field is authoritative (PDI, Signature, Both)
+     - Ignore pdiAdmit/sigAdmit on Signature/PDI-only clients even if set in calendar
+     - PRE_CALENDAR fills data for 7 pre-launch clients not in Firebase
+     - Duplicate names = readmissions (e.g. Layla S) counted separately */
+  function norm(c){
+    var p=(c.program||'').trim();
+    var hasPDI=(p==='PDI'||p==='Both');
+    var hasSig=(p==='Signature'||p==='Both');
     return{
-      id:c.id||('fb_'+c.name),
-      name:c.name,
-      _prog:prog,
-      pdiAdmit:hasPDI?(c.pdiAdmit||null):null,
-      pdiDisch: hasPDI?(c.pdiDischarge||c.pdiDisch||null):null,
-      sigAdmit: hasSig?(c.sigAdmit||null):null,
+      id:c.id||c.name,name:c.name,_prog:p,
+      pdiAdmit: hasPDI?(c.pdiAdmit||null):null,
+      pdiDisch:  hasPDI?(c.pdiDischarge||c.pdiDisch||null):null,
+      sigAdmit:  hasSig?(c.sigAdmit||null):null,
       sigDisch:  hasSig?(c.sigDischarge||c.sigDisch||null):null
     };
   }
-
-  // Build calendar episode map — first occurrence per name used for PRE_CALENDAR merge
-  // Additional occurrences (e.g. Layla S readmission) are kept as separate episodes
-  var calMap={};
-  var extras=[];
+  var calMap={},extras=[];
   (fbClients||[]).forEach(function(c){
-    if(!c.name||!c.program)return; // skip incomplete/test records
-    var ep=normalize(c);
-    var key=c.name.toLowerCase().trim();
-    if(!calMap[key]){calMap[key]=ep;}
-    else{extras.push(ep);}
+    if(!c.name||!c.program)return;
+    var ep=norm(c),k=c.name.toLowerCase().trim();
+    if(!calMap[k])calMap[k]=ep; else extras.push(ep);
   });
-
   var result=[];
-
-  // Pre-calendar historical clients: merge with Firebase if name found
   PRE_CALENDAR.forEach(function(h){
-    var key=h.name.toLowerCase().trim();
-    if(calMap[key]){
-      // Firebase has this client — use Firebase data, fill missing PDI from hist
-      var ep=calMap[key];
-      if(!ep.pdiAdmit&&h.pdiAdmit){
-        ep.pdiAdmit=h.pdiAdmit;
-        ep.pdiDisch=h.pdiDischarge||ep.pdiDisch||null;
-      }
+    var k=h.name.toLowerCase().trim();
+    if(calMap[k]){
+      var ep=calMap[k];
+      if(!ep.pdiAdmit&&h.pdiAdmit){ep.pdiAdmit=h.pdiAdmit;ep.pdiDisch=h.pdiDischarge||null;}
       if(!ep.sigAdmit&&h.sigAdmit){ep.sigAdmit=h.sigAdmit;}
       if(!ep.sigDisch&&h.sigDischarge){ep.sigDisch=h.sigDischarge;}
-      result.push(ep);
-      delete calMap[key];
+      result.push(ep);delete calMap[k];
     }else{
-      // Historical only — not in Firebase
-      result.push({
-        id:h.id,name:h.name,_prog:h.program,
+      result.push({id:h.id,name:h.name,_prog:h.program,
         pdiAdmit:h.pdiAdmit||null,pdiDisch:h.pdiDischarge||null,
-        sigAdmit:h.sigAdmit||null,sigDisch:h.sigDischarge||null,
-        source:'historical'
-      });
+        sigAdmit:h.sigAdmit||null,sigDisch:h.sigDischarge||null,source:'hist'});
     }
   });
-
-  // All remaining Firebase clients (not in PRE_CALENDAR) — fully automated
   Object.values(calMap).forEach(function(ep){result.push(ep);});
-  // Readmissions (duplicate names = new episodes e.g. Layla S)
   extras.forEach(function(ep){result.push(ep);});
-
   return result;
 }
 
