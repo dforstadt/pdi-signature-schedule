@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><!-- deploy:1783710042 -->
+<meta charset="UTF-8"><!-- deploy:1783710183-1783710042 -->
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PDI / Signature — Stipend Roster</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -785,7 +785,7 @@ function renderByStaff(D){
       '</div>'+
       '<div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">'+
         '<thead><tr style="background:#f8f7f5">'+
-          '<th style="padding:8px 14px;text-align:left;font-size:10px;font-weight:600;color:var(--tx2)">Pay Period</th>'+
+          '<th style="padding:8px 14px;text-align:left;font-size:10px;font-weight:600;color:var(--tx2)">Pay Period (Fri–Thu)</th>'+
           '<th style="padding:8px 10px;text-align:center;font-size:10px;font-weight:600;color:#7F77DD">Sig Census</th>'+
           '<th style="padding:8px 10px;text-align:center;font-size:10px;font-weight:600;color:#378ADD">PDI</th>'+
           '<th style="padding:8px 10px;text-align:right;font-size:10px;font-weight:500;color:var(--tx3)">Sig Hours</th>'+
@@ -1084,7 +1084,7 @@ function exportByStaffExcel(){
   var staffList=Object.keys(staffMap).sort();
   var weeks=D.sortedWeeks.slice().sort();
 
-  // Billing period label: Sat – Fri
+  // Billing period label: Fri – Thu
   function wLbl(iso){
     var d=new Date(iso+'T12:00:00'),e=new Date(iso+'T12:00:00');
     e.setDate(e.getDate()+6);
