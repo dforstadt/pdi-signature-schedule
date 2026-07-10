@@ -39,7 +39,9 @@ function setWeekFilter(mon){
 function shiftWeek(dir){
   _wkOffset+=dir;
   if(_wkOffset>0)_wkOffset=0;
-  setWeekFilter(getMondayISO(_wkOffset));
+  clearWeekFilter();
+  var _fromEl=document.getElementById('flt-from');
+  if(_fromEl&&!_fromEl.value)_fromEl.value='2026-04-01';
 }
 function clearWeekFilter(){
   _wkOffset=0;
@@ -240,7 +242,7 @@ td.money.zero{color:var(--tx3);}
   <div class="nav-tab" onclick="showTab('lineitems')">Line Items</div>
   <div class="nav-tab" onclick="showTab('roster')">Weekly Staff Roster</div>
   <div class="nav-tab" onclick="showTab('byclient')">By Client</div>
-  <div class="nav-tab" onclick="showTab('bystaff')">Stipend Approval</div>
+  
 </div>
 
 <!-- FILTERS -->
@@ -298,7 +300,7 @@ td.money.zero{color:var(--tx3);}
       </table>
     </div>
   
-<div style="margin-top:24px"><div style="font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--tx3);margin-bottom:8px;display:flex;align-items:center;gap:10px">Client Census<div style="flex:1;height:.5px;background:var(--bd2)"></div></div><p style="font-size:11px;color:var(--tx3);margin-bottom:10px">Active Signature clients per billing week — flat fee ($250/client) for Ockman, Nicole Williams &amp; Gus. PDI discharge weeks in blue.</p><div class="tbl-wrap" id="census-table-wrap"></div></div>
+<div style="margin-top:24px"><div style="font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--tx3);margin-bottom:8px;display:flex;align-items:center;gap:10px">Client Census — Week Over Week<div style="flex:1;height:.5px;background:var(--bd2)"></div></div><p style="font-size:11px;color:var(--tx3);margin-bottom:10px">Active Signature clients per billing week. Flat fee ($250/client) applies to Ockman, Nicole Williams &amp; Gus. PDI discharge weeks highlighted in blue.</p><div class="tbl-wrap" id="census-table-wrap"></div></div>
 </div>
 
   <!-- LINE ITEMS TAB -->
@@ -699,144 +701,7 @@ function toggleApproval(key){
   if(window._lastD)renderByStaff(window._lastD);
 }
 
-function renderByStaff(D){
-  var el=document.getElementById('bystaff-content');if(!el)return;
-  function fmt$(v){return v||v===0?'$'+(+v).toFixed(2):'-';}
-  function fmtH(v){return v||v===0?(+v).toFixed(1)+' hr':'-';}
-
-  // Build staff -> week -> amounts
-  var staffMap={};
-  D.lineItems.forEach(function(li){
-    var prov=li.staff;
-    if(!staffMap[prov])staffMap[prov]={weeks:{}};
-    var wk=li.wStart;
-    if(!staffMap[prov].weeks[wk])staffMap[prov].weeks[wk]={sigHrs:0,sigSess:0,sigWkly:0,pdi:0};
-    if(li.track==='Signature'){
-      if(li.type==='Session'){staffMap[prov].weeks[wk].sigHrs+=li.sessHrs||0;staffMap[prov].weeks[wk].sigSess+=li.amount||0;}
-      else{staffMap[prov].weeks[wk].sigWkly+=li.amount||0;}
-    }else{
-      staffMap[prov].weeks[wk].pdi+=li.counted||0;
-    }
-  });
-
-  var weeks=D.sortedWeeks.slice().sort();
-
-  // Week label: Mon – Sun (pay period)
-  function wLbl(iso){
-    var d=new Date(iso+'T12:00:00'),e=new Date(iso+'T12:00:00');
-    e.setDate(e.getDate()+6);
-    return d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+
-      ' \u2013 '+e.toLocaleDateString('en-US',{month:'short',day:'numeric'});
-  }
-  // Approval key per therapist per week
-  function apvKey(staff,wkISO){return 'staff::'+staff+'::'+wkISO;}
-  function isApvd(staff,wkISO){return !!approvals[apvKey(staff,wkISO)];}
-  function btnId(staff,wkISO){return 'apv_'+staff.replace(/[^a-zA-Z0-9]/g,'_')+'_'+wkISO.replace(/-/g,'');}
-
-  var staffList=Object.keys(staffMap).sort();
-  if(!staffList.length){
-    el.innerHTML='<div style="padding:40px;text-align:center;color:var(--tx3)">No stipend data for selected period.</div>';
-    return;
-  }
-
-  var html='<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 16px 12px;flex-wrap:wrap;gap:10px">'+
-    '<div>'+
-      '<div style="font-size:14px;font-weight:600">By Therapist by Week</div>'+
-      '<div style="font-size:11px;color:var(--tx3);margin-top:3px">'+
-        'Approve each pay period (Mon\u2013Sun) per therapist. Saved to Firebase in real time.</div>'+
-    '</div>'+
-    '<button class="excel-btn" onclick="exportByStaffExcel()">\u2193 Export to Excel</button>'+
-  '</div>';
-
-  staffList.forEach(function(staff){
-    var wdata=staffMap[staff].weeks;
-    // Collect active weeks for this staff member
-    var activeWeeks=weeks.filter(function(wk){
-      var r=wdata[wk];return r&&(r.sigSess+r.sigWkly+r.pdi)>0;
-    });
-    if(!activeWeeks.length)return;
-
-    var tSigHrs=0,tSigSess=0,tSigWkly=0,tPDI=0;
-    activeWeeks.forEach(function(wk){
-      tSigHrs+=wdata[wk].sigHrs;tSigSess+=wdata[wk].sigSess;
-      tSigWkly+=wdata[wk].sigWkly;tPDI+=wdata[wk].pdi;
-    });
-    var staffTotal=tSigSess+tSigWkly+tPDI;
-    // All weeks approved = overall green header
-    var allApvd=activeWeeks.length>0&&activeWeeks.every(function(wk){return isApvd(staff,wk);});
-    var anyApvd=activeWeeks.some(function(wk){return isApvd(staff,wk);});
-
-    html+='<div style="margin:0 16px 20px;border:.5px solid '+(allApvd?'#1D9E75':'var(--bd)')+';border-radius:12px;overflow:hidden">'+
-      // Provider header
-      '<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:'+(allApvd?'#f0fdf4':anyApvd?'#fffbeb':'var(--bg2)')+';border-bottom:.5px solid var(--bd)">'+
-        '<div style="width:36px;height:36px;border-radius:50%;background:#6b5c45;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:15px;flex-shrink:0">'+staff.charAt(0).toUpperCase()+'</div>'+
-        '<div style="flex:1">'+
-          '<div style="font-size:14px;font-weight:600;color:var(--tx)">'+staff+'</div>'+
-          '<div style="font-size:11px;color:var(--tx3);margin-top:2px">'+
-            (tSigHrs?fmtH(tSigHrs)+' direct hrs &nbsp;':'')+
-            (tSigSess?'&nbsp;'+fmt$(tSigSess)+' session fees &nbsp;':'')+
-            (tSigWkly?'&nbsp;'+fmt$(tSigWkly)+' weekly &nbsp;':'')+
-            (tPDI?'&nbsp;'+fmt$(tPDI)+' PDI':'')+
-          '</div>'+
-        '</div>'+
-        '<div style="text-align:right">'+
-          '<div style="font-size:20px;font-weight:700;color:var(--green)">'+fmt$(staffTotal)+'</div>'+
-          '<div style="font-size:10px;color:var(--tx3);margin-top:2px">'+
-            (allApvd?'<span style="color:var(--green)">\u2713 All weeks approved</span>':
-             anyApvd?'<span style="color:var(--amber)">Partial approval</span>':
-             '<span>No approvals</span>')+
-          '</div>'+
-        '</div>'+
-      '</div>'+
-      // Week-by-week table with approval per row
-      '<div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">'+
-        '<thead><tr style="background:#f8f7f5">'+
-          '<th style="padding:8px 14px;text-align:left;font-size:10px;font-weight:600;color:var(--tx2)">Pay Period (Mon\u2013Sun)</th>'+
-          '<th style="padding:8px 10px;text-align:right;font-size:10px;font-weight:500;color:var(--tx3)">Sig Hours</th>'+
-          '<th style="padding:8px 10px;text-align:right;font-size:10px;font-weight:500;color:var(--tx3)">Session Fees</th>'+
-          '<th style="padding:8px 10px;text-align:right;font-size:10px;font-weight:500;color:var(--tx3)">Weekly Stipend</th>'+
-          '<th style="padding:8px 10px;text-align:right;font-size:10px;font-weight:500;color:var(--tx3)">PDI Stipend</th>'+
-          '<th style="padding:8px 10px;text-align:right;font-size:10px;font-weight:600;color:var(--tx2)">Total</th>'+
-          '<th style="padding:8px 14px;text-align:center;font-size:10px;font-weight:500;color:var(--tx3)">Approved</th>'+
-        '</tr></thead><tbody>';
-
-    activeWeeks.forEach(function(wk,ri){
-      var r=wdata[wk];
-      var wTotal=r.sigSess+r.sigWkly+r.pdi;
-      var apvd=isApvd(staff,wk);
-      var bid=btnId(staff,wk);
-      var rowBg=apvd?'background:#f0fdf4':ri%2===0?'':'background:var(--bg)';
-      html+='<tr style="'+rowBg+'">'+
-        '<td style="padding:8px 14px;border-top:.5px solid var(--bd);font-weight:500;white-space:nowrap">'+wLbl(wk)+'</td>'+
-        '<td style="padding:7px 10px;text-align:right;border-top:.5px solid var(--bd);color:var(--tx3)">'+fmtH(r.sigHrs)+'</td>'+
-        '<td style="padding:7px 10px;text-align:right;border-top:.5px solid var(--bd)">'+fmt$(r.sigSess)+'</td>'+
-        '<td style="padding:7px 10px;text-align:right;border-top:.5px solid var(--bd)">'+fmt$(r.sigWkly)+'</td>'+
-        '<td style="padding:7px 10px;text-align:right;border-top:.5px solid var(--bd)">'+fmt$(r.pdi)+'</td>'+
-        '<td style="padding:7px 10px;text-align:right;border-top:.5px solid var(--bd);font-weight:700;color:var(--green)">'+fmt$(wTotal)+'</td>'+
-        '<td style="padding:7px 14px;text-align:center;border-top:.5px solid var(--bd)">'+
-          '<button id="'+bid+'" onclick="toggleWeekApproval(\''+apvKey(staff,wk)+'\',\''+bid+'\')" '+
-            'style="padding:5px 14px;border-radius:16px;border:1.5px solid '+(apvd?'#1D9E75':'var(--bd2)')+';'+
-            'background:'+(apvd?'#1D9E75':'transparent')+';color:'+(apvd?'#fff':'var(--tx3)')+';'+
-            'cursor:pointer;font-size:11px;font-weight:600;font-family:var(--f);min-width:90px;transition:all .15s">'+
-            (apvd?'\u2713 Approved':'Approve')+'</button>'+
-        '</td>'+
-      '</tr>';
-    });
-
-    // Totals row
-    html+='<tr style="background:#1e170e;color:#fff">'+
-      '<td style="padding:9px 14px;font-weight:700">Total</td>'+
-      '<td style="padding:8px 10px;text-align:right">'+fmtH(tSigHrs)+'</td>'+
-      '<td style="padding:8px 10px;text-align:right">'+fmt$(tSigSess)+'</td>'+
-      '<td style="padding:8px 10px;text-align:right">'+fmt$(tSigWkly)+'</td>'+
-      '<td style="padding:8px 10px;text-align:right">'+fmt$(tPDI)+'</td>'+
-      '<td style="padding:8px 10px;text-align:right;font-weight:700;color:#86efac">'+fmt$(staffTotal)+'</td>'+
-      '<td></td>'+
-    '</tr></tbody></table></div></div>';
-  });
-
-  el.innerHTML=html;
-}
+function renderByStaff(D){}
 
 function toggleWeekApproval(key,btnId){
   if(!key)return;
@@ -1309,27 +1174,74 @@ function exportByClientExcel(){
   window.render=function(){
     _orig();
     var D=window._lastD;
-    var el=document.getElementById('census-table-wrap');
-    if(!el||!D)return;
-    // Build census from lineItems
+    if(!D)return;
     var items=D.lineItems||[];
-    var weekMap={};
+
+    // ── Census table (Summary tab) ──
+    var cEl=document.getElementById('census-table-wrap');
+    if(cEl){
+      var weekMap={};
+      items.forEach(function(li){
+        if(!weekMap[li.wStart])weekMap[li.wStart]={week:li.week,wStart:li.wStart,sig:{},pdi:{}};
+        if(li.track==='Signature'&&li.type==='Weekly Stipend')weekMap[li.wStart].sig[li.client]=1;
+        if(li.track==='PDI'&&li.type==='Flat Stipend')weekMap[li.wStart].pdi[li.client]=1;
+      });
+      var rows=Object.values(weekMap).sort(function(a,b){return a.wStart>b.wStart?-1:1;});
+      if(!rows.length){cEl.innerHTML='<p style="padding:16px;color:#888;font-size:12px">No data yet.</p>';}
+      else{
+        var h='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:#1e170e;color:#fff"><th style="padding:8px 12px;text-align:left;font-size:10px">Billing Week</th><th style="padding:8px 12px;text-align:center;font-size:10px">Sig</th><th style="padding:8px 12px;text-align:center;font-size:10px">PDI</th><th style="padding:8px 12px;text-align:right;font-size:10px">Flat/Provider</th><th style="padding:8px 12px;text-align:left;font-size:10px">Signature Clients</th><th style="padding:8px 12px;text-align:left;font-size:10px">PDI Discharges</th></tr></thead><tbody>';
+        rows.forEach(function(r){
+          var sc=Object.keys(r.sig),pd=Object.keys(r.pdi);
+          var bg=pd.length?'background:rgba(55,138,221,.05)':'';
+          h+='<tr style="'+bg+'"><td style="padding:7px 12px;border-top:.5px solid #e5e7eb;font-weight:500;white-space:nowrap">'+r.week+'</td>';
+          h+='<td style="padding:7px 12px;border-top:.5px solid #e5e7eb;text-align:center;font-weight:700;color:#7F77DD">'+sc.length+'</td>';
+          h+='<td style="padding:7px 12px;border-top:.5px solid #e5e7eb;text-align:center;font-weight:700;color:#378ADD">'+pd.length+'</td>';
+          h+='<td style="padding:7px 12px;border-top:.5px solid #e5e7eb;text-align:right;color:#1D9E75;font-weight:600">$'+(sc.length*250).toLocaleString()+'</td>';
+          h+='<td style="padding:7px 12px;border-top:.5px solid #e5e7eb;color:#3a3f4a;font-size:11px">'+(sc.join(', ')||'&mdash;')+'</td>';
+          h+='<td style="padding:7px 12px;border-top:.5px solid #e5e7eb;color:#378ADD;font-size:11px">'+(pd.join(', ')||'&mdash;')+'</td></tr>';
+        });
+        h+='</tbody></table>';
+        cEl.innerHTML=h;
+      }
+    }
+
+    // ── Inject census rows into Line Items table ──
+    var liTbl=document.querySelector('#tab-lineitems table tbody');
+    if(!liTbl)return;
+    // Build census per week from lineItems
+    var wkCensus={};
     items.forEach(function(li){
-      if(!weekMap[li.wStart])weekMap[li.wStart]={week:li.week,wStart:li.wStart,sigClients:{},pdiDischarges:{}};
-      if(li.track==='Signature'&&li.type==='Weekly Stipend')weekMap[li.wStart].sigClients[li.client]=1;
-      if(li.track==='PDI'&&li.type==='Flat Stipend')weekMap[li.wStart].pdiDischarges[li.client]=1;
+      if(!wkCensus[li.wStart])wkCensus[li.wStart]={sig:{},pdi:{}};
+      if(li.track==='Signature'&&li.type==='Weekly Stipend')wkCensus[li.wStart].sig[li.client]=1;
+      if(li.track==='PDI'&&li.type==='Flat Stipend')wkCensus[li.wStart].pdi[li.client]=1;
     });
-    var rows=Object.values(weekMap).sort(function(a,b){return a.wStart>b.wStart?-1:1;});
-    if(!rows.length){el.innerHTML='<p style="padding:16px;color:#888;font-size:12px">No data yet.</p>';return;}
-    var h='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:#1e170e;color:#fff"><th style="padding:8px 12px;text-align:left;font-size:10px">Billing Week</th><th style="padding:8px 12px;text-align:center;font-size:10px">Census</th><th style="padding:8px 12px;text-align:right;font-size:10px">Flat/Provider</th><th style="padding:8px 12px;text-align:left;font-size:10px">Signature Clients</th><th style="padding:8px 12px;text-align:left;font-size:10px">PDI Discharges</th></tr></thead><tbody>';
-    rows.forEach(function(r){
-      var clients=Object.keys(r.sigClients);
-      var discharges=Object.keys(r.pdiDischarges);
-      var bg=discharges.length?'background:rgba(55,138,221,.05)':'';
-      h+='<tr style="'+bg+'"><td style="padding:7px 12px;border-top:.5px solid #e5e7eb;font-weight:500;white-space:nowrap">'+r.week+'</td><td style="padding:7px 12px;border-top:.5px solid #e5e7eb;text-align:center;font-weight:700;font-size:14px">'+clients.length+'</td><td style="padding:7px 12px;border-top:.5px solid #e5e7eb;text-align:right;color:#1D9E75;font-weight:600">$'+(clients.length*250).toLocaleString()+'</td><td style="padding:7px 12px;border-top:.5px solid #e5e7eb;color:#3a3f4a;font-size:11px">'+(clients.join(', ')||'&mdash;')+'</td><td style="padding:7px 12px;border-top:.5px solid #e5e7eb;color:#378ADD;font-size:11px">'+(discharges.join(', ')||'&mdash;')+'</td></tr>';
+    // Insert census header row before first row of each new week
+    var rows=liTbl.querySelectorAll('tr');
+    var seenWeeks={};
+    rows.forEach(function(row){
+      var cells=row.querySelectorAll('td');
+      if(!cells.length)return;
+      var weekTxt=cells[0]?cells[0].textContent.trim():'';
+      // Get wStart from items
+      var li=items.find(function(l){return l.week===weekTxt;});
+      if(!li)return;
+      var ws=li.wStart;
+      if(seenWeeks[ws])return;
+      seenWeeks[ws]=true;
+      var cen=wkCensus[ws]||{sig:{},pdi:{}};
+      var sc=Object.keys(cen.sig).length,pd=Object.keys(cen.pdi).length;
+      var hdr=document.createElement('tr');
+      hdr.style.cssText='background:#f3f0eb;';
+      var cols=cells.length;
+      hdr.innerHTML='<td colspan="'+cols+'" style="padding:5px 12px;font-size:10px;font-weight:700;color:#2c2417;letter-spacing:.05em">'+
+        weekTxt+
+        ' &nbsp;|&nbsp; <span style="color:#7F77DD">Sig: '+sc+'</span>'+
+        ' &nbsp;|&nbsp; <span style="color:#378ADD">PDI discharges: '+pd+'</span>'+
+        (pd>0?' &nbsp;('+Object.keys(cen.pdi).join(', ')+')':'')+
+        ' &nbsp;|&nbsp; <span style="color:#1D9E75">Flat/provider: $'+(sc*250).toLocaleString()+'</span>'+
+        '</td>';
+      liTbl.insertBefore(hdr,row);
     });
-    h+='</tbody></table>';
-    el.innerHTML=h;
   };
 })();
 </script>
