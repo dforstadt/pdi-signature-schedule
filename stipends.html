@@ -574,6 +574,22 @@ function computeStipends(){
         return true;
       });
 
+      // ── Census: capture active Sig clients and PDI discharges this week ──
+      if(!censusMap[wStart]){
+        var pdiDischarges=DATA.clients.filter(function(cl){
+          var prog=(cl.program||'').trim();
+          if(prog!=='PDI'&&prog!=='Both')return false;
+          var pd=toISO(cl.pdiDischarge||cl.pdiDisch);
+          return pd&&pd>=wStart&&pd<=wEnd;
+        }).map(function(cl){return cl.name;});
+        censusMap[wStart]={
+          week:wLbl,wStart:wStart,
+          sigCount:activeSig.length,
+          sigClients:activeSig.map(function(cl){return cl.name;}),
+          pdiDischarges:pdiDischarges,
+          flatPerProv:activeSig.length*250
+        };
+      }
       activeSig.forEach(function(client){
         var cid=client.id,cName=client.name;
         var sigAdmit=toISO(client.sigAdmit);
@@ -659,6 +675,7 @@ function computeStipends(){
 
   // ── Weekly summary ────────────────────────────────────────────────────────
   var sumMap={};
+  var censusMap={};
   lineItems.forEach(function(li){
     if(!sumMap[li.wStart])sumMap[li.wStart]={week:li.week,wStart:li.wStart,sigHrs:0,sigCost:0,pdiCost:0};
     if(li.track==='Signature'){
@@ -672,7 +689,8 @@ function computeStipends(){
     var r=sumMap[w];return{week:r.week,wStart:w,sigHrs:r.sigHrs,sigCost:r.sigCost,pdiCost:r.pdiCost,combined:r.sigCost+r.pdiCost};
   });
 
-  return{lineItems:lineItems,summaryFinal:summaryFinal,sortedWeeks:allWeeks,
+  var censusFinal=allWeeks.filter(function(w){return censusMap[w];}).map(function(w){return censusMap[w];});
+  return{lineItems:lineItems,summaryFinal:summaryFinal,censusFinal:censusFinal,sortedWeeks:allWeeks,
     sigHrsByStaff:sigHrsByStaff,sigStiByStaff:sigStiByStaff,pdiStiByStaff:pdiStiByStaff,
     sigStaffSet:sigStaffSet,weekStiStaffSet:weekStiStaffSet,pdiStaffSet:pdiStaffSet,
     byClientSig:byClientSig,byClientPDI:byClientPDI,fltTrack:fltTrack};
@@ -931,6 +949,37 @@ function renderSummary(D){
     var chStaff=document.getElementById('ch-staff');if(chStaff)window._summaryCharts['ch-staff']=new Chart(chStaff,{type:'doughnut',data:{labels:staffKeys,datasets:[{data:staffKeys.map(function(k){return staffTotals[k];}),backgroundColor:COLORS,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'right',labels:{boxWidth:10,font:{size:9},padding:4}}}}});
   },50);
 }
+
+  // ── Client Census: week-over-week Signature census & PDI discharges ──
+  var censusData=D.censusFinal||[];
+  if(censusData.length){
+    var censusEl=document.getElementById('census-table-wrap');
+    if(censusEl){
+      var html='<table style="width:100%;border-collapse:collapse;font-size:12px">';
+      html+='<thead><tr style="background:#1e170e;color:#fff">';
+      html+='<th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:500">Billing Week</th>';
+      html+='<th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:500">Sig Census</th>';
+      html+='<th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:500">Flat/Provider</th>';
+      html+='<th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:500">Active Signature Clients</th>';
+      html+='<th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:500">PDI Discharges</th>';
+      html+='</tr></thead><tbody>';
+      censusData.slice().reverse().forEach(function(r){
+        var clients=r.sigClients.join(', ')||'—';
+        var discharges=r.pdiDischarges.length?r.pdiDischarges.join(', '):'—';
+        var bg=r.pdiDischarges.length?'background:#378ADD08':'';
+        html+='<tr style="'+bg+'">';
+        html+='<td style="padding:7px 12px;border-top:.5px solid var(--bd);white-space:nowrap">'+r.week+'</td>';
+        html+='<td style="padding:7px 12px;border-top:.5px solid var(--bd);text-align:center;font-weight:600">'+r.sigCount+'</td>';
+        html+='<td style="padding:7px 12px;border-top:.5px solid var(--bd);text-align:right;color:var(--green)">$'+r.flatPerProv.toLocaleString()+'</td>';
+        html+='<td style="padding:7px 12px;border-top:.5px solid var(--bd);color:var(--tx2);font-size:11px">'+clients+'</td>';
+        html+='<td style="padding:7px 12px;border-top:.5px solid var(--bd);color:var(--pdi);font-size:11px">'+discharges+'</td>';
+        html+='</tr>';
+      });
+      html+='</tbody></table>';
+      censusEl.innerHTML=html;
+    }
+  }
+
 
 function renderLineItems(D){
   window._debugEvents=DATA.events;window._debugClients=DATA.clients;
