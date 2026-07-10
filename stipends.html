@@ -453,6 +453,13 @@ function computeStipends(){
     return d.toISOString().slice(0,10);
   }
   function weekEnd(ws){var d=new Date(ws+'T12:00:00');d.setDate(d.getDate()+6);return d.toISOString().slice(0,10);}
+  function daysBetween(isoA,isoB){
+    // Returns isoB - isoA in whole days (positive if B is after A)
+    try{
+      var a=fromISO(isoA),b=fromISO(isoB);
+      return Math.round((b-a)/(1000*60*60*24));
+    }catch(e){return 0;}
+  }
 
   // ── Weeks derived from events + PDI discharge dates (Sat–Fri billing periods)
   var weekSet={};
@@ -577,11 +584,13 @@ function computeStipends(){
         var admit=toISO(c.sigAdmit);
         var disch=toISO(c.sigDischarge||c.sigDisch);
         if(!admit)return false;
-        // Flat fee requires at least 5 days present in the billing week (Fri-Thu)
-        var effectiveEnd=disch&&disch<wEnd?disch:wEnd;
-        var effectiveStart=admit>wStart?admit:wStart;
-        if(effectiveStart>effectiveEnd)return false;
-        var daysPresent=(new Date(effectiveEnd)-new Date(effectiveStart))/(1000*60*60*24)+1;
+        // Must overlap with this billing period at all
+        if(admit>wEnd)return false;
+        if(disch&&disch<wStart)return false;
+        // Flat fee requires >= 5 days present in this Fri-Thu period
+        var presFrom=admit>wStart?admit:wStart;
+        var presTo=disch&&disch<wEnd?disch:wEnd;
+        var daysPresent=daysBetween(presFrom,presTo)+1;
         return daysPresent>=5;
       });
 
