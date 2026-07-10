@@ -3,7 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<script>if(localStorage.getItem("stip_auth")!=="1")window.location.replace("sg.html");</script>
+<script>
+(function(){
+  if(localStorage.getItem('stip_auth')==='1') return;
+  var pw = window.prompt('Stipend Roster\nEnter access code:');
+  if(pw === 'StipendLS2024'){
+    localStorage.setItem('stip_auth','1');
+  } else {
+    document.write('<div style="font-family:sans-serif;text-align:center;padding:100px;color:#555">Access denied. <a href=\"login.html\">Return to portal</a></div>');
+    document.close();
+  }
+})();
+</script>
 <title>PDI / Signature — Stipend Roster</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
