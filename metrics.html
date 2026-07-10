@@ -266,6 +266,10 @@ function compute(episodes){
 
   var pdiEps=episodes.filter(function(c){return c.pdiAdmit;});
   var sigEps=episodes.filter(function(c){return c.sigAdmit;});
+  // Programme breakdown
+  var pdiToSig=episodes.filter(function(c){return c.pdiAdmit&&c.sigAdmit;}); // PDI→Signature
+  var pdiOnly=episodes.filter(function(c){return c.pdiAdmit&&!c.sigAdmit;}); // PDI standalone only
+  var sigOnly=episodes.filter(function(c){return c.sigAdmit&&!c.pdiAdmit;}); // Signature only
 
   // Conversion: PDI clients admitted April 2026+ OR who converted to Signature
   // Carlos L (PDI 3/23) is included because he converted on Signature launch day (4/1)
@@ -311,7 +315,7 @@ function render(M){
   document.getElementById('content').style.display='block';
 
   // PDI
-  set('pdi-total',M.pdiEps.length);
+  set('pdi-total',M.pdiEps.length+' ('+M.pdiOnly.length+' standalone · '+M.pdiToSig.length+' →Sig)');
   set('pdi-ytd',M.pdiYTD.length+' in 2026'+(M.pdiEps.length-M.pdiYTD.length>0?' · '+(M.pdiEps.length-M.pdiYTD.length)+' prior':''));
   set('pdi-active',M.pdiActive.length);
   set('pdi-active-sub',M.pdiActive.length?M.pdiActive.map(function(c){return c.name;}).join(', '):'All discharged');
@@ -321,7 +325,7 @@ function render(M){
   set('pdi-los-sub',M.pdiLOS?'Range '+M.pdiLOS.min+'–'+M.pdiLOS.max+' d · '+M.pdiLOS.n+' completed':'No completed PDI episodes');
 
   // Signature
-  set('sig-total',M.sigEps.length);
+  set('sig-total',M.sigEps.length+' ('+M.sigOnly.length+' direct · '+M.pdiToSig.length+' via PDI)');
   set('sig-ytd',M.sigYTD.length+' in 2026');
   set('sig-active',M.sigActive.length);
   set('sig-active-sub',M.sigActive.length+' currently in Signature');
