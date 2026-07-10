@@ -1,7 +1,15 @@
-<!-- v1783700349 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+if(sessionStorage.getItem('stip_auth')!=='1'){window.location.replace('stipend-login.html');}
+</script>
+<script>
+if(!sessionStorage.getItem('portal_auth')){
+  window.location.replace('portal.html');
+}
+</script>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PDI / Signature — Stipend Roster</title>
@@ -348,13 +356,11 @@ firebase.initializeApp({
   messagingSenderId:"545049861408",
   appId:"1:545049861408:web:1e0bf60ab88497f67a8b45"
 });
-
 var db=firebase.database();
 var FB=db.ref('schedule_v3');
 
-var HIST_CLIENTS=[{"id":"hist_matthew_h","name":"Matthew H","program":"PDI","pdiAdmit":"2025-08-12","pdiDischarge":"2025-08-21","sigAdmit":null,"sigDischarge":null},{"id":"hist_leslie_k","name":"Leslie K","program":"PDI","pdiAdmit":"2025-09-25","pdiDischarge":"2025-10-03","sigAdmit":null,"sigDischarge":null},{"id":"hist_abbegail_m","name":"Abbegail M","program":"PDI","pdiAdmit":"2025-10-08","pdiDischarge":"2025-10-18","sigAdmit":null,"sigDischarge":null},{"id":"hist_alex_r","name":"Alex R","program":"PDI","pdiAdmit":"2025-12-03","pdiDischarge":"2025-12-12","sigAdmit":null,"sigDischarge":null},{"id":"hist_francis_r","name":"Francis R","program":"PDI","pdiAdmit":"2026-05-13","pdiDischarge":"2026-05-22","sigAdmit":null,"sigDischarge":null},{"id":"hist_thomas_w","name":"Thomas W","program":"PDI","pdiAdmit":"2026-06-05","pdiDischarge":"2026-06-16","sigAdmit":null,"sigDischarge":null},{"id":"hist_norman_p","name":"Norman P","program":"PDI","pdiAdmit":"2026-06-15","pdiDischarge":"2026-06-25","sigAdmit":null,"sigDischarge":null},{"id":"hist_carlos_l","name":"Carlos L","program":"Both","pdiAdmit":"2026-03-23","pdiDischarge":"2026-03-31","sigAdmit":"2026-04-01","sigDischarge":"2026-04-01"},{"id":"hist_jessica_c","name":"Jessica C","program":"Both","pdiAdmit":"2026-04-04","pdiDischarge":"2026-04-21","sigAdmit":"2026-04-14","sigDischarge":"2026-04-21"},{"id":"hist_george_w","name":"George W","program":"Both","pdiAdmit":"2026-04-11","pdiDischarge":"2026-04-22","sigAdmit":"2026-04-24","sigDischarge":"2026-05-18"},{"id":"hist_marc_c","name":"Marc C","program":"Both","pdiAdmit":"2026-04-17","pdiDischarge":"2026-04-28","sigAdmit":"2026-05-01","sigDischarge":"2026-07-06"},{"id":"hist_michael_f","name":"Michael F","program":"Both","pdiAdmit":"2026-05-08","pdiDischarge":"2026-05-18","sigAdmit":"2026-05-19","sigDischarge":null},{"id":"hist_kevin_c","name":"Kevin C","program":"Both","pdiAdmit":"2026-05-14","pdiDischarge":"2026-05-26","sigAdmit":"2026-05-27","sigDischarge":"2026-06-12"},{"id":"hist_layla_s","name":"Layla S","program":"Both","pdiAdmit":"2026-05-18","pdiDischarge":"2026-05-28","sigAdmit":"2026-05-29","sigDischarge":"2026-06-08"},{"id":"hist_blake_p","name":"Blake P","program":"Both","pdiAdmit":"2026-06-04","pdiDischarge":"2026-06-12","sigAdmit":"2026-06-13","sigDischarge":"2026-06-26"},{"id":"hist_angela_t","name":"Angela T","program":"Both","pdiAdmit":"2026-07-03","pdiDischarge":null,"sigAdmit":"2026-06-25","sigDischarge":null},{"id":"hist_tomas_w","name":"Tomas W","program":"Signature","pdiAdmit":null,"pdiDischarge":null,"sigAdmit":"2026-05-26","sigDischarge":"2026-06-18"},{"id":"hist_jarrod_w","name":"Jarrod W","program":"Signature","pdiAdmit":null,"pdiDischarge":null,"sigAdmit":"2026-05-29","sigDischarge":"2026-06-29"},{"id":"hist_emma_t","name":"Emma T","program":"Signature","pdiAdmit":null,"pdiDischarge":null,"sigAdmit":"2026-06-01","sigDischarge":"2026-06-22"},{"id":"hist_david_r","name":"David R","program":"Signature","pdiAdmit":null,"pdiDischarge":null,"sigAdmit":"2026-06-05","sigDischarge":"2026-07-01"},{"id":"hist_joseph_g","name":"Joseph G","program":"Signature","pdiAdmit":null,"pdiDischarge":null,"sigAdmit":"2026-06-08","sigDischarge":null},{"id":"hist_arianna_b","name":"Arianna B","program":"Signature","pdiAdmit":null,"pdiDischarge":null,"sigAdmit":"2026-06-15","sigDischarge":null},{"id":"hist_alex_a","name":"Alex A","program":"Signature","pdiAdmit":null,"pdiDischarge":null,"sigAdmit":"2026-06-18","sigDischarge":null},{"id":"hist_peter_s","name":"Peter S","program":"Signature","pdiAdmit":null,"pdiDischarge":null,"sigAdmit":"2026-06-19","sigDischarge":null},{"id":"hist_george_r","name":"George R","program":"Signature","pdiAdmit":null,"pdiDischarge":null,"sigAdmit":"2026-06-20","sigDischarge":null},{"id":"hist_chayse_b","name":"Chayse B","program":"Signature","pdiAdmit":null,"pdiDischarge":null,"sigAdmit":"2026-06-29","sigDischarge":null},{"id":"hist_louis_r","name":"Louis R","program":"Signature","pdiAdmit":null,"pdiDischarge":null,"sigAdmit":"2026-07-01","sigDischarge":null},{"id":"hist_jack_s","name":"Jack S","program":"Signature","pdiAdmit":null,"pdiDischarge":null,"sigAdmit":"2026-07-03","sigDischarge":null},{"id":"hist_william_c","name":"William C","program":"Signature","pdiAdmit":null,"pdiDischarge":null,"sigAdmit":"2026-07-10","sigDischarge":null},{"id":"hist_layla_s_2","name":"Layla S (Readmission)","program":"Signature","pdiAdmit":null,"pdiDischarge":null,"sigAdmit":"2026-07-07","sigDischarge":null}];
-
-var DATA={clients:HIST_CLIENTS.slice(),events:[],providers:{},services:[],mealServices:[]};
+var PRE_CALENDAR=[{"id":"hist_matthew_h","name":"Matthew H","program":"PDI","pdiAdmit":"2025-08-12","pdiDischarge":"2025-08-21","sigAdmit":null,"sigDischarge":null},{"id":"hist_leslie_k","name":"Leslie K","program":"PDI","pdiAdmit":"2025-09-25","pdiDischarge":"2025-10-03","sigAdmit":null,"sigDischarge":null},{"id":"hist_abbegail_m","name":"Abbegail M","program":"PDI","pdiAdmit":"2025-10-08","pdiDischarge":"2025-10-18","sigAdmit":null,"sigDischarge":null},{"id":"hist_alex_r","name":"Alex R","program":"PDI","pdiAdmit":"2025-12-03","pdiDischarge":"2025-12-12","sigAdmit":null,"sigDischarge":null},{"id":"hist_carlos_l","name":"Carlos L","program":"Both","pdiAdmit":"2026-03-23","pdiDischarge":"2026-03-31","sigAdmit":"2026-04-01","sigDischarge":"2026-04-01"},{"id":"hist_jessica_c","name":"Jessica C","program":"Both","pdiAdmit":"2026-04-04","pdiDischarge":"2026-04-21","sigAdmit":"2026-04-14","sigDischarge":"2026-04-21"},{"id":"hist_george_w","name":"George W","program":"Both","pdiAdmit":"2026-04-11","pdiDischarge":"2026-04-22","sigAdmit":"2026-04-24","sigDischarge":"2026-05-18"}];
+DATA={clients:PRE_CALENDAR.slice(),events:[],providers:{},services:[],mealServices:[]};
 var currentTab='summary';
 
 // ── Live data ──────────────────────────────────────────────────────────────
@@ -364,24 +370,26 @@ FB.on('value',function(snap){
     try{
       var d=JSON.parse(raw.blob);
       if(Array.isArray(d.clients)){
-  // Merge Firebase clients with hist, deduplicating by name
-  // Merge: pre-calendar clients + all Firebase clients (deduped by name, extras kept)
   var calMap={};var extras=[];
-  (d.clients||[]).forEach(function(c){
-    if(!c.name||!c.program)return;
-    var k=c.name.toLowerCase().trim();
-    if(!calMap[k])calMap[k]=c; else extras.push(c);
+  (d.clients||[]).forEach(function(cl){
+    if(!cl.name||!cl.program)return;
+    var k=cl.name.toLowerCase().trim();
+    if(!calMap[k])calMap[k]=cl; else extras.push(cl);
   });
   var merged=[];
   PRE_CALENDAR.forEach(function(h){
     var k=h.name.toLowerCase().trim();
-    if(calMap[k]){merged.push(calMap[k]);delete calMap[k];}
-    else{merged.push(h);}
+    if(calMap[k]){
+      var fb=calMap[k];
+      if(!fb.pdiAdmit&&h.pdiAdmit){fb.pdiAdmit=h.pdiAdmit;fb.pdiDischarge=h.pdiDischarge||fb.pdiDischarge||null;}
+      if(!fb.sigAdmit&&h.sigAdmit){fb.sigAdmit=h.sigAdmit;}
+      merged.push(fb);delete calMap[k];
+    }else{merged.push(h);}
   });
-  Object.values(calMap).forEach(function(c){merged.push(c);});
-  extras.forEach(function(c){merged.push(c);});
+  Object.values(calMap).forEach(function(cl){merged.push(cl);});
+  extras.forEach(function(cl){merged.push(cl);});
   DATA.clients=merged;
-} else { /* keep existing */ }
+}
       if(Array.isArray(d.events))DATA.events=d.events;
       if(d.providers&&typeof d.providers==='object')DATA.providers=d.providers;
       if(Array.isArray(d.services))DATA.services=d.services;
@@ -436,7 +444,7 @@ function showTab(tab){
 // ── COMPUTE STIPENDS ────────────────────────────────────────────────────────
 function fmt$(v){return v||v===0?'$'+(+v).toFixed(2):'-';}
 
-// Provider display name map — Firebase provider key → full real name
+// Provider display names
 var PROV_DISPLAY={"Nicole":"Nicole Williams","David Ockman":"David Ockman","Gus Hernandez":"Gus Hernandez","Tara":"Tara Alhadeff","Dr. Mirella":"Mirella Ezeta","Rabbi":"Rabbi Brandon Gaines","Sandy":"Sandra Bernstein","Dr. Hume":"Anisha Hume","Dr. Despina":"Despina Karfis","Dr. Greg":"Gregory Fortune","Dr. Paul":"Paul Lazar","T.D":"Thomas Young","Tamas":"Tamas Biro","Esther":"Esther Entin","Dr. Bruno":"Robert Bruno","Gina":"Gina","Dr. Alex":"Dr. Alex","Dr. Flavia":"Dr. Flavia"};
 function displayName(p){return PROV_DISPLAY[p]||p;}
 
@@ -455,7 +463,6 @@ function computeStipends(){
   function isGroup(ev){return ev.service&&ev.service.toLowerCase().indexOf('group')>-1;}
   function isBillable(ev){
   var s=(ev.status||'').toLowerCase();
-  // Count scheduled and completed; skip cancelled, rescheduled, or no-show
   if(s==='cancelled'||s==='rescheduled'||s==='no_show'||s==='no-show')return false;
   return !isGroup(ev);
 }
@@ -625,10 +632,9 @@ function computeStipends(){
           if(!isSessionProv(ev.provider))return;
           if(!isBillable(ev))return; // completed only, no groups
           // activeSig already confirms client was admitted and not discharged this week
-          if(noStipend(ev.provider))return; // skip excluded providers
           if(!sessMap[ev.provider])sessMap[ev.provider]=0;
           if(!sessCount[ev.provider])sessCount[ev.provider]=0;
-          sessMap[ev.provider]+=1; // 1 per completed session regardless of duration
+          sessMap[ev.provider]+=1; // slots (30 min each)
           sessCount[ev.provider]+=1;             // event count
         });
         Object.keys(sessMap).forEach(function(prov){
@@ -1356,5 +1362,6 @@ function initGate(gid){
   setTimeout(function(){if(inp)inp.focus();},80);
 }
 </script>
+<script>initGate("stip-gate");</script>
 </body>
 </html>
