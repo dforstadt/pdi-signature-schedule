@@ -490,9 +490,9 @@ function computeStipends(){
   // They are hardcoded so they are never accidentally excluded if their provider
   // record is missing or has the wrong stipendType in the calendar.
   // Names must match exactly what is used in the calendar provider list.
-  var WEEKLY_CORE=['David Ockman','Nicole','Gus Hernandez'];
+  var WEEKLY_CORE=['David Ockman','Nicole Williams','Nicole','Gus Hernandez'];
   // Providers who receive Signature session fees only — excluded from PDI flat stipend
-  var PDI_EXCLUDED=['Rabbi Gaines'];
+  var PDI_EXCLUDED=['Rabbi Gaines','Rabbi Brandon Gaines','Rabbi'];
 
   // Build weeklyProviders: core three + any other pdi_weekly providers in DATA.providers
   var weeklyProviders=[];
@@ -623,7 +623,7 @@ function computeStipends(){
           if(noStipend(ev.provider))return; // skip excluded providers
           if(!sessMap[ev.provider])sessMap[ev.provider]=0;
           if(!sessCount[ev.provider])sessCount[ev.provider]=0;
-          sessMap[ev.provider]+=ev.duration||1; // slots (30 min each)
+          sessMap[ev.provider]+=1; // 1 per completed session regardless of duration
           sessCount[ev.provider]+=1;             // event count
         });
         Object.keys(sessMap).forEach(function(prov){
