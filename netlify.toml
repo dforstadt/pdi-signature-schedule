@@ -1,0 +1,12 @@
+[build]
+  publish = "."
+
+[[headers]]
+  for = "/stip.html"
+  [headers.values]
+    Basic-Auth = "leadership:Stipend2024"
+
+[[headers]]
+  for = "/financial.html"
+  [headers.values]
+    Basic-Auth = "leadership:Finance2024"
