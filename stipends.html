@@ -424,11 +424,6 @@ function fmt$(v){return v||v===0?'$'+(+v).toFixed(2):'-';}
 var PROV_DISPLAY={"Nicole":"Nicole Williams","David Ockman":"David Ockman","Gus Hernandez":"Gus Hernandez","Tara":"Tara Alhadeff","Dr. Mirella":"Mirella Ezeta","Rabbi":"Rabbi Brandon Gaines","Sandy":"Sandra Bernstein","Dr. Hume":"Anisha Hume","Dr. Despina":"Despina Karfis","Dr. Greg":"Gregory Fortune","Dr. Paul":"Paul Lazar","T.D":"Thomas Young","Tamas":"Tamas Biro","Esther":"Esther Entin","Dr. Bruno":"Robert Bruno","Gina":"Gina","Dr. Alex":"Dr. Alex","Dr. Flavia":"Dr. Flavia"};
 function displayName(p){return PROV_DISPLAY[p]||p;}
 
-function isoOffset(iso,days){
-  try{var d=new Date(iso+'T12:00:00');d.setDate(d.getDate()+days);return d.toISOString().slice(0,10);}
-  catch(e){return iso;}
-}
-
 function computeStipends(){
   var fltTrack=document.getElementById('flt-track').value;
   var fltFrom =document.getElementById('flt-from').value;
@@ -576,7 +571,12 @@ function computeStipends(){
     if(fltTrack!=='PDI'){
 
       // Active Signature clients this week: sigAdmit ≤ wEnd AND (no sigDisch OR sigDisch ≥ wStart)
-      var activeSig=DATA.clients.filter(function(c){
+      var // 5-day rule cutoffs: Sunday = wStart+2, Tuesday = wStart+4
+      var _d1=new Date(wStart+'T12:00:00');_d1.setDate(_d1.getDate()+2);
+      var _sunday=_d1.toISOString().slice(0,10);
+      var _d2=new Date(wStart+'T12:00:00');_d2.setDate(_d2.getDate()+4);
+      var _tuesday=_d2.toISOString().slice(0,10);
+      activeSig=DATA.clients.filter(function(c){
         var prog=c.program||'';
         if(prog!=='Signature'&&prog!=='Both')return false;
         var admit=toISO(c.sigAdmit);
@@ -584,13 +584,9 @@ function computeStipends(){
         if(!admit)return false;
         if(admit>wEnd)return false;
         if(disch&&disch<wStart)return false;
-        // Flat fee: client must be present for >= 5 days in the Fri-Thu period
-        // Must be admitted by Sunday (wStart+2) to get 5 days (Sun-Thu)
-        // Must not be discharged before Tuesday (wStart+4) to get 5 days (Fri-Tue)
-        var admitCutoff=isoOffset(wStart,2); // Sunday
-        var dischCutoff=isoOffset(wStart,4); // Tuesday
-        if(admit>admitCutoff)return false;
-        if(disch&&disch<dischCutoff)return false;
+        // Flat fee: >= 5 days in Fri-Thu period
+        if(admit>_sunday)return false;
+        if(disch&&disch<_tuesday)return false;
         return true;
       });
 
