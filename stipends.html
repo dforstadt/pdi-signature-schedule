@@ -709,6 +709,14 @@ function renderByStaff(D){
   function fmt$(v){return v||v===0?'$'+(+v).toFixed(2):'-';}
   function fmtH(v){return v||v===0?(+v).toFixed(1)+' hr':'-';}
 
+  // Build week-level census (Sig clients, PDI discharges) from lineItems
+  var weekCensus={};
+  D.lineItems.forEach(function(li){
+    if(!weekCensus[li.wStart])weekCensus[li.wStart]={sig:{},pdi:{}};
+    if(li.track==='Signature'&&li.type==='Weekly Stipend')weekCensus[li.wStart].sig[li.client]=1;
+    if(li.track==='PDI'&&li.type==='Flat Stipend')weekCensus[li.wStart].pdi[li.client]=1;
+  });
+
   // Build staff -> week -> amounts
   var staffMap={};
   D.lineItems.forEach(function(li){
@@ -726,14 +734,12 @@ function renderByStaff(D){
 
   var weeks=D.sortedWeeks.slice().sort();
 
-  // Week label: Mon – Sun (pay period)
   function wLbl(iso){
     var d=new Date(iso+'T12:00:00'),e=new Date(iso+'T12:00:00');
     e.setDate(e.getDate()+6);
     return d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+
-      ' \u2013 '+e.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+      ' – '+e.toLocaleDateString('en-US',{month:'short',day:'numeric'});
   }
-  // Approval key per therapist per week
   function apvKey(staff,wkISO){return 'staff::'+staff+'::'+wkISO;}
   function isApvd(staff,wkISO){return !!approvals[apvKey(staff,wkISO)];}
   function btnId(staff,wkISO){return 'apv_'+staff.replace(/[^a-zA-Z0-9]/g,'_')+'_'+wkISO.replace(/-/g,'');}
@@ -746,97 +752,80 @@ function renderByStaff(D){
 
   var html='<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 16px 12px;flex-wrap:wrap;gap:10px">'+
     '<div>'+
-      '<div style="font-size:14px;font-weight:600">By Therapist by Week</div>'+
+      '<div style="font-size:14px;font-weight:600">Stipend Approval — By Therapist</div>'+
       '<div style="font-size:11px;color:var(--tx3);margin-top:3px">'+
-        'Approve each pay period (Mon\u2013Sun) per therapist. Saved to Firebase in real time.</div>'+
+        'Approve each pay period per therapist. Census columns show active Sig clients and PDI discharges to reconcile flat fees.</div>'+
     '</div>'+
-    '<button class="excel-btn" onclick="exportByStaffExcel()">\u2193 Export to Excel</button>'+
+    '<button class="excel-btn" onclick="exportByStaffExcel()">↓ Export to Excel</button>'+
   '</div>';
 
   staffList.forEach(function(staff){
     var wdata=staffMap[staff].weeks;
-    // Collect active weeks for this staff member
     var activeWeeks=weeks.filter(function(wk){
       var r=wdata[wk];return r&&(r.sigSess+r.sigWkly+r.pdi)>0;
     });
     if(!activeWeeks.length)return;
 
-    var tSigHrs=0,tSigSess=0,tSigWkly=0,tPDI=0;
-    activeWeeks.forEach(function(wk){
-      tSigHrs+=wdata[wk].sigHrs;tSigSess+=wdata[wk].sigSess;
-      tSigWkly+=wdata[wk].sigWkly;tPDI+=wdata[wk].pdi;
-    });
-    var staffTotal=tSigSess+tSigWkly+tPDI;
-    // All weeks approved = overall green header
     var allApvd=activeWeeks.length>0&&activeWeeks.every(function(wk){return isApvd(staff,wk);});
     var anyApvd=activeWeeks.some(function(wk){return isApvd(staff,wk);});
 
     html+='<div style="margin:0 16px 20px;border:.5px solid '+(allApvd?'#1D9E75':'var(--bd)')+';border-radius:12px;overflow:hidden">'+
-      // Provider header
       '<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:'+(allApvd?'#f0fdf4':anyApvd?'#fffbeb':'var(--bg2)')+';border-bottom:.5px solid var(--bd)">'+
         '<div style="width:36px;height:36px;border-radius:50%;background:#6b5c45;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:15px;flex-shrink:0">'+staff.charAt(0).toUpperCase()+'</div>'+
         '<div style="flex:1">'+
           '<div style="font-size:14px;font-weight:600;color:var(--tx)">'+staff+'</div>'+
-          '<div style="font-size:11px;color:var(--tx3);margin-top:2px">'+
-            (tSigHrs?fmtH(tSigHrs)+' direct hrs &nbsp;':'')+
-            (tSigSess?'&nbsp;'+fmt$(tSigSess)+' session fees &nbsp;':'')+
-            (tSigWkly?'&nbsp;'+fmt$(tSigWkly)+' weekly &nbsp;':'')+
-            (tPDI?'&nbsp;'+fmt$(tPDI)+' PDI':'')+
-          '</div>'+
         '</div>'+
         '<div style="text-align:right">'+
-          '<div style="font-size:10px;color:var(--tx3)">'+
-            (allApvd?'<span style="color:var(--green)">\u2713 All weeks approved</span>':
+          '<div style="font-size:11px;color:var(--tx3)">'+
+            (allApvd?'<span style="color:var(--green)">✓ All weeks approved</span>':
              anyApvd?'<span style="color:var(--amber)">Partial approval</span>':
              '<span>No approvals</span>')+
           '</div>'+
         '</div>'+
       '</div>'+
-      // Week-by-week table with approval per row
       '<div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">'+
         '<thead><tr style="background:#f8f7f5">'+
-          '<th style="padding:8px 14px;text-align:left;font-size:10px;font-weight:600;color:var(--tx2)">Pay Period (Mon\u2013Sun)</th>'+
+          '<th style="padding:8px 14px;text-align:left;font-size:10px;font-weight:600;color:var(--tx2)">Pay Period</th>'+
+          '<th style="padding:8px 10px;text-align:center;font-size:10px;font-weight:600;color:#7F77DD">Sig Census</th>'+
+          '<th style="padding:8px 10px;text-align:center;font-size:10px;font-weight:600;color:#378ADD">PDI</th>'+
           '<th style="padding:8px 10px;text-align:right;font-size:10px;font-weight:500;color:var(--tx3)">Sig Hours</th>'+
           '<th style="padding:8px 10px;text-align:right;font-size:10px;font-weight:500;color:var(--tx3)">Session Fees</th>'+
           '<th style="padding:8px 10px;text-align:right;font-size:10px;font-weight:500;color:var(--tx3)">Weekly Stipend</th>'+
           '<th style="padding:8px 10px;text-align:right;font-size:10px;font-weight:500;color:var(--tx3)">PDI Stipend</th>'+
-          '<th style="padding:8px 10px;text-align:right;font-size:10px;font-weight:600;color:var(--tx2)">Total</th>'+
           '<th style="padding:8px 14px;text-align:center;font-size:10px;font-weight:500;color:var(--tx3)">Approved</th>'+
         '</tr></thead><tbody>';
 
     activeWeeks.forEach(function(wk,ri){
       var r=wdata[wk];
-      var wTotal=r.sigSess+r.sigWkly+r.pdi;
       var apvd=isApvd(staff,wk);
       var bid=btnId(staff,wk);
+      var cen=weekCensus[wk]||{sig:{},pdi:{}};
+      var sigCount=Object.keys(cen.sig).length;
+      var pdiCount=Object.keys(cen.pdi).length;
       var rowBg=apvd?'background:#f0fdf4':ri%2===0?'':'background:var(--bg)';
       html+='<tr style="'+rowBg+'">'+
         '<td style="padding:8px 14px;border-top:.5px solid var(--bd);font-weight:500;white-space:nowrap">'+wLbl(wk)+'</td>'+
+        '<td style="padding:7px 10px;text-align:center;border-top:.5px solid var(--bd)">'+
+          '<span style="font-weight:700;color:#7F77DD">'+sigCount+'</span>'+
+        '</td>'+
+        '<td style="padding:7px 10px;text-align:center;border-top:.5px solid var(--bd)">'+
+          (pdiCount?'<span style="font-weight:700;color:#378ADD">'+pdiCount+'</span>':'<span style="color:#ccc">—</span>')+
+        '</td>'+
         '<td style="padding:7px 10px;text-align:right;border-top:.5px solid var(--bd);color:var(--tx3)">'+fmtH(r.sigHrs)+'</td>'+
         '<td style="padding:7px 10px;text-align:right;border-top:.5px solid var(--bd)">'+fmt$(r.sigSess)+'</td>'+
         '<td style="padding:7px 10px;text-align:right;border-top:.5px solid var(--bd)">'+fmt$(r.sigWkly)+'</td>'+
         '<td style="padding:7px 10px;text-align:right;border-top:.5px solid var(--bd)">'+fmt$(r.pdi)+'</td>'+
-        '<td style="padding:7px 10px;text-align:right;border-top:.5px solid var(--bd);font-weight:700;color:var(--green)">'+fmt$(wTotal)+'</td>'+
         '<td style="padding:7px 14px;text-align:center;border-top:.5px solid var(--bd)">'+
-          '<button id="'+bid+'" onclick="toggleWeekApproval(\''+apvKey(staff,wk)+'\',\''+bid+'\')" '+
+          '<button id="'+bid+'" onclick="toggleWeekApproval(''+apvKey(staff,wk)+'',''+bid+'')" '+
             'style="padding:5px 14px;border-radius:16px;border:1.5px solid '+(apvd?'#1D9E75':'var(--bd2)')+';'+
             'background:'+(apvd?'#1D9E75':'transparent')+';color:'+(apvd?'#fff':'var(--tx3)')+';'+
             'cursor:pointer;font-size:11px;font-weight:600;font-family:var(--f);min-width:90px;transition:all .15s">'+
-            (apvd?'\u2713 Approved':'Approve')+'</button>'+
+            (apvd?'✓ Approved':'Approve')+'</button>'+
         '</td>'+
       '</tr>';
     });
 
-    // Totals row
-    html+='<tr style="background:#1e170e;color:#fff">'+
-      '<td style="padding:9px 14px;font-weight:700">Total</td>'+
-      '<td style="padding:8px 10px;text-align:right">'+fmtH(tSigHrs)+'</td>'+
-      '<td style="padding:8px 10px;text-align:right">'+fmt$(tSigSess)+'</td>'+
-      '<td style="padding:8px 10px;text-align:right">'+fmt$(tSigWkly)+'</td>'+
-      '<td style="padding:8px 10px;text-align:right">'+fmt$(tPDI)+'</td>'+
-      '<td style="padding:8px 10px;text-align:right;font-weight:700;color:#86efac">'+fmt$(staffTotal)+'</td>'+
-      '<td></td>'+
-    '</tr></tbody></table></div></div>';
+    html+='</tbody></table></div></div>';
   });
 
   el.innerHTML=html;
