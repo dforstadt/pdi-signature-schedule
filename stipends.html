@@ -602,7 +602,7 @@ function computeStipends(){
         // ── Weekly stipend: $250/wk per active Sig client (Ockman/Nicole/Gus) ──
         weeklyProviders.forEach(function(prov){
           lineItems.push({week:wLbl,wStart:wStart,client:cName,track:'Signature',
-            staff:prov,type:'Weekly Stipend',sessHrs:'',rate:'',amount:250,counted:250,notes:''});
+            staff:displayName(prov),type:'Weekly Stipend',sessHrs:'',rate:'',amount:250,counted:250,notes:''});
           if(!sigStiByStaff[prov])sigStiByStaff[prov]={};
           sigStiByStaff[prov][wStart]=(sigStiByStaff[prov][wStart]||0)+250;
           weekStiStaffSet[prov]=true;
@@ -666,7 +666,7 @@ function computeStipends(){
 
         provs.forEach(function(prov){
           lineItems.push({week:wLbl,wStart:wStart,client:cName,track:'PDI',
-            staff:prov,type:'Flat Stipend',sessHrs:'',rate:'',amount:250,counted:250,
+            staff:displayName(prov),type:'Flat Stipend',sessHrs:'',rate:'',amount:250,counted:250,
             notes:note});
           if(!pdiStiByStaff[prov])pdiStiByStaff[prov]={};
           pdiStiByStaff[prov][wStart]=(pdiStiByStaff[prov][wStart]||0)+250;
