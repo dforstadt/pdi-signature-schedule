@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><!-- deploy:1783710183-1783710042 -->
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PDI / Signature — Stipend Roster</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -571,22 +571,20 @@ function computeStipends(){
     if(fltTrack!=='PDI'){
 
       // Active Signature clients this week: sigAdmit ≤ wEnd AND (no sigDisch OR sigDisch ≥ wStart)
-      var // 5-day rule cutoffs: Sunday = wStart+2, Tuesday = wStart+4
-      var _d1=new Date(wStart+'T12:00:00');_d1.setDate(_d1.getDate()+2);
-      var _sunday=_d1.toISOString().slice(0,10);
-      var _d2=new Date(wStart+'T12:00:00');_d2.setDate(_d2.getDate()+4);
-      var _tuesday=_d2.toISOString().slice(0,10);
+      var // 5-day rule: Sunday=wStart+2, Tuesday=wStart+4
+      var _dSun=new Date(wStart+'T12:00:00');_dSun.setDate(_dSun.getDate()+2);
+      var _wSunday=_dSun.toISOString().slice(0,10);
+      var _dTue=new Date(wStart+'T12:00:00');_dTue.setDate(_dTue.getDate()+4);
+      var _wTuesday=_dTue.toISOString().slice(0,10);
       activeSig=DATA.clients.filter(function(c){
         var prog=c.program||'';
         if(prog!=='Signature'&&prog!=='Both')return false;
         var admit=toISO(c.sigAdmit);
         var disch=toISO(c.sigDischarge||c.sigDisch);
-        if(!admit)return false;
-        if(admit>wEnd)return false;
+        if(!admit||admit>wEnd)return false;
         if(disch&&disch<wStart)return false;
-        // Flat fee: >= 5 days in Fri-Thu period
-        if(admit>_sunday)return false;
-        if(disch&&disch<_tuesday)return false;
+        if(admit>_wSunday)return false;
+        if(disch&&disch<_wTuesday)return false;
         return true;
       });
 
@@ -794,7 +792,7 @@ function renderByStaff(D){
       '</div>'+
       '<div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">'+
         '<thead><tr style="background:#f8f7f5">'+
-          '<th style="padding:8px 14px;text-align:left;font-size:10px;font-weight:600;color:var(--tx2)">Pay Period (Fri–Thu)</th>'+
+          '<th style="padding:8px 14px;text-align:left;font-size:10px;font-weight:600;color:var(--tx2)">Pay Period</th>'+
           '<th style="padding:8px 10px;text-align:center;font-size:10px;font-weight:600;color:#7F77DD">Sig Census</th>'+
           '<th style="padding:8px 10px;text-align:center;font-size:10px;font-weight:600;color:#378ADD">PDI</th>'+
           '<th style="padding:8px 10px;text-align:right;font-size:10px;font-weight:500;color:var(--tx3)">Sig Hours</th>'+
@@ -1093,7 +1091,7 @@ function exportByStaffExcel(){
   var staffList=Object.keys(staffMap).sort();
   var weeks=D.sortedWeeks.slice().sort();
 
-  // Billing period label: Fri – Thu
+  // Billing period label: Sat – Fri
   function wLbl(iso){
     var d=new Date(iso+'T12:00:00'),e=new Date(iso+'T12:00:00');
     e.setDate(e.getDate()+6);
