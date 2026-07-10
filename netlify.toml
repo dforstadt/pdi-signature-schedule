@@ -1,9 +1,0 @@
-[build]
-  publish = "."
-
-[[headers]]
-  for = "/*.html"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-
-# Last deploy: 1783711818
