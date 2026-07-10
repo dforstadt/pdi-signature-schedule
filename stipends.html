@@ -453,7 +453,12 @@ function computeStipends(){
   // ── Event helpers ─────────────────────────────────────────────────────────
   function isCompleted(ev){return(ev.status||'').toLowerCase()==='completed';}
   function isGroup(ev){return ev.service&&ev.service.toLowerCase().indexOf('group')>-1;}
-  function isBillable(ev){return isCompleted(ev)&&!isGroup(ev);}
+  function isBillable(ev){
+  var s=(ev.status||'').toLowerCase();
+  // Count scheduled and completed; skip cancelled, rescheduled, or no-show
+  if(s==='cancelled'||s==='rescheduled'||s==='no_show'||s==='no-show')return false;
+  return !isGroup(ev);
+}
 
   // ── Date helpers ──────────────────────────────────────────────────────────
   function toISO(d){return d?String(d).slice(0,10):null;}
