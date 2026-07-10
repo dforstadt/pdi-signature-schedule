@@ -232,7 +232,7 @@ function Z9go(){
     sessionStorage.setItem('Z9','1');
     document.getElementById('Z9gate').style.display='none';
   } else {
-    document.getElementById('Z9err').textContent='Incorrect code.';
+    document.getElementById('Z9err').textContent='You typed: ['+v+']';
     document.getElementById('Z9pw').value='';
     document.getElementById('Z9pw').focus();
   }
