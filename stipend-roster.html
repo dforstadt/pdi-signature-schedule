@@ -212,6 +212,19 @@ td.money.zero{color:var(--tx3);}
 </style>
 </head>
 <body>
+<div id="diag" style="position:fixed;bottom:10px;right:10px;background:#1e170e;color:#fff;padding:8px 14px;border-radius:8px;font-size:11px;font-family:monospace;z-index:9999;max-width:300px">
+  <div id="d1">1. Page loaded ✓</div>
+  <div id="d2">2. Firebase SDK: checking...</div>
+  <div id="d3">3. initializeApp: pending</div>
+  <div id="d4">4. FB.on: pending</div>
+  <div id="d5">5. Data received: pending</div>
+</div>
+<script>
+setTimeout(function(){
+  var d2=document.getElementById('d2');
+  if(d2)d2.textContent='2. Firebase SDK: '+(typeof firebase!=='undefined'?'✓ loaded':'✗ MISSING');
+},500);
+</script>
 
 <!-- HEADER -->
 
@@ -344,6 +357,7 @@ td.money.zero{color:var(--tx3);}
 
 <script>
 // ── Firebase ───────────────────────────────────────────────────────────────
+document.getElementById('d3').textContent='3. initializeApp: running...';
 firebase.initializeApp({
   apiKey:"AIzaSyCERxntgytkfCHWN7EoAVYVmLBcfWyYZ5A",
   authDomain:"pdi-signature-schedule.firebaseapp.com",
@@ -356,7 +370,9 @@ firebase.initializeApp({
 var db=firebase.database();
 var FB=db.ref('schedule_v3');
 
+document.getElementById('d4').textContent='4. FB.on: registered';
 FB.on('value',function(snap){
+document.getElementById('d5').textContent='5. Data received ✓';
   var raw=snap.val();
   if(raw&&raw.blob){
     try{
