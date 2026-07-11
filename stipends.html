@@ -8,7 +8,6 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" async></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js">
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js">
 // ── Week navigation ────────────────────────────────────────────────────────
 var _wkOffset=0;
 function getMondayISO(offset){
@@ -355,8 +354,6 @@ firebase.initializeApp({
 var db=firebase.database();
 var FB=db.ref('schedule_v3');
 
-// Start Firebase listener - called after auth attempt (success or fail)
-function _startFBListener(){
 FB.on('value',function(snap){
   var raw=snap.val();
   if(raw&&raw.blob){
@@ -382,18 +379,10 @@ FB.on('value',function(snap){
   document.getElementById('loading').classList.add('hidden');
   window._fbLoaded=true;
   loadApprovals(function(){render();});
-},function(){
-}
-// Try anonymous auth first, fall back to unauthenticated
-firebase.auth().signInAnonymously().then(function(){
-  _startFBListener();
-}).catch(function(e){
-  console.warn('Anonymous auth unavailable, trying direct read:', e);
-  _startFBListener();
-});
-
+},function(err){
   document.getElementById('live-dot').className='live-dot off';
   document.getElementById('live-lbl').textContent='Offline';
+  document.getElementById('loading').innerHTML='<div style="padding:40px;text-align:center;color:#c00;font-size:13px">Database error: '+err.code+'</div>';
 });
 
 // ── Helpers ────────────────────────────────────────────────────────────────
