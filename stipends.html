@@ -363,6 +363,17 @@ firebase.initializeApp({
 var db=firebase.database();
 var FB=db.ref('schedule_v3');
 
+var PRE_CALENDAR=[
+  {id:'hist_matthew_h', name:'Matthew H', program:'PDI', pdiAdmit:'2025-08-12',pdiDischarge:'2025-08-21',sigAdmit:null,sigDischarge:null},
+  {id:'hist_leslie_k',  name:'Leslie K',  program:'PDI', pdiAdmit:'2025-09-25',pdiDischarge:'2025-10-03',sigAdmit:null,sigDischarge:null},
+  {id:'hist_abbegail_m',name:'Abbegail M',program:'PDI', pdiAdmit:'2025-10-08',pdiDischarge:'2025-10-18',sigAdmit:null,sigDischarge:null},
+  {id:'hist_alex_r',    name:'Alex R',    program:'PDI', pdiAdmit:'2025-12-03',pdiDischarge:'2025-12-12',sigAdmit:null,sigDischarge:null},
+  {id:'hist_carlos_l',  name:'Carlos L',  program:'Both',pdiAdmit:'2026-03-23',pdiDischarge:'2026-03-31',sigAdmit:'2026-04-01',sigDischarge:'2026-04-01'},
+  {id:'hist_jessica_c', name:'Jessica C', program:'Both',pdiAdmit:'2026-04-04',pdiDischarge:'2026-04-21',sigAdmit:'2026-04-14',sigDischarge:'2026-04-21'},
+  {id:'hist_george_w',  name:'George W',  program:'Both',pdiAdmit:'2026-04-11',pdiDischarge:'2026-04-22',sigAdmit:'2026-04-24',sigDischarge:'2026-05-18'}
+];
+DATA={clients:PRE_CALENDAR.slice(),events:[],providers:{},services:[],mealServices:[]};
+
 FB.on('value',function(snap){
   var raw=snap.val();
   if(raw&&raw.blob){
@@ -850,31 +861,14 @@ function toggleProvApproval(apvKey,btnId){
 }
 
 function render(){
-  try{
-    var D=computeStipends();
-    window._lastD=D;
-    // Show debug in summary tab
-    var ts=document.getElementById('tab-summary');
-    if(ts){ts.innerHTML='<div style="padding:20px;font-family:monospace;font-size:13px;color:#333;background:#fff;margin:20px;border-radius:8px">'+
-      '<b>DEBUG</b><br>'+
-      'Clients: '+DATA.clients.length+'<br>'+
-      'Events: '+DATA.events.length+'<br>'+
-      'LineItems: '+D.lineItems.length+'<br>'+
-      'Weeks: '+D.sortedWeeks.length+'<br>'+
-      'SummaryFinal: '+D.summaryFinal.length+'<br>'+
-      'fltFrom: '+(document.getElementById("flt-from")&&document.getElementById("flt-from").value||'none')+
-      '</div>';}
-    var el=document.getElementById('loading');if(el)el.classList.add('hidden');
-    renderLineItems(D);
-    renderRoster(D);
-    renderByClient(D);
-    renderByStaff(D);
-    renderFilterBadges(D);
-  }catch(e){
-    var ts=document.getElementById('tab-summary');
-    if(ts)ts.innerHTML='<div style="padding:20px;color:red;font-family:monospace">ERROR: '+e.message+'<br>'+e.stack.slice(0,400)+'</div>';
-    var el=document.getElementById('loading');if(el)el.classList.add('hidden');
-  }
+  var D=computeStipends();
+  window._lastD=D;
+  renderSummary(D);
+  renderLineItems(D);
+  renderRoster(D);
+  renderByClient(D);
+  renderByStaff(D);
+  renderFilterBadges(D);
 }
 
 function renderFilterBadges(D){
