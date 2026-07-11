@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><!-- deploy:1783781089 -->
+<meta charset="UTF-8"><!-- deploy:1783780897 -->
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PDI / Signature — Stipend Roster</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -212,6 +212,13 @@ td.money.zero{color:var(--tx3);}
 </style>
 </head>
 <body>
+<script>
+window.onerror=function(msg,src,line,col,err){
+  var d=document.getElementById('loading');
+  if(d)d.innerHTML='<div style="padding:30px;color:#c00;font-size:13px;font-family:monospace"><b>JS Error:</b><br>'+msg+'<br>Line '+line+' Col '+col+'<br>'+(src||'')+'<br><br>'+(err&&err.stack?err.stack.slice(0,300):'')+'</div>';
+  return false;
+};
+</script>
 
 <!-- HEADER -->
 
@@ -344,11 +351,6 @@ td.money.zero{color:var(--tx3);}
 
 <script>
 // ── Firebase ───────────────────────────────────────────────────────────────
-(function(){
-  function _step(n,msg){var el=document.getElementById('loading');if(el)el.innerHTML='<div style="padding:20px;font-size:13px;font-family:monospace">Step '+n+': '+msg+'</div>';}
-  window.onerror=function(m,s,l){_step('ERR','JS Error line '+l+': '+m);return false;};
-  _step(1,'Firebase SDK check: '+(typeof firebase));
-  try{
 firebase.initializeApp({
   apiKey:"AIzaSyCERxntgytkfCHWN7EoAVYVmLBcfWyYZ5A",
   authDomain:"pdi-signature-schedule.firebaseapp.com",
@@ -359,12 +361,9 @@ firebase.initializeApp({
   appId:"1:545049861408:web:1e0bf60ab88497f67a8b45"
 });
 var db=firebase.database();
-  _step(2,'DB initialized, creating ref...');
 var FB=db.ref('schedule_v3');
-  _step(3,'FB ref created, registering listener...');
 
 FB.on('value',function(snap){
-  _step(4,'FB.on fired! snap exists: '+(snap.val()!==null));
   var raw=snap.val();
   if(raw&&raw.blob){
     try{
@@ -384,14 +383,12 @@ FB.on('value',function(snap){
       if(Array.isArray(d.mealServices))DATA.mealServices=d.mealServices;
     }catch(e){console.error(e);}
   }
-  _step(5,'Setting live...');
   document.getElementById('live-dot').className='live-dot on';
   document.getElementById('live-lbl').textContent='Live';
   document.getElementById('loading').classList.add('hidden');
   window._fbLoaded=true;
   loadApprovals(function(){render();});
 },function(err){
-  _step('ERR','Firebase error: '+err.code);
   document.getElementById('live-dot').className='live-dot off';
   document.getElementById('live-lbl').textContent='Offline';
   document.getElementById('loading').innerHTML='<div style="padding:40px;text-align:center;color:#c00;font-size:13px">Database error: '+err.code+'</div>';
@@ -579,18 +576,13 @@ function computeStipends(){
     if(fltTrack!=='PDI'){
 
       // Active Signature clients this week: sigAdmit ≤ wEnd AND (no sigDisch OR sigDisch ≥ wStart)
-      var // 5-day rule cutoffs for billing week (Fri=wStart)
-      var _d1=new Date(wStart+'T12:00:00');_d1.setDate(_d1.getDate()+2);var _wSun=_d1.toISOString().slice(0,10);
-      var _d2=new Date(wStart+'T12:00:00');_d2.setDate(_d2.getDate()+4);var _wTue=_d2.toISOString().slice(0,10);
-      activeSig=DATA.clients.filter(function(c){
+      var activeSig=DATA.clients.filter(function(c){
         var prog=c.program||'';
         if(prog!=='Signature'&&prog!=='Both')return false;
         var admit=toISO(c.sigAdmit);
         var disch=toISO(c.sigDischarge||c.sigDisch);
         if(!admit||admit>wEnd)return false;
         if(disch&&disch<wStart)return false;
-        if(admit>_wSun)return false;
-        if(disch&&disch<_wTue)return false;
         return true;
       });
 
@@ -1302,8 +1294,7 @@ function exportByClientExcel(){
   });
   dlCSV(rows,'Stipend_By_Client.csv');
 }
-
-  }catch(e){_step("CRASH","'+e.message+' line '+e.stack.slice(0,100)");}})();</script>
+</script>
 
 
 
