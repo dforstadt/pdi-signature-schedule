@@ -569,13 +569,18 @@ function computeStipends(){
     if(fltTrack!=='PDI'){
 
       // Active Signature clients this week: sigAdmit ≤ wEnd AND (no sigDisch OR sigDisch ≥ wStart)
-      var activeSig=DATA.clients.filter(function(c){
+      var // 5-day rule cutoffs for billing week (Fri=wStart)
+      var _d1=new Date(wStart+'T12:00:00');_d1.setDate(_d1.getDate()+2);var _wSun=_d1.toISOString().slice(0,10);
+      var _d2=new Date(wStart+'T12:00:00');_d2.setDate(_d2.getDate()+4);var _wTue=_d2.toISOString().slice(0,10);
+      activeSig=DATA.clients.filter(function(c){
         var prog=c.program||'';
         if(prog!=='Signature'&&prog!=='Both')return false;
         var admit=toISO(c.sigAdmit);
         var disch=toISO(c.sigDischarge||c.sigDisch);
         if(!admit||admit>wEnd)return false;
         if(disch&&disch<wStart)return false;
+        if(admit>_wSun)return false;
+        if(disch&&disch<_wTue)return false;
         return true;
       });
 
