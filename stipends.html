@@ -850,14 +850,31 @@ function toggleProvApproval(apvKey,btnId){
 }
 
 function render(){
-  var D=computeStipends();
-  window._lastD=D;
-  renderSummary(D);
-  renderLineItems(D);
-  renderRoster(D);
-  renderByClient(D);
-  renderByStaff(D);
-  renderFilterBadges(D);
+  try{
+    var D=computeStipends();
+    window._lastD=D;
+    var dbg=document.getElementById('loading');
+    if(dbg){dbg.style.display='block';dbg.style.padding='20px';dbg.style.fontSize='12px';dbg.style.color='#333';
+      dbg.innerHTML='Clients: '+DATA.clients.length+' | Events: '+DATA.events.length+' | LineItems: '+D.lineItems.length+' | Weeks: '+D.sortedWeeks.length+'<br>fltFrom: '+(document.getElementById('flt-from')&&document.getElementById('flt-from').value||'none');
+    }
+    setTimeout(function(){
+      try{
+        var el=document.getElementById('loading');if(el)el.classList.add('hidden');
+        renderSummary(D);
+        renderLineItems(D);
+        renderRoster(D);
+        renderByClient(D);
+        renderByStaff(D);
+        renderFilterBadges(D);
+      }catch(e2){
+        var el2=document.getElementById('loading');
+        if(el2){el2.style.display='block';el2.innerHTML='Render error: '+e2.message+'<br>'+e2.stack.slice(0,200);}
+      }
+    },100);
+  }catch(e){
+    var el=document.getElementById('loading');
+    if(el){el.style.display='block';el.innerHTML='computeStipends error: '+e.message+'<br>'+e.stack.slice(0,200);}
+  }
 }
 
 function renderFilterBadges(D){
