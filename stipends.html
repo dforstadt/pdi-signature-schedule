@@ -821,7 +821,7 @@ function renderByStaff(D){
         '<td style="padding:7px 10px;text-align:right;border-top:.5px solid var(--bd)">'+fmt$(r.sigWkly)+'</td>'+
         '<td style="padding:7px 10px;text-align:right;border-top:.5px solid var(--bd)">'+fmt$(r.pdi)+'</td>'+
         '<td style="padding:7px 14px;text-align:center;border-top:.5px solid var(--bd)">'+
-          '<button id="'+bid+'" onclick="toggleWeekApproval(''+apvKey(staff,wk)+'',''+bid+'')" '+
+          '<button id="'+bid+'" onclick="toggleWeekApproval(\''+apvKey(staff,wk)+'\'\,\''+bid+'\')" '+
             'style="padding:5px 14px;border-radius:16px;border:1.5px solid '+(apvd?'#1D9E75':'var(--bd2)')+';'+
             'background:'+(apvd?'#1D9E75':'transparent')+';color:'+(apvd?'#fff':'var(--tx3)')+';'+
             'cursor:pointer;font-size:11px;font-weight:600;font-family:var(--f);min-width:90px;transition:all .15s">'+
