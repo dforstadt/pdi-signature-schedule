@@ -212,13 +212,6 @@ td.money.zero{color:var(--tx3);}
 </style>
 </head>
 <body>
-<script>
-window.onerror=function(msg,src,line,col,err){
-  var d=document.getElementById('loading');
-  if(d)d.innerHTML='<div style="padding:30px;color:#c00;font-size:13px;font-family:monospace"><b>JS Error:</b><br>'+msg+'<br>Line '+line+' Col '+col+'<br>'+(src||'')+'<br><br>'+(err&&err.stack?err.stack.slice(0,300):'')+'</div>';
-  return false;
-};
-</script>
 
 <!-- HEADER -->
 
