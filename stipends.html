@@ -344,6 +344,11 @@ td.money.zero{color:var(--tx3);}
 
 <script>
 // ── Firebase ───────────────────────────────────────────────────────────────
+(function(){
+  function _step(n,msg){var el=document.getElementById('loading');if(el)el.innerHTML='<div style="padding:20px;font-size:13px;font-family:monospace">Step '+n+': '+msg+'</div>';}
+  window.onerror=function(m,s,l){_step('ERR','JS Error line '+l+': '+m);return false;};
+  _step(1,'Firebase SDK check: '+(typeof firebase));
+  try{
 firebase.initializeApp({
   apiKey:"AIzaSyCERxntgytkfCHWN7EoAVYVmLBcfWyYZ5A",
   authDomain:"pdi-signature-schedule.firebaseapp.com",
@@ -354,9 +359,12 @@ firebase.initializeApp({
   appId:"1:545049861408:web:1e0bf60ab88497f67a8b45"
 });
 var db=firebase.database();
+  _step(2,'DB initialized, creating ref...');
 var FB=db.ref('schedule_v3');
+  _step(3,'FB ref created, registering listener...');
 
 FB.on('value',function(snap){
+  _step(4,'FB.on fired! snap exists: '+(snap.val()!==null));
   var raw=snap.val();
   if(raw&&raw.blob){
     try{
@@ -376,12 +384,14 @@ FB.on('value',function(snap){
       if(Array.isArray(d.mealServices))DATA.mealServices=d.mealServices;
     }catch(e){console.error(e);}
   }
+  _step(5,'Setting live...');
   document.getElementById('live-dot').className='live-dot on';
   document.getElementById('live-lbl').textContent='Live';
   document.getElementById('loading').classList.add('hidden');
   window._fbLoaded=true;
   loadApprovals(function(){render();});
 },function(err){
+  _step('ERR','Firebase error: '+err.code);
   document.getElementById('live-dot').className='live-dot off';
   document.getElementById('live-lbl').textContent='Offline';
   document.getElementById('loading').innerHTML='<div style="padding:40px;text-align:center;color:#c00;font-size:13px">Database error: '+err.code+'</div>';
@@ -1292,7 +1302,8 @@ function exportByClientExcel(){
   });
   dlCSV(rows,'Stipend_By_Client.csv');
 }
-</script>
+
+  }catch(e){_step("CRASH","'+e.message+' line '+e.stack.slice(0,100)");}})();</script>
 
 
 
