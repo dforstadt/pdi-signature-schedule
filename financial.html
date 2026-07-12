@@ -309,6 +309,102 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
     </div>
   </div>
 
+
+  <!-- Margin Variability Drivers -->
+  <div class="glass full-col">
+    <div class="sec-h">
+      <div class="sec-h-left">
+        <div class="sec-title">Margin Variability Factors</div>
+        <div class="sec-sub">What drives the 3.5pp spread in PDI episode margins (55.6% – 59.1%)</div>
+      </div>
+    </div>
+    <div style="padding:18px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px">
+
+      <!-- Factor 1: Episode Length -->
+      <div style="background:rgba(55,138,221,.06);border-radius:12px;padding:16px;border:.5px solid rgba(55,138,221,.2)">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <div style="width:28px;height:28px;border-radius:50%;background:rgba(55,138,221,.15);display:flex;align-items:center;justify-content:center;font-size:14px">📅</div>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--pdi)">Episode Length</div>
+            <div style="font-size:9px;color:var(--tx3);margin-top:1px">Strongest driver · r = −0.54</div>
+          </div>
+          <div style="margin-left:auto;font-size:10px;font-weight:700;color:var(--pdi);background:rgba(55,138,221,.12);padding:2px 8px;border-radius:20px">Primary</div>
+        </div>
+        <div style="font-size:11px;color:var(--tx2);line-height:1.7">
+          Each additional <b>weekday</b> costs <b style="color:var(--red)">−0.54pp</b> margin<br>
+          Each additional <b>weekend day</b> costs <b style="color:var(--red)">−0.32pp</b> margin<br>
+          Each additional <b>full week</b> costs −3.8pp margin ($2,625)<br><br>
+          <span style="color:var(--tx3)">Range in dataset: 9 days (Leslie K, Carlos L) → 18 days (Jessica C)</span>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:6px;font-size:10px">
+          <span style="background:rgba(29,158,117,.12);color:var(--green);padding:2px 8px;border-radius:20px;font-weight:600">Minimize: target 9–10 day protocol</span>
+        </div>
+      </div>
+
+      <!-- Factor 2: Wellness Sessions -->
+      <div style="background:rgba(127,119,221,.06);border-radius:12px;padding:16px;border:.5px solid rgba(127,119,221,.2)">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <div style="width:28px;height:28px;border-radius:50%;background:rgba(127,119,221,.15);display:flex;align-items:center;justify-content:center;font-size:14px">🧘</div>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--sig)">Wellness Sessions</div>
+            <div style="font-size:9px;color:var(--tx3);margin-top:1px">Secondary driver · r = −0.28</div>
+          </div>
+          <div style="margin-left:auto;font-size:10px;font-weight:700;color:var(--sig);background:rgba(127,119,221,.12);padding:2px 8px;border-radius:20px">Secondary</div>
+        </div>
+        <div style="font-size:11px;color:var(--tx2);line-height:1.7">
+          Each additional session costs <b style="color:var(--red)">−0.43pp</b> margin ($300)<br>
+          Wellness = <b>38%</b> of all variable costs (largest single variable)<br>
+          Standard: <b>2/week</b> · Range in dataset: <b>2–11 sessions</b><br><br>
+          <span style="color:var(--tx3)">Michael F: 11 sessions (+$2,700 vs 2-session baseline). PBWI care coordination is in the package; each direct session is $300.</span>
+        </div>
+        <div style="margin-top:10px;font-size:10px">
+          <span style="background:rgba(29,158,117,.12);color:var(--green);padding:2px 8px;border-radius:20px;font-weight:600">Hold to 2/week standard to protect margin</span>
+        </div>
+      </div>
+
+      <!-- Factor 3: Weekday/Weekend Mix -->
+      <div style="background:rgba(217,119,6,.06);border-radius:12px;padding:16px;border:.5px solid rgba(217,119,6,.2)">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <div style="width:28px;height:28px;border-radius:50%;background:rgba(217,119,6,.15);display:flex;align-items:center;justify-content:center;font-size:14px">📆</div>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--amber)">Weekday / Weekend Mix</div>
+            <div style="font-size:9px;color:var(--tx3);margin-top:1px">Structural · tied to admit date</div>
+          </div>
+          <div style="margin-left:auto;font-size:10px;font-weight:700;color:var(--amber);background:rgba(217,119,6,.12);padding:2px 8px;border-radius:20px">Structural</div>
+        </div>
+        <div style="font-size:11px;color:var(--tx2);line-height:1.7">
+          <b>Weekday:</b> culinary $150 + training $150 + ancillary $75 = <b>$375/day</b><br>
+          <b>Weekend:</b> culinary $150 (ordering) + ancillary $75 = <b>$225/day</b> (no training)<br>
+          Weekend days cost <b>$150 less</b> per day than weekdays<br><br>
+          <span style="color:var(--tx3)">Admitting Friday → more weekend days → slightly better margin. Admitting Monday → more high-cost weekdays.</span>
+        </div>
+        <div style="margin-top:10px;font-size:10px">
+          <span style="background:rgba(217,119,6,.12);color:var(--amber);padding:2px 8px;border-radius:20px;font-weight:600">Minor effect — $150/extra weekend vs weekday</span>
+        </div>
+      </div>
+
+      <!-- Summary / Optimization -->
+      <div style="background:rgba(29,158,117,.06);border-radius:12px;padding:16px;border:.5px solid rgba(29,158,117,.2)">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <div style="width:28px;height:28px;border-radius:50%;background:rgba(29,158,117,.15);display:flex;align-items:center;justify-content:center;font-size:14px">📊</div>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--green)">Margin Optimization</div>
+            <div style="font-size:9px;color:var(--tx3);margin-top:1px">Variable cost breakdown · avg episode</div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--tx2);line-height:1.9">
+          <div style="display:flex;justify-content:space-between"><span>Culinary / Food</span><span><b>$1,733</b> <span style="color:var(--tx3)">(28%)</span></span></div>
+          <div style="display:flex;justify-content:space-between"><span>Wellness Sessions</span><span><b>$2,333</b> <span style="color:var(--tx3)">(38%)</span></span></div>
+          <div style="display:flex;justify-content:space-between"><span>Personal Training</span><span><b>$1,250</b> <span style="color:var(--tx3)">(20%)</span></span></div>
+          <div style="display:flex;justify-content:space-between"><span>Ancillary ($75/day)</span><span><b>$867</b> <span style="color:var(--tx3)">(14%)</span></span></div>
+          <div style="display:flex;justify-content:space-between;border-top:.5px solid var(--bd);margin-top:6px;padding-top:6px;font-weight:700"><span>Total Variable (avg)</span><span style="color:var(--amber)">$6,183</span></div>
+        </div>
+        <div style="margin-top:8px;font-size:10px;color:var(--tx3)">Fixed costs $23,738 are identical across all episodes and do not influence margin variability.</div>
+      </div>
+
+    </div>
+  </div>
+
 </div><!-- /tab-pdi -->
 
 <!-- ══════════════════════════════════════════════════════════════════ -->
