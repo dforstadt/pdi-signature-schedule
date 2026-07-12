@@ -397,7 +397,7 @@ FB.on('value',function(snap){
     }catch(e){console.error(e);}
   }
   document.getElementById('live-dot').className='live-dot on';
-  document.getElementById('live-lbl').textContent='Live';
+  document.getElementById('live-lbl').textContent='Live C:'+DATA.clients.length+' E:'+DATA.events.length;
   document.getElementById('loading').classList.add('hidden');
   window._fbLoaded=true;
   loadApprovals(function(){render();});
