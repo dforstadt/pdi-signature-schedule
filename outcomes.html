@@ -560,7 +560,11 @@ firebase.database().ref('schedule_v3').on('value',function(snap){
   document.getElementById('llbl').textContent='Live';
   var raw=snap.val(),clients=[];
   if(raw&&raw.blob){try{var d=JSON.parse(raw.blob);if(Array.isArray(d.clients))clients=d.clients;}catch(e){console.error(e);}}
-  render(compute(buildEpisodes(clients)));
+  try{
+    render(compute(buildEpisodes(clients)));
+  }catch(e){
+    document.getElementById('loading').innerHTML='<div style="padding:30px;color:red;font-family:monospace;font-size:12px"><b>Error:</b> '+e.message+'<br>'+e.stack.slice(0,400)+'</div>';
+  }
 },function(err){
   document.getElementById('ldot').className='ldot';
   document.getElementById('llbl').textContent='Offline';
