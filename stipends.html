@@ -216,8 +216,9 @@ td.money.zero{color:var(--tx3);}
 <body>
 <script>
 window.onerror=function(msg,src,line,col,err){
-  var d=document.getElementById('loading');
-  if(d)d.innerHTML='<div style="padding:30px;color:#c00;font-size:13px;font-family:monospace"><b>JS Error:</b><br>'+msg+'<br>Line '+line+' Col '+col+'<br>'+(src||'')+'<br><br>'+(err&&err.stack?err.stack.slice(0,300):'')+'</div>';
+  var e=document.getElementById('_err');
+  if(!e){e=document.createElement('div');e.id='_err';e.style.cssText='position:fixed;top:60px;left:0;right:0;background:#fff0f0;border:2px solid #c00;padding:16px;z-index:9999;font-size:12px;font-family:monospace;white-space:pre-wrap';document.body.appendChild(e);}
+  e.innerHTML='<b>JS Error line '+line+':</b> '+msg+'\n'+(err&&err.stack?err.stack.slice(0,400):'');
   return false;
 };
 </script>
@@ -863,14 +864,20 @@ function toggleProvApproval(apvKey,btnId){
 }
 
 function render(){
-  var D=computeStipends();
-  window._lastD=D;
-  renderSummary(D);
-  renderLineItems(D);
-  renderRoster(D);
-  renderByClient(D);
-  renderByStaff(D);
-  renderFilterBadges(D);
+  try{
+    var D=computeStipends();
+    window._lastD=D;
+    renderSummary(D);
+    renderLineItems(D);
+    renderRoster(D);
+    renderByClient(D);
+    renderByStaff(D);
+    renderFilterBadges(D);
+  }catch(e){
+    var er=document.getElementById('_err');
+    if(!er){er=document.createElement('div');er.id='_err';er.style.cssText='position:fixed;top:60px;left:0;right:0;background:#fff0f0;border:2px solid #c00;padding:16px;z-index:9999;font-size:12px;font-family:monospace;white-space:pre-wrap';document.body.appendChild(er);}
+    er.innerHTML='<b>render() error:</b> '+e.message+'\n'+(e.stack?e.stack.slice(0,500):'');
+  }
 }
 
 function renderFilterBadges(D){
