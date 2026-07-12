@@ -84,6 +84,8 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
 .add-row{padding:10px 14px}
 .add-btn{width:100%;padding:7px;background:transparent;border:1px dashed rgba(139,115,85,.4);border-radius:8px;font-size:11px;color:var(--accent);cursor:pointer;font-family:var(--f);font-weight:600}
 .add-btn:hover{background:rgba(139,115,85,.06);border-color:var(--accent)}
+.reset-btn{padding:6px 14px;background:transparent;border:1px solid rgba(139,115,85,.35);border-radius:8px;font-size:11px;color:var(--tx3);cursor:pointer;font-family:var(--f);font-weight:500;display:inline-flex;align-items:center;gap:5px;transition:all .15s}
+.reset-btn:hover{background:rgba(139,115,85,.08);border-color:var(--accent);color:var(--tx)}
 
 /* Input group */
 .inp-group{display:flex;flex-direction:column;gap:5px}
@@ -224,6 +226,7 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
     <div class="glass">
       <div class="sec-h">
         <div class="sec-h-left"><div class="sec-title">PDI Assumptions</div><div class="sec-sub">Episode-level inputs — pre-filled from actual schedules</div></div>
+        <button class="reset-btn" onclick="resetPDI()" title="Restore original values">↺ Reset</button>
       </div>
       <div class="assumptions">
         <div class="inp-group"><label>Episode Fee (Revenue)</label><input type="number" id="pdi-a-rev" value="70000" step="1000" oninput="calcPDI()"></div>
@@ -344,7 +347,7 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
   <div class="three-col">
     <!-- Step-Down Assumptions -->
     <div class="glass">
-      <div class="sec-h"><div class="sec-h-left"><div class="sec-title">Phase Assumptions</div><div class="sec-sub">Episode-level inputs</div></div></div>
+      <div class="sec-h"><div class="sec-h-left"><div class="sec-title">Phase Assumptions</div><div class="sec-sub">Episode-level inputs</div></div><button class="reset-btn" onclick="resetStep()" title="Restore original values">↺ Reset</button></div>
       <div class="assumptions" style="grid-template-columns:1fr">
         <div class="inp-group"><label>PDI Fee (Phase 1)</label><input type="number" id="step-a-pdi" value="70000" step="1000" oninput="calcStep()"></div>
         <div class="inp-group"><label>PDI Length (days)</label><input type="number" id="step-a-pdi-days" value="10" step="1" oninput="calcStep()"></div>
@@ -450,7 +453,7 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
 
   <div class="two-col">
     <div class="glass">
-      <div class="sec-h"><div class="sec-h-left"><div class="sec-title">Signature Assumptions</div><div class="sec-sub">Weekly per-client inputs</div></div></div>
+      <div class="sec-h"><div class="sec-h-left"><div class="sec-title">Signature Assumptions</div><div class="sec-sub">Weekly per-client inputs</div></div><button class="reset-btn" onclick="resetSig()" title="Restore original values">↺ Reset</button></div>
       <div class="assumptions">
         <div class="inp-group"><label>Weekly Rate / Client</label><input type="number" id="sig-a-rev" value="21000" step="500" oninput="calcSig()"></div>
         <div class="inp-group"><label>Daily Rate</label><input type="number" id="sig-a-day" value="3000" step="100" oninput="calcSig()"></div>
@@ -527,7 +530,7 @@ var DATA = {
     {cat:'Daily — Culinary', name:'Culinary / Chef + Food (weekdays)', note:'$150/day × 5 weekdays — chef model', amt:750},
     {cat:'Daily — Culinary', name:'Weekend Food — Ordering ($150/day × 2)', note:'$300/weekend · same $150/day rate, ordering only', amt:300},
     {cat:'Daily — Wellness', name:'Wellness Direct Services (2/week × $300/hr)', note:'Care coordination included in PBWI package · direct service hour billed separately at $300 each · 2 interventions/week (massage, acupuncture, yoga, Vielight, etc.)', amt:600},
-    {cat:'Daily — Ancillary', name:'Client Ancillary Needs ($75/day × ALL days)', note:'Every day including weekends · 10-day episode = $750 · adjust for actual length', amt:750},
+    {cat:'Daily — Ancillary', name:'Client Ancillary Needs ($75/day × 10 days)', note:'$75 × 10 days = $750 · includes all days, weekdays and weekends', amt:750},
   ],
   stepPdi: [
     {cat:'Fixed — Clinical', name:'Dr. Forstadt — Program Direction', note:'Flat fee per person', amt:3000},
@@ -543,7 +546,7 @@ var DATA = {
     {cat:'Daily — Culinary', name:'Culinary / Chef + Food (weekdays)', note:'$150/day × 5 weekdays', amt:750},
     {cat:'Daily — Culinary', name:'Weekend Food — Ordering ($150/day × 2)', note:'$300/weekend', amt:300},
     {cat:'Daily — Wellness', name:'Wellness Direct Services (2/week × $300/hr)', note:'Care coordination in PBWI package · direct service hour billed separately at $300 each', amt:600},
-    {cat:'Daily — Ancillary', name:'Client Ancillary Needs ($75/day × ALL days)', note:'Every day including weekends · 10-day episode = $750', amt:750},
+    {cat:'Daily — Ancillary', name:'Client Ancillary Needs ($75/day × 10 days)', note:'$75 × 10 days = $750 · includes all days', amt:750},
   ],
   stepSig: [
     {cat:'Medical', name:'PBWI — Medical Follow-Up', note:'1/wk', amt:1350},
@@ -852,6 +855,35 @@ firebase.database().ref('schedule_v3').once('value',function(snap){
   document.getElementById('llbl').textContent='Offline';
   calcAll();
 });
+
+// ── Reset functions ────────────────────────────────────────────────────────
+function resetPDI(){
+  lines.pdi=clone(DATA.pdi);
+  document.getElementById('pdi-a-rev').value=70000;
+  document.getElementById('pdi-a-days').value=12;
+  document.getElementById('pdi-a-eps').value=document.getElementById('pdi-a-eps').value;
+  document.getElementById('pdi-a-goal').value=44;
+  renderLines('pdi-cost-body','pdi',false);calcPDI();
+}
+function resetStep(){
+  lines.stepPdi=clone(DATA.stepPdi);
+  lines.stepSig=clone(DATA.stepSig);
+  document.getElementById('step-a-pdi').value=70000;
+  document.getElementById('step-a-pdi-days').value=12;
+  document.getElementById('step-a-sig-wk').value=21000;
+  document.getElementById('step-a-sig-wks').value=4;
+  document.getElementById('step-a-goal').value=44;
+  renderLines('step-pdi-body','stepPdi',false);
+  renderLines('step-sig-body','stepSig',true);
+  calcStep();
+}
+function resetSig(){
+  document.getElementById('sig-a-scenario').value='full';
+  document.getElementById('sig-a-rev').value=21000;
+  document.getElementById('sig-a-day').value=3000;
+  document.getElementById('sig-a-goal').value=44;
+  applySigScenario();calcSig();
+}
 
 // Init
 renderAll();
