@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Data Fix</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>body{font-family:sans-serif;padding:40px;max-width:700px}button{padding:10px 20px;margin:8px 4px;border-radius:6px;cursor:pointer;border:none;background:#1e170e;color:#fff;font-size:14px}.done{background:#1D9E75}pre{background:#f5f5f5;padding:12px;border-radius:6px;font-size:12px;white-space:pre-wrap}</style>
+</head><body>
+<h2>Firebase Data Corrections</h2>
+<p>These fixes update client records in Firebase to match the authoritative program data.</p>
+<div id="log"><pre>Ready. Click a button to apply fix.</pre></div>
+<button onclick="fixAngelaT()">Fix Angela T → program=Both, pdiAdmit=2026-07-03</button>
+<button onclick="fixGeorge()">Fix George → George W, program=Both, PDI/Sig dates</button>
+<button onclick="fixAll()">Fix All (Both Above)</button>
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyCERxntgytkfCHWN7EoAVYVmLBcfWyYZ5A",
+  databaseURL:"https://pdi-signature-schedule-default-rtdb.firebaseio.com",
+  projectId:"pdi-signature-schedule"
+});
+var db=firebase.database();
+var log=document.getElementById('log').querySelector('pre');
+function lg(msg){log.textContent+=msg+'\n';}
+
+function fixAngelaT(){
+  lg('Loading blob...');
+  db.ref('schedule_v3').once('value',function(snap){
+    var raw=snap.val();
+    if(!raw||!raw.blob){lg('ERROR: no blob');return;}
+    var d=JSON.parse(raw.blob);
+    var clients=d.clients||[];
+    var fixed=0;
+    clients.forEach(function(c){
+      if(c.name==='Angela T'){
+        lg('Found Angela T: program='+c.program+' pdiAdmit='+c.pdiAdmit);
+        c.program='Both';
+        c.pdiAdmit='2026-07-03';
+        // Keep sigAdmit as-is (2026-06-25)
+        fixed++;
+        lg('Fixed: program=Both, pdiAdmit=2026-07-03');
+      }
+    });
+    if(!fixed){lg('Angela T not found');return;}
+    d.clients=clients;
+    db.ref('schedule_v3').update({blob:JSON.stringify(d)},function(err){
+      if(err)lg('ERROR: '+err);
+      else{lg('Angela T SAVED successfully ✓');document.querySelector('button').classList.add('done');}
+    });
+  });
+}
+
+function fixGeorge(){
+  lg('Loading blob...');
+  db.ref('schedule_v3').once('value',function(snap){
+    var raw=snap.val();
+    if(!raw||!raw.blob){lg('ERROR: no blob');return;}
+    var d=JSON.parse(raw.blob);
+    var clients=d.clients||[];
+    var fixed=0;
+    clients.forEach(function(c){
+      if(c.name==='George'&&(!c.program||c.program=='')){
+        lg('Found George (orphan): id='+c.id+' program='+c.program);
+        c.name='George W';
+        c.program='Both';
+        c.pdiAdmit='2026-04-11';
+        c.pdiDischarge='2026-04-22';
+        c.sigAdmit='2026-04-24';
+        c.sigDischarge='2026-05-18';
+        fixed++;
+        lg('Fixed: renamed George → George W, program=Both, dates set');
+      }
+    });
+    if(!fixed){lg('Orphan George not found (may already be fixed)');return;}
+    d.clients=clients;
+    db.ref('schedule_v3').update({blob:JSON.stringify(d)},function(err){
+      if(err)lg('ERROR: '+err);
+      else lg('George W SAVED successfully ✓');
+    });
+  });
+}
+
+function fixAll(){fixAngelaT();setTimeout(fixGeorge,2000);}
+</script>
+</body></html>
