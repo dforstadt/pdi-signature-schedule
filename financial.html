@@ -225,7 +225,7 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
       <div style="font-size:12px;font-weight:700;color:var(--pdi);margin-bottom:4px">Based on 9 Actual PDI Episodes (Matthew H through Michael F)</div>
       <div style="font-size:11px;color:var(--tx2);line-height:1.6">
         PBWI PDI package: <b>$10,038</b> (Dr. Flannery medical, brain map, interpretation, report, debriefing, wellness coordination) &nbsp;·&nbsp; Fixed total: <b>~$16,838</b> &nbsp;·&nbsp; 10-day est. total: <b>~$20,300</b> &nbsp;·&nbsp; Margin at $70K: <b style="color:var(--green)">~71%</b><br>
-        Typical services: SCID + full psychometric battery (Dr. Forstadt) · Brain mapping/neurofeedback (PBWI) · Psychiatric eval (Dr. Spaedy) · Medical eval (Dr. Flannery) · Lab panels · ~8–11 clinical sessions (Tara, Dr. Mirella, Nicole)
+        Typical services: SCID + full psychometric battery (Dr. Forstadt) · PBWI PDI package ($10,038): Dr. Flannery medical services, brain map, interpretation, integrated report, debriefing, wellness coordination · Lab panels ($2,000) · Nutritional assessment + follow-up · Staff PDI flat stipends
       </div>
     </div>
   </div>
@@ -379,7 +379,7 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
     <div>
       <div style="font-size:12px;font-weight:700;color:var(--sig);margin-bottom:4px">Based on Actual Signature Schedules (Carlos L, George W, Jessica C, Marc C) + Live Firebase Calendar</div>
       <div style="font-size:11px;color:var(--tx2);line-height:1.6">
-        Typical weekly sessions per client: <b>5 Individual Therapy</b> · <b>3–4 Family Therapy</b> · <b>3 Cognitive Remediation</b> · <b>2× Neurofeedback (PBWI)</b> · <b>5 Personal Training (PBWI)</b> · <b>1 Medical Follow-Up (PBWI)</b><br>
+        PBWI weekly package: <b>$3,888/client/wk</b> (2 neurofeedback sessions, Dr. Flannery follow-up & note, wellness care coordination) &nbsp;·&nbsp; PDI+Sig combined package: <b>$13,926</b> per episode &nbsp;·&nbsp; Typical clinical sessions: Individual Therapy · Family Therapy · Cognitive Remediation · Personal Training<br>
         Cost at $21K rate: <b style="color:var(--amber)">$12,813/client/wk → 39% margin</b> (full) &nbsp;·&nbsp; <b style="color:var(--green)">$8,925/client/wk → 57% margin</b> (reduced) &nbsp;·&nbsp; Target 44% requires <b>$11,760 max cost</b>
       </div>
     </div>
@@ -498,8 +498,7 @@ var DATA = {
     {cat:'Fixed — Clinical', name:'Dr. Forstadt — Program Direction', note:'Flat fee per person', amt:3000},
     {cat:'Fixed — Clinical', name:'Psychometric Testing Battery (full protocol)', note:'SCID, MMPI-3, MCMI, WCST, Rorschach, WAIS, projectives', amt:6900},
     {cat:'Fixed — Clinical', name:'  └ Psychometric Assistant (if applicable)', note:'$2,133.33 of testing fee', amt:0},
-    {cat:'Fixed — PBWI', name:'PBWI — Neurofeedback / Brain Mapping', note:'Diagnostic package — PDI phase', amt:2538},
-    {cat:'Fixed — PBWI', name:'PBWI — Medical Follow-Up & Evaluation', note:'PDI phase package', amt:1350},
+    {cat:'Fixed — PBWI', name:'PBWI PDI+Signature Combined Package — Dr. Flannery', note:'PDI: medical services & care coord, medical records review, brain map + interpretation + integrated report, debriefing, wellness coord | +Sig: 2 neurofeedback sessions & care coord, Dr. Flannery follow-up visit & note, wellness care coord', amt:13926},
     {cat:'Fixed — External', name:'Medical Evaluation (Dr. Flannery / Dr. Shaeffer)', note:'PDI phase', amt:1500},
     {cat:'Fixed — Labs', name:'Lab Panels — Comprehensive Bloodwork', note:'Day 1–2', amt:2000},
     {cat:'Fixed — Nutritional', name:'Nutritional / Dietician Assessment', note:'Initial intake', amt:150},
@@ -538,7 +537,7 @@ var DATA = {
     {cat:'Stipend', name:'David Ockman — Executive Oversight', freq:'Weekly flat', amt:250},
     {cat:'Stipend', name:'Gus Hernandez — Tech Oversight', freq:'Weekly flat', amt:250},
     {cat:'Stipend', name:'Nicole Williams — Clinical Liaison', freq:'Weekly flat', amt:250},
-    {cat:'Wellness', name:'PBWI — Wellness Services', freq:'3×/wk', amt:900},
+
     {cat:'Wellness', name:'Alice — Nutritional Follow-Up', freq:'1×/wk', amt:150},
     {cat:'Operational', name:'Kim / Culinary — Fee + Food', freq:'5 days', amt:750},
     {cat:'Operational', name:'Client Ancillary Needs ($75/day)', freq:'5 days', amt:375},
@@ -552,7 +551,7 @@ var DATA = {
     {cat:'Stipend', name:'David Ockman — Executive Oversight', freq:'Weekly flat', amt:250},
     {cat:'Stipend', name:'Gus Hernandez — Tech Oversight', freq:'Weekly flat', amt:250},
     {cat:'Stipend', name:'Nicole Williams — Clinical Liaison', freq:'Weekly flat', amt:250},
-    {cat:'Wellness', name:'PBWI — Wellness Services (1 of 3)', freq:'1×/wk', amt:300},
+
     {cat:'Wellness', name:'Alice — Nutritional Follow-Up', freq:'1×/wk', amt:150},
     {cat:'Operational', name:'Kim / Culinary — Fee + Food', freq:'5 days', amt:750},
     {cat:'Operational', name:'Client Ancillary Needs ($75/day)', freq:'5 days', amt:375},
