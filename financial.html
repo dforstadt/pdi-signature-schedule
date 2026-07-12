@@ -314,7 +314,7 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
         <div class="inp-group"><label>PDI Fee (Phase 1)</label><input type="number" id="step-a-pdi" value="70000" step="1000" oninput="calcStep()"></div>
         <div class="inp-group"><label>PDI Length (days)</label><input type="number" id="step-a-pdi-days" value="10" step="1" oninput="calcStep()"></div>
         <div class="inp-group"><label>Sig Rate / Week (Phase 2)</label><input type="number" id="step-a-sig-wk" value="21000" step="500" oninput="calcStep()"></div>
-        <div class="inp-group"><label>Sig Phase Duration (weeks)</label><input type="number" id="step-a-sig-wks" value="4" step="1" min="1" oninput="calcStep()"></div>
+        <div class="inp-group"><label>Sig Phase Duration (weeks)</label><input type="number" id="step-a-sig-wks" value="4" step="1" min="1" oninput="calcStep()"><div style="font-size:9px;color:var(--tx3);margin-top:3px">Week 1 covered by $13,926 combined package · $3,888/wk applies from Week 2</div></div>
         <div class="inp-group"><label>Profit Goal (%)</label><input type="number" id="step-a-goal" value="44" step="1" oninput="calcStep()"></div>
       </div>
     </div>
@@ -379,7 +379,7 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
     <div>
       <div style="font-size:12px;font-weight:700;color:var(--sig);margin-bottom:4px">Based on Actual Signature Schedules (Carlos L, George W, Jessica C, Marc C) + Live Firebase Calendar</div>
       <div style="font-size:11px;color:var(--tx2);line-height:1.6">
-        PBWI weekly package: <b>$3,888/client/wk</b> (2 neurofeedback sessions, Dr. Flannery follow-up & note, wellness care coordination) &nbsp;·&nbsp; PDI+Sig combined package: <b>$13,926</b> per episode &nbsp;·&nbsp; Typical clinical sessions: Individual Therapy · Family Therapy · Cognitive Remediation · Personal Training<br>
+        PBWI: <b>$3,888/wk</b> every week after the first Signature week &nbsp;·&nbsp; PDI→Sig clients: Week 1 PBWI covered by $13,926 combined package &nbsp;·&nbsp; Sig-standalone clients: $3,888 from Week 1 &nbsp;·&nbsp; Clinical sessions: Individual Therapy · Family Therapy · Cognitive Remediation · Personal Training<br>
         Cost at $21K rate: <b style="color:var(--amber)">$12,813/client/wk → 39% margin</b> (full) &nbsp;·&nbsp; <b style="color:var(--green)">$8,925/client/wk → 57% margin</b> (reduced) &nbsp;·&nbsp; Target 44% requires <b>$11,760 max cost</b>
       </div>
     </div>
@@ -457,9 +457,9 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
     </table>
     <div class="add-row"><button class="add-btn" onclick="addLine('sig')">+ Add Line Item</button></div>
     <div style="padding:10px 16px;font-size:10px;color:var(--tx3);border-top:.5px solid var(--bd);display:flex;gap:20px">
-      <span>✦ PBWI Signature weekly package: <b>$3,888/client/wk</b> (2 neurofeedback sessions, Dr. Flannery follow-up & note, wellness care coordination)</span>
-      <span>✦ PDI+Sig combined package: <b>$13,926</b> per episode (covers PDI phase + first Sig week)</span>
-      <span>✦ To hit <b>44%</b> at $21K/wk rate: max total cost <b>$11,760/client/wk</b></span>
+      <span>✦ PBWI package: <b>$3,888/wk</b> every week after the first Signature week &nbsp;·&nbsp; PDI→Sig clients: Week 1 covered in $13,926 combined package &nbsp;·&nbsp; Sig-standalone clients: $3,888 from Week 1</span>
+      <span>✦ PDI+Sig combined package: <b>$13,926</b> (PDI phase + Sig Week 1) &nbsp;·&nbsp; PDI-only package: <b>$10,038</b></span>
+      <span>✦ To hit <b>44%</b> at $21K/wk: max total cost <b>$11,760/client/wk</b> &nbsp;·&nbsp; At $3,888 PBWI + $7,872 other costs = 44% margin</span>
     </div>
   </div>
 
@@ -498,7 +498,7 @@ var DATA = {
     {cat:'Fixed — Clinical', name:'Dr. Forstadt — Program Direction', note:'Flat fee per person', amt:3000},
     {cat:'Fixed — Clinical', name:'Psychometric Testing Battery (full protocol)', note:'SCID, MMPI-3, MCMI, WCST, Rorschach, WAIS, projectives', amt:6900},
     {cat:'Fixed — Clinical', name:'  └ Psychometric Assistant (if applicable)', note:'$2,133.33 of testing fee', amt:0},
-    {cat:'Fixed — PBWI', name:'PBWI PDI+Signature Combined Package — Dr. Flannery', note:'PDI: medical services & care coord, medical records review, brain map + interpretation + integrated report, debriefing, wellness coord | +Sig: 2 neurofeedback sessions & care coord, Dr. Flannery follow-up visit & note, wellness care coord', amt:13926},
+    {cat:'Fixed — PBWI', name:'PBWI PDI+Signature Package — Dr. Flannery', note:'Covers PDI phase + Week 1 of Signature | PDI: medical services & care coord, medical records review, brain map + interpretation + integrated report, debriefing, wellness coord | Sig Wk 1: 2 neurofeedback sessions & care coord, Dr. Flannery follow-up & note, wellness care coord', amt:13926},
     {cat:'Fixed — External', name:'Medical Evaluation (Dr. Flannery / Dr. Shaeffer)', note:'PDI phase', amt:1500},
     {cat:'Fixed — Labs', name:'Lab Panels — Comprehensive Bloodwork', note:'Day 1–2', amt:2000},
     {cat:'Fixed — Nutritional', name:'Nutritional / Dietician Assessment', note:'Initial intake', amt:150},
@@ -527,7 +527,7 @@ var DATA = {
     {cat:'Operational', name:'Client Ancillary ($75/day)', note:'5 days', amt:375},
   ],
   sigFull: [
-    {cat:'PBWI', name:'PBWI Signature Weekly Package', freq:'Per week', amt:3888},
+    {cat:'PBWI', name:'PBWI Signature Weekly Package ($3,888/wk)', freq:'Every week · Sig-standalone clients start at week 1; PDI→Sig clients: week 2 onward (wk 1 in $13,926 combined pkg)', amt:3888},
     
     {cat:'Clinical Leadership', name:'Dr. Forstadt — Case Mgmt / Clinical Oversight', freq:'Ongoing', amt:3000},
     {cat:'Clinical', name:'Individual Therapy (Tara / Dr. Forstadt / Dr. Mirella)', freq:'5×/wk × $150 · actual avg: 4–5/wk', amt:750},
