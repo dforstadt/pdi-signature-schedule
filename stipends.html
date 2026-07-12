@@ -397,7 +397,7 @@ FB.on('value',function(snap){
     }catch(e){console.error(e);}
   }
   document.getElementById('live-dot').className='live-dot on';
-  document.getElementById('live-lbl').textContent='Live C:'+DATA.clients.length+' E:'+DATA.events.length;
+  document.getElementById('live-lbl').textContent='Live';
   document.getElementById('loading').classList.add('hidden');
   window._fbLoaded=true;
   loadApprovals(function(){render();});
@@ -443,7 +443,7 @@ var PROV_DISPLAY={"Nicole":"Nicole Williams","David Ockman":"David Ockman","Gus 
 function displayName(p){return PROV_DISPLAY[p]||p;}
 
 function computeStipends(){
-  var fltTrack=document.getElementById('flt-track').value;
+  var _ftEl=document.getElementById('flt-track');var fltTrack=_ftEl?_ftEl.value:'';
   var fltFrom =document.getElementById('flt-from').value;
   var fltTo   =document.getElementById('flt-to').value;
 
