@@ -111,11 +111,11 @@ tbody tr:hover td{background:rgba(139,115,85,.05)}
   <!-- Charts Row 2 -->
   <div class="chart-grid">
     <div class="chart-card">
-      <div class="chart-card-title"><span style="width:10px;height:10px;border-radius:50%;background:var(--pdi);display:inline-block"></span>PDI Length of Stay (days)</div>
+      <div class="chart-card-title"><span style="width:10px;height:10px;border-radius:50%;background:var(--pdi);display:inline-block"></span>PDI Length of Stay (days) &nbsp;<span style="color:var(--tx3);font-weight:400;font-size:10px">● = still active (days to date)</span></div>
       <div class="chart-wrap"><canvas id="pdi-los-chart"></canvas></div>
     </div>
     <div class="chart-card">
-      <div class="chart-card-title"><span style="width:10px;height:10px;border-radius:50%;background:var(--sig);display:inline-block"></span>Signature Length of Stay (days)</div>
+      <div class="chart-card-title"><span style="width:10px;height:10px;border-radius:50%;background:var(--sig);display:inline-block"></span>Signature Length of Stay (days) &nbsp;<span style="color:var(--tx3);font-weight:400;font-size:10px">● = still active (days to date)</span></div>
       <div class="chart-wrap"><canvas id="sig-los-chart"></canvas></div>
     </div>
     <div class="chart-card">
@@ -257,16 +257,35 @@ function render(fbClients){
   mkChart('conv-chart',{type:'doughnut',data:{labels:['Eligible, not converted','Converted to Sig','Pre-Sig era (excl.)'],datasets:[{data:[convEligible.length-convEps.length,convEps.length,pdiEps.length-convEligible.length],backgroundColor:['rgba(55,138,221,.4)','rgba(29,158,117,.75)','rgba(180,180,180,.35)'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:8}}}}});
 
   // PDI LOS histogram
-  if(pdiLOS){
-    var pdiVals=pdiEps.filter(function(e){return e.pdiAdmit&&e.pdiDisch;}).map(function(e){return{name:e.name,d:los(e.pdiAdmit,e.pdiDisch)};}).sort(function(a,b){return a.d-b.d;});
-    mkChart('pdi-los-chart',{type:'bar',data:{labels:pdiVals.map(function(e){return e.name;}),datasets:[{data:pdiVals.map(function(e){return e.d;}),backgroundColor:'rgba(55,138,221,.7)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:8}}},y:{beginAtZero:true,title:{display:true,text:'Days',font:{size:9}},ticks:{font:{size:9}}}}}});
-  }
+  // PDI LOS — include all episodes; actives use today as end date (shown in lighter blue)
+  var pdiVals=pdiEps.filter(function(e){return e.pdiAdmit;}).map(function(e){
+    var active=!e.pdiDisch;
+    return{name:e.name,d:los(e.pdiAdmit,e.pdiDisch),active:active};
+  }).sort(function(a,b){return a.d-b.d;});
+  mkChart('pdi-los-chart',{type:'bar',data:{
+    labels:pdiVals.map(function(e){return e.name+(e.active?' ●':'');}),
+    datasets:[{
+      data:pdiVals.map(function(e){return e.d;}),
+      backgroundColor:pdiVals.map(function(e){return e.active?'rgba(55,138,221,.35)':'rgba(55,138,221,.75)';}),
+      borderRadius:4
+    }]
+  },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){var v=pdiVals[ctx.dataIndex];return v.active?ctx.parsed.y+'d (active)':ctx.parsed.y+'d';}}}},scales:{x:{grid:{display:false},ticks:{font:{size:8}}},y:{beginAtZero:true,title:{display:true,text:'Days',font:{size:9}},ticks:{font:{size:9}}}}}});
 
   // Sig LOS histogram
-  if(sigLOS){
-    var sigVals=sigEps.filter(function(e){return e.sigAdmit&&e.sigDisch;}).map(function(e){return{name:e.name,d:los(e.sigAdmit,e.sigDisch)};}).sort(function(a,b){return a.d-b.d;});
-    mkChart('sig-los-chart',{type:'bar',data:{labels:sigVals.map(function(e){return e.name;}),datasets:[{data:sigVals.map(function(e){return e.d;}),backgroundColor:'rgba(127,119,221,.7)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:8}}},y:{beginAtZero:true,title:{display:true,text:'Days',font:{size:9}},ticks:{font:{size:9}}}}}});
-  }
+  // Sig LOS — include all 23 episodes; actives use today as end (shown lighter)
+  var sigVals=sigEps.filter(function(e){return e.sigAdmit;}).map(function(e){
+    var active=!e.sigDisch;
+    var label=e.name+(e.note?' (R)':'')+(active?' ●':'');
+    return{name:label,d:los(e.sigAdmit,e.sigDisch),active:active};
+  }).sort(function(a,b){return a.d-b.d;});
+  mkChart('sig-los-chart',{type:'bar',data:{
+    labels:sigVals.map(function(e){return e.name;}),
+    datasets:[{
+      data:sigVals.map(function(e){return e.d;}),
+      backgroundColor:sigVals.map(function(e){return e.active?'rgba(127,119,221,.35)':'rgba(127,119,221,.8)';}),
+      borderRadius:4
+    }]
+  },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){var v=sigVals[ctx.dataIndex];return v.active?ctx.parsed.y+'d (still active as of today)':ctx.parsed.y+'d';}}}},scales:{x:{grid:{display:false},ticks:{font:{size:8}}},y:{beginAtZero:true,title:{display:true,text:'Days',font:{size:9}},ticks:{font:{size:9}}}}}});
 
   // Cumulative census chart
   var cumPDI=[],cumSig=[],running={pdi:0,sig:0};
