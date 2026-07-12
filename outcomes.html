@@ -195,7 +195,13 @@ function render(fbClients){
   // Merge Firebase discharge dates
   var fbMap={};
   (fbClients||[]).forEach(function(c){if(c.name){var k=c.name.toLowerCase();if(!fbMap[k])fbMap[k]={sigDisch:c.sigDischarge||c.sigDisch||null,pdiDisch:c.pdiDischarge||c.pdiDisch||null};}});
-  ALL_EPISODES.forEach(function(ep){var live=fbMap[ep.name.toLowerCase()]||{};if(!ep.sigDisch&&live.sigDisch)ep.sigDisch=live.sigDisch;if(!ep.pdiDisch&&live.pdiDisch)ep.pdiDisch=live.pdiDisch;});
+  ALL_EPISODES.forEach(function(ep){
+    var live=fbMap[ep.name.toLowerCase()]||{};
+    // Only apply discharge if it falls strictly AFTER this episode's own admit
+    // (prevents Layla S readmission getting the first-admission's sigDisch)
+    if(!ep.sigDisch&&live.sigDisch&&ep.sigAdmit&&live.sigDisch>ep.sigAdmit)ep.sigDisch=live.sigDisch;
+    if(!ep.pdiDisch&&live.pdiDisch&&ep.pdiAdmit&&live.pdiDisch>ep.pdiAdmit)ep.pdiDisch=live.pdiDisch;
+  });
 
   var pdiEps=ALL_EPISODES.filter(function(e){return e.pdiAdmit;}).sort(function(a,b){return a.pdiAdmit>b.pdiAdmit?1:-1;});
   var sigEps=ALL_EPISODES.filter(function(e){return e.sigAdmit;}).sort(function(a,b){return a.sigAdmit>b.sigAdmit?1:-1;});
