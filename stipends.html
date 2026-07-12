@@ -78,7 +78,9 @@ function updateNavBtns(){
   if(nb)nb.disabled=_wkOffset>=0;
 }
 window.addEventListener('DOMContentLoaded',function(){
-  setWeekFilter(getMondayISO(0));
+  clearWeekFilter();
+  var _fe=document.getElementById('flt-from');
+  if(_fe&&!_fe.value)_fe.value='2026-03-27';
 });
 </script>
 <style>
@@ -482,7 +484,7 @@ function computeStipends(){
     var disch=toISO(c.pdiDischarge||c.pdiDisch);
     if(disch)weekSet[getSat(fromISO(disch))]=true;
   });
-  var allWeeks=Object.keys(weekSet).sort();
+  var allWeeks=Object.keys(weekSet).sort().filter(function(w){return w>='2026-03-27';});
   if(fltFrom)allWeeks=allWeeks.filter(function(w){return w>=getSat(fromISO(fltFrom));});
   if(fltTo)  allWeeks=allWeeks.filter(function(w){return w<=getSat(fromISO(fltTo));});
 
