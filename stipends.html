@@ -426,6 +426,7 @@ function clientName(cid){var c=DATA.clients.find(function(c){return c.id===cid;}
 function clientProg(cid){var c=DATA.clients.find(function(c){return c.id===cid;});return c?(c.program||'PDI'):'PDI';}
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
+var currentTab='summary';
 function showTab(tab){
   currentTab=tab;
   document.querySelectorAll('.nav-tab').forEach(function(el){el.classList.remove('active');});
@@ -867,14 +868,14 @@ function render(){
   try{
     var D=computeStipends();
     window._lastD=D;
-    var _lbl=document.getElementById('live-lbl');
-    if(_lbl)_lbl.textContent='LI:'+D.lineItems.length+' Wks:'+D.sortedWeeks.length+' Sum:'+D.summaryFinal.length+' flt:'+(document.getElementById('flt-from')?document.getElementById('flt-from').value:'?');
+
     renderSummary(D);
     renderLineItems(D);
     renderRoster(D);
     renderByClient(D);
     renderByStaff(D);
     renderFilterBadges(D);
+    showTab(currentTab||'summary');
   }catch(e){
     var er=document.getElementById('_err');
     if(!er){er=document.createElement('div');er.id='_err';er.style.cssText='position:fixed;top:60px;left:0;right:0;background:#fff0f0;border:2px solid #c00;padding:16px;z-index:9999;font-size:12px;font-family:monospace;white-space:pre-wrap';document.body.appendChild(er);}
