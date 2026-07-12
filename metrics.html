@@ -419,6 +419,61 @@ function render(M){
       }).join('')+
     '</table>';
   }
+
+  // ── All-time Rosters ──────────────────────────────────────────────────
+  function fmtDate(d){if(!d)return '–';var p=d.split('-');return (p[1]||'?')+'/'+(p[2]||'?')+'/'+(p[0]||'?').slice(2);}
+
+  // PDI Roster (all 16 — includes those who later went to Signature)
+  var pdiRosterEl=document.getElementById('pdi-roster-table');
+  if(pdiRosterEl){
+    var pdiRows=M.pdiEps.slice().sort(function(a,b){return (a.pdiAdmit||'')>(b.pdiAdmit||'')?1:-1;});
+    var ph='<table style="width:100%;border-collapse:collapse;font-size:12px">';
+    ph+='<thead><tr style="background:#1e170e;color:#fff">';
+    ph+='<th style="padding:7px 12px;text-align:left;font-size:10px">#</th>';
+    ph+='<th style="padding:7px 12px;text-align:left;font-size:10px">Client</th>';
+    ph+='<th style="padding:7px 12px;text-align:left;font-size:10px">PDI Admit</th>';
+    ph+='<th style="padding:7px 12px;text-align:left;font-size:10px">PDI Discharge</th>';
+    ph+='<th style="padding:7px 12px;text-align:left;font-size:10px">→ Signature</th>';
+    ph+='</tr></thead><tbody>';
+    pdiRows.forEach(function(c,i){
+      var convSig=c.sigAdmit?'<span style="color:var(--sig);font-weight:600">Yes — '+fmtDate(c.sigAdmit)+'</span>':'<span style="color:var(--tx3)">PDI only</span>';
+      ph+='<tr style="'+(i%2?'background:var(--bg2)':'')+'">'+
+        '<td style="padding:6px 12px;border-top:.5px solid var(--bd);color:var(--tx3)">'+(i+1)+'</td>'+
+        '<td style="padding:6px 12px;border-top:.5px solid var(--bd);font-weight:600">'+c.name+'</td>'+
+        '<td style="padding:6px 12px;border-top:.5px solid var(--bd)">'+fmtDate(c.pdiAdmit)+'</td>'+
+        '<td style="padding:6px 12px;border-top:.5px solid var(--bd)">'+fmtDate(c.pdiDisch)+'</td>'+
+        '<td style="padding:6px 12px;border-top:.5px solid var(--bd)">'+convSig+'</td>'+
+      '</tr>';
+    });
+    ph+='</tbody></table>';
+    pdiRosterEl.innerHTML=ph;
+  }
+
+  // Signature Roster (all 23 — includes those who came from PDI)
+  var sigRosterEl=document.getElementById('sig-roster-table');
+  if(sigRosterEl){
+    var sigRows=M.sigEps.slice().sort(function(a,b){return (a.sigAdmit||'')>(b.sigAdmit||'')?1:-1;});
+    var sh='<table style="width:100%;border-collapse:collapse;font-size:12px">';
+    sh+='<thead><tr style="background:#1e170e;color:#fff">';
+    sh+='<th style="padding:7px 12px;text-align:left;font-size:10px">#</th>';
+    sh+='<th style="padding:7px 12px;text-align:left;font-size:10px">Client</th>';
+    sh+='<th style="padding:7px 12px;text-align:left;font-size:10px">Sig Admit</th>';
+    sh+='<th style="padding:7px 12px;text-align:left;font-size:10px">Sig Discharge</th>';
+    sh+='<th style="padding:7px 12px;text-align:left;font-size:10px">Pathway</th>';
+    sh+='</tr></thead><tbody>';
+    sigRows.forEach(function(c,i){
+      var path=c.pdiAdmit?'<span style="color:var(--pdi);font-weight:600">Via PDI — '+fmtDate(c.pdiAdmit)+'</span>':'<span style="color:var(--sig)">Direct admit</span>';
+      sh+='<tr style="'+(i%2?'background:var(--bg2)':'')+'">'+
+        '<td style="padding:6px 12px;border-top:.5px solid var(--bd);color:var(--tx3)">'+(i+1)+'</td>'+
+        '<td style="padding:6px 12px;border-top:.5px solid var(--bd);font-weight:600">'+c.name+'</td>'+
+        '<td style="padding:6px 12px;border-top:.5px solid var(--bd)">'+fmtDate(c.sigAdmit)+'</td>'+
+        '<td style="padding:6px 12px;border-top:.5px solid var(--bd)">'+fmtDate(c.sigDisch)+'</td>'+
+        '<td style="padding:6px 12px;border-top:.5px solid var(--bd)">'+path+'</td>'+
+      '</tr>';
+    });
+    sh+='</tbody></table>';
+    sigRosterEl.innerHTML=sh;
+  }
 }
 
 function mkBar(id,labels,data,color){
@@ -490,5 +545,33 @@ firebase.database().ref('schedule_v3').on('value',function(snap){
   document.getElementById('loading').innerHTML='<div style="color:var(--tx3)">Unable to connect. Check your connection and refresh.</div>';
 });
 </script>
+
+<div style="max-width:1100px;margin:32px auto;padding:0 20px">
+
+  <!-- PDI All-Time Roster -->
+  <div style="margin-bottom:40px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+      <div style="width:4px;height:24px;background:var(--pdi);border-radius:2px"></div>
+      <div>
+        <div style="font-size:16px;font-weight:700;color:var(--tx)">All-Time PDI Roster</div>
+        <div style="font-size:12px;color:var(--tx3);margin-top:2px">All 16 PDI episodes — includes clients who subsequently enrolled in Signature</div>
+      </div>
+    </div>
+    <div class="tbl-wrap" id="pdi-roster-table"></div>
+  </div>
+
+  <!-- Signature All-Time Roster -->
+  <div style="margin-bottom:40px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+      <div style="width:4px;height:24px;background:var(--sig);border-radius:2px"></div>
+      <div>
+        <div style="font-size:16px;font-weight:700;color:var(--tx)">All-Time Signature Roster</div>
+        <div style="font-size:12px;color:var(--tx3);margin-top:2px">All 23 Signature episodes — includes clients who came via PDI and direct admissions</div>
+      </div>
+    </div>
+    <div class="tbl-wrap" id="sig-roster-table"></div>
+  </div>
+
+</div>
 </body>
 </html>
