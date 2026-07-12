@@ -476,19 +476,23 @@ function computeStipends(){
 
   // ── Weeks derived from events + PDI discharge dates (Sat–Fri billing periods)
   var weekSet={};
-  DATA.events.forEach(function(ev){
-    if(ev.date)weekSet[getSat(fromISO(ev.date))]=true;
-  });
-  // Always include PDI discharge weeks so they appear even with no events that week
-  DATA.clients.forEach(function(c){
-    var prog=c.program||'';
+  // Fixed Friday-Thursday grid: every Friday from launch through today
+  var _gd=fromISO('2026-03-27');
+  var _today=getSat(new Date());
+  while(_gd.toISOString().slice(0,10)<=_today){
+    weekSet[_gd.toISOString().slice(0,10)]=true;
+    _gd.setDate(_gd.getDate()+7);
+  }
+  // Also include PDI discharge weeks not in regular grid
+  DATA.clients.forEach(function(cl){
+    var prog=cl.program||'';
     if(prog!=='PDI'&&prog!=='Both')return;
-    var disch=toISO(c.pdiDischarge||c.pdiDisch);
+    var disch=toISO(cl.pdiDischarge||cl.pdiDisch);
     if(disch)weekSet[getSat(fromISO(disch))]=true;
   });
-  var allWeeks=Object.keys(weekSet).sort().filter(function(w){return w>='2026-03-27';});
+  allWeeks=Object.keys(weekSet).sort().filter(function(w){return w>='2026-03-27';});
   if(fltFrom)allWeeks=allWeeks.filter(function(w){return w>=getSat(fromISO(fltFrom));});
-  if(fltTo)  allWeeks=allWeeks.filter(function(w){return w<=getSat(fromISO(fltTo));});
+  if(fltTo)  allWeeks=allWeeks.filter(function(w){return w<=getSat(fromISO(fltTo));});});
 
   // ── Weekly-type providers: Ockman, Nicole, Gus ──────────────────────────────
   // These three ALWAYS receive the weekly Signature stipend and PDI flat stipend.
