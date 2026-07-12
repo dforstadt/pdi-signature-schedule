@@ -492,7 +492,7 @@ function computeStipends(){
   });
   allWeeks=Object.keys(weekSet).sort().filter(function(w){return w>='2026-03-27';});
   if(fltFrom)allWeeks=allWeeks.filter(function(w){return w>=getSat(fromISO(fltFrom));});
-  if(fltTo)  allWeeks=allWeeks.filter(function(w){return w<=getSat(fromISO(fltTo));});});
+  if(fltTo)  allWeeks=allWeeks.filter(function(w){return w<=getSat(fromISO(fltTo));});
 
   // ── Weekly-type providers: Ockman, Nicole, Gus ──────────────────────────────
   // These three ALWAYS receive the weekly Signature stipend and PDI flat stipend.
