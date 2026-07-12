@@ -224,7 +224,7 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
     <div>
       <div style="font-size:12px;font-weight:700;color:var(--pdi);margin-bottom:4px">Based on 9 Actual PDI Episodes (Matthew H through Michael F)</div>
       <div style="font-size:11px;color:var(--tx2);line-height:1.6">
-        Average episode cost: <b>$19,368</b> &nbsp;·&nbsp; Margin at $70K: <b style="color:var(--green)">~72%</b> &nbsp;·&nbsp; Range: $17,051–$20,750<br>
+        Average episode cost: <b>~$21,100</b> &nbsp;·&nbsp; Margin at $70K: <b style="color:var(--green)">~70%</b> &nbsp;·&nbsp; Includes labs ($2,000), nutritional assessment + follow-up ($300)<br>
         Typical services: SCID + full psychometric battery (Dr. Forstadt) · Brain mapping/neurofeedback (PBWI) · Psychiatric eval (Dr. Spaedy) · Medical eval (Dr. Flannery) · Lab panels · ~8–11 clinical sessions (Tara, Dr. Mirella, Nicole)
       </div>
     </div>
@@ -479,11 +479,12 @@ var DATA = {
     {cat:'PBWI Services', name:'PBWI — Personal Training', note:'~5 sessions across episode', amt:750},
     {cat:'External Clinical', name:'Psychiatric Evaluation (Dr. Spaedy)', note:'1 session per episode — est.', amt:1200},
     {cat:'External Medical', name:'Medical Evaluation (Dr. Flannery / Dr. Shaeffer)', note:'1–2 sessions per episode', amt:1500},
-    {cat:'Labs', name:'Lab Panels (Corrine / Jamel)', note:'Day 1–2 bloodwork', amt:500},
+    {cat:'Labs', name:'Lab Panels (Corrine / Jamel)', note:'Day 1–2 comprehensive bloodwork', amt:2000},
     {cat:'Clinical Sessions', name:'Individual Therapy (Tara / Dr. Mirella)', note:'Avg 4 sessions × $150', amt:600},
     {cat:'Clinical Sessions', name:'Family Therapy (Dr. Mirella / Dr. Hume)', note:'Avg 3 sessions × $150', amt:450},
     {cat:'Clinical Sessions', name:'Cognitive Remediation (Nicole)', note:'Avg 3 sessions × $150', amt:450},
-    {cat:'Clinical Sessions', name:'Nutritional Assessment (Alice)', note:'1 session per episode', amt:150},
+    {cat:'Nutritional', name:'Nutritional / Dietician Assessment (Alice)', note:'Initial assessment', amt:150},
+    {cat:'Nutritional', name:'Nutritional / Dietician Follow-Up (Alice)', note:'Follow-up session', amt:150},
     {cat:'Stipend', name:'Staff PDI Flat Stipends', note:'~6 eligible providers × $250', amt:1500},
     {cat:'Operational', name:'Tech Transport / Outings', note:'Gym, outings across episode', amt:500},
     {cat:'Operational', name:'Client Ancillary Needs', note:'$75/day × avg 10 days', amt:750},
@@ -496,9 +497,10 @@ var DATA = {
     {cat:'PBWI Services', name:'PBWI — Personal Training', note:'PDI phase', amt:750},
     {cat:'External Clinical', name:'Psychiatric Evaluation (Dr. Spaedy)', note:'1 session — PDI phase', amt:1200},
     {cat:'External Medical', name:'Medical Evaluation (Dr. Flannery)', note:'1–2 sessions — PDI phase', amt:1500},
-    {cat:'Labs', name:'Lab Panels', note:'Day 1–2', amt:500},
+    {cat:'Labs', name:'Lab Panels (Corrine / Jamel)', note:'Day 1–2 comprehensive bloodwork', amt:2000},
     {cat:'Clinical Sessions', name:'Individual / Family / Cognitive Sessions', note:'Avg 10 sessions × $150', amt:1500},
-    {cat:'Clinical Sessions', name:'Nutritional Assessment (Alice)', note:'1 session', amt:150},
+    {cat:'Nutritional', name:'Nutritional / Dietician Assessment (Alice)', note:'Initial assessment', amt:150},
+    {cat:'Nutritional', name:'Nutritional / Dietician Follow-Up (Alice)', note:'Follow-up session', amt:150},
     {cat:'Stipend', name:'Staff PDI Flat Stipends', note:'~6 providers × $250', amt:1500},
     {cat:'Operational', name:'Ancillary + Tech Transport', note:'$75/day + outings', amt:1250},
   ],
