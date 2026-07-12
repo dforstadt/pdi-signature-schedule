@@ -491,8 +491,8 @@ var DATA = {
     {cat:'Daily — Training', name:'Personal Training (5 days/week)', note:'$750/wk · $150/day × 5 weekdays', amt:750},
     {cat:'Daily — Culinary', name:'Culinary / Chef + Food (weekdays)', note:'$150/day × 5 weekdays — chef model', amt:750},
     {cat:'Daily — Culinary', name:'Weekend Food — Ordering ($150/day × 2)', note:'$300/weekend · same $150/day rate, ordering only', amt:300},
-    {cat:'Daily — Wellness', name:'PBWI Wellness Interventions (2/week)', note:'Wellness care coordination included in PBWI package · additional hands-on sessions beyond package', amt:0},
-    {cat:'Daily — Ancillary', name:'Client Ancillary Needs', note:'$75/day × episode length', amt:750},
+    {cat:'Daily — Wellness', name:'Wellness Direct Services (2/week × $300/hr)', note:'Care coordination included in PBWI package · direct service hour billed separately at $300 each · 2 interventions/week (massage, acupuncture, yoga, Vielight, etc.)', amt:600},
+    {cat:'Daily — Ancillary', name:'Client Ancillary Needs ($75/day × ALL days)', note:'Every day including weekends · 10-day episode = $750 · adjust for actual length', amt:750},
   ],
   stepPdi: [
     {cat:'Fixed — Clinical', name:'Dr. Forstadt — Program Direction', note:'Flat fee per person', amt:3000},
@@ -507,13 +507,14 @@ var DATA = {
     {cat:'Daily — Training', name:'Personal Training (5 days/week)', note:'$750/wk · PDI phase weeks', amt:750},
     {cat:'Daily — Culinary', name:'Culinary / Chef + Food (weekdays)', note:'$150/day × 5 weekdays', amt:750},
     {cat:'Daily — Culinary', name:'Weekend Food — Ordering ($150/day × 2)', note:'$300/weekend', amt:300},
-    {cat:'Daily — Wellness', name:'PBWI Wellness Interventions (2/week — beyond package)', note:'Additional wellness beyond PBWI package · adjust as needed', amt:0},
-    {cat:'Daily — Ancillary', name:'Client Ancillary Needs', note:'$75/day × PDI days', amt:750},
+    {cat:'Daily — Wellness', name:'Wellness Direct Services (2/week × $300/hr)', note:'Care coordination in PBWI package · direct service hour billed separately at $300 each', amt:600},
+    {cat:'Daily — Ancillary', name:'Client Ancillary Needs ($75/day × ALL days)', note:'Every day including weekends · 10-day episode = $750', amt:750},
   ],
   stepSig: [
     {cat:'Medical', name:'PBWI — Medical Follow-Up', note:'1/wk', amt:1350},
     {cat:'Medical', name:'PBWI — Neurofeedback', note:'2/wk', amt:2538},
     {cat:'Clinical Leadership', name:'Dr. Forstadt — Ongoing Oversight', note:'Weekly', amt:3000},
+    {cat:'Wellness', name:'Wellness Direct Services (2/week × $300/hr)', note:'Direct service hour · care coord in PBWI package', amt:600},
     {cat:'Clinical', name:'Individual Therapy', note:'5/wk × $150', amt:750},
     {cat:'Clinical', name:'Family Therapy', note:'5/wk × $150', amt:750},
     {cat:'Clinical', name:'Specialist', note:'5/wk × $150', amt:750},
@@ -532,6 +533,7 @@ var DATA = {
     
     {cat:'Clinical Leadership', name:'Dr. Forstadt — Case Mgmt / Clinical Oversight', freq:'Ongoing', amt:3000},
     {cat:'Clinical', name:'Individual Therapy (Tara / Dr. Forstadt / Dr. Mirella)', freq:'5×/wk × $150 · actual avg: 4–5/wk', amt:750},
+    {cat:'Wellness', name:'Wellness Direct Services (2/week × $300/hr)', freq:'2/wk · care coordination in PBWI package, direct service billed separately', amt:600},
     {cat:'Clinical', name:'Family Therapy', freq:'5×/wk × $150', amt:750},
     {cat:'Clinical', name:'Specialist', freq:'5×/wk × $150', amt:750},
     {cat:'Wellness', name:'Personal Training (Heather / Anthony)', freq:'5×/wk', amt:750},
@@ -541,12 +543,13 @@ var DATA = {
 
     {cat:'Wellness', name:'Alice — Nutritional Follow-Up', freq:'1×/wk', amt:150},
     {cat:'Operational', name:'Kim / Culinary — Fee + Food', freq:'5 days', amt:750},
-    {cat:'Operational', name:'Client Ancillary Needs ($75/day)', freq:'5 days', amt:375},
+    {cat:'Operational', name:'Client Ancillary Needs ($75/day × 7 days)', freq:'Every day incl. weekends', amt:525},
   ],
   sigReduced: [
     {cat:'Medical', name:'History & Physical (H&P)', freq:'One-time on admission', amt:200},
     {cat:'Clinical Leadership', name:'Dr. Forstadt — Case Mgmt / Clinical Oversight', freq:'Ongoing', amt:3000},
     {cat:'Clinical', name:'Individual Therapy', freq:'5×/wk × $150', amt:750},
+    {cat:'Wellness', name:'Wellness Direct Services (2/week × $300/hr)', freq:'2/wk · direct service hour', amt:600},
     {cat:'Clinical', name:'Family Therapy', freq:'5×/wk × $150', amt:750},
     {cat:'Clinical', name:'Specialist', freq:'5×/wk × $150', amt:750},
     {cat:'Wellness', name:'Personal Training', freq:'5×/wk', amt:750},
@@ -556,7 +559,7 @@ var DATA = {
 
     {cat:'Wellness', name:'Alice — Nutritional Follow-Up', freq:'1×/wk', amt:150},
     {cat:'Operational', name:'Kim / Culinary — Fee + Food', freq:'5 days', amt:750},
-    {cat:'Operational', name:'Client Ancillary Needs ($75/day)', freq:'5 days', amt:375},
+    {cat:'Operational', name:'Client Ancillary Needs ($75/day × 7 days)', freq:'Every day incl. weekends', amt:525},
   ]
 };
 
