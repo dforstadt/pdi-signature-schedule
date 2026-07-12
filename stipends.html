@@ -867,6 +867,8 @@ function render(){
   try{
     var D=computeStipends();
     window._lastD=D;
+    var _lbl=document.getElementById('live-lbl');
+    if(_lbl)_lbl.textContent='LI:'+D.lineItems.length+' Wks:'+D.sortedWeeks.length+' Sum:'+D.summaryFinal.length+' flt:'+(document.getElementById('flt-from')?document.getElementById('flt-from').value:'?');
     renderSummary(D);
     renderLineItems(D);
     renderRoster(D);
