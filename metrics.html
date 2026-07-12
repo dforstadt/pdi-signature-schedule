@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><!-- metrics-v1783870115 -->
+<meta charset="UTF-8"><!-- metrics-v1783873636 -->
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PDI / Signature — Program Metrics</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -213,62 +213,82 @@ var HIST_CLIENTS=PRE_CALENDAR;
 // Build episode list merging historical records + live Firebase calendar data
 // Historical records are the baseline; calendar takes precedence for matching clients
 function buildEpisodes(fbClients){
-  /* Classification rules:
-     - program field is authoritative (PDI, Signature, Both)
-     - Ignore pdiAdmit/sigAdmit on Signature/PDI-only clients even if set in calendar
-     - PRE_CALENDAR fills data for 7 pre-launch clients not in Firebase
-     - Duplicate names = readmissions (e.g. Layla S) counted separately */
-  function norm(c){
-    var p=(c.program||'').trim();
-    var hasPDI=(p==='PDI'||p==='Both');
-    var hasSig=(p==='Signature'||p==='Both');
+  /* Authoritative episode list — 16 PDI, 23 Signature.
+     Program field is authoritative. Pre-launch clients (before May 2026 calendar)
+     are hardcoded. Firebase fills discharge dates and current clients. */
+
+  // Build name→client lookup from Firebase for discharge dates / active status
+  var fbMap={};
+  (fbClients||[]).forEach(function(c){
+    if(!c.name)return;
+    var k=c.name.toLowerCase().trim();
+    if(!fbMap[k])fbMap[k]=c;
+    else if(!fbMap[k+'_2'])fbMap[k+'_2']=c; // readmission
+  });
+  function fbGet(name){return fbMap[name.toLowerCase().trim()]||{};}
+  function d(c,key){var v=c[key];return v||null;}
+
+  // Helper: merge static entry with live Firebase dates
+  function ep(name,prog,pdiAdmit,pdiDisch,sigAdmit,sigDisch){
+    var live=fbGet(name);
     return{
-      id:c.id||c.name,name:c.name,_prog:p,
-      pdiAdmit: hasPDI?(c.pdiAdmit||null):null,
-      pdiDisch:  hasPDI?(c.pdiDischarge||c.pdiDisch||null):null,
-      sigAdmit:  hasSig?(c.sigAdmit||null):null,
-      sigDisch:  hasSig?(c.sigDischarge||c.sigDisch||null):null
+      name:name,_prog:prog,
+      pdiAdmit: pdiAdmit||null,
+      pdiDisch:  pdiDisch||(prog==='PDI'||prog==='Both'?(d(live,'pdiDischarge')||d(live,'pdiDisch')):null),
+      sigAdmit:  sigAdmit||null,
+      sigDisch:  sigDisch||(prog==='Signature'||prog==='Both'?(d(live,'sigDischarge')||d(live,'sigDisch')):null)
     };
   }
-  // ── Authoritative overrides: correct known Firebase data errors ──
-  var PROG_OVERRIDES={
-    'angela t':   {program:'Both', pdiAdmit:'2026-07-03'},
-    'george':     {program:'Both', name:'George W', pdiAdmit:'2026-04-11', pdiDischarge:'2026-04-22', sigAdmit:'2026-04-24', sigDischarge:'2026-05-18'},
-    'george w':   {program:'Both', pdiAdmit:'2026-04-11', pdiDischarge:'2026-04-22', sigAdmit:'2026-04-24', sigDischarge:'2026-05-18'}
-  };
-  // These Signature-only clients had pdiAdmit accidentally set in the calendar — ignore it
-  var SIG_ONLY_NAMES=['tomas w','jarrod w','emma t','david r','arianna b','alex a','peter s','chayse b','louis r','jack s'];
-  var calMap={},extras=[];
-  (fbClients||[]).forEach(function(c){
-    var ck=(c.name||'').toLowerCase().trim();
-    if(SIG_ONLY_NAMES.indexOf(ck)>-1){c=Object.assign({},c,{pdiAdmit:null,pdiDischarge:null,program:'Signature'});}
-    if(PROG_OVERRIDES[ck]){c=Object.assign({},c,PROG_OVERRIDES[ck]);}
-    if(ck==='george'&&PROG_OVERRIDES['george']){c.name='George W';}
-    
-    if(!c.name||!c.program)return;
-    var ep=norm(c),k=c.name.toLowerCase().trim();
-    if(!calMap[k])calMap[k]=ep; else extras.push(ep);
-  });
-  var result=[];
-  PRE_CALENDAR.forEach(function(h){
-    var k=h.name.toLowerCase().trim();
-    var k2=k==='george w'&&!calMap[k]&&calMap['george']?'george':k;
-    if(calMap[k2]){
-      var k=k2;
-      var ep=calMap[k];
-      if(!ep.pdiAdmit&&h.pdiAdmit){ep.pdiAdmit=h.pdiAdmit;ep.pdiDisch=h.pdiDischarge||null;}
-      if(!ep.sigAdmit&&h.sigAdmit){ep.sigAdmit=h.sigAdmit;}
-      if(!ep.sigDisch&&h.sigDischarge){ep.sigDisch=h.sigDischarge;}
-      result.push(ep);delete calMap[k];
-    }else{
-      result.push({id:h.id,name:h.name,_prog:h.program,
-        pdiAdmit:h.pdiAdmit||null,pdiDisch:h.pdiDischarge||null,
-        sigAdmit:h.sigAdmit||null,sigDisch:h.sigDischarge||null,source:'hist'});
-    }
-  });
-  Object.values(calMap).forEach(function(ep){result.push(ep);});
-  extras.forEach(function(ep){result.push(ep);});
+
+  // ── AUTHORITATIVE 16 PDI EPISODES ──────────────────────────────────────
+  // All clients who underwent PDI — regardless of subsequent Signature enrollment
+  var pdiEpisodes=[
+    // PDI-only (7)
+    ep('Matthew H', 'PDI',  '2025-08-12','2025-08-21',null,null),
+    ep('Leslie K',  'PDI',  '2025-09-25','2025-10-03',null,null),
+    ep('Abbegail M','PDI',  '2025-10-08','2025-10-18',null,null),
+    ep('Alex R',    'PDI',  '2025-12-03','2025-12-12',null,null),
+    ep('Francis R', 'PDI',  '2026-05-13','2026-05-22',null,null),
+    ep('Thomas W',  'PDI',  '2026-06-05','2026-06-16',null,null),
+    ep('Norman P',  'PDI',  '2026-06-16','2026-06-25',null,null),
+    // PDI → Signature (9)
+    ep('Carlos L',  'Both', '2026-03-23','2026-03-31','2026-04-01','2026-04-01'),
+    ep('Jessica C', 'Both', '2026-04-04','2026-04-21','2026-04-14','2026-04-21'),
+    ep('George W',  'Both', '2026-04-11','2026-04-22','2026-04-24','2026-05-18'),
+    ep('Marc C',    'Both', '2026-04-17','2026-04-30','2026-05-01',null),
+    ep('Michael F', 'Both', '2026-05-08','2026-05-18','2026-05-19',null),
+    ep('Layla S',   'Both', '2026-05-18','2026-05-28','2026-05-29',null),
+    ep('Kevin C',   'Both', '2026-05-14','2026-05-26','2026-05-27',null),
+    ep('Blake P',   'Both', '2026-06-04','2026-06-12','2026-06-13',null),
+    ep('Angela T',  'Both', '2026-07-03',null,'2026-06-25',null),
+  ];
+
+  // ── AUTHORITATIVE 23 SIGNATURE EPISODES ────────────────────────────────
+  // Direct Signature admits (14) — not counting the 9 PDI→Sig above
+  var sigOnlyEpisodes=[
+    ep('Tomas W',   'Signature',null,null,'2026-05-26',null),
+    ep('Jarrod W',  'Signature',null,null,'2026-05-29',null),
+    ep('Emma T',    'Signature',null,null,'2026-06-01',null),
+    ep('David R',   'Signature',null,null,'2026-06-05',null),
+    ep('Joseph G',  'Signature',null,null,'2026-06-01',null),
+    ep('Arianna B', 'Signature',null,null,'2026-06-15',null),
+    ep('Alex A',    'Signature',null,null,'2026-06-18',null),
+    ep('Peter S',   'Signature',null,null,'2026-06-19',null),
+    ep('George R',  'Signature',null,null,'2026-06-21',null),
+    ep('Chayse B',  'Signature',null,null,'2026-06-29',null),
+    ep('Louis R',   'Signature',null,null,'2026-07-01',null),
+    ep('Jack S',    'Signature',null,null,'2026-07-03',null),
+    ep('William C', 'Signature',null,null,'2026-07-10',null),
+    // Layla S readmission (2nd Signature episode)
+    ep('Layla S',   'Signature',null,null,'2026-07-07',null),
+  ];
+
+  // Combine: all PDI episodes + Signature-only episodes
+  // pdiEpisodes already includes the 9 PDI→Sig clients (they have both pdiAdmit and sigAdmit)
+  var result=pdiEpisodes.concat(sigOnlyEpisodes);
   return result;
+}
+
 }
 
 function compute(episodes){
