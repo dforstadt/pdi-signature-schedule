@@ -224,7 +224,7 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
     <div>
       <div style="font-size:12px;font-weight:700;color:var(--pdi);margin-bottom:4px">Based on 9 Actual PDI Episodes (Matthew H through Michael F)</div>
       <div style="font-size:11px;color:var(--tx2);line-height:1.6">
-        Average episode cost: <b>~$21,100</b> &nbsp;·&nbsp; Margin at $70K: <b style="color:var(--green)">~70%</b> &nbsp;·&nbsp; Includes labs ($2,000), nutritional assessment + follow-up ($300)<br>
+        Fixed costs: <b>~$21,538</b> &nbsp;·&nbsp; + Daily costs (training $750/wk, culinary $1,050/wk, wellness $600/wk) &nbsp;·&nbsp; 10-day episode est. total: <b>~$25,900</b> &nbsp;·&nbsp; Margin at $70K: <b style="color:var(--green)">~63%</b><br>
         Typical services: SCID + full psychometric battery (Dr. Forstadt) · Brain mapping/neurofeedback (PBWI) · Psychiatric eval (Dr. Spaedy) · Medical eval (Dr. Flannery) · Lab panels · ~8–11 clinical sessions (Tara, Dr. Mirella, Nicole)
       </div>
     </div>
@@ -263,7 +263,10 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
     <table class="cost-tbl">
       <thead><tr><th>Line Item</th><th>Category</th><th>Notes</th><th style="text-align:right">Amount</th><th></th></tr></thead>
       <tbody id="pdi-cost-body"></tbody>
-      <tfoot><tr class="grand-total"><td colspan="3">Total Episode Cost</td><td style="text-align:right" id="pdi-cost-total">$0</td><td></td></tr></tfoot>
+      <tfoot>
+        <tr class="subtotal"><td colspan="2" style="color:var(--tx3);font-size:10px">Fixed costs + est. weekly costs × avg episode length (adjust Daily lines for actual duration)</td><td></td><td style="text-align:right" id="pdi-cost-total">$0</td><td></td></tr>
+        <tr class="grand-total"><td colspan="3">Total Episode Cost</td><td style="text-align:right" id="pdi-cost-total-2">$0</td><td></td></tr>
+      </tfoot>
     </table>
     <div class="add-row"><button class="add-btn" onclick="addLine('pdi')">+ Add Line Item</button></div>
   </div>
@@ -471,38 +474,47 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
 
 var DATA = {
   pdi: [
-    // Derived from actual PDI schedules (9 episodes analyzed — avg $19,368/episode)
-    {cat:'Clinical Leadership', name:'Dr. Forstadt — Clinical Oversight, Testing & Case Mgmt', note:'Flat per episode (SCID, MMPI, MCMI, WCST, Rorschach, etc.)', amt:3000},
-    {cat:'PBWI Services', name:'PBWI — Neurofeedback / Brain Mapping', note:'Full protocol package', amt:2538},
-    {cat:'PBWI Services', name:'PBWI — Medical Follow-Up & Evaluation', note:'Full protocol package', amt:1350},
-    {cat:'PBWI Services', name:'PBWI — Wellness Block (Massage, Acupuncture, Yoga)', note:'~5 sessions across episode', amt:900},
-    {cat:'PBWI Services', name:'PBWI — Personal Training', note:'~5 sessions across episode', amt:750},
-    {cat:'External Clinical', name:'Psychiatric Evaluation (Dr. Spaedy)', note:'1 session per episode — est.', amt:1200},
-    {cat:'External Medical', name:'Medical Evaluation (Dr. Flannery / Dr. Shaeffer)', note:'1–2 sessions per episode', amt:1500},
-    {cat:'Labs', name:'Lab Panels (Corrine / Jamel)', note:'Day 1–2 comprehensive bloodwork', amt:2000},
-    {cat:'Clinical Sessions', name:'Individual Therapy (Tara / Dr. Mirella)', note:'Avg 4 sessions × $150', amt:600},
-    {cat:'Clinical Sessions', name:'Family Therapy (Dr. Mirella / Dr. Hume)', note:'Avg 3 sessions × $150', amt:450},
-    {cat:'Clinical Sessions', name:'Cognitive Remediation (Nicole)', note:'Avg 3 sessions × $150', amt:450},
-    {cat:'Nutritional', name:'Nutritional / Dietician Assessment (Alice)', note:'Initial assessment', amt:150},
-    {cat:'Nutritional', name:'Nutritional / Dietician Follow-Up (Alice)', note:'Follow-up session', amt:150},
-    {cat:'Stipend', name:'Staff PDI Flat Stipends', note:'~6 eligible providers × $250', amt:1500},
-    {cat:'Operational', name:'Tech Transport / Outings', note:'Gym, outings across episode', amt:500},
-    {cat:'Operational', name:'Client Ancillary Needs', note:'$75/day × avg 10 days', amt:750},
+    // ── FIXED COSTS (per episode, regardless of length) ───────────────────
+    // Clinical Leadership
+    {cat:'Fixed — Clinical', name:'Dr. Forstadt — Program Direction', note:'Flat fee per person', amt:3000},
+    {cat:'Fixed — Clinical', name:'Psychometric Testing Battery (full protocol)', note:'SCID, MMPI-3, MCMI, WCST, TOVA, Rorschach, WAIS, projectives', amt:6900},
+    {cat:'Fixed — Clinical', name:'  └ Psychometric Assistant (data collection support)', note:'$2,133.33 of testing fee — if applicable', amt:0},
+    // PBWI Diagnostic
+    {cat:'Fixed — PBWI', name:'PBWI — Neurofeedback / Brain Mapping', note:'Diagnostic assessment package', amt:2538},
+    {cat:'Fixed — PBWI', name:'PBWI — Medical Follow-Up & Evaluation', note:'Per episode package', amt:1350},
+    // External Consultants
+    {cat:'Fixed — External', name:'Psychiatric Evaluation (Dr. Spaedy)', note:'Per episode', amt:1200},
+    {cat:'Fixed — External', name:'Medical Evaluation (Dr. Flannery / Dr. Shaeffer)', note:'Per episode', amt:1500},
+    // Labs & Nutrition
+    {cat:'Fixed — Labs', name:'Lab Panels — Comprehensive Bloodwork', note:'Day 1–2 draw + full panel', amt:2000},
+    {cat:'Fixed — Nutritional', name:'Nutritional / Dietician Assessment (Alice)', note:'Initial intake', amt:150},
+    {cat:'Fixed — Nutritional', name:'Nutritional / Dietician Follow-Up (Alice)', note:'Follow-up session', amt:150},
+    // Stipends (PDI flat, no session fees)
+    {cat:'Fixed — Stipend', name:'Staff PDI Flat Stipends', note:'~6 eligible providers × $250 — no per-session fees in PDI', amt:1500},
+    // ── DAILY / WEEKLY COSTS (× episode length) ──────────────────────────
+    {cat:'Daily — Training', name:'Personal Training (5 days/week)', note:'$750/wk · $150/day × 5 weekdays', amt:750},
+    {cat:'Daily — Culinary', name:'Culinary / Chef + Food (weekdays)', note:'$150/day × 5 weekdays — chef model', amt:750},
+    {cat:'Daily — Culinary', name:'Weekend Food — Ordering ($150/day × 2)', note:'$300/weekend · same $150/day rate, ordering only', amt:300},
+    {cat:'Daily — Wellness', name:'PBWI Wellness Interventions (2/week)', note:'Massage, acupuncture, yoga, Vielight, etc. · $300 per intervention × 2', amt:600},
+    {cat:'Daily — Ancillary', name:'Client Ancillary Needs', note:'$75/day × episode length', amt:750},
   ],
   stepPdi: [
-    {cat:'Clinical Leadership', name:'Dr. Forstadt — Clinical Oversight & Testing', note:'Flat per PDI episode', amt:3000},
-    {cat:'PBWI Services', name:'PBWI — Neurofeedback / Brain Mapping', note:'PDI phase package', amt:2538},
-    {cat:'PBWI Services', name:'PBWI — Medical Follow-Up', note:'PDI phase package', amt:1350},
-    {cat:'PBWI Services', name:'PBWI — Wellness (Massage, Acupuncture)', note:'PDI phase package', amt:900},
-    {cat:'PBWI Services', name:'PBWI — Personal Training', note:'PDI phase', amt:750},
-    {cat:'External Clinical', name:'Psychiatric Evaluation (Dr. Spaedy)', note:'1 session — PDI phase', amt:1200},
-    {cat:'External Medical', name:'Medical Evaluation (Dr. Flannery)', note:'1–2 sessions — PDI phase', amt:1500},
-    {cat:'Labs', name:'Lab Panels (Corrine / Jamel)', note:'Day 1–2 comprehensive bloodwork', amt:2000},
-    {cat:'Clinical Sessions', name:'Individual / Family / Cognitive Sessions', note:'Avg 10 sessions × $150', amt:1500},
-    {cat:'Nutritional', name:'Nutritional / Dietician Assessment (Alice)', note:'Initial assessment', amt:150},
-    {cat:'Nutritional', name:'Nutritional / Dietician Follow-Up (Alice)', note:'Follow-up session', amt:150},
-    {cat:'Stipend', name:'Staff PDI Flat Stipends', note:'~6 providers × $250', amt:1500},
-    {cat:'Operational', name:'Ancillary + Tech Transport', note:'$75/day + outings', amt:1250},
+    {cat:'Fixed — Clinical', name:'Dr. Forstadt — Program Direction', note:'Flat fee per person', amt:3000},
+    {cat:'Fixed — Clinical', name:'Psychometric Testing Battery (full protocol)', note:'SCID, MMPI-3, MCMI, WCST, Rorschach, WAIS, projectives', amt:6900},
+    {cat:'Fixed — Clinical', name:'  └ Psychometric Assistant (if applicable)', note:'$2,133.33 of testing fee', amt:0},
+    {cat:'Fixed — PBWI', name:'PBWI — Neurofeedback / Brain Mapping', note:'Diagnostic package — PDI phase', amt:2538},
+    {cat:'Fixed — PBWI', name:'PBWI — Medical Follow-Up & Evaluation', note:'PDI phase package', amt:1350},
+    {cat:'Fixed — External', name:'Psychiatric Evaluation (Dr. Spaedy)', note:'PDI phase', amt:1200},
+    {cat:'Fixed — External', name:'Medical Evaluation (Dr. Flannery / Dr. Shaeffer)', note:'PDI phase', amt:1500},
+    {cat:'Fixed — Labs', name:'Lab Panels — Comprehensive Bloodwork', note:'Day 1–2', amt:2000},
+    {cat:'Fixed — Nutritional', name:'Nutritional / Dietician Assessment (Alice)', note:'Initial intake', amt:150},
+    {cat:'Fixed — Nutritional', name:'Nutritional / Dietician Follow-Up (Alice)', note:'Follow-up', amt:150},
+    {cat:'Fixed — Stipend', name:'Staff PDI Flat Stipends', note:'~6 providers × $250 — no session fees', amt:1500},
+    {cat:'Daily — Training', name:'Personal Training (5 days/week)', note:'$750/wk · PDI phase weeks', amt:750},
+    {cat:'Daily — Culinary', name:'Culinary / Chef + Food (weekdays)', note:'$150/day × 5 weekdays', amt:750},
+    {cat:'Daily — Culinary', name:'Weekend Food — Ordering ($150/day × 2)', note:'$300/weekend', amt:300},
+    {cat:'Daily — Wellness', name:'PBWI Wellness Interventions (2/week)', note:'$600/wk · PDI phase weeks', amt:600},
+    {cat:'Daily — Ancillary', name:'Client Ancillary Needs', note:'$75/day × PDI days', amt:750},
   ],
   stepSig: [
     {cat:'Medical', name:'PBWI — Medical Follow-Up', note:'1/wk', amt:1350},
@@ -644,6 +656,7 @@ function calcPDI(){
   document.getElementById('pdi-kpi-pct').style.color=pc;
   document.getElementById('pdi-cost-badge').textContent=fmt$(cost);
   document.getElementById('pdi-cost-total').textContent=fmt$(cost);
+  var t2=document.getElementById('pdi-cost-total-2');if(t2)t2.textContent=fmt$(cost);
   document.getElementById('pdi-pl-badge').textContent=fmtPct(pct)+' margin';
   setGauge('pdi-gauge',pct,goal);
 
