@@ -239,7 +239,9 @@ function buildEpisodes(fbClients){
   var result=[];
   PRE_CALENDAR.forEach(function(h){
     var k=h.name.toLowerCase().trim();
-    if(calMap[k]){
+    var k2=k==='george w'&&!calMap[k]&&calMap['george']?'george':k;
+    if(calMap[k2]){
+      var k=k2;
       var ep=calMap[k];
       if(!ep.pdiAdmit&&h.pdiAdmit){ep.pdiAdmit=h.pdiAdmit;ep.pdiDisch=h.pdiDischarge||null;}
       if(!ep.sigAdmit&&h.sigAdmit){ep.sigAdmit=h.sigAdmit;}
