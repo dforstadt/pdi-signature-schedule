@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8"><!-- metrics-v1783870115 -->
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PDI / Signature — Program Metrics</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -230,8 +230,21 @@ function buildEpisodes(fbClients){
       sigDisch:  hasSig?(c.sigDischarge||c.sigDisch||null):null
     };
   }
+  // ── Authoritative overrides: correct known Firebase data errors ──
+  var PROG_OVERRIDES={
+    'angela t':   {program:'Both', pdiAdmit:'2026-07-03'},
+    'george':     {program:'Both', name:'George W', pdiAdmit:'2026-04-11', pdiDischarge:'2026-04-22', sigAdmit:'2026-04-24', sigDischarge:'2026-05-18'},
+    'george w':   {program:'Both', pdiAdmit:'2026-04-11', pdiDischarge:'2026-04-22', sigAdmit:'2026-04-24', sigDischarge:'2026-05-18'}
+  };
+  // These Signature-only clients had pdiAdmit accidentally set in the calendar — ignore it
+  var SIG_ONLY_NAMES=['tomas w','jarrod w','emma t','david r','arianna b','alex a','peter s','chayse b','louis r','jack s'];
   var calMap={},extras=[];
   (fbClients||[]).forEach(function(c){
+    var ck=(c.name||'').toLowerCase().trim();
+    if(SIG_ONLY_NAMES.indexOf(ck)>-1){c=Object.assign({},c,{pdiAdmit:null,pdiDischarge:null,program:'Signature'});}
+    if(PROG_OVERRIDES[ck]){c=Object.assign({},c,PROG_OVERRIDES[ck]);}
+    if(ck==='george'&&PROG_OVERRIDES['george']){c.name='George W';}
+    
     if(!c.name||!c.program)return;
     var ep=norm(c),k=c.name.toLowerCase().trim();
     if(!calMap[k])calMap[k]=ep; else extras.push(ep);
