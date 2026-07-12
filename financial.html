@@ -224,7 +224,7 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
     <div>
       <div style="font-size:12px;font-weight:700;color:var(--pdi);margin-bottom:4px">Based on 9 Actual PDI Episodes (Matthew H through Michael F)</div>
       <div style="font-size:11px;color:var(--tx2);line-height:1.6">
-        Fixed costs: <b>~$20,338</b> &nbsp;·&nbsp; + Daily costs (training $750/wk, culinary $1,050/wk, wellness $600/wk) &nbsp;·&nbsp; 10-day episode est. total: <b>~$24,700</b> &nbsp;·&nbsp; Margin at $70K: <b style="color:var(--green)">~65%</b><br>
+        PBWI PDI package: <b>$10,038</b> (Dr. Flannery medical, brain map, interpretation, report, debriefing, wellness coordination) &nbsp;·&nbsp; Fixed total: <b>~$16,838</b> &nbsp;·&nbsp; 10-day est. total: <b>~$20,300</b> &nbsp;·&nbsp; Margin at $70K: <b style="color:var(--green)">~71%</b><br>
         Typical services: SCID + full psychometric battery (Dr. Forstadt) · Brain mapping/neurofeedback (PBWI) · Psychiatric eval (Dr. Spaedy) · Medical eval (Dr. Flannery) · Lab panels · ~8–11 clinical sessions (Tara, Dr. Mirella, Nicole)
       </div>
     </div>
@@ -457,9 +457,9 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
     </table>
     <div class="add-row"><button class="add-btn" onclick="addLine('sig')">+ Add Line Item</button></div>
     <div style="padding:10px 16px;font-size:10px;color:var(--tx3);border-top:.5px solid var(--bd);display:flex;gap:20px">
-      <span>✦ Full scenario (with PBWI): <b>$12,813/client/wk</b> → 39% margin at $21K</span>
-      <span>✦ Reduced (without step-down): <b>$8,925/client/wk</b> → 57% margin at $21K</span>
-      <span>✦ To hit <b>44%</b> at $21K rate: max cost <b>$11,760/client/wk</b></span>
+      <span>✦ PBWI Signature weekly package: <b>$3,888/client/wk</b> (2 neurofeedback sessions, Dr. Flannery follow-up & note, wellness care coordination)</span>
+      <span>✦ PDI+Sig combined package: <b>$13,926</b> per episode (covers PDI phase + first Sig week)</span>
+      <span>✦ To hit <b>44%</b> at $21K/wk rate: max total cost <b>$11,760/client/wk</b></span>
     </div>
   </div>
 
@@ -480,10 +480,7 @@ var DATA = {
     {cat:'Fixed — Clinical', name:'Psychometric Testing Battery (full protocol)', note:'SCID, MMPI-3, MCMI, WCST, TOVA, Rorschach, WAIS, projectives', amt:6900},
     {cat:'Fixed — Clinical', name:'  └ Psychometric Assistant (data collection support)', note:'$2,133.33 of testing fee — if applicable', amt:0},
     // PBWI Diagnostic
-    {cat:'Fixed — PBWI', name:'PBWI — Neurofeedback / Brain Mapping', note:'Diagnostic assessment package', amt:2538},
-    {cat:'Fixed — PBWI', name:'PBWI — Medical Follow-Up & Evaluation', note:'Per episode package', amt:1350},
-    // External Consultants
-    {cat:'Fixed — External', name:'Medical Evaluation (Dr. Flannery / Dr. Shaeffer)', note:'Per episode', amt:1500},
+    {cat:'Fixed — PBWI', name:'PBWI PDI Program Package — Dr. Flannery', note:'Medical services & care coordination · Medical records review · Brain map + interpretation + integrated report · Debriefing (medical & brain map) · Wellness services care coordination', amt:10038},
     // Labs & Nutrition
     {cat:'Fixed — Labs', name:'Lab Panels — Comprehensive Bloodwork', note:'Day 1–2 draw + full panel', amt:2000},
     {cat:'Fixed — Nutritional', name:'Nutritional / Dietician Assessment', note:'Initial intake', amt:150},
@@ -494,7 +491,7 @@ var DATA = {
     {cat:'Daily — Training', name:'Personal Training (5 days/week)', note:'$750/wk · $150/day × 5 weekdays', amt:750},
     {cat:'Daily — Culinary', name:'Culinary / Chef + Food (weekdays)', note:'$150/day × 5 weekdays — chef model', amt:750},
     {cat:'Daily — Culinary', name:'Weekend Food — Ordering ($150/day × 2)', note:'$300/weekend · same $150/day rate, ordering only', amt:300},
-    {cat:'Daily — Wellness', name:'PBWI Wellness Interventions (2/week)', note:'Massage, acupuncture, yoga, Vielight, etc. · $300 per intervention × 2', amt:600},
+    {cat:'Daily — Wellness', name:'PBWI Wellness Interventions (2/week)', note:'Wellness care coordination included in PBWI package · additional hands-on sessions beyond package', amt:0},
     {cat:'Daily — Ancillary', name:'Client Ancillary Needs', note:'$75/day × episode length', amt:750},
   ],
   stepPdi: [
@@ -511,7 +508,7 @@ var DATA = {
     {cat:'Daily — Training', name:'Personal Training (5 days/week)', note:'$750/wk · PDI phase weeks', amt:750},
     {cat:'Daily — Culinary', name:'Culinary / Chef + Food (weekdays)', note:'$150/day × 5 weekdays', amt:750},
     {cat:'Daily — Culinary', name:'Weekend Food — Ordering ($150/day × 2)', note:'$300/weekend', amt:300},
-    {cat:'Daily — Wellness', name:'PBWI Wellness Interventions (2/week)', note:'$600/wk · PDI phase weeks', amt:600},
+    {cat:'Daily — Wellness', name:'PBWI Wellness Interventions (2/week — beyond package)', note:'Additional wellness beyond PBWI package · adjust as needed', amt:0},
     {cat:'Daily — Ancillary', name:'Client Ancillary Needs', note:'$75/day × PDI days', amt:750},
   ],
   stepSig: [
@@ -531,8 +528,8 @@ var DATA = {
     {cat:'Operational', name:'Client Ancillary ($75/day)', note:'5 days', amt:375},
   ],
   sigFull: [
-    {cat:'Medical', name:'PBWI — Medical Follow-Up', freq:'1×/wk', amt:1350},
-    {cat:'Medical', name:'PBWI — Neurofeedback', freq:'2×/wk', amt:2538},
+    {cat:'PBWI', name:'PBWI Signature Weekly Package', freq:'Per week', amt:3888},
+    
     {cat:'Clinical Leadership', name:'Dr. Forstadt — Case Mgmt / Clinical Oversight', freq:'Ongoing', amt:3000},
     {cat:'Clinical', name:'Individual Therapy (Tara / Dr. Forstadt / Dr. Mirella)', freq:'5×/wk × $150 · actual avg: 4–5/wk', amt:750},
     {cat:'Clinical', name:'Family Therapy', freq:'5×/wk × $150', amt:750},
