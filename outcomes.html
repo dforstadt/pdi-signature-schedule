@@ -88,7 +88,7 @@ tbody tr:hover td{background:rgba(139,115,85,.05)}
   <div class="card-grid" id="stat-cards">
     <div class="card pdi"><div class="card-lbl">PDI All-Time</div><div class="card-v" id="c-pdi">—</div><div class="card-sub" id="c-pdi-sub"></div></div>
     <div class="card sig"><div class="card-lbl">Signature All-Time</div><div class="card-v" id="c-sig">—</div><div class="card-sub" id="c-sig-sub"></div></div>
-    <div class="card grn"><div class="card-lbl">PDI → Sig Conversion</div><div class="card-v" id="c-conv">—</div><div class="card-sub" id="c-conv-sub"></div></div>
+    <div class="card grn"><div class="card-lbl">PDI → Sig Conversion</div><div class="card-v" id="c-conv">—</div><div class="card-sub" id="c-conv-sub"></div><div style="font-size:9px;color:var(--tx3);margin-top:4px;line-height:1.3">Of PDI clients admitted after<br>Signature launched (Apr 2026)</div></div>
     <div class="card pdi"><div class="card-lbl">Active PDI</div><div class="card-v" id="c-pdi-act">—</div><div class="card-sub" id="c-pdi-act-sub"></div></div>
     <div class="card sig"><div class="card-lbl">Active Signature</div><div class="card-v" id="c-sig-act">—</div><div class="card-sub" id="c-sig-act-sub"></div></div>
     <div class="card amb"><div class="card-lbl">Avg PDI LOS</div><div class="card-v" id="c-pdi-los">—</div><div class="card-sub" id="c-pdi-los-sub"></div></div>
@@ -139,7 +139,7 @@ tbody tr:hover td{background:rgba(139,115,85,.05)}
   </table></div>
 
   <!-- Conversions -->
-  <div class="sec-head"><div class="sec-bar" style="background:var(--green)"></div><div><div class="sec-title">PDI → Signature Conversions</div><div class="sec-sub">9 of 16 PDI clients enrolled in Signature (56% conversion rate)</div></div></div>
+  <div class="sec-head"><div class="sec-bar" style="background:var(--green)"></div><div><div class="sec-title">PDI → Signature Conversions</div><div class="sec-sub">9 of 12 eligible PDI clients enrolled in Signature — excludes 4 pre-Signature-era PDI clients (Matthew H, Leslie K, Abbegail M, Alex R) who had no opportunity to convert</div></div></div>
   <div class="tbl-wrap"><table>
     <thead><tr><th>#</th><th>Client</th><th>PDI Admit</th><th>PDI Discharge</th><th>Sig Admit</th><th>Gap (days)</th></tr></thead>
     <tbody id="conv-body"></tbody>
@@ -219,8 +219,13 @@ function render(fbClients){
   document.getElementById('c-pdi-sub').textContent=pdiOnly.length+' standalone · '+convEps.length+' →Sig';
   document.getElementById('c-sig').textContent=sigEps.length;
   document.getElementById('c-sig-sub').textContent=(sigEps.length-convEps.length)+' direct · '+convEps.length+' via PDI';
-  document.getElementById('c-conv').textContent=convEps.length+' / '+pdiEps.length;
-  document.getElementById('c-conv-sub').textContent=Math.round(convEps.length/pdiEps.length*100)+'% of PDI clients enrolled in Signature';
+  // Conversion rate: only PDI clients admitted after Signature launched (Apr 1 2026)
+  // OR who actually converted (Carlos L admitted Mar 23 but was first Sig client Apr 1)
+  var SIG_LAUNCH='2026-04-01';
+  var convEligible=pdiEps.filter(function(e){return e.pdiAdmit>=SIG_LAUNCH||e.sigAdmit;});
+  var convRate=convEligible.length?Math.round(convEps.length/convEligible.length*100):0;
+  document.getElementById('c-conv').textContent=convEps.length+' / '+convEligible.length;
+  document.getElementById('c-conv-sub').textContent=convRate+'% conversion rate';
   document.getElementById('c-pdi-act').textContent=pdiActive.length;
   document.getElementById('c-pdi-act-sub').textContent=pdiActive.map(function(e){return e.name;}).join(', ')||'All discharged';
   document.getElementById('c-sig-act').textContent=sigActive.length;
@@ -243,7 +248,7 @@ function render(fbClients){
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:10}}}},scales:{x:{grid:{display:false},ticks:{font:{size:9}}},y:{beginAtZero:true,ticks:{stepSize:1,font:{size:9}}}}}});
 
   // Conversion funnel (doughnut)
-  mkChart('conv-chart',{type:'doughnut',data:{labels:['PDI Only','PDI → Sig'],datasets:[{data:[pdiOnly.length,convEps.length],backgroundColor:['rgba(55,138,221,.4)','rgba(29,158,117,.75)'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:12}}}}});
+  mkChart('conv-chart',{type:'doughnut',data:{labels:['Eligible, not converted','Converted to Sig','Pre-Sig era (excl.)'],datasets:[{data:[convEligible.length-convEps.length,convEps.length,pdiEps.length-convEligible.length],backgroundColor:['rgba(55,138,221,.4)','rgba(29,158,117,.75)','rgba(180,180,180,.35)'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:8}}}}});
 
   // PDI LOS histogram
   if(pdiLOS){
