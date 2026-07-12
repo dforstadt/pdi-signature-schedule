@@ -218,11 +218,23 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
     </div>
   </div>
 
+  <!-- Actual data banner -->
+  <div style="background:rgba(55,138,221,.08);border:.5px solid rgba(55,138,221,.25);border-radius:12px;padding:14px 18px;margin-bottom:18px;display:flex;align-items:flex-start;gap:12px">
+    <div style="font-size:20px;margin-top:1px">📋</div>
+    <div>
+      <div style="font-size:12px;font-weight:700;color:var(--pdi);margin-bottom:4px">Based on 9 Actual PDI Episodes (Matthew H through Michael F)</div>
+      <div style="font-size:11px;color:var(--tx2);line-height:1.6">
+        Average episode cost: <b>$19,368</b> &nbsp;·&nbsp; Margin at $70K: <b style="color:var(--green)">~72%</b> &nbsp;·&nbsp; Range: $17,051–$20,750<br>
+        Typical services: SCID + full psychometric battery (Dr. Forstadt) · Brain mapping/neurofeedback (PBWI) · Psychiatric eval (Dr. Spaedy) · Medical eval (Dr. Flannery) · Lab panels · ~8–11 clinical sessions (Tara, Dr. Mirella, Nicole)
+      </div>
+    </div>
+  </div>
+
   <div class="two-col">
     <!-- PDI Assumptions -->
     <div class="glass">
       <div class="sec-h">
-        <div class="sec-h-left"><div class="sec-title">PDI Assumptions</div><div class="sec-sub">Episode-level inputs</div></div>
+        <div class="sec-h-left"><div class="sec-title">PDI Assumptions</div><div class="sec-sub">Episode-level inputs — pre-filled from actual schedules</div></div>
       </div>
       <div class="assumptions">
         <div class="inp-group"><label>Episode Fee (Revenue)</label><input type="number" id="pdi-a-rev" value="70000" step="1000" oninput="calcPDI()"></div>
@@ -358,6 +370,18 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
 <!-- ══════════════════════════════════════════════════════════════════ -->
 <div id="tab-sig" class="tab-panel">
 
+  <!-- Actual data banner -->
+  <div style="background:rgba(127,119,221,.08);border:.5px solid rgba(127,119,221,.25);border-radius:12px;padding:14px 18px;margin-bottom:18px;display:flex;align-items:flex-start;gap:12px">
+    <div style="font-size:20px;margin-top:1px">📋</div>
+    <div>
+      <div style="font-size:12px;font-weight:700;color:var(--sig);margin-bottom:4px">Based on Actual Signature Schedules (Carlos L, George W, Jessica C, Marc C) + Live Firebase Calendar</div>
+      <div style="font-size:11px;color:var(--tx2);line-height:1.6">
+        Typical weekly sessions per client: <b>5 Individual Therapy</b> · <b>3–4 Family Therapy</b> · <b>3 Cognitive Remediation</b> · <b>2× Neurofeedback (PBWI)</b> · <b>5 Personal Training (PBWI)</b> · <b>1 Medical Follow-Up (PBWI)</b><br>
+        Cost at $21K rate: <b style="color:var(--amber)">$12,813/client/wk → 39% margin</b> (full) &nbsp;·&nbsp; <b style="color:var(--green)">$8,925/client/wk → 57% margin</b> (reduced) &nbsp;·&nbsp; Target 44% requires <b>$11,760 max cost</b>
+      </div>
+    </div>
+  </div>
+
   <div class="kpi-strip">
     <div class="glass kpi">
       <div class="kpi-lbl">Weekly Revenue</div>
@@ -447,22 +471,36 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
 
 var DATA = {
   pdi: [
-    {cat:'Clinical Leadership', name:'Dr. Forstadt — Clinical Oversight / Case Mgmt', note:'Full episode', amt:3000},
-    {cat:'Clinical Leadership', name:'Neurofeedback (PBWI)', note:'Full protocol', amt:2538},
-    {cat:'Clinical', name:'Individual Therapy Sessions', note:'Est. 10 sessions × $150', amt:1500},
-    {cat:'Clinical', name:'Psychological Testing & Assessment', note:'Full battery', amt:0},
-    {cat:'Clinical', name:'Specialist Consultations', note:'Per episode', amt:0},
-    {cat:'Medical', name:'PBWI Medical Follow-Up', note:'Full episode', amt:1350},
-    {cat:'Stipend', name:'Staff PDI Flat Stipends', note:'~6 providers × $250', amt:1500},
-    {cat:'Operational', name:'Client Ancillary Needs', note:'$75/day × avg stay', amt:750},
+    // Derived from actual PDI schedules (9 episodes analyzed — avg $19,368/episode)
+    {cat:'Clinical Leadership', name:'Dr. Forstadt — Clinical Oversight, Testing & Case Mgmt', note:'Flat per episode (SCID, MMPI, MCMI, WCST, Rorschach, etc.)', amt:3000},
+    {cat:'PBWI Services', name:'PBWI — Neurofeedback / Brain Mapping', note:'Full protocol package', amt:2538},
+    {cat:'PBWI Services', name:'PBWI — Medical Follow-Up & Evaluation', note:'Full protocol package', amt:1350},
+    {cat:'PBWI Services', name:'PBWI — Wellness Block (Massage, Acupuncture, Yoga)', note:'~5 sessions across episode', amt:900},
+    {cat:'PBWI Services', name:'PBWI — Personal Training', note:'~5 sessions across episode', amt:750},
+    {cat:'External Clinical', name:'Psychiatric Evaluation (Dr. Spaedy)', note:'1 session per episode — est.', amt:1200},
+    {cat:'External Medical', name:'Medical Evaluation (Dr. Flannery / Dr. Shaeffer)', note:'1–2 sessions per episode', amt:1500},
+    {cat:'Labs', name:'Lab Panels (Corrine / Jamel)', note:'Day 1–2 bloodwork', amt:500},
+    {cat:'Clinical Sessions', name:'Individual Therapy (Tara / Dr. Mirella)', note:'Avg 4 sessions × $150', amt:600},
+    {cat:'Clinical Sessions', name:'Family Therapy (Dr. Mirella / Dr. Hume)', note:'Avg 3 sessions × $150', amt:450},
+    {cat:'Clinical Sessions', name:'Cognitive Remediation (Nicole)', note:'Avg 3 sessions × $150', amt:450},
+    {cat:'Clinical Sessions', name:'Nutritional Assessment (Alice)', note:'1 session per episode', amt:150},
+    {cat:'Stipend', name:'Staff PDI Flat Stipends', note:'~6 eligible providers × $250', amt:1500},
+    {cat:'Operational', name:'Tech Transport / Outings', note:'Gym, outings across episode', amt:500},
+    {cat:'Operational', name:'Client Ancillary Needs', note:'$75/day × avg 10 days', amt:750},
   ],
   stepPdi: [
-    {cat:'Clinical Leadership', name:'Dr. Forstadt — Clinical Oversight / Case Mgmt', note:'PDI phase', amt:3000},
-    {cat:'Clinical', name:'Neurofeedback (PBWI)', note:'PDI phase', amt:2538},
-    {cat:'Clinical', name:'Individual Therapy Sessions', note:'PDI phase sessions', amt:1500},
-    {cat:'Medical', name:'PBWI Medical Follow-Up', note:'PDI phase', amt:1350},
+    {cat:'Clinical Leadership', name:'Dr. Forstadt — Clinical Oversight & Testing', note:'Flat per PDI episode', amt:3000},
+    {cat:'PBWI Services', name:'PBWI — Neurofeedback / Brain Mapping', note:'PDI phase package', amt:2538},
+    {cat:'PBWI Services', name:'PBWI — Medical Follow-Up', note:'PDI phase package', amt:1350},
+    {cat:'PBWI Services', name:'PBWI — Wellness (Massage, Acupuncture)', note:'PDI phase package', amt:900},
+    {cat:'PBWI Services', name:'PBWI — Personal Training', note:'PDI phase', amt:750},
+    {cat:'External Clinical', name:'Psychiatric Evaluation (Dr. Spaedy)', note:'1 session — PDI phase', amt:1200},
+    {cat:'External Medical', name:'Medical Evaluation (Dr. Flannery)', note:'1–2 sessions — PDI phase', amt:1500},
+    {cat:'Labs', name:'Lab Panels', note:'Day 1–2', amt:500},
+    {cat:'Clinical Sessions', name:'Individual / Family / Cognitive Sessions', note:'Avg 10 sessions × $150', amt:1500},
+    {cat:'Clinical Sessions', name:'Nutritional Assessment (Alice)', note:'1 session', amt:150},
     {cat:'Stipend', name:'Staff PDI Flat Stipends', note:'~6 providers × $250', amt:1500},
-    {cat:'Operational', name:'Client Ancillary Needs', note:'$75/day × stay', amt:750},
+    {cat:'Operational', name:'Ancillary + Tech Transport', note:'$75/day + outings', amt:1250},
   ],
   stepSig: [
     {cat:'Medical', name:'PBWI — Medical Follow-Up', note:'1/wk', amt:1350},
@@ -484,7 +522,7 @@ var DATA = {
     {cat:'Medical', name:'PBWI — Medical Follow-Up', freq:'1×/wk', amt:1350},
     {cat:'Medical', name:'PBWI — Neurofeedback', freq:'2×/wk', amt:2538},
     {cat:'Clinical Leadership', name:'Dr. Forstadt — Case Mgmt / Clinical Oversight', freq:'Ongoing', amt:3000},
-    {cat:'Clinical', name:'Individual Therapy', freq:'5×/wk × $150', amt:750},
+    {cat:'Clinical', name:'Individual Therapy (Tara / Dr. Forstadt / Dr. Mirella)', freq:'5×/wk × $150 · actual avg: 4–5/wk', amt:750},
     {cat:'Clinical', name:'Family Therapy', freq:'5×/wk × $150', amt:750},
     {cat:'Clinical', name:'Specialist', freq:'5×/wk × $150', amt:750},
     {cat:'Wellness', name:'Personal Training (Heather / Anthony)', freq:'5×/wk', amt:750},
