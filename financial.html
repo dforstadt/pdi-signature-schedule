@@ -218,17 +218,6 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
     </div>
   </div>
 
-  <!-- Actual data banner -->
-  <div style="background:rgba(55,138,221,.08);border:.5px solid rgba(55,138,221,.25);border-radius:12px;padding:14px 18px;margin-bottom:18px;display:flex;align-items:flex-start;gap:12px">
-    <div style="font-size:20px;margin-top:1px">📋</div>
-    <div>
-      <div style="font-size:12px;font-weight:700;color:var(--pdi);margin-bottom:4px">Based on 9 Actual PDI Episodes (Matthew H through Michael F)</div>
-      <div style="font-size:11px;color:var(--tx2);line-height:1.6">
-        PBWI PDI package: <b>$10,038</b> (Dr. Flannery medical, brain map, interpretation, report, debriefing, wellness coordination) &nbsp;·&nbsp; Fixed total: <b>~$16,838</b> &nbsp;·&nbsp; 10-day est. total: <b>~$20,300</b> &nbsp;·&nbsp; Margin at $70K: <b style="color:var(--green)">~71%</b><br>
-        Typical services: SCID + full psychometric battery (Dr. Forstadt) · PBWI PDI package ($10,038): Dr. Flannery medical services, brain map, interpretation, integrated report, debriefing, wellness coordination · Lab panels ($2,000) · Nutritional assessment + follow-up · Staff PDI flat stipends
-      </div>
-    </div>
-  </div>
 
   <div class="two-col">
     <!-- PDI Assumptions -->
@@ -238,7 +227,7 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
       </div>
       <div class="assumptions">
         <div class="inp-group"><label>Episode Fee (Revenue)</label><input type="number" id="pdi-a-rev" value="70000" step="1000" oninput="calcPDI()"></div>
-        <div class="inp-group"><label>Avg Episode Length (days)</label><input type="number" id="pdi-a-days" value="10" step="1" min="1" oninput="calcPDI()"></div>
+        <div class="inp-group"><label>Avg Episode Length (days)</label><input type="number" id="pdi-a-days" value="12" step="1" min="1" oninput="calcPDI()"></div>
         <div class="inp-group"><label>Active PDI Episodes</label><input type="number" id="pdi-a-eps" value="1" step="1" min="0" oninput="calcPDI()"></div>
         <div class="inp-group"><label>Profit Goal (%)</label><input type="number" id="pdi-a-goal" value="44" step="1" min="0" max="100" oninput="calcPDI()"></div>
       </div>
@@ -269,6 +258,52 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
       </tfoot>
     </table>
     <div class="add-row"><button class="add-btn" onclick="addLine('pdi')">+ Add Line Item</button></div>
+  </div>
+
+
+  <!-- Actual Per-Client Margins -->
+  <div class="glass full-col">
+    <div class="sec-h">
+      <div class="sec-h-left">
+        <div class="sec-title">Actual PDI Episode Margins</div>
+        <div class="sec-sub">Calculated from real schedule data · fixed rates + actual episode length · $70,000 revenue per episode</div>
+      </div>
+      <span class="sec-badge" style="background:rgba(55,138,221,.1);color:var(--pdi)">9 completed episodes</span>
+    </div>
+    <table class="cost-tbl">
+      <thead><tr>
+        <th>Client</th><th>Episode Dates</th><th style="text-align:center">Days</th>
+        <th style="text-align:right">Variable Cost</th><th style="text-align:right">Fixed Cost</th>
+        <th style="text-align:right">Total Cost</th><th style="text-align:right">Profit</th>
+        <th style="text-align:right">Margin</th>
+      </tr></thead>
+      <tbody>
+        <tr><td><b>Matthew H</b></td><td style="color:var(--tx3)">Aug 12–21, 2025</td><td style="text-align:center">10</td><td style="text-align:right">$6,150</td><td style="text-align:right">$23,738</td><td style="text-align:right">$29,888</td><td style="text-align:right;color:var(--green)">+$40,112</td><td style="text-align:right;font-weight:700;color:var(--green)">57.3%</td></tr>
+        <tr><td><b>Leslie K</b></td><td style="color:var(--tx3)">Sep 25–Oct 3, 2025</td><td style="text-align:center">9</td><td style="text-align:right">$4,875</td><td style="text-align:right">$23,738</td><td style="text-align:right">$28,613</td><td style="text-align:right;color:var(--green)">+$41,387</td><td style="text-align:right;font-weight:700;color:var(--green)">59.1%</td></tr>
+        <tr><td><b>Abbegail M</b></td><td style="color:var(--tx3)">Oct 8–18, 2025</td><td style="text-align:center">11</td><td style="text-align:right">$6,075</td><td style="text-align:right">$23,738</td><td style="text-align:right">$29,813</td><td style="text-align:right;color:var(--green)">+$40,187</td><td style="text-align:right;font-weight:700;color:var(--green)">57.4%</td></tr>
+        <tr><td><b>Alex R</b></td><td style="color:var(--tx3)">Dec 3–12, 2025</td><td style="text-align:center">10</td><td style="text-align:right">$6,150</td><td style="text-align:right">$23,738</td><td style="text-align:right">$29,888</td><td style="text-align:right;color:var(--green)">+$40,112</td><td style="text-align:right;font-weight:700;color:var(--green)">57.3%</td></tr>
+        <tr><td><b>Carlos L</b></td><td style="color:var(--tx3)">Mar 23–31, 2026</td><td style="text-align:center">9</td><td style="text-align:right">$5,775</td><td style="text-align:right">$23,738</td><td style="text-align:right">$29,513</td><td style="text-align:right;color:var(--green)">+$40,487</td><td style="text-align:right;font-weight:700;color:var(--green)">57.8%</td></tr>
+        <tr><td><b>Jessica C</b></td><td style="color:var(--tx3)">Apr 4–21, 2026</td><td style="text-align:center">18</td><td style="text-align:right">$6,450</td><td style="text-align:right">$23,738</td><td style="text-align:right">$30,188</td><td style="text-align:right;color:var(--green)">+$39,812</td><td style="text-align:right;font-weight:700;color:var(--green)">56.9%</td></tr>
+        <tr><td><b>George W</b></td><td style="color:var(--tx3)">Apr 11–22, 2026</td><td style="text-align:center">12</td><td style="text-align:right">$6,000</td><td style="text-align:right">$23,738</td><td style="text-align:right">$29,738</td><td style="text-align:right;color:var(--green)">+$40,262</td><td style="text-align:right;font-weight:700;color:var(--green)">57.5%</td></tr>
+        <tr><td><b>Marc C</b></td><td style="color:var(--tx3)">Apr 17–30, 2026</td><td style="text-align:center">14</td><td style="text-align:right">$7,350</td><td style="text-align:right">$23,738</td><td style="text-align:right">$31,088</td><td style="text-align:right;color:var(--green)">+$38,912</td><td style="text-align:right;font-weight:700;color:var(--amber)">55.6%</td></tr>
+        <tr><td><b>Michael F</b></td><td style="color:var(--tx3)">May 8–18, 2026</td><td style="text-align:center">11</td><td style="text-align:right">$6,825</td><td style="text-align:right">$23,738</td><td style="text-align:right">$30,563</td><td style="text-align:right;color:var(--green)">+$39,437</td><td style="text-align:right;font-weight:700;color:var(--green)">56.3%</td></tr>
+      </tbody>
+      <tfoot>
+        <tr class="grand-total">
+          <td colspan="2">Average (12-day episode)</td>
+          <td style="text-align:center">12</td>
+          <td style="text-align:right">$6,183</td>
+          <td style="text-align:right">$23,738</td>
+          <td style="text-align:right">$29,921</td>
+          <td style="text-align:right;color:var(--green)">+$40,079</td>
+          <td style="text-align:right;color:var(--green)">57.3%</td>
+        </tr>
+      </tfoot>
+    </table>
+    <div style="padding:12px 18px;font-size:10px;color:var(--tx3);border-top:.5px solid var(--bd);display:flex;gap:24px;flex-wrap:wrap">
+      <span>Fixed costs (all episodes): <b>$23,738</b> — Dr. Forstadt $3K · Testing $6,900 · PBWI PDI package $10,038 · Labs $2K · Nutritional $300 · Stipends $1,500</span>
+      <span>Variable: Personal training $150/weekday · Culinary $150/day · Wellness $300/session × 2/wk · Ancillary $75/day</span>
+    </div>
   </div>
 
 </div><!-- /tab-pdi -->
