@@ -42,6 +42,7 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
 
 /* Glass cards */
 .glass{background:rgba(255,255,255,.88);backdrop-filter:blur(10px);border-radius:16px;border:.5px solid rgba(255,255,255,.9);box-shadow:0 2px 12px rgba(0,0,0,.05)}
+.tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
 
 /* KPI strip */
 .kpi-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
@@ -69,14 +70,16 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
 .sec-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap}
 
 /* Editable cost table */
-.cost-tbl{width:100%;border-collapse:collapse;font-size:12px}
+.cost-tbl{width:100%;border-collapse:collapse;font-size:12px;table-layout:auto}
 .cost-tbl th{padding:8px 14px;text-align:left;font-size:9px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.07em;border-bottom:.5px solid var(--bd);background:transparent}
 .cost-tbl td{padding:8px 14px;border-bottom:.5px solid rgba(0,0,0,.04);vertical-align:middle}
 .cost-tbl tbody tr:hover td{background:rgba(139,115,85,.03)}
 .cost-tbl .cat-sep td{font-size:9px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.07em;background:rgba(245,241,235,.6);padding:5px 14px;border-bottom:.5px solid var(--bd)}
 .cost-tbl .subtotal td{font-weight:700;border-top:.5px solid var(--bd);background:rgba(245,241,235,.4);font-size:12px}
 .cost-tbl .grand-total td{font-weight:800;border-top:2px solid rgba(0,0,0,.15);background:rgba(245,241,235,.7);font-size:13px;padding:11px 14px}
-.inp{background:transparent;border:none;font-size:12px;font-family:var(--f);color:var(--tx);width:100%;padding:0}
+.inp{background:transparent;border:none;font-size:12px;font-family:var(--f);color:var(--tx);width:100%;padding:0;word-break:break-word;min-width:160px}
+.cost-tbl td:first-child{min-width:200px}
+.cost-tbl td:nth-child(3){min-width:140px;color:var(--tx3);font-size:11px}
 .inp:focus{outline:1px solid rgba(139,115,85,.5);border-radius:4px;background:rgba(255,255,255,.8);padding:1px 3px}
 .inp-num{text-align:right;width:90px}
 .del-btn{background:none;border:none;color:rgba(0,0,0,.2);cursor:pointer;font-size:13px;padding:0 2px;line-height:1}
@@ -840,7 +843,7 @@ var DATA = {
     {cat:'Fixed — External', name:'Medical Evaluation (Dr. Flannery / Dr. Shaeffer)', note:'PDI phase', amt:1500},
     {cat:'Fixed — Labs', name:'Lab Panels — Comprehensive Bloodwork', note:'Day 1–2', amt:2000},
     {cat:'Fixed — Nutritional', name:'Nutritional / Dietician Assessment', note:'Initial intake', amt:150},
-    {cat:'Fixed — Nutritional', name:'Nutritional / Dietician Follow-Up (Alice)', note:'Follow-up', amt:150},
+    {cat:'Fixed — Nutritional', name:'Nutritional / Dietician Follow-Up', note:'Follow-up', amt:150},
     {cat:'Fixed — Stipend', name:'Staff PDI Flat Stipends', note:'~6 providers × $250 — no session fees', amt:1500},
     {cat:'Daily — Training', name:'Personal Training (5 days/week)', note:'$750/wk · PDI phase weeks', amt:750},
     {cat:'Daily — Culinary', name:'Culinary / Chef + Food (weekdays)', note:'$150/day × 5 weekdays', amt:750},
