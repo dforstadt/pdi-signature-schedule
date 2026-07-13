@@ -1868,12 +1868,15 @@ function buildProvModal(){
     '<div style="font-size:15px;font-weight:600;margin-bottom:16px">Manage Providers</div>'+
     '<div style="max-height:360px;overflow-y:auto;margin-bottom:16px">'+(rows||'<div style="text-align:center;padding:20px;color:var(--tx3)">No providers yet.</div>')+'</div>'+
     '<div style="background:var(--bg2);border-radius:var(--rl);padding:14px;border:.5px solid var(--bd);margin-bottom:16px">'+
-      '<div style="font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:10px">Add provider</div>'+
-      '<div style="display:flex;gap:8px;align-items:center">'+
+      '<div style="font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:10px">Add Provider</div>'+
+      '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">'+
         '<input type="color" id="np-col" value="#6b5c45" style="width:34px;height:34px;flex-shrink:0;border:none;border-radius:50%;cursor:pointer;padding:0">'+
-        (function(){var r=["Alexandria Marullo", "Anisha Hume", "Anthony", "Brian", "David Ockman", "Despina Karfis", "Dr. Flannery", "Dr. Forstadt", "Esther Entin", "Gregory Fortune", "Gus Hernandez", "Mirella Ezeta", "Nicole", "PBWI", "Paul Lazar", "Rabbi Gaines", "Robert Bruno", "Sandra Bernstein", "Tara Alhadeff", "Tech Team", "Thomas Young"];var av=r.filter(function(n){return!S.providers[n];});return av.length?'<select id="np-name" style="flex:1"><option value="">Select provider...</option>'+av.map(function(n){return'<option value="'+n+'">'+n+'</option>';}).join('')+'</select>':'<span style="flex:1;font-size:12px;color:var(--tx3);padding:4px">All staff members already added</span>';})()+''+
+        '<input type="text" id="np-name" placeholder="Type provider name..." style="flex:1;padding:8px 12px;border-radius:var(--r);border:.5px solid var(--bd2);background:var(--bg);font-size:13px;font-family:var(--f);color:var(--tx)" list="np-roster">'+
         '<button onclick="addProvider()" style="padding:8px 16px;border-radius:var(--r);border:none;background:#6b5c45;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--f);white-space:nowrap">+ Add</button>'+
       '</div>'+
+      '<datalist id="np-roster">'+
+        (function(){var r=["Alexandria Marullo","Anisha Hume","Anthony","Brian","David Ockman","Despina Karfis","Dr. Flannery","Dr. Forstadt","Esther Entin","Gregory Fortune","Gus Hernandez","Mirella Ezeta","Nicole","PBWI","Paul Lazar","Rabbi Gaines","Robert Bruno","Sandra Bernstein","Tara Alhadeff","Tech Team","Thomas Young"];return r.filter(function(n){return!S.providers[n];}).map(function(n){return'<option value="'+n+'">';}).join('');})()+'</datalist>'+
+      '<div style="font-size:10px;color:var(--tx3)">Type any name or choose from the suggestion list above.</div>'+
     '</div>'+
     '<div style="display:flex;justify-content:flex-end"><button onclick="closeModal()" style="padding:8px 24px;border-radius:var(--r);border:none;background:#6b5c45;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--f)">Done</button></div>'
   );
