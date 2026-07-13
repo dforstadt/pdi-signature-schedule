@@ -311,194 +311,52 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
   </div>
 
 
-  <!-- Margin Variability Drivers -->
+  <!-- PDI Variability -->
   <div class="glass full-col">
     <div class="sec-h">
-      <div class="sec-h-left">
-        <div class="sec-title">Margin Variability Factors</div>
-        <div class="sec-sub">What drives the 1.2pp spread in PDI episode margins (59.2% – 60.4%)</div>
-      </div>
+      <div class="sec-h-left"><div class="sec-title">Margin Variability Factors</div><div class="sec-sub">What drives the 1.2pp spread across PDI episodes (59.2% – 60.4%)</div></div>
     </div>
-    <div style="padding:18px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px">
-
-      <!-- Factor 1: Episode Length -->
+    <div style="padding:18px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px">
       <div style="background:rgba(55,138,221,.06);border-radius:12px;padding:16px;border:.5px solid rgba(55,138,221,.2)">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-          <div style="width:28px;height:28px;border-radius:50%;background:rgba(55,138,221,.15);display:flex;align-items:center;justify-content:center;font-size:14px">📅</div>
-          <div>
-            <div style="font-size:12px;font-weight:700;color:var(--pdi)">Episode Length</div>
-            <div style="font-size:9px;color:var(--tx3);margin-top:1px">Strongest driver · r = −0.54</div>
-          </div>
-          <div style="margin-left:auto;font-size:10px;font-weight:700;color:var(--pdi);background:rgba(55,138,221,.12);padding:2px 8px;border-radius:20px">Primary</div>
+          <span style="font-size:18px">📅</span>
+          <div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--pdi)">Episode Length</div><div style="font-size:9px;color:var(--tx3)">Biggest driver</div></div>
+          <span style="font-size:9px;font-weight:700;color:var(--pdi);background:rgba(55,138,221,.12);padding:2px 7px;border-radius:20px">Primary</span>
         </div>
-        <div style="font-size:11px;color:var(--tx2);line-height:1.7">
-          Each additional <b>weekday</b> costs <b style="color:var(--red)">−0.54pp</b> margin<br>
-          Each additional <b>weekend day</b> costs <b style="color:var(--red)">−0.32pp</b> margin<br>
-          Each additional <b>full week</b> costs −3.8pp margin ($2,625)<br><br>
-          <span style="color:var(--tx3)">Range in dataset: 9 days (Leslie K, Carlos L) → 18 days (Jessica C)</span>
-        </div>
-        <div style="margin-top:10px;display:flex;gap:6px;font-size:10px">
-          <span style="background:rgba(29,158,117,.12);color:var(--green);padding:2px 8px;border-radius:20px;font-weight:600">Minimize: target 9–10 day protocol</span>
-        </div>
+        <div style="font-size:11px;color:var(--tx2);line-height:1.7">The $70,000 episode fee is fixed. Every extra day only adds cost — no additional revenue. Each extra <b>weekday</b> adds $375 → costs <b style="color:var(--red)">−0.54pp</b> margin. Each extra <b>weekend day</b> adds $225 → <b style="color:var(--red)">−0.32pp</b>.<br><br><span style="color:var(--tx3)">Range: 9 days (best) → 18 days (lowest margin)</span></div>
+        <div style="margin-top:10px"><span style="font-size:10px;background:rgba(29,158,117,.12);color:var(--green);padding:2px 8px;border-radius:20px;font-weight:600">Target: 9–10 day protocol</span></div>
       </div>
-
-      <!-- Factor 2: Wellness Sessions -->
       <div style="background:rgba(127,119,221,.06);border-radius:12px;padding:16px;border:.5px solid rgba(127,119,221,.2)">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-          <div style="width:28px;height:28px;border-radius:50%;background:rgba(127,119,221,.15);display:flex;align-items:center;justify-content:center;font-size:14px">🧘</div>
-          <div>
-            <div style="font-size:12px;font-weight:700;color:var(--sig)">Wellness Sessions</div>
-            <div style="font-size:9px;color:var(--tx3);margin-top:1px">Secondary driver · r = −0.28</div>
-          </div>
-          <div style="margin-left:auto;font-size:10px;font-weight:700;color:var(--sig);background:rgba(127,119,221,.12);padding:2px 8px;border-radius:20px">Secondary</div>
+          <span style="font-size:18px">🧘</span>
+          <div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--sig)">Wellness Sessions</div><div style="font-size:9px;color:var(--tx3)">Second factor</div></div>
+          <span style="font-size:9px;font-weight:700;color:var(--sig);background:rgba(127,119,221,.12);padding:2px 7px;border-radius:20px">Secondary</span>
         </div>
-        <div style="font-size:11px;color:var(--tx2);line-height:1.7">
-          Each additional session costs <b style="color:var(--red)">−0.43pp</b> margin ($300)<br>
-          Wellness = <b>38%</b> of all variable costs (largest single variable)<br>
-          Standard: <b>2/week</b> · Range in dataset: <b>2–11 sessions</b><br><br>
-          <span style="color:var(--tx3)">Standard: 2 sessions/week prorated by episode length. A 10-day episode = 3 sessions ($900). A 12-day episode = 3 sessions ($900). Wellness care coordination is included in the PBWI package; $300/session is the direct service fee only.</span>
-        </div>
-        <div style="margin-top:10px;font-size:10px">
-          <span style="background:rgba(29,158,117,.12);color:var(--green);padding:2px 8px;border-radius:20px;font-weight:600">Hold to 2/week standard to protect margin</span>
-        </div>
+        <div style="font-size:11px;color:var(--tx2);line-height:1.7">Each direct wellness session costs $300 and is billed separately from the PBWI package. Standard is <b>2/week</b> — about 3 sessions for a 10-day episode ($900). Every session beyond the standard costs <b style="color:var(--red)">−0.43pp</b> margin.<br><br><span style="color:var(--tx3)">Wellness is the largest single variable cost at 38% of total variable spend.</span></div>
+        <div style="margin-top:10px"><span style="font-size:10px;background:rgba(29,158,117,.12);color:var(--green);padding:2px 8px;border-radius:20px;font-weight:600">Hold to 2 sessions/week</span></div>
       </div>
-
-      <!-- Factor 3: Weekday/Weekend Mix -->
       <div style="background:rgba(217,119,6,.06);border-radius:12px;padding:16px;border:.5px solid rgba(217,119,6,.2)">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-          <div style="width:28px;height:28px;border-radius:50%;background:rgba(217,119,6,.15);display:flex;align-items:center;justify-content:center;font-size:14px">📆</div>
-          <div>
-            <div style="font-size:12px;font-weight:700;color:var(--amber)">Weekday / Weekend Mix</div>
-            <div style="font-size:9px;color:var(--tx3);margin-top:1px">Structural · tied to admit date</div>
-          </div>
-          <div style="margin-left:auto;font-size:10px;font-weight:700;color:var(--amber);background:rgba(217,119,6,.12);padding:2px 8px;border-radius:20px">Structural</div>
+          <span style="font-size:18px">📆</span>
+          <div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--amber)">Weekday vs. Weekend Mix</div><div style="font-size:9px;color:var(--tx3)">Smaller structural factor</div></div>
+          <span style="font-size:9px;font-weight:700;color:var(--amber);background:rgba(217,119,6,.12);padding:2px 7px;border-radius:20px">Structural</span>
         </div>
-        <div style="font-size:11px;color:var(--tx2);line-height:1.7">
-          <b>Weekday:</b> culinary $150 + training $150 + ancillary $75 = <b>$375/day</b><br>
-          <b>Weekend:</b> culinary $150 (ordering) + ancillary $75 = <b>$225/day</b> (no training)<br>
-          Weekend days cost <b>$150 less</b> per day than weekdays<br><br>
-          <span style="color:var(--tx3)">Admitting Friday → more weekend days → slightly better margin. Admitting Monday → more high-cost weekdays.</span>
-        </div>
-        <div style="margin-top:10px;font-size:10px">
-          <span style="background:rgba(217,119,6,.12);color:var(--amber);padding:2px 8px;border-radius:20px;font-weight:600">Minor effect — $150/extra weekend vs weekday</span>
-        </div>
+        <div style="font-size:11px;color:var(--tx2);line-height:1.7">Weekdays cost <b>$375/day</b> (culinary + training + ancillary). Weekends cost <b>$225/day</b> — no personal training charge. That's a $150 difference per day. Admitting on a Friday builds more weekend days into the stay, slightly improving margin.<br><br><span style="color:var(--tx3)">Minor effect — roughly $150 per extra weekend vs weekday.</span></div>
       </div>
-
-      <!-- Summary / Optimization -->
       <div style="background:rgba(29,158,117,.06);border-radius:12px;padding:16px;border:.5px solid rgba(29,158,117,.2)">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-          <div style="width:28px;height:28px;border-radius:50%;background:rgba(29,158,117,.15);display:flex;align-items:center;justify-content:center;font-size:14px">📊</div>
-          <div>
-            <div style="font-size:12px;font-weight:700;color:var(--green)">Margin Optimization</div>
-            <div style="font-size:9px;color:var(--tx3);margin-top:1px">Variable cost breakdown · avg episode</div>
-          </div>
+          <span style="font-size:18px">📊</span>
+          <div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--green)">Variable Cost Breakdown (avg 10d)</div></div>
         </div>
         <div style="font-size:11px;color:var(--tx2);line-height:1.9">
-          <div style="display:flex;justify-content:space-between"><span>Culinary / Food</span><span><b>$1,733</b> <span style="color:var(--tx3)">(28%)</span></span></div>
-          <div style="display:flex;justify-content:space-between"><span>Wellness Direct</span><span><b>$900</b> <span style="color:var(--tx3)">(38%)</span></span></div>
-          <div style="display:flex;justify-content:space-between"><span>Personal Training</span><span><b>$1,193</b> <span style="color:var(--tx3)">(20%)</span></span></div>
-          <div style="display:flex;justify-content:space-between"><span>Ancillary ($75/day)</span><span><b>$750</b> <span style="color:var(--tx3)">(14%)</span></span></div>
-          <div style="display:flex;justify-content:space-between;border-top:.5px solid var(--bd);margin-top:6px;padding-top:6px;font-weight:700"><span>Total Variable (avg)</span><span style="color:var(--amber)">$4,393</span></div>
+          <div style="display:flex;justify-content:space-between"><span>Culinary / Food</span><span><b>$1,594</b> <span style="color:var(--tx3)">(37%)</span></span></div>
+          <div style="display:flex;justify-content:space-between"><span>Wellness (2/wk × $300)</span><span><b>$900</b> <span style="color:var(--tx3)">(21%)</span></span></div>
+          <div style="display:flex;justify-content:space-between"><span>Personal Training</span><span><b>$1,193</b> <span style="color:var(--tx3)">(27%)</span></span></div>
+          <div style="display:flex;justify-content:space-between"><span>Ancillary ($75/day)</span><span><b>$750</b> <span style="color:var(--tx3)">(17%)</span></span></div>
+          <div style="border-top:.5px solid var(--bd);margin-top:6px;padding-top:6px;font-weight:700;display:flex;justify-content:space-between"><span>Total variable</span><span style="color:var(--amber)">$4,393</span></div>
+          <div style="margin-top:5px;font-size:9px;color:var(--tx3)">Fixed costs ($23,738) are identical every episode — they don't cause margin variation.</div>
         </div>
-        <div style="margin-top:8px;font-size:10px;color:var(--tx3)">Fixed costs $23,738 are identical across all episodes and do not influence margin variability.</div>
       </div>
-
-    </div>
-  </div>
-
-
-</div><!-- /tab-pdi -->
-
-<!-- ══════════════════════════════════════════════════════════════════ -->
-<!-- TAB 2 — PDI → SIGNATURE STEP-DOWN                                  -->
-<!-- ══════════════════════════════════════════════════════════════════ -->
-<div id="tab-step" class="tab-panel">
-
-  <div class="kpi-strip">
-    <div class="glass kpi">
-      <div class="kpi-lbl">Total Episode Revenue</div>
-      <div class="kpi-v" style="color:var(--step)" id="step-kpi-rev">—</div>
-      <div class="kpi-sub" id="step-kpi-rev-sub">PDI + Signature phases</div>
-    </div>
-    <div class="glass kpi">
-      <div class="kpi-lbl">Total Episode Cost</div>
-      <div class="kpi-v" style="color:var(--amber)" id="step-kpi-cost">—</div>
-      <div class="kpi-sub" id="step-kpi-cost-sub"></div>
-    </div>
-    <div class="glass kpi">
-      <div class="kpi-lbl">Episode Profit</div>
-      <div class="kpi-v" id="step-kpi-profit">—</div>
-      <div class="kpi-sub" id="step-kpi-profit-sub"></div>
-    </div>
-    <div class="glass kpi">
-      <div class="kpi-lbl">Blended Margin</div>
-      <div class="kpi-v" id="step-kpi-pct">—</div>
-      <div class="kpi-sub">Goal: 44%</div>
-      <div class="gauge-wrap">
-        <div class="gauge-fill" id="step-gauge" style="background:var(--green);width:0%"></div>
-        <div class="gauge-mark" style="left:44%"></div>
-      </div>
-      <div class="gauge-lbl"><span>0%</span><span>▲44%</span><span>100%</span></div>
-    </div>
-  </div>
-
-  <div class="three-col">
-    <!-- Step-Down Assumptions -->
-    <div class="glass">
-      <div class="sec-h"><div class="sec-h-left"><div class="sec-title">Phase Assumptions</div><div class="sec-sub">Episode-level inputs</div></div><button class="reset-btn" onclick="resetStep()" title="Restore original values">↺ Reset</button></div>
-      <div class="assumptions" style="grid-template-columns:1fr">
-        <div class="inp-group"><label>PDI Fee (Phase 1)</label><input type="number" id="step-a-pdi" value="70000" step="1000" oninput="calcStep()"></div>
-        <div class="inp-group"><label>PDI Length (days)</label><input type="number" id="step-a-pdi-days" value="10" step="1" oninput="calcStep()"></div>
-        <div class="inp-group"><label>Sig Rate / Week (Phase 2)</label><input type="number" id="step-a-sig-wk" value="21000" step="500" oninput="calcStep()"></div>
-        <div class="inp-group"><label>Sig Phase Duration (weeks)</label><input type="number" id="step-a-sig-wks" value="4" step="1" min="1" oninput="calcStep()"><div style="font-size:9px;color:var(--tx3);margin-top:3px">Week 1 covered by $13,926 combined package · $3,888/wk applies from Week 2</div></div>
-        <div class="inp-group"><label>Profit Goal (%)</label><input type="number" id="step-a-goal" value="44" step="1" oninput="calcStep()"></div>
-      </div>
-    </div>
-
-    <!-- Phase 1 P&L -->
-    <div class="glass">
-      <div class="sec-h">
-        <div class="sec-h-left"><div class="sec-title">Phase 1 — PDI</div><div class="sec-sub">Diagnostic protocol</div></div>
-        <span class="phase-badge" style="background:rgba(55,138,221,.15);color:var(--pdi)">PDI</span>
-      </div>
-      <div id="step-pdi-pl"></div>
-    </div>
-
-    <!-- Phase 2 P&L -->
-    <div class="glass">
-      <div class="sec-h">
-        <div class="sec-h-left"><div class="sec-title">Phase 2 — Signature</div><div class="sec-sub">Step-down / residential</div></div>
-        <span class="phase-badge" style="background:rgba(46,139,122,.15);color:var(--step)">Signature</span>
-      </div>
-      <div id="step-sig-pl"></div>
-    </div>
-  </div>
-
-  <!-- Combined cost tables -->
-  <div class="two-col">
-    <div class="glass">
-      <div class="sec-h">
-        <div class="sec-h-left"><div class="sec-title">PDI Phase Costs</div><div class="sec-sub">Full protocol costs — editable</div></div>
-        <span class="sec-badge" id="step-pdi-badge" style="background:rgba(55,138,221,.1);color:var(--pdi)">$0</span>
-      </div>
-      <table class="cost-tbl">
-        <thead><tr><th>Line Item</th><th>Category</th><th style="text-align:right">Amount</th><th></th></tr></thead>
-        <tbody id="step-pdi-body"></tbody>
-        <tfoot><tr class="grand-total"><td colspan="2">PDI Phase Total</td><td style="text-align:right" id="step-pdi-total">$0</td><td></td></tr></tfoot>
-      </table>
-      <div class="add-row"><button class="add-btn" onclick="addLine('step-pdi')">+ Add Line Item</button></div>
-    </div>
-    <div class="glass">
-      <div class="sec-h">
-        <div class="sec-h-left"><div class="sec-title">Signature Phase Costs</div><div class="sec-sub">Per-week × duration — editable</div></div>
-        <span class="sec-badge" id="step-sig-badge" style="background:rgba(46,139,122,.1);color:var(--step)">$0</span>
-      </div>
-      <table class="cost-tbl">
-        <thead><tr><th>Line Item</th><th>Category</th><th style="text-align:right">/ Week</th><th></th></tr></thead>
-        <tbody id="step-sig-body"></tbody>
-        <tfoot><tr class="grand-total"><td colspan="2">Total Sig Phase Cost</td><td style="text-align:right" id="step-sig-total">$0</td><td></td></tr></tfoot>
-      </table>
-      <div class="add-row"><button class="add-btn" onclick="addLine('step-sig')">+ Add Line Item</button></div>
     </div>
   </div>
 
@@ -546,72 +404,50 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
   </div>
 
 
-  <!-- PDI → Sig Variability Factors -->
-  <div class="glass full-col" style="margin-top:0">
+  <!-- Step variability -->
+  <div class="glass full-col">
     <div class="sec-h">
-      <div class="sec-h-left">
-        <div class="sec-title">Margin Variability Factors — PDI → Signature</div>
-        <div class="sec-sub">What drives the 8.9pp spread (46.2% – 55.1%) across combined episodes</div>
-      </div>
+      <div class="sec-h-left"><div class="sec-title">Margin Variability Factors — PDI → Signature</div><div class="sec-sub">What drives the 8.6pp spread (46.5% – 55.1%) across combined episodes</div></div>
     </div>
-    <div style="padding:18px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px">
-
+    <div style="padding:18px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px">
       <div style="background:rgba(46,139,122,.06);border-radius:12px;padding:16px;border:.5px solid rgba(46,139,122,.2)">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-          <div style="width:28px;height:28px;border-radius:50%;background:rgba(46,139,122,.15);display:flex;align-items:center;justify-content:center;font-size:14px">📅</div>
-          <div><div style="font-size:12px;font-weight:700;color:var(--step)">Signature Phase Duration</div><div style="font-size:9px;color:var(--tx3)">Strongest driver</div></div>
-          <div style="margin-left:auto;font-size:10px;font-weight:700;color:var(--step);background:rgba(46,139,122,.12);padding:2px 8px;border-radius:20px">Primary</div>
+          <span style="font-size:18px">📅</span>
+          <div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--step)">Signature Phase Duration</div><div style="font-size:9px;color:var(--tx3)">Dominant factor</div></div>
+          <span style="font-size:9px;font-weight:700;color:var(--step);background:rgba(46,139,122,.12);padding:2px 7px;border-radius:20px">Primary</span>
         </div>
-        <div style="font-size:11px;color:var(--tx2);line-height:1.7">
-          Sig weeks carry <b style="color:var(--red)">42.6% margin</b> ($12,063 cost on $21K/wk revenue)<br>
-          Each extra Sig week: <b>$21K revenue but $12,063 cost</b> → dilutes blended margin<br>
-          Carlos L (1 Sig day): <b>55.1%</b> vs Marc C (73 Sig days): <b>46.2%</b><br><br>
-          <span style="color:var(--tx3)">As Sig phase extends, blended margin converges downward from PDI-level (~60%) toward Sig-phase level (~43%)</span>
-        </div>
+        <div style="font-size:11px;color:var(--tx2);line-height:1.7">Each Signature week brings in <b>$21,000 revenue</b> but costs <b>$12,063</b> — a <b style="color:var(--red)">42.6% weekly margin</b>. The longer a client stays in Signature, the more the blended margin is pulled from the higher PDI rate (~60%) toward that 42.6% floor.<br><br><span style="color:var(--tx3)">Carlos L (1 Sig day) → 55.1% &nbsp;·&nbsp; Marc C (67 Sig days) → 46.5%</span></div>
       </div>
-
       <div style="background:rgba(55,138,221,.06);border-radius:12px;padding:16px;border:.5px solid rgba(55,138,221,.2)">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-          <div style="width:28px;height:28px;border-radius:50%;background:rgba(55,138,221,.15);display:flex;align-items:center;justify-content:center;font-size:14px">💰</div>
-          <div><div style="font-size:12px;font-weight:700;color:var(--pdi)">PBWI Package Upgrade</div><div style="font-size:9px;color:var(--tx3)">Fixed cost differential</div></div>
-          <div style="margin-left:auto;font-size:10px;font-weight:700;color:var(--pdi);background:rgba(55,138,221,.12);padding:2px 8px;border-radius:20px">Fixed</div>
+          <span style="font-size:18px">💰</span>
+          <div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--pdi)">PBWI Package Cost</div><div style="font-size:9px;color:var(--tx3)">Why Sig weeks here cost more than standalone</div></div>
+          <span style="font-size:9px;font-weight:700;color:var(--pdi);background:rgba(55,138,221,.12);padding:2px 7px;border-radius:20px">Key difference</span>
         </div>
-        <div style="font-size:11px;color:var(--tx2);line-height:1.7">
-          PDI+Sig fixed costs: <b>$27,626</b> vs PDI-only: <b>$23,738</b><br>
-          Difference: <b>+$3,888</b> (PBWI combined package upgrade)<br>
-          Plus $3,888 every Sig week from Week 2 onward<br><br>
-          <span style="color:var(--tx3)">The PBWI weekly package is what separates PDI→Sig Sig-phase margin (42.6%) from Sig-standalone margin (56.8%) — standalone clients don't carry the $3,888/wk PBWI cost</span>
-        </div>
+        <div style="font-size:11px;color:var(--tx2);line-height:1.7">PDI→Sig clients carry a <b>$3,888/week PBWI package</b> from Week 2 of Signature onward (neurofeedback, Dr. Flannery follow-up, wellness coordination). Standalone Signature clients do not have this cost — which is why their Signature weekly margin is <b>56.8%</b> vs <b>42.6%</b> here — a <b>14pp gap</b>.<br><br><span style="color:var(--tx3)">Fixed costs also higher: $27,626 vs $23,738 for PDI-only.</span></div>
       </div>
-
       <div style="background:rgba(217,119,6,.06);border-radius:12px;padding:16px;border:.5px solid rgba(217,119,6,.2)">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-          <div style="width:28px;height:28px;border-radius:50%;background:rgba(217,119,6,.15);display:flex;align-items:center;justify-content:center;font-size:14px">🔬</div>
-          <div><div style="font-size:12px;font-weight:700;color:var(--amber)">PDI Phase Length</div><div style="font-size:9px;color:var(--tx3)">Secondary — same as PDI tab</div></div>
-          <div style="margin-left:auto;font-size:10px;font-weight:700;color:var(--amber);background:rgba(217,119,6,.12);padding:2px 8px;border-radius:20px">Secondary</div>
+          <span style="font-size:18px">🔬</span>
+          <div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--amber)">PDI Phase Length</div><div style="font-size:9px;color:var(--tx3)">Same effect as PDI tab</div></div>
+          <span style="font-size:9px;font-weight:700;color:var(--amber);background:rgba(217,119,6,.12);padding:2px 7px;border-radius:20px">Secondary</span>
         </div>
-        <div style="font-size:11px;color:var(--tx2);line-height:1.7">
-          Each extra PDI weekday: <b style="color:var(--red)">−0.54pp</b> blended margin<br>
-          Jessica C: 18-day PDI → higher variable cost dragging margin<br>
-          9-day PDI (optimal): saves ~$900 vs 14-day PDI<br><br>
-          <span style="color:var(--tx3)">Less impactful here because the Sig phase revenue dominates for longer-stay clients. More important for short Sig stays like Carlos L.</span>
-        </div>
+        <div style="font-size:11px;color:var(--tx2);line-height:1.7">A longer PDI phase adds daily variable costs against the fixed $70K fee — same dynamic as PDI-only. Each extra PDI weekday costs <b style="color:var(--red)">−0.54pp</b> on the blended margin.<br><br><span style="color:var(--tx3)">Less impactful when the Signature phase is long, but matters more for clients with a short Signature stay (Carlos L, Angela T).</span></div>
       </div>
-
       <div style="background:rgba(29,158,117,.06);border-radius:12px;padding:16px;border:.5px solid rgba(29,158,117,.2)">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-          <div style="width:28px;height:28px;border-radius:50%;background:rgba(29,158,117,.15);display:flex;align-items:center;justify-content:center;font-size:14px">📊</div>
-          <div><div style="font-size:12px;font-weight:700;color:var(--green)">Blended Range Summary</div></div>
+          <span style="font-size:18px">📊</span>
+          <div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--green)">Margin at a Glance</div></div>
         </div>
         <div style="font-size:11px;color:var(--tx2);line-height:1.9">
-          <div style="display:flex;justify-content:space-between"><span>PDI-only margin</span><span><b style="color:var(--pdi)">~59.8%</b></span></div>
-          <div style="display:flex;justify-content:space-between"><span>PDI→Sig (short Sig)</span><span><b style="color:var(--step)">~52–55%</b></span></div>
-          <div style="display:flex;justify-content:space-between"><span>PDI→Sig (long Sig)</span><span><b style="color:var(--amber)">~46–48%</b></span></div>
-          <div style="display:flex;justify-content:space-between"><span>Sig standalone margin</span><span><b style="color:var(--sig)">~56.8%</b></span></div>
-          <div style="border-top:.5px solid var(--bd);margin-top:6px;padding-top:6px;font-size:10px;color:var(--tx3)">PDI→Sig is less profitable per Sig week than standalone because of the $3,888/wk PBWI package. Standalone clients don't carry this.</div>
+          <div style="display:flex;justify-content:space-between"><span>PDI-only</span><span><b style="color:var(--pdi)">~59.8%</b></span></div>
+          <div style="display:flex;justify-content:space-between"><span>PDI→Sig, short Sig stay</span><span><b style="color:var(--step)">52–55%</b></span></div>
+          <div style="display:flex;justify-content:space-between"><span>PDI→Sig, long Sig stay</span><span><b style="color:var(--amber)">46–48%</b></span></div>
+          <div style="display:flex;justify-content:space-between"><span>Sig weekly rate (PDI→Sig)</span><span><b style="color:var(--red)">42.6%</b></span></div>
+          <div style="display:flex;justify-content:space-between"><span>Sig standalone weekly</span><span><b style="color:var(--sig)">56.8%</b></span></div>
+          <div style="border-top:.5px solid var(--bd);margin-top:6px;padding-top:4px;font-size:9px;color:var(--tx3)">As Signature duration grows, blended margin trends toward 42.6%.</div>
         </div>
       </div>
-
     </div>
   </div>
 
@@ -741,66 +577,45 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
     </div>
   </div>
 
-  <!-- Sig Standalone Variability Factors -->
-  <div class="glass full-col" style="margin-top:0">
+  <!-- Sig variability -->
+  <div class="glass full-col">
     <div class="sec-h">
-      <div class="sec-h-left">
-        <div class="sec-title">Margin Variability Factors — Signature Standalone</div>
-        <div class="sec-sub">What drives the 2.2pp spread (54.6% – 56.6%) — an exceptionally tight range</div>
-      </div>
+      <div class="sec-h-left"><div class="sec-title">Margin Variability Factors — Signature Standalone</div><div class="sec-sub">What drives the 2.0pp spread (54.6% – 56.6%) — a highly consistent program</div></div>
     </div>
-    <div style="padding:18px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px">
-
+    <div style="padding:18px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px">
       <div style="background:rgba(127,119,221,.06);border-radius:12px;padding:16px;border:.5px solid rgba(127,119,221,.2)">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-          <div style="width:28px;height:28px;border-radius:50%;background:rgba(127,119,221,.15);display:flex;align-items:center;justify-content:center;font-size:14px">🏥</div>
-          <div><div style="font-size:12px;font-weight:700;color:var(--sig)">H&P Amortization</div><div style="font-size:9px;color:var(--tx3)">Only structural driver · 0.67pp at 10 days</div></div>
-          <div style="margin-left:auto;font-size:10px;font-weight:700;color:var(--sig);background:rgba(127,119,221,.12);padding:2px 8px;border-radius:20px">Primary</div>
+          <span style="font-size:18px">🏥</span>
+          <div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--sig)">H&P Admission Cost</div><div style="font-size:9px;color:var(--tx3)">The only driver of variation</div></div>
+          <span style="font-size:9px;font-weight:700;color:var(--sig);background:rgba(127,119,221,.12);padding:2px 7px;border-radius:20px">Only factor</span>
         </div>
-        <div style="font-size:11px;color:var(--tx2);line-height:1.7">
-          H&P ($200 one-time) dilutes margin slightly for short stays<br>
-          At <b>10 days</b>: H&P costs <b>0.67pp</b> of margin<br>
-          At <b>30 days</b>: only <b>0.22pp</b> impact<br>
-          Beyond 30 days: effectively negligible<br><br>
-          <span style="color:var(--tx3)">William C (3 days) at 54.6% vs Tomas W (48 days) at 56.6% — the entire spread is driven by H&P amortization, not service utilization</span>
-        </div>
-        <div style="margin-top:10px;font-size:10px">
-          <span style="background:rgba(29,158,117,.12);color:var(--green);padding:2px 8px;border-radius:20px;font-weight:600">Steady-state margin (long stay): 56.8%</span>
-        </div>
+        <div style="font-size:11px;color:var(--tx2);line-height:1.7">The $200 History & Physical is paid once on admission. Shorter stays carry it proportionally more, reducing margin slightly. It becomes negligible as length of stay grows.<br><br>At <b>10 days</b>: costs <b>0.67pp</b> · At <b>30 days</b>: <b>0.22pp</b> · At <b>48+ days</b>: near zero.<br><br><span style="color:var(--tx3)">William C (3 days) = 54.6% · Jarrod W (32 days) = 56.6% — the full 2pp spread is H&P amortization.</span></div>
+        <div style="margin-top:10px"><span style="font-size:10px;background:rgba(29,158,117,.12);color:var(--green);padding:2px 8px;border-radius:20px;font-weight:600">Steady-state margin: 56.8%</span></div>
       </div>
-
       <div style="background:rgba(29,158,117,.06);border-radius:12px;padding:16px;border:.5px solid rgba(29,158,117,.2)">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-          <div style="width:28px;height:28px;border-radius:50%;background:rgba(29,158,117,.15);display:flex;align-items:center;justify-content:center;font-size:14px">✅</div>
-          <div><div style="font-size:12px;font-weight:700;color:var(--green)">Highly Predictable Program</div></div>
+          <span style="font-size:18px">✅</span>
+          <div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--green)">Most Predictable Program</div></div>
         </div>
-        <div style="font-size:11px;color:var(--tx2);line-height:1.7">
-          Signature standalone is the <b>most predictable</b> of all three models<br>
-          No PBWI costs — service costs are session-based (stipend model)<br>
-          Fixed weekly cost of <b>$9,075</b> regardless of patient profile<br><br>
-          <span style="color:var(--tx3)">15 therapy sessions/wk (Individual, Family, Specialist × 5 each) · Personal Training 5/wk · Wellness 2/wk · Cognitive Remediation included. Consistent service delivery means margin is highly predictable.</span>
-        </div>
-        <div style="margin-top:10px;font-size:10px;color:var(--tx3)">
-          Key advantage vs PDI→Sig: no $3,888/wk PBWI package → <b>14pp higher</b> Sig-phase margin
-        </div>
+        <div style="font-size:11px;color:var(--tx2);line-height:1.7">Signature standalone has the <b>tightest margin range</b> of all three programs — just 2pp across all 14 clients. Because there is no PBWI package, costs are entirely fixed weekly services at consistent rates. No single variable meaningfully shifts margin between clients.<br><br>Adding a client adds predictable revenue and predictable cost every week — it scales cleanly.<br><br><span style="color:var(--tx3)">14pp margin advantage over PDI→Sig clients in their Signature phase (56.8% vs 42.6%) — no $3,888/wk PBWI package.</span></div>
       </div>
-
       <div style="background:rgba(55,138,221,.06);border-radius:12px;padding:16px;border:.5px solid rgba(55,138,221,.2)">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-          <div style="width:28px;height:28px;border-radius:50%;background:rgba(55,138,221,.15);display:flex;align-items:center;justify-content:center;font-size:14px">📊</div>
-          <div><div style="font-size:12px;font-weight:700;color:var(--pdi)">Weekly Service Structure</div></div>
+          <span style="font-size:18px">📊</span>
+          <div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--pdi)">Weekly Cost Structure</div></div>
         </div>
         <div style="font-size:11px;color:var(--tx2);line-height:1.9">
-          <div style="display:flex;justify-content:space-between"><span>Individual Therapy</span><span><b>5/wk × $150</b> <span style="color:var(--tx3)">($750/wk)</span></span></div>
-          <div style="display:flex;justify-content:space-between"><span>Family Therapy</span><span><b>5/wk × $150</b> <span style="color:var(--tx3)">($750/wk)</span></span></div>
-          <div style="display:flex;justify-content:space-between"><span>Specialist</span><span><b>5/wk × $150</b> <span style="color:var(--tx3)">($750/wk)</span></span></div>
-          <div style="display:flex;justify-content:space-between"><span>Personal Training</span><span><b>5/wk × $150</b> <span style="color:var(--tx3)">($750/wk)</span></span></div>
-          <div style="display:flex;justify-content:space-between"><span>Wellness (direct service)</span><span><b>2/wk × $300</b> <span style="color:var(--tx3)">($600/wk)</span></span></div>
-          <div style="display:flex;justify-content:space-between"><span>Cognitive Remediation</span><span style="color:var(--tx3)">Included — not a stipend cost</span></div>
-          <div style="border-top:.5px solid var(--bd);margin-top:6px;padding-top:6px;font-weight:700;display:flex;justify-content:space-between"><span>Total clinical sessions/wk</span><span style="color:var(--amber)">15 sessions · $2,250</span></div>
+          <div style="display:flex;justify-content:space-between"><span>Individual Therapy (5/wk)</span><span><b>$750</b></span></div>
+          <div style="display:flex;justify-content:space-between"><span>Family Therapy (5/wk)</span><span><b>$750</b></span></div>
+          <div style="display:flex;justify-content:space-between"><span>Specialist (5/wk)</span><span><b>$750</b></span></div>
+          <div style="display:flex;justify-content:space-between"><span>Personal Training (5/wk)</span><span><b>$750</b></span></div>
+          <div style="display:flex;justify-content:space-between"><span>Wellness (2/wk × $300)</span><span><b>$600</b></span></div>
+          <div style="display:flex;justify-content:space-between"><span>Dr. Forstadt oversight</span><span><b>$3,000</b></span></div>
+          <div style="display:flex;justify-content:space-between"><span>Culinary + Food (7 days)</span><span><b>$1,050</b></span></div>
+          <div style="display:flex;justify-content:space-between"><span>Stipends + Ancillary</span><span><b>$1,275</b></span></div>
+          <div style="border-top:.5px solid var(--bd);margin-top:6px;padding-top:6px;font-weight:700;display:flex;justify-content:space-between"><span>Total / week</span><span style="color:var(--amber)">$9,075</span></div>
         </div>
       </div>
-
     </div>
   </div>
 
