@@ -375,11 +375,7 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
           <span style="font-weight:700;color:var(--green)">$70,000 PDI + $21,000 Sig = <b>$91,000</b></span>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:11px">
-          <span style="color:var(--tx3)">Fixed costs (PBWI combined pkg)</span>
-          <span id="s-fix-cost">—</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;font-size:11px">
-          <span style="color:var(--tx3)">PDI variable costs (avg episode)</span>
+          <span style="color:var(--tx3)">Total PDI costs (all line items)</span>
           <span id="s-pdi-var">—</span>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:11px">
@@ -796,7 +792,6 @@ var DATA = {
     {cat:'Fixed — Clinical', name:'Psychometric Testing Battery (full protocol)', note:'SCID, MMPI-3, MCMI, WCST, Rorschach, WAIS, projectives', amt:6900},
     {cat:'Fixed — Clinical', name:'  └ Psychometric Assistant (if applicable)', note:'$2,133.33 of testing fee', amt:0},
     {cat:'Fixed — PBWI', name:'PBWI PDI+Signature Package — Dr. Flannery', note:'Covers PDI phase + Week 1 of Signature | PDI: medical services & care coord, medical records review, brain map + interpretation + integrated report, debriefing, wellness coord | Sig Wk 1: 2 neurofeedback sessions & care coord, Dr. Flannery follow-up & note, wellness care coord', amt:13926},
-    {cat:'Fixed — External', name:'Medical Evaluation (Dr. Flannery / Dr. Shaeffer)', note:'PDI phase', amt:1500},
     {cat:'Fixed — Labs', name:'Lab Panels — Comprehensive Bloodwork', note:'Day 1–2', amt:2000},
     {cat:'Fixed — Nutritional', name:'Nutritional / Dietician Assessment', note:'Initial intake', amt:150},
     {cat:'Fixed — Nutritional', name:'Nutritional / Dietician Follow-Up', note:'Follow-up', amt:150},
@@ -808,21 +803,22 @@ var DATA = {
     {cat:'Daily — Ancillary', name:'Client Ancillary Needs ($75/day × 10 days)', note:'$75 × 10 days = $750 · includes all days', amt:750},
   ],
   stepSig: [
-    {cat:'Medical', name:'PBWI — Medical Follow-Up', note:'1/wk', amt:1350},
-    {cat:'Medical', name:'PBWI — Neurofeedback', note:'2/wk', amt:2538},
+    // Standard weekly Signature costs — same for ALL weeks including Week 1
     {cat:'Clinical Leadership', name:'Dr. Forstadt — Ongoing Oversight', note:'Weekly', amt:3000},
-    {cat:'Wellness', name:'Wellness Direct Services (2/week × $300/hr)', note:'Direct service hour · care coord in PBWI package', amt:600},
     {cat:'Clinical', name:'Individual Therapy', note:'5/wk × $150', amt:750},
     {cat:'Clinical', name:'Family Therapy', note:'5/wk × $150', amt:750},
     {cat:'Clinical', name:'Specialist', note:'5/wk × $150', amt:750},
-    {cat:'Wellness', name:'Personal Training', note:'5/wk', amt:750},
-    {cat:'Stipend', name:'David Ockman — Executive Oversight', note:'Weekly', amt:250},
-    {cat:'Stipend', name:'Gus Hernandez — Tech Oversight', note:'Weekly', amt:250},
-    {cat:'Stipend', name:'Nicole Williams — Clinical Liaison', note:'Weekly', amt:250},
-    {cat:'Wellness', name:'PBWI — Wellness Services', note:'3/wk', amt:900},
-    {cat:'Wellness', name:'Alice — Nutritional Follow-Up', note:'1/wk', amt:150},
-    {cat:'Operational', name:'Kim / Culinary — Fee + Food', note:'5/wk', amt:750},
-    {cat:'Operational', name:'Client Ancillary ($75/day)', note:'5 days', amt:375},
+    {cat:'Wellness', name:'Personal Training', note:'5 days/wk · $150/session', amt:750},
+    {cat:'Wellness', name:'Wellness Direct Services (2/week × $300)', note:'Direct service fee · care coord in PBWI pkg', amt:600},
+    {cat:'Nutritional', name:'Nutritional Follow-Up', note:'1/wk · $150/session', amt:150},
+    {cat:'Stipend', name:'David Ockman — Executive Oversight', note:'Weekly flat', amt:250},
+    {cat:'Stipend', name:'Gus Hernandez — Tech Oversight', note:'Weekly flat', amt:250},
+    {cat:'Stipend', name:'Nicole Williams — Clinical Liaison', note:'Weekly flat', amt:250},
+    {cat:'Operational', name:'Culinary / Chef + Food (weekdays)', note:'$150/day × 5 weekdays', amt:750},
+    {cat:'Operational', name:'Weekend Food — Ordering', note:'$150/day × 2 weekend days', amt:300},
+    {cat:'Operational', name:'Client Ancillary Needs', note:'$75/day × 7 days', amt:525},
+    // PBWI weekly package — Week 2+ ONLY (Week 1 already covered in $13,926 combined pkg in PDI phase)
+    {cat:'PBWI (Wk 2+ only)', name:'PBWI Signature Weekly Package', note:'Neurofeedback + Dr. Flannery follow-up + wellness care coord — NOT charged Week 1', amt:3888},
   ],
   sigFull: [
     {cat:'Medical', name:'History & Physical (H&P)', freq:'One-time on admission · est.', amt:200},
@@ -988,8 +984,8 @@ function calcStep(){
   var sigM=sigRev>0?(sigRev-sigCostTotal)/sigRev:0;
 
   // Step tab uses renderStepTable() directly
-  document.getElementById('step-pdi-badge').textContent=fmt$(pdiCost);
-  document.getElementById('step-pdi-total').textContent=fmt$(pdiCost);
+  document.getElementById('step-pdi-badge').textContent=fmt$(pdiTotal);
+  document.getElementById('step-pdi-total').textContent=fmt$(pdiTotal);
   document.getElementById('step-sig-badge').textContent=fmt$(sigCostTotal)+' total';
   document.getElementById('step-sig-total').textContent=fmt$(sigCostTotal)+' ('+fmt$(sigCostPerWk)+'/wk × '+sigWks+'wk)';
   setGauge('step-gauge',pct,goal);
@@ -1040,7 +1036,7 @@ function calcStep(){
   var pPDI=profitColor(pdiM,goal),pSig=profitColor(sigM,goal);
   document.getElementById('step-pdi-pl').innerHTML=
     plRow('PDI Fee','+ '+fmt$(pdiRev))+
-    plRow('PDI Phase Cost','( '+fmt$(pdiCost)+' )')+
+    plRow('PDI Phase Cost','( '+fmt$(pdiTotal)+' )')+
     '<div style="height:.5px;background:var(--bd);margin:0 20px"></div>'+
     plRow('PDI Phase Profit',(pdiRev-pdiCost>=0?'+ ':'')+fmt$(pdiRev-pdiCost),'profit')+
     '<div style="padding:8px 20px 12px;font-size:10px;color:'+pPDI+'">PDI margin: <b>'+fmtPct(Math.round(pdiM*100))+'%</b></div>';
@@ -1159,20 +1155,21 @@ function renderStepTable(){
   var PDI_REV=70000, SIG_WK_REV=21000;
 
   // Get costs from editable line items
-  var pdiVar=lines.stepPdi.reduce(function(s,l){return s+(l.amt||0);},0);
-  var sigWkBase=lines.stepSig.reduce(function(s,l){return s+(l.amt||0);},0);
-  var sigWk1=sigWkBase;         // Week 1: no PBWI
-  var sigWkN=sigWkBase+PBWI_WKN; // Week 2+: + PBWI
+  // PDI total = ALL stepPdi lines (PBWI combined pkg already included in there)
+  var pdiTotal=lines.stepPdi.reduce(function(s,l){return s+(l.amt||0);},0);
+  // Sig: stepSig contains standard costs + the PBWI Wk2+ line
+  var sigWkN=lines.stepSig.reduce(function(s,l){return s+(l.amt||0);},0);       // Wk2+: includes PBWI $3,888
+  var sigWk1=lines.stepSig.filter(function(l){return l.amt!==3888;}).reduce(function(s,l){return s+(l.amt||0);},0); // Wk1: PBWI already in combined pkg
 
-  var baseCost=STEP_FIXED+pdiVar+sigWk1;
+  var baseCost=pdiTotal+sigWk1;
   var baseRev=PDI_REV+SIG_WK_REV;
   var baseProfit=baseRev-baseCost;
   var baseMargin=baseProfit/baseRev*100;
 
   // Update the two cards
   var set=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
-  set('s-fix-cost',  '($'+STEP_FIXED.toLocaleString()+')');
-  set('s-pdi-var',   '($'+Math.round(pdiVar).toLocaleString()+')');
+  set('s-fix-cost',  'Included in PDI cost line items');
+  set('s-pdi-var',   '($'+Math.round(pdiTotal).toLocaleString()+')');
   set('s-wk1-cost',  '($'+SIG_WK1_COST.toLocaleString()+')');
   set('s-base-cost', '$'+Math.round(baseCost).toLocaleString());
   set('s-base-profit','+$'+Math.round(baseProfit).toLocaleString());
@@ -1186,8 +1183,8 @@ function renderStepTable(){
   set('s-wkn-margin', Math.round(wknMargin*10)/10+'%');
 
   // Badges
-  set('step-pdi-badge', '$'+Math.round(pdiVar).toLocaleString());
-  set('step-pdi-total', '$'+Math.round(pdiVar).toLocaleString());
+  set('step-pdi-badge', '$'+Math.round(pdiTotal).toLocaleString());
+  set('step-pdi-total', '$'+Math.round(pdiTotal).toLocaleString());
   set('step-sig-badge', 'Wk1: $'+Math.round(sigWk1).toLocaleString()+' · Wk2+: $'+Math.round(sigWkN).toLocaleString());
   set('step-sig-wk1',   '$'+Math.round(sigWk1).toLocaleString());
   set('step-sig-total', '$'+Math.round(sigWkN).toLocaleString()+'/wk');
