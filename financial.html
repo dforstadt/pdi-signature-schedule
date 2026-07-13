@@ -560,7 +560,7 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
           <div style="margin-left:auto;font-size:10px;font-weight:700;color:var(--step);background:rgba(46,139,122,.12);padding:2px 8px;border-radius:20px">Primary</div>
         </div>
         <div style="font-size:11px;color:var(--tx2);line-height:1.7">
-          Sig weeks carry <b style="color:var(--red)">42.6% margin</b> ($12,063 cost on $21K revenue)<br>
+          Sig weeks carry <b style="color:var(--red)">42.6% margin</b> ($12,063 cost on $21K/wk revenue)<br>
           Each extra Sig week: <b>$21K revenue but $12,063 cost</b> → dilutes blended margin<br>
           Carlos L (1 Sig day): <b>55.1%</b> vs Marc C (73 Sig days): <b>46.2%</b><br><br>
           <span style="color:var(--tx3)">As Sig phase extends, blended margin converges downward from PDI-level (~60%) toward Sig-phase level (~43%)</span>
@@ -703,9 +703,9 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
     <div class="sec-h">
       <div class="sec-h-left">
         <div class="sec-title">Actual Signature Margins — All Active Clients</div>
-        <div class="sec-sub">Revenue $3,000/day · weekly cost $9,075 · H&P $200 one-time · all clients active as of Jul 12, 2026 · session rates from Firebase calendar</div>
+        <div class="sec-sub">Revenue $3,000/day · weekly cost $9,075 · H&P $200 one-time · all clients active as of Jul 12, 2026 · session rates based on program service structure</div>
       </div>
-      <span class="sec-badge" style="background:rgba(127,119,221,.1);color:var(--sig)">14 episodes · Firebase</span>
+      <span class="sec-badge" style="background:rgba(127,119,221,.1);color:var(--sig)">14 episodes · all active</span>
     </div>
     <table class="cost-tbl">
       <thead><tr><th>Client</th><th>Admitted</th><th style="text-align:center">Days</th><th style="text-align:right">Revenue</th><th style="text-align:right">Var Cost</th><th style="text-align:right">H&P</th><th style="text-align:right">Total Cost</th><th style="text-align:right">Profit</th><th style="text-align:right">Margin</th></tr></thead>
@@ -733,7 +733,7 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
       </tr></tfoot>
     </table>
     <div style="padding:12px 18px;font-size:10px;color:var(--tx3);border-top:.5px solid var(--bd);display:flex;gap:24px;flex-wrap:wrap">
-      <span>Firebase session rates: Therapy 8.0/wk · Personal Training 3.5/wk · Cognitive Remediation 2.4/wk · Wellness 1.6/wk</span>
+      <span>Service structure: 15 therapy sessions/wk (Ind/Family/Specialist × 5 each) · Personal Training 5/wk · Wellness 2/wk · Cognitive Remediation included</span>
       <span>Steady-state margin (long stay): <b>56.8%</b> · H&P amortizes quickly (0.67pp impact at 10 days)</span>
     </div>
   </div>
@@ -773,9 +773,9 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
         </div>
         <div style="font-size:11px;color:var(--tx2);line-height:1.7">
           Signature standalone is the <b>most predictable</b> of all three models<br>
-          No PBWI costs — service costs are entirely session-based<br>
+          No PBWI costs — service costs are session-based (stipend model)<br>
           Fixed weekly cost of <b>$9,075</b> regardless of patient profile<br><br>
-          <span style="color:var(--tx3)">Firebase data confirms: 8 therapy sessions/wk, 3.5 PT/wk, 2.4 cognitive/wk — consistent across all clients. Service variation does not materially affect margin.</span>
+          <span style="color:var(--tx3)">15 therapy sessions/wk (Individual, Family, Specialist × 5 each) · Personal Training 5/wk · Wellness 2/wk · Cognitive Remediation included. Consistent service delivery means margin is highly predictable.</span>
         </div>
         <div style="margin-top:10px;font-size:10px;color:var(--tx3)">
           Key advantage vs PDI→Sig: no $3,888/wk PBWI package → <b>14pp higher</b> Sig-phase margin
@@ -785,15 +785,16 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
       <div style="background:rgba(55,138,221,.06);border-radius:12px;padding:16px;border:.5px solid rgba(55,138,221,.2)">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
           <div style="width:28px;height:28px;border-radius:50%;background:rgba(55,138,221,.15);display:flex;align-items:center;justify-content:center;font-size:14px">📊</div>
-          <div><div style="font-size:12px;font-weight:700;color:var(--pdi)">Actual Session Rates (Firebase)</div></div>
+          <div><div style="font-size:12px;font-weight:700;color:var(--pdi)">Weekly Service Structure</div></div>
         </div>
         <div style="font-size:11px;color:var(--tx2);line-height:1.9">
-          <div style="display:flex;justify-content:space-between"><span>Therapy sessions</span><span><b>8.0/wk</b> <span style="color:var(--tx3)">($1,193/wk)</span></span></div>
-          <div style="display:flex;justify-content:space-between"><span>Personal Training</span><span><b>3.5/wk</b> <span style="color:var(--tx3)">($529/wk)</span></span></div>
-          <div style="display:flex;justify-content:space-between"><span>Cognitive Remediation</span><span><b>2.4/wk</b> <span style="color:var(--tx3)">($360/wk)</span></span></div>
-          <div style="display:flex;justify-content:space-between"><span>Wellness sessions</span><span><b>1.6/wk</b> <span style="color:var(--tx3)">($480/wk)</span></span></div>
-          <div style="display:flex;justify-content:space-between"><span>Nutritional</span><span><b>0.3/wk</b> <span style="color:var(--tx3)">($47/wk)</span></span></div>
-          <div style="border-top:.5px solid var(--bd);margin-top:6px;padding-top:6px;font-weight:700;display:flex;justify-content:space-between"><span>Actual session cost</span><span style="color:var(--amber)">$2,609/wk</span></div>
+          <div style="display:flex;justify-content:space-between"><span>Individual Therapy</span><span><b>5/wk × $150</b> <span style="color:var(--tx3)">($750/wk)</span></span></div>
+          <div style="display:flex;justify-content:space-between"><span>Family Therapy</span><span><b>5/wk × $150</b> <span style="color:var(--tx3)">($750/wk)</span></span></div>
+          <div style="display:flex;justify-content:space-between"><span>Specialist</span><span><b>5/wk × $150</b> <span style="color:var(--tx3)">($750/wk)</span></span></div>
+          <div style="display:flex;justify-content:space-between"><span>Personal Training</span><span><b>5/wk × $150</b> <span style="color:var(--tx3)">($750/wk)</span></span></div>
+          <div style="display:flex;justify-content:space-between"><span>Wellness (direct service)</span><span><b>2/wk × $300</b> <span style="color:var(--tx3)">($600/wk)</span></span></div>
+          <div style="display:flex;justify-content:space-between"><span>Cognitive Remediation</span><span style="color:var(--tx3)">Included — not a stipend cost</span></div>
+          <div style="border-top:.5px solid var(--bd);margin-top:6px;padding-top:6px;font-weight:700;display:flex;justify-content:space-between"><span>Total clinical sessions/wk</span><span style="color:var(--amber)">15 sessions · $2,250</span></div>
         </div>
       </div>
 
