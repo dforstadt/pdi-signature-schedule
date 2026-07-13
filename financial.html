@@ -364,75 +364,85 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
 
 <div id="tab-step" class="tab-panel">
 
-  <div style="background:rgba(46,139,122,.07);border:.5px solid rgba(46,139,122,.25);border-radius:12px;padding:11px 16px;margin-bottom:16px;font-size:11px;color:var(--tx2);display:flex;align-items:center;gap:10px">
-    <span style="font-size:15px">⚙️</span>
-    <span>The projected figures below are calculated from the assumption inputs — they model a single episode scenario. Real episode margins for all clients appear in the tables further down this page.</span>
-  </div>
+  <!-- ── GUARANTEED BASELINE ────────────────────────────────────────────── -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px">
 
-  <div class="kpi-strip">
-    <div class="glass kpi">
-      <div class="kpi-lbl">Projected Revenue</div>
-      <div class="kpi-v" style="color:var(--step)" id="step-kpi-rev">—</div>
-      <div class="kpi-sub" id="step-kpi-rev-sub">PDI fee + Sig phase</div>
-    </div>
-    <div class="glass kpi">
-      <div class="kpi-lbl">Projected Cost</div>
-      <div class="kpi-v" style="color:var(--amber)" id="step-kpi-cost">—</div>
-      <div class="kpi-sub" id="step-kpi-cost-sub">PDI + Sig costs</div>
-    </div>
-    <div class="glass kpi">
-      <div class="kpi-lbl">Projected Profit</div>
-      <div class="kpi-v" id="step-kpi-profit">—</div>
-      <div class="kpi-sub" id="step-kpi-profit-sub"></div>
-    </div>
-    <div class="glass kpi">
-      <div class="kpi-lbl">Blended Margin</div>
-      <div class="kpi-v" id="step-kpi-pct">—</div>
-      <div class="kpi-sub">Goal: 44%</div>
-      <div class="gauge-wrap">
-        <div class="gauge-fill" id="step-gauge" style="background:var(--green);width:0%"></div>
-        <div class="gauge-mark" style="left:44%"></div>
+    <!-- Guaranteed card -->
+    <div class="glass" style="padding:22px 20px;border-left:4px solid var(--step)">
+      <div style="font-size:10px;font-weight:700;color:var(--step);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Guaranteed Episode</div>
+      <div style="font-family:var(--fg);font-size:13px;color:var(--tx2);margin-bottom:14px">PDI + Week 1 of Signature is always firm for every step-down client.</div>
+      <div style="display:flex;flex-direction:column;gap:7px;font-size:12px">
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--tx3)">Revenue</span><span style="font-weight:600;color:var(--green)">$91,000</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--tx3)">Total Cost</span><span style="font-weight:600">$40,194</span></div>
+        <div style="height:.5px;background:var(--bd);margin:2px 0"></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--tx3)">Profit</span><span style="font-weight:700;color:var(--green)">+$50,806</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--tx3)">Margin</span><span style="font-weight:800;font-size:20px;color:var(--step)">55.8%</span></div>
       </div>
-      <div class="gauge-lbl"><span>0%</span><span>▲44%</span><span>100%</span></div>
+      <div style="margin-top:12px;font-size:9px;color:var(--tx3);line-height:1.5">$70K PDI + $21K Sig Wk 1 · Fixed cost $27,626 + avg PDI variable $4,393 + Sig Wk 1 $8,175</div>
     </div>
-  </div>
 
-  <div class="three-col">
-    <div class="glass">
-      <div class="sec-h">
-        <div class="sec-h-left"><div class="sec-title">Phase Assumptions</div><div class="sec-sub">Adjust to model any PDI→Sig episode</div></div>
-        <button class="reset-btn" onclick="resetStep()">↺ Reset</button>
+    <!-- Each additional week card -->
+    <div class="glass" style="padding:22px 20px;border-left:4px solid var(--amber)">
+      <div style="font-size:10px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Each Additional Week</div>
+      <div style="font-family:var(--fg);font-size:13px;color:var(--tx2);margin-bottom:14px">Every Signature week beyond Week 1 adds the $3,888 PBWI weekly package.</div>
+      <div style="display:flex;flex-direction:column;gap:7px;font-size:12px">
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--tx3)">Revenue / week</span><span style="font-weight:600;color:var(--green)">$21,000</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--tx3)">Cost / week</span><span style="font-weight:600">$12,063</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--tx3);padding-left:8px"><span>Dr. Forstadt + clinical</span><span>$8,175</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--tx3);padding-left:8px"><span>PBWI weekly package</span><span>$3,888</span></div>
+        <div style="height:.5px;background:var(--bd);margin:2px 0"></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--tx3)">Profit / week</span><span style="font-weight:700;color:var(--green)">+$8,937</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--tx3)">Weekly margin</span><span style="font-weight:800;font-size:20px;color:var(--amber)">42.6%</span></div>
       </div>
-      <div class="assumptions" style="grid-template-columns:1fr">
-        <div class="inp-group"><label>PDI Fee (Phase 1)</label><input type="number" id="step-a-pdi" value="70000" step="1000" oninput="calcStep()"></div>
-        <div class="inp-group"><label>PDI Length (days)</label><input type="number" id="step-a-pdi-days" value="12" step="1" oninput="calcStep()"></div>
-        <div class="inp-group"><label>Sig Rate / Week</label><input type="number" id="step-a-sig-wk" value="21000" step="500" oninput="calcStep()"></div>
-        <div class="inp-group"><label>Sig Duration (weeks)</label><input type="number" id="step-a-sig-wks" value="4" step="1" min="1" oninput="calcStep()">
-          <div style="font-size:9px;color:var(--tx3);margin-top:3px">Wk 1 covered in $13,926 combined package · $3,888/wk from Wk 2</div>
-        </div>
-        <div class="inp-group"><label>Profit Goal (%)</label><input type="number" id="step-a-goal" value="44" step="1" oninput="calcStep()"></div>
-      </div>
+      <div style="margin-top:12px;font-size:9px;color:var(--tx3);line-height:1.5">14 percentage points below Signature standalone (56.8%) due to the $3,888/wk PBWI package</div>
     </div>
-    <div class="glass">
-      <div class="sec-h">
-        <div class="sec-h-left"><div class="sec-title">Phase 1 — PDI</div><div class="sec-sub">$70K fee vs PDI costs</div></div>
-        <span class="phase-badge" style="background:rgba(55,138,221,.15);color:var(--pdi)">PDI</span>
+
+    <!-- How many weeks input -->
+    <div class="glass" style="padding:22px 20px;border-left:4px solid var(--sig)">
+      <div style="font-size:10px;font-weight:700;color:var(--sig);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Projection Tool</div>
+      <div style="font-family:var(--fg);font-size:13px;color:var(--tx2);margin-bottom:14px">How many total Signature weeks does this client stay?</div>
+      <div class="inp-group" style="margin-bottom:14px">
+        <label>Total Signature Weeks</label>
+        <input type="number" id="step-wks" value="4" min="1" max="26" step="1" oninput="renderStepTable()" style="font-size:18px;font-weight:700;text-align:center">
+        <div style="font-size:9px;color:var(--tx3);margin-top:4px">Week 1 is always guaranteed · enter total including Week 1</div>
       </div>
-      <div id="step-pdi-pl"></div>
-    </div>
-    <div class="glass">
-      <div class="sec-h">
-        <div class="sec-h-left"><div class="sec-title">Phase 2 — Signature</div><div class="sec-sub">Weekly costs × duration</div></div>
-        <span class="phase-badge" style="background:rgba(46,139,122,.15);color:var(--step)">Signature</span>
+      <div style="font-size:11px;color:var(--tx2);line-height:1.7">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Total Revenue</span><span style="font-weight:700;color:var(--green)" id="step-proj-rev">—</span></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Total Cost</span><span style="font-weight:600" id="step-proj-cost">—</span></div>
+        <div style="display:flex;justify-content:space-between"><span>Profit / Margin</span><span style="font-weight:700;color:var(--step)" id="step-proj-margin">—</span></div>
       </div>
-      <div id="step-sig-pl"></div>
     </div>
   </div>
 
+  <!-- ── WEEK-OVER-WEEK BLENDED MARGIN TABLE ─────────────────────────────── -->
+  <div class="glass full-col" style="margin-bottom:20px">
+    <div class="sec-h">
+      <div class="sec-h-left">
+        <div class="sec-title">Blended Margin — Week by Week</div>
+        <div class="sec-sub">Starting from the guaranteed PDI + Week 1 baseline · each row shows what one more Signature week does to the overall episode</div>
+      </div>
+    </div>
+    <div style="overflow-x:auto;padding:0 20px 20px">
+      <table class="cost-tbl" style="min-width:640px">
+        <thead><tr>
+          <th>Milestone</th>
+          <th style="text-align:right">Period Revenue</th>
+          <th style="text-align:right">Period Cost</th>
+          <th style="text-align:right">Period Margin</th>
+          <th style="text-align:right">Cumulative Revenue</th>
+          <th style="text-align:right">Cumulative Cost</th>
+          <th style="text-align:right">Blended Margin</th>
+        </tr></thead>
+        <tbody id="step-wk-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Editable cost structures -->
   <div class="two-col">
     <div class="glass">
       <div class="sec-h">
-        <div class="sec-h-left"><div class="sec-title">PDI Phase Costs</div><div class="sec-sub">Editable line items</div></div>
+        <div class="sec-h-left"><div class="sec-title">PDI Phase Cost Structure</div><div class="sec-sub">Full protocol — editable</div></div>
         <div style="display:flex;align-items:center;gap:8px"><button class="reset-btn" onclick="resetStep()">↺ Reset</button><span class="sec-badge" id="step-pdi-badge" style="background:rgba(55,138,221,.1);color:var(--pdi)">$0</span></div>
       </div>
       <table class="cost-tbl"><thead><tr><th>Line Item</th><th>Category</th><th style="text-align:right">Amount</th><th></th></tr></thead>
@@ -443,55 +453,17 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
     </div>
     <div class="glass">
       <div class="sec-h">
-        <div class="sec-h-left"><div class="sec-title">Signature Phase Costs</div><div class="sec-sub">Per-week × duration — editable</div></div>
+        <div class="sec-h-left"><div class="sec-title">Signature Phase Cost Structure</div><div class="sec-sub">Per week (Wk 1 and Wk 2+ differ) — editable</div></div>
         <span class="sec-badge" id="step-sig-badge" style="background:rgba(46,139,122,.1);color:var(--step)">$0</span>
       </div>
       <table class="cost-tbl"><thead><tr><th>Line Item</th><th>Category</th><th style="text-align:right">/ Week</th><th></th></tr></thead>
         <tbody id="step-sig-body"></tbody>
-        <tfoot><tr class="grand-total"><td colspan="2">Total Sig Phase Cost</td><td style="text-align:right" id="step-sig-total">$0</td><td></td></tr></tfoot>
+        <tfoot>
+          <tr class="subtotal"><td colspan="2">Wk 1 (PBWI in combined pkg)</td><td style="text-align:right" id="step-sig-wk1">$0</td></tr>
+          <tr class="grand-total"><td colspan="2">Wk 2+ (+ $3,888 PBWI)</td><td style="text-align:right" id="step-sig-total">$0</td></tr>
+        </tfoot>
       </table>
       <div class="add-row"><button class="add-btn" onclick="addLine('step-sig')">+ Add Line Item</button></div>
-    </div>
-  </div>
-
-
-  <!-- Week-over-week progression -->
-  <div class="glass full-col" style="margin-bottom:20px">
-    <div class="sec-h">
-      <div class="sec-h-left">
-        <div class="sec-title">Margin Progression — Week by Week</div>
-        <div class="sec-sub">How the blended margin evolves as the Signature phase extends · driven by the assumption inputs above</div>
-      </div>
-      <span class="sec-badge" id="wk-badge" style="background:rgba(46,139,122,.1);color:var(--step)">Live</span>
-    </div>
-
-    <!-- Key insight banner -->
-    <div style="margin:0 20px 16px;padding:12px 16px;background:rgba(29,158,117,.07);border-radius:10px;border:.5px solid rgba(29,158,117,.25);font-size:11px;color:var(--tx2);line-height:1.6">
-      <b style="color:var(--green)">Key insight:</b>
-      Sig Week 1 margin is <b>61.1%</b> — higher than PDI alone — because the PBWI cost is already covered in the $13,926 combined package.
-      From Week 2 onward, the $3,888/wk PBWI package applies, dropping the weekly Sig margin to <b>42.6%</b> and pulling the blended rate down each week.
-      This is <b>14 percentage points lower</b> than Signature standalone (56.8%), where there is no PBWI weekly cost.
-    </div>
-
-    <div style="overflow-x:auto;padding:0 20px 20px">
-      <table class="cost-tbl" style="min-width:680px" id="wk-table">
-        <thead><tr>
-          <th>Phase</th>
-          <th style="text-align:right">Revenue</th>
-          <th style="text-align:right">Cost This Period</th>
-          <th style="text-align:right">Period Margin</th>
-          <th style="text-align:right">Cumulative Revenue</th>
-          <th style="text-align:right">Cumulative Cost</th>
-          <th style="text-align:right">Blended Margin</th>
-        </tr></thead>
-        <tbody id="wk-body"></tbody>
-      </table>
-    </div>
-
-    <div style="padding:10px 20px 16px;font-size:10px;color:var(--tx3);display:flex;gap:24px;flex-wrap:wrap;border-top:.5px solid var(--bd)">
-      <span>Standalone Sig weekly margin: <b>56.8%</b> ($9,075 cost, no PBWI)</span>
-      <span>PDI→Sig Sig weekly margin Wk 1: <b>61.1%</b> ($8,175 — PBWI in combined pkg)</span>
-      <span>PDI→Sig Sig weekly margin Wk 2+: <b>42.6%</b> ($12,063 — includes $3,888/wk PBWI)</span>
     </div>
   </div>
 
@@ -981,14 +953,7 @@ function calcStep(){
   var pdiM=pdiRev>0?(pdiRev-pdiCost)/pdiRev:0;
   var sigM=sigRev>0?(sigRev-sigCostTotal)/sigRev:0;
 
-  document.getElementById('step-kpi-rev').textContent=fmt$(totalRev);
-  document.getElementById('step-kpi-rev-sub').textContent='PDI '+fmt$(pdiRev)+' + Sig '+fmt$(sigRev);
-  document.getElementById('step-kpi-cost').textContent=fmt$(totalCost);
-  document.getElementById('step-kpi-cost-sub').textContent=fmt$(pdiCost)+' PDI + '+fmt$(sigCostTotal)+' Sig';
-  document.getElementById('step-kpi-profit').textContent=(profit>=0?'+ ':'')+fmt$(profit);
-  document.getElementById('step-kpi-profit').style.color=pc;
-  document.getElementById('step-kpi-pct').textContent=fmtPct(pct);
-  document.getElementById('step-kpi-pct').style.color=pc;
+  // Step tab uses renderStepTable() directly
   document.getElementById('step-pdi-badge').textContent=fmt$(pdiCost);
   document.getElementById('step-pdi-total').textContent=fmt$(pdiCost);
   document.getElementById('step-sig-badge').textContent=fmt$(sigCostTotal)+' total';
@@ -1152,6 +1117,57 @@ firebase.database().ref('schedule_v3').once('value',function(snap){
 
 var STEP_FIX=27626; // PDI+Sig fixed costs
 // ── Reset functions ────────────────────────────────────────────────────────
+function fmt$(v){return '$'+Math.round(Math.abs(v)).toLocaleString();}
+function renderStepTable(){
+  var SIG_WK1_COST=8175, SIG_WKN_COST=12063, SIG_REV=21000, PDI_REV=70000;
+  var pdiCost=lines.stepPdi.reduce(function(s,l){return s+(l.amt||0);},0);
+  var STEP_FIXED=27626;
+  var wks=Math.max(1,parseInt(document.getElementById('step-wks')?document.getElementById('step-wks').value:4)||4);
+  var rows='';
+  // Guaranteed baseline row
+  var baseCost=STEP_FIXED+pdiCost+SIG_WK1_COST;
+  var baseRev=PDI_REV+SIG_REV;
+  var baseM=(baseRev-baseCost)/baseRev*100;
+  var bC=baseM>=50?'var(--green)':baseM>=44?'var(--amber)':'var(--red)';
+  rows+='<tr style="background:rgba(46,139,122,.07)"><td><b>PDI + Sig Week 1</b> <span style="font-size:9px;color:var(--step)">Guaranteed baseline</span></td>'+
+    '<td style="text-align:right">$91,000</td><td style="text-align:right">'+fmt$(baseCost)+'</td>'+
+    '<td style="text-align:right;color:var(--tx3)">—</td>'+
+    '<td style="text-align:right">$91,000</td><td style="text-align:right">'+fmt$(baseCost)+'</td>'+
+    '<td style="text-align:right;font-weight:700;color:'+bC+'">'+Math.round(baseM*10)/10+'%</td></tr>';
+  var cRev=baseRev, cCost=baseCost;
+  for(var w=2;w<=Math.max(wks,2);w++){
+    cRev+=SIG_REV; cCost+=SIG_WKN_COST;
+    var blend=(cRev-cCost)/cRev*100;
+    var bc=blend>=50?'var(--green)':blend>=44?'var(--amber)':'var(--red)';
+    var active=w<=wks;
+    rows+='<tr'+(active?'':' style="opacity:.4"')+'>'+
+      '<td style="padding-left:18px">+ Sig Week '+w+' <span style="font-size:9px;color:var(--tx3)">+$8,937 profit · 42.6% weekly</span></td>'+
+      '<td style="text-align:right;color:var(--green)">$21,000</td>'+
+      '<td style="text-align:right">$12,063</td>'+
+      '<td style="text-align:right;color:var(--amber)">42.6%</td>'+
+      '<td style="text-align:right">'+fmt$(cRev)+'</td>'+
+      '<td style="text-align:right">'+fmt$(cCost)+'</td>'+
+      '<td style="text-align:right;font-weight:700;color:'+bc+'">'+Math.round(blend*10)/10+'%</td></tr>';
+  }
+  var el=document.getElementById('step-wk-body');if(el)el.innerHTML=rows;
+  // Update projection summary
+  var projRev=PDI_REV+wks*SIG_REV;
+  var projCost=STEP_FIXED+pdiCost+SIG_WK1_COST+(wks-1)*SIG_WKN_COST;
+  var projM=(projRev-projCost)/projRev*100;
+  var setT=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
+  setT('step-proj-rev',fmt$(projRev));
+  setT('step-proj-cost',fmt$(projCost));
+  setT('step-proj-margin',fmt$(projRev-projCost)+' · '+Math.round(projM*10)/10+'%');
+  // Update pdi badge / sig totals
+  var sigWk1=lines.stepSig.reduce(function(s,l){return s+(l.amt||0);},0);
+  var sigWkN=sigWk1+3888;
+  var sigBadge=document.getElementById('step-sig-badge');if(sigBadge)sigBadge.textContent='Wk 1: '+fmt$(sigWk1)+' · Wk 2+: '+fmt$(sigWkN);
+  var sigWk1El=document.getElementById('step-sig-wk1');if(sigWk1El)sigWk1El.textContent=fmt$(sigWk1);
+  var sigTotEl=document.getElementById('step-sig-total');if(sigTotEl)sigTotEl.textContent=fmt$(sigWkN)+'/wk';
+  var pdiB=document.getElementById('step-pdi-badge');if(pdiB)pdiB.textContent=fmt$(pdiCost);
+  var pdiT=document.getElementById('step-pdi-total');if(pdiT)pdiT.textContent=fmt$(pdiCost);
+}
+function calcStep(){renderStepTable();}
 function resetPDI(){
   lines.pdi=clone(DATA.pdi);
   document.getElementById('pdi-a-rev').value=70000;
