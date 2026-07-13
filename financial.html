@@ -360,6 +360,100 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
     </div>
   </div>
 
+</div><!-- /tab-pdi -->
+
+<div id="tab-step" class="tab-panel">
+
+  <div style="background:rgba(46,139,122,.07);border:.5px solid rgba(46,139,122,.25);border-radius:12px;padding:11px 16px;margin-bottom:16px;font-size:11px;color:var(--tx2);display:flex;align-items:center;gap:10px">
+    <span style="font-size:15px">⚙️</span>
+    <span>The projected figures below are calculated from the assumption inputs — they model a single episode scenario. Real episode margins for all clients appear in the tables further down this page.</span>
+  </div>
+
+  <div class="kpi-strip">
+    <div class="glass kpi">
+      <div class="kpi-lbl">Projected Revenue</div>
+      <div class="kpi-v" style="color:var(--step)" id="step-kpi-rev">—</div>
+      <div class="kpi-sub" id="step-kpi-rev-sub">PDI fee + Sig phase</div>
+    </div>
+    <div class="glass kpi">
+      <div class="kpi-lbl">Projected Cost</div>
+      <div class="kpi-v" style="color:var(--amber)" id="step-kpi-cost">—</div>
+      <div class="kpi-sub" id="step-kpi-cost-sub">PDI + Sig costs</div>
+    </div>
+    <div class="glass kpi">
+      <div class="kpi-lbl">Projected Profit</div>
+      <div class="kpi-v" id="step-kpi-profit">—</div>
+      <div class="kpi-sub" id="step-kpi-profit-sub"></div>
+    </div>
+    <div class="glass kpi">
+      <div class="kpi-lbl">Blended Margin</div>
+      <div class="kpi-v" id="step-kpi-pct">—</div>
+      <div class="kpi-sub">Goal: 44%</div>
+      <div class="gauge-wrap">
+        <div class="gauge-fill" id="step-gauge" style="background:var(--green);width:0%"></div>
+        <div class="gauge-mark" style="left:44%"></div>
+      </div>
+      <div class="gauge-lbl"><span>0%</span><span>▲44%</span><span>100%</span></div>
+    </div>
+  </div>
+
+  <div class="three-col">
+    <div class="glass">
+      <div class="sec-h">
+        <div class="sec-h-left"><div class="sec-title">Phase Assumptions</div><div class="sec-sub">Adjust to model any PDI→Sig episode</div></div>
+        <button class="reset-btn" onclick="resetStep()">↺ Reset</button>
+      </div>
+      <div class="assumptions" style="grid-template-columns:1fr">
+        <div class="inp-group"><label>PDI Fee (Phase 1)</label><input type="number" id="step-a-pdi" value="70000" step="1000" oninput="calcStep()"></div>
+        <div class="inp-group"><label>PDI Length (days)</label><input type="number" id="step-a-pdi-days" value="12" step="1" oninput="calcStep()"></div>
+        <div class="inp-group"><label>Sig Rate / Week</label><input type="number" id="step-a-sig-wk" value="21000" step="500" oninput="calcStep()"></div>
+        <div class="inp-group"><label>Sig Duration (weeks)</label><input type="number" id="step-a-sig-wks" value="4" step="1" min="1" oninput="calcStep()">
+          <div style="font-size:9px;color:var(--tx3);margin-top:3px">Wk 1 covered in $13,926 combined package · $3,888/wk from Wk 2</div>
+        </div>
+        <div class="inp-group"><label>Profit Goal (%)</label><input type="number" id="step-a-goal" value="44" step="1" oninput="calcStep()"></div>
+      </div>
+    </div>
+    <div class="glass">
+      <div class="sec-h">
+        <div class="sec-h-left"><div class="sec-title">Phase 1 — PDI</div><div class="sec-sub">$70K fee vs PDI costs</div></div>
+        <span class="phase-badge" style="background:rgba(55,138,221,.15);color:var(--pdi)">PDI</span>
+      </div>
+      <div id="step-pdi-pl"></div>
+    </div>
+    <div class="glass">
+      <div class="sec-h">
+        <div class="sec-h-left"><div class="sec-title">Phase 2 — Signature</div><div class="sec-sub">Weekly costs × duration</div></div>
+        <span class="phase-badge" style="background:rgba(46,139,122,.15);color:var(--step)">Signature</span>
+      </div>
+      <div id="step-sig-pl"></div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="glass">
+      <div class="sec-h">
+        <div class="sec-h-left"><div class="sec-title">PDI Phase Costs</div><div class="sec-sub">Editable line items</div></div>
+        <div style="display:flex;align-items:center;gap:8px"><button class="reset-btn" onclick="resetStep()">↺ Reset</button><span class="sec-badge" id="step-pdi-badge" style="background:rgba(55,138,221,.1);color:var(--pdi)">$0</span></div>
+      </div>
+      <table class="cost-tbl"><thead><tr><th>Line Item</th><th>Category</th><th style="text-align:right">Amount</th><th></th></tr></thead>
+        <tbody id="step-pdi-body"></tbody>
+        <tfoot><tr class="grand-total"><td colspan="2">PDI Phase Total</td><td style="text-align:right" id="step-pdi-total">$0</td><td></td></tr></tfoot>
+      </table>
+      <div class="add-row"><button class="add-btn" onclick="addLine('step-pdi')">+ Add Line Item</button></div>
+    </div>
+    <div class="glass">
+      <div class="sec-h">
+        <div class="sec-h-left"><div class="sec-title">Signature Phase Costs</div><div class="sec-sub">Per-week × duration — editable</div></div>
+        <span class="sec-badge" id="step-sig-badge" style="background:rgba(46,139,122,.1);color:var(--step)">$0</span>
+      </div>
+      <table class="cost-tbl"><thead><tr><th>Line Item</th><th>Category</th><th style="text-align:right">/ Week</th><th></th></tr></thead>
+        <tbody id="step-sig-body"></tbody>
+        <tfoot><tr class="grand-total"><td colspan="2">Total Sig Phase Cost</td><td style="text-align:right" id="step-sig-total">$0</td><td></td></tr></tfoot>
+      </table>
+      <div class="add-row"><button class="add-btn" onclick="addLine('step-sig')">+ Add Line Item</button></div>
+    </div>
+  </div>
+
   <!-- PDI → Signature Actual Margins -->
   <div class="glass full-col" style="margin-top:0">
     <div class="sec-h">
