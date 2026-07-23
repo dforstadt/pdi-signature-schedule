@@ -315,8 +315,15 @@ function getBlob(){
 function applyData(d){
   try{
     if(Array.isArray(d.clients)){
-    // Normalize program field: infer from admit dates if missing
+    // Normalize program field: canonical case + infer from admit dates if missing
     d.clients.forEach(function(c){
+      // Normalise case first ('signature'→'Signature', 'sig'→'Signature', etc.)
+      if(c.program){
+        var pn=c.program.trim().toLowerCase();
+        if(pn==='signature'||pn==='sig') c.program='Signature';
+        else if(pn==='pdi') c.program='PDI';
+        else if(pn==='both') c.program='Both';
+      }
       if(!c.program){
         var hasPdi=!!c.pdiAdmit, hasSig=!!c.sigAdmit;
         if(hasPdi&&hasSig&&c.pdiAdmit!==c.sigAdmit) c.program='Both';
