@@ -1132,8 +1132,8 @@ firebase.database().ref('schedule_v3').on('value',function(snap){
     return admit&&admit<=today&&(!disch||disch>=today);
   });
   var activePDI=clients.filter(function(c){
-    var p=(c.program||'').trim();
-    if(p!=='PDI'&&p!=='Both')return false;
+    var p=(c.program||'').trim().toLowerCase();
+    if(p!=='pdi'&&p!=='both')return false;
     var admit=c.pdiAdmit||'',disch=c.pdiDischarge||c.pdiDisch||'';
     if(c.sigAdmit&&admit&&admit===c.sigAdmit)return false;
     return admit&&admit<=today&&(!disch||disch>=today);
@@ -1177,8 +1177,10 @@ firebase.database().ref('schedule_v3').on('value',function(snap){
       // Include Signature and Both programs
       // Also include clients with sigAdmit but missing/empty program field
       // (happens when calendar sessions are added before program is confirmed)
-      var isSig = p==='Signature' || p==='Both';
-      if(!isSig && c.sigAdmit && !p) isSig = true; // infer from sigAdmit
+      // Case-insensitive match — Firebase may store 'signature', 'Sig', etc.
+      var pl = p.toLowerCase();
+      var isSig = pl==='signature' || pl==='both' || pl==='sig';
+      if(!isSig && c.sigAdmit) isSig = true; // infer from sigAdmit when program unclear
       if(!isSig) return false;
       if(!c.sigAdmit) return false;
       // Exclude if name matches any hardcoded Sig OR step-down client
@@ -1214,7 +1216,8 @@ firebase.database().ref('schedule_v3').on('value',function(snap){
 
     // ── PDI-only dynamic rows ────────────────────────────────────────────
     var pdiDyn = clients.filter(function(c){
-      if((c.program||'').trim()!=='PDI') return false;
+      var pp=(c.program||'').trim().toLowerCase();
+      if(pp!=='pdi') return false;
       if(!c.pdiAdmit) return false;
       return !isHardcoded(c.name, ALL_HARD);
     }).sort(function(a,b){ return a.pdiAdmit>b.pdiAdmit?1:-1; });
