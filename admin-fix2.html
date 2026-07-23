@@ -2,32 +2,61 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Admin — Restore Missing Clients</title>
+<title>Admin Fix — Angela T</title>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 <style>
-  body{font-family:Arial,sans-serif;max-width:700px;margin:40px auto;padding:20px;}
-  h2{color:#1B2A4A}
-  .client{background:#f5f3ee;padding:12px;margin:10px 0;border-radius:6px;border-left:4px solid #1B2A4A}
-  .log{background:#1B2A4A;color:#90EE90;padding:16px;border-radius:6px;font-family:monospace;font-size:13px;min-height:120px;white-space:pre-wrap;}
-  button{background:#1B2A4A;color:white;padding:12px 28px;border:none;border-radius:6px;font-size:14px;cursor:pointer;margin-top:16px}
-  button:hover{background:#2A3F6A}
-  .warn{background:#FEF6EC;border-left:4px solid #B87A00;padding:12px;border-radius:6px;margin-bottom:16px}
+  body{font-family:Arial,sans-serif;max-width:640px;margin:60px auto;padding:24px;background:#f7f5f2;}
+  h2{color:#1B2A4A;margin-bottom:4px;}
+  .sub{color:#888;font-size:13px;margin-bottom:24px;}
+  .card{background:white;border-radius:8px;padding:20px;margin-bottom:16px;border:1px solid #e0ddd8;}
+  .label{font-size:11px;font-weight:bold;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;}
+  .val{font-size:14px;color:#1B2A4A;font-weight:bold;}
+  .change{color:#1D9E75;}
+  .log{background:#1B2A4A;color:#90EE90;padding:16px;border-radius:8px;font-family:monospace;
+       font-size:13px;min-height:100px;white-space:pre-wrap;margin-top:16px;}
+  button{background:#1B2A4A;color:white;padding:12px 32px;border:none;border-radius:6px;
+         font-size:14px;cursor:pointer;margin-top:8px;width:100%;}
+  button:hover{background:#2A3F6A;}
+  button:disabled{background:#aaa;cursor:not-allowed;}
+  .row{display:flex;gap:24px;margin-top:8px;}
+  .field{flex:1;}
+  .arrow{color:#999;font-size:18px;align-self:center;padding-top:16px;}
 </style>
 </head>
 <body>
-<h2>Admin — Restore Missing Clients to Firebase</h2>
-<div class="warn">⚠ This page will add Carlos L, Jessica C, and George W back into the Firebase database. They were lost due to a previous blob overwrite. This operation is safe — it only ADDS records, it does not delete anything.</div>
+<h2>Admin Fix — Angela T</h2>
+<p class="sub">Sets program = Both and pdiAdmit = 2026-07-03 on the Angela T client record.</p>
 
-<h3>Clients to Restore</h3>
-<div class="client"><strong>Carlos L</strong> — Program: Both | PDI: 2026-03-23 → 2026-03-31 | Sig: 2026-04-01 → 2026-04-07</div>
-<div class="client"><strong>Jessica C</strong> — Program: Both | PDI: 2026-04-04 → 2026-04-21 | Sig: 2026-04-14 → 2026-04-21</div>
-<div class="client"><strong>George W</strong> — Program: Both | PDI: 2026-04-11 → 2026-04-22 | Sig: 2026-04-24 → 2026-05-18</div>
+<div class="card">
+  <div class="label">Client</div>
+  <div class="val">Angela T</div>
+  <div class="row">
+    <div class="field">
+      <div class="label" style="margin-top:12px">program (current)</div>
+      <div class="val" id="cur-program">Loading…</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="field">
+      <div class="label" style="margin-top:12px">program (new)</div>
+      <div class="val change">Both</div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="field">
+      <div class="label" style="margin-top:12px">pdiAdmit (current)</div>
+      <div class="val" id="cur-pdi">Loading…</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="field">
+      <div class="label" style="margin-top:12px">pdiAdmit (new)</div>
+      <div class="val change">2026-07-03</div>
+    </div>
+  </div>
+</div>
 
-<button onclick="restore()">Restore Clients</button>
-
-<h3 style="margin-top:24px">Log</h3>
-<div class="log" id="log">Ready. Press Restore Clients to begin.</div>
+<button id="btn" onclick="applyFix()">Apply Fix</button>
+<div class="log" id="log">Connecting to Firebase…</div>
 
 <script>
 firebase.initializeApp({
@@ -35,86 +64,72 @@ firebase.initializeApp({
   databaseURL:'https://pdi-signature-schedule-default-rtdb.firebaseio.com',
   projectId:'pdi-signature-schedule'
 });
-var db = firebase.database();
-var FB = db.ref('schedule_v3');
-var MISSING = [
-  {
-    "name": "Carlos L",
-    "program": "Both",
-    "pdiAdmit": "2026-03-23",
-    "pdiDischarge": "2026-03-31",
-    "sigAdmit": "2026-04-01",
-    "sigDischarge": "2026-04-07",
-    "rate": 60000,
-    "companionRate": 0
-  },
-  {
-    "name": "Jessica C",
-    "program": "Both",
-    "pdiAdmit": "2026-04-04",
-    "pdiDischarge": "2026-04-21",
-    "sigAdmit": "2026-04-14",
-    "sigDischarge": "2026-04-21",
-    "rate": 60000,
-    "companionRate": 0
-  },
-  {
-    "name": "George W",
-    "program": "Both",
-    "pdiAdmit": "2026-04-11",
-    "pdiDischarge": "2026-04-22",
-    "sigAdmit": "2026-04-24",
-    "sigDischarge": "2026-05-18",
-    "rate": 70000,
-    "companionRate": 0
-  }
-];
+var FB = firebase.database().ref('schedule_v3');
+var currentBlob = null;
+var angelaIdx   = -1;
 
-function log(msg) {
-  var el = document.getElementById('log');
-  el.textContent += '\n' + new Date().toISOString().slice(11,19) + ' ' + msg;
+function log(msg){
+  var el=document.getElementById('log');
+  el.textContent += (el.textContent ? '\n' : '') + new Date().toISOString().slice(11,19)+' '+msg;
   el.scrollTop = el.scrollHeight;
 }
 
-function generateId() {
-  return 'c_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
-}
-
-function restore() {
-  log('Reading current blob from Firebase...');
-  FB.once('value', function(snap) {
-    var raw = snap.val();
-    if (!raw || !raw.blob) { log('ERROR: Could not read blob.'); return; }
-    var blob;
-    try { blob = JSON.parse(raw.blob); } catch(e) { log('ERROR: Could not parse blob: '+e); return; }
-    var clients = blob.clients || [];
-    var names = clients.map(function(c){return c.name;});
-    log('Current clients in Firebase: ' + names.join(', '));
-
-    var added = 0;
-    MISSING.forEach(function(mc) {
-      if (names.indexOf(mc.name) >= 0) {
-        log('SKIP: ' + mc.name + ' already exists.');
+// Load and preview current state on open
+FB.once('value', function(snap){
+  var raw = snap.val();
+  if(!raw||!raw.blob){ log('ERROR: Could not read blob.'); return; }
+  try{
+    currentBlob = JSON.parse(raw.blob);
+    var clients = currentBlob.clients || [];
+    log('Loaded. '+clients.length+' clients in Firebase.');
+    for(var i=0;i<clients.length;i++){
+      if(clients[i].name && clients[i].name.toLowerCase().indexOf('angela')>=0){
+        angelaIdx = i;
+        document.getElementById('cur-program').textContent = clients[i].program || '(not set)';
+        document.getElementById('cur-pdi').textContent     = clients[i].pdiAdmit || '(not set)';
+        log('Found Angela T at index '+i+' (id: '+clients[i].id+')');
+        log('Current program: "'+clients[i].program+'" | pdiAdmit: "'+(clients[i].pdiAdmit||'none')+'"');
+        if(clients[i].program==='Both' && clients[i].pdiAdmit==='2026-07-03'){
+          log('Already correct — no fix needed.');
+          document.getElementById('btn').disabled=true;
+          document.getElementById('btn').textContent='Already Fixed';
+        }
         return;
       }
-      var newClient = Object.assign({}, mc, {id: generateId(), addedBy:'admin-restore', addedAt: new Date().toISOString()});
-      clients.push(newClient);
-      log('ADDED: ' + mc.name + ' (id: ' + newClient.id + ')');
-      added++;
-    });
+    }
+    log('WARNING: Angela T not found in client list. Names: '+clients.map(function(c){return c.name;}).join(', '));
+  }catch(e){ log('ERROR parsing blob: '+e); }
+});
 
-    if (added === 0) { log('No clients needed restoring — all already present.'); return; }
+function applyFix(){
+  if(!currentBlob || angelaIdx<0){ log('ERROR: Blob not loaded or Angela T not found.'); return; }
+  var btn = document.getElementById('btn');
+  btn.disabled=true; btn.textContent='Applying…';
 
-    blob.clients = clients;
-    var newBlob = JSON.stringify(blob);
-    var ts = Date.now();
-    log('Saving blob back to Firebase (' + Math.round(newBlob.length/1024) + ' KB)...');
-    FB.set({blob: newBlob, ts: ts}).then(function() {
-      log('SUCCESS: ' + added + ' client(s) restored. Blob saved.');
-      log('Done. You can close this page.');
-    }).catch(function(e) {
-      log('ERROR saving: ' + e);
-    });
+  var clients = currentBlob.clients;
+  var before  = {program: clients[angelaIdx].program, pdiAdmit: clients[angelaIdx].pdiAdmit};
+  clients[angelaIdx].program  = 'Both';
+  clients[angelaIdx].pdiAdmit = '2026-07-03';
+  currentBlob.clients = clients;
+
+  log('Changing program: "'+before.program+'" → "Both"');
+  log('Changing pdiAdmit: "'+(before.pdiAdmit||'none')+'" → "2026-07-03"');
+
+  var newBlob = JSON.stringify(currentBlob);
+  var ts = Date.now();
+  log('Saving ('+Math.round(newBlob.length/1024)+' KB)…');
+
+  FB.set({blob:newBlob, ts:ts}).then(function(){
+    log('SUCCESS — Angela T updated.');
+    log('program = Both | pdiAdmit = 2026-07-03');
+    log('Done. You can close this page.');
+    btn.textContent='Fixed ✓';
+    document.getElementById('cur-program').textContent='Both';
+    document.getElementById('cur-pdi').textContent='2026-07-03';
+  }).catch(function(e){
+    log('ERROR saving: '+e);
+    btn.disabled=false;
+    btn.textContent='Retry Fix';
   });
 }
 </script>
