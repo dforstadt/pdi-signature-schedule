@@ -260,7 +260,7 @@ function render(fbClients){
       pdiAdmit: hasPdi?(c.pdiAdmit||null):null,
       pdiDisch:  hasPdi?(c.pdiDischarge||c.pdiDisch||null):null,
       sigAdmit: hasSig?(c.sigAdmit||null):null,
-      sigDisch:  hasSig?(c.sigDischarge||c.sigDisch||null):null,
+      sigDisch:  hasSig?(c.sigDischarge||c.sigDisch||(hasSig&&!hasPdi?c.endDate:null)||null):null,
       _fromFB:true
     };
   });
