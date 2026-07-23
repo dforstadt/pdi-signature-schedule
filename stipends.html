@@ -445,7 +445,20 @@ FB.on('value',function(snap){
   var calMap={};var extras=[];
   (d.clients||[]).forEach(function(cl){if(!cl.name||!cl.program)return;var k=cl.name.toLowerCase().trim();if(!calMap[k])calMap[k]=cl;else extras.push(cl);});
   var merged=[];
-  PRE_CALENDAR.forEach(function(h){var k=h.name.toLowerCase().trim();if(calMap[k]){var fb=calMap[k];if(!fb.pdiAdmit&&h.pdiAdmit){fb.pdiAdmit=h.pdiAdmit;fb.pdiDischarge=h.pdiDischarge||null;}if(!fb.sigAdmit&&h.sigAdmit){fb.sigAdmit=h.sigAdmit;}merged.push(fb);delete calMap[k];}else{merged.push(h);}});
+  PRE_CALENDAR.forEach(function(h){var k=h.name.toLowerCase().trim();if(calMap[k]){
+    var fb=calMap[k];
+    // Merge: keep PRE_CALENDAR id so stipend event lookups stay consistent,
+    // but use Firebase for dates/discharge/program (Firebase is authoritative).
+    var mc=Object.assign({},h,{
+      program:fb.program||h.program,
+      pdiAdmit:fb.pdiAdmit||h.pdiAdmit,
+      pdiDischarge:fb.pdiDischarge||fb.pdiDisch||h.pdiDischarge||null,
+      sigAdmit:fb.sigAdmit||h.sigAdmit||null,
+      sigDischarge:fb.sigDischarge||fb.sigDisch||h.sigDischarge||null,
+      endDate:fb.endDate||h.endDate||null,
+      startDate:fb.startDate||h.startDate||null
+    });
+    merged.push(mc);delete calMap[k];}else{merged.push(h);}});
   Object.values(calMap).forEach(function(cl){merged.push(cl);});
   extras.forEach(function(cl){merged.push(cl);});
   DATA.clients=merged;
