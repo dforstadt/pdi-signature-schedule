@@ -144,7 +144,7 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
 <script>
 (function(){
   var PW='PDIFinance',SK='_fin_auth_v4';
-  if(sessionStorage.getItem(SK)==='1')document.getElementById('_gate').style.display='none';
+  var _g=document.getElementById('_gate');if(_g&&sessionStorage.getItem(SK)==='1')_g.style.display='none';
   window._gcheck=function(){
     var v=document.getElementById('_gpw').value,err=document.getElementById('_gerr');
     if(v===PW){sessionStorage.setItem(SK,'1');var g=document.getElementById('_gate');g.style.transition='opacity .35s';g.style.opacity='0';setTimeout(function(){g.style.display='none';},350);}
@@ -300,6 +300,7 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
         <tr><td><b>Norman P</b></td><td style="color:var(--tx3)">10</td><td style="text-align:right">$80,000 <span style="font-size:9px;color:var(--tx3)">$70K+$10K companion</span></td><td style="text-align:right">$4,350</td><td style="text-align:right">$23,738</td><td style="text-align:right">$28,088</td><td style="text-align:right;color:var(--green)">+$51,912</td><td style="text-align:right;font-weight:700;color:var(--green)">64.9%</td></tr>
         <tr><td><b>Angela T</b> <span style="font-size:9px;color:var(--step)">→ Sig ●</span></td><td style="color:var(--tx3)">10</td><td style="text-align:right">$70,000 </td><td style="text-align:right">$4,050</td><td style="text-align:right">$27,626</td><td style="text-align:right">$31,676</td><td style="text-align:right;color:var(--green)">+$38,324</td><td style="text-align:right;font-weight:700;color:var(--amber)">54.7%</td></tr>
       </tbody>
+      <tbody id="step-dynamic-rows"></tbody>
       <tbody id="pdi-dynamic-rows"></tbody>
 
     </table>
@@ -1279,8 +1280,17 @@ firebase.database().ref('schedule_v3').on('value',function(snap){
     if(stepDynEl) stepDynEl.innerHTML = stepHtml;
 
     // Console log for debugging
-    console.log('[Financial] Dynamic clients found — Sig:'+sigDyn.length+' PDI:'+pdiDyn.length+' Step:'+stepDyn.length);
-    if(sigDyn.length) console.log('[Financial] New Sig clients:', sigDyn.map(function(c){return c.name+' ('+c.program+')';}).join(', '));
+    // ── Debug output ───────────────────────────────────────────────
+    var _allSig=clients.filter(function(c){
+      var p=(c.program||'').trim();
+      return p==='Signature'||p==='Both';
+    });
+    console.log('[Financial] ALL Sig/Both in Firebase ('+_allSig.length+'):',
+      _allSig.map(function(c){return c.name+'['+c.program+']'+(c.sigAdmit?'✓':'NO-ADMIT');}).join(', '));
+    console.log('[Financial] Dynamic rows — Sig:'+sigDyn.length+' PDI:'+pdiDyn.length+' Step:'+stepDyn.length);
+    if(sigDyn.length) console.log('[Financial] New Sig:',
+      sigDyn.map(function(c){return c.name+'('+c.program+')';}).join(', '));
+    if(!sigDyn.length) console.warn('[Financial] No dynamic Sig rows — all Sig clients may be hardcoded or missing program/sigAdmit');
 
   })(); // end IIFE
   document.getElementById('sig-a-census').value=activeSig.length;
