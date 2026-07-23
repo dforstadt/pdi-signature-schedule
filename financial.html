@@ -1116,26 +1116,28 @@ firebase.initializeApp({
   projectId:'pdi-signature-schedule'
 });
 
-firebase.database().ref('schedule_v3').once('value',function(snap){
+firebase.database().ref('schedule_v3').on('value',function(snap){
   document.getElementById('ldot').className='ldot on';
-  document.getElementById('llbl').textContent='Live';
+  document.getElementById('llbl').textContent='Live • Auto-updating';
   var raw=snap.val(),clients=[];
   if(raw&&raw.blob){try{var d=JSON.parse(raw.blob);clients=d.clients||[];}catch(e){}}
   var today=new Date().toISOString().slice(0,10);
   var activeSig=clients.filter(function(c){
     var p=(c.program||'').trim();
     if(p!=='Signature'&&p!=='Both')return false;
-    var admit=c.sigAdmit||'',disch=c.sigDischarge||c.sigDisch||'';
+    var admit=c.sigAdmit||'',disch=c.sigDischarge||c.sigDisch||c.endDate||'';
     return admit&&admit<=today&&(!disch||disch>=today);
   });
   var activePDI=clients.filter(function(c){
     var p=(c.program||'').trim();
     if(p!=='PDI'&&p!=='Both')return false;
     var admit=c.pdiAdmit||'',disch=c.pdiDischarge||c.pdiDisch||'';
+    // Guard: skip Sig-only clients erroneously tagged with pdiAdmit=sigAdmit
+    if(p==='Both'&&c.sigAdmit&&admit===c.sigAdmit)return false;
     return admit&&admit<=today&&(!disch||disch>=today);
   });
-  document.getElementById('sig-a-census').value=activeSig.length||13;
-  document.getElementById('pdi-a-eps').value=activePDI.length||1;
+  document.getElementById('sig-a-census').value=activeSig.length;
+  document.getElementById('pdi-a-eps').value=activePDI.length;
   calcAll();
 },function(){
   document.getElementById('ldot').style.background='var(--red)';
