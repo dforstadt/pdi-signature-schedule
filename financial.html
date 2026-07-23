@@ -1174,7 +1174,12 @@ firebase.database().ref('schedule_v3').on('value',function(snap){
     // ── SIG dynamic rows ────────────────────────────────────────────────
     var sigDyn = clients.filter(function(c){
       var p = (c.program||'').trim();
-      if(p!=='Signature'&&p!=='Both') return false;
+      // Include Signature and Both programs
+      // Also include clients with sigAdmit but missing/empty program field
+      // (happens when calendar sessions are added before program is confirmed)
+      var isSig = p==='Signature' || p==='Both';
+      if(!isSig && c.sigAdmit && !p) isSig = true; // infer from sigAdmit
+      if(!isSig) return false;
       if(!c.sigAdmit) return false;
       // Exclude if name matches any hardcoded Sig OR step-down client
       return !isHardcoded(c.name, SIG_HARD.concat(STEP_HARD));
