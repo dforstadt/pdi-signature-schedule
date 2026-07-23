@@ -241,14 +241,26 @@ function render(fbClients){
     var k=c.name.toLowerCase().trim();
     // Build a canonical episode from this Firebase client record
     var prog=c.program||'';
-    var hasPdi=prog==='PDI'||prog==='Both'||c.pdiAdmit;
-    var hasSig=prog==='Signature'||prog==='Both'||c.sigAdmit;
+    // Drive PDI/Sig purely from the program field.
+    // Many Sig-only clients have pdiAdmit erroneously set = sigAdmit in Firebase.
+    // Never use pdiAdmit to infer PDI status for a Signature-only client.
+    var hasPdi = prog==='PDI' || prog==='Both';
+    var hasSig = prog==='Signature' || prog==='Both';
+    // If program field is missing, fall back to checking admit dates
+    // (covers older records before program field was added)
+    if(!prog){
+      hasPdi = !!c.pdiAdmit;
+      hasSig = !!c.sigAdmit;
+      // But only treat as PDI if pdiAdmit differs from sigAdmit
+      // (erroneous entries have pdiAdmit === sigAdmit)
+      if(hasPdi && hasSig && c.pdiAdmit === c.sigAdmit) hasPdi = false;
+    }
     fbMap[k]={
       name:c.name,
       pdiAdmit: hasPdi?(c.pdiAdmit||null):null,
-      pdiDisch:  c.pdiDischarge||c.pdiDisch||null,
+      pdiDisch:  hasPdi?(c.pdiDischarge||c.pdiDisch||null):null,
       sigAdmit: hasSig?(c.sigAdmit||null):null,
-      sigDisch:  c.sigDischarge||c.sigDisch||null,
+      sigDisch:  hasSig?(c.sigDischarge||c.sigDisch||null):null,
       _fromFB:true
     };
   });
