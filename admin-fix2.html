@@ -2,50 +2,46 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Admin Fixes</title>
+<title>Firebase Client Inspector</title>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 <style>
-body{font-family:Arial,sans-serif;max-width:680px;margin:48px auto;padding:24px;background:#f7f5f2;}
-h2{color:#1B2A4A;margin:0 0 4px}
-.sub{color:#888;font-size:13px;margin:0 0 28px}
-.fix{background:white;border-radius:8px;padding:20px;margin:0 0 16px;border:1px solid #e0ddd8;}
-.fix h3{color:#1B2A4A;margin:0 0 8px;font-size:14px}
-.fix p{color:#555;font-size:13px;margin:0 0 12px;line-height:1.5}
-.change{background:#EAF5EE;border-radius:4px;padding:8px 12px;font-family:monospace;font-size:12px;color:#157A52;margin:0 0 12px}
-button{background:#1B2A4A;color:white;padding:10px 24px;border:none;border-radius:6px;font-size:13px;cursor:pointer;}
-button:hover{background:#2A3F6A}
-button:disabled{background:#aaa;cursor:not-allowed}
-.log{background:#1B2A4A;color:#90EE90;padding:14px;border-radius:6px;font-family:monospace;font-size:12px;min-height:80px;white-space:pre-wrap;margin-top:20px}
-.done{color:#90EE90;font-weight:bold}
-.err{color:#FF8888}
+body{font-family:Arial,sans-serif;max-width:900px;margin:32px auto;padding:20px;background:#f7f5f2;}
+h2{color:#1B2A4A;margin-bottom:4px;}
+.sub{color:#888;font-size:13px;margin-bottom:20px;}
+input{padding:8px 12px;border:1px solid #ccc;border-radius:6px;font-size:13px;width:200px;}
+button{background:#1B2A4A;color:white;padding:9px 20px;border:none;border-radius:6px;
+       font-size:13px;cursor:pointer;margin-left:8px;}
+table{width:100%;border-collapse:collapse;margin-top:16px;font-size:12px;}
+th{background:#1B2A4A;color:white;padding:8px;text-align:left;}
+td{padding:6px 8px;border-bottom:1px solid #e0ddd8;}
+tr:nth-child(even){background:#f0ede8;}
+.match{background:#EAF5EE!important;font-weight:bold;}
+.warn{color:#c00;}
+.ok{color:#157A52;}
+.na{color:#999;}
 </style>
 </head>
 <body>
-<h2>Admin Fixes</h2>
-<p class="sub">Run each fix in order. Each button reads live Firebase, applies the change, and saves back.</p>
+<h2>Firebase Client Inspector</h2>
+<p class="sub">Shows all clients in Firebase blob — use to diagnose missing clients in financial model.</p>
 
-<div class="fix">
-  <h3>Fix 1 — Angela T: set program = Both, pdiAdmit = 2026-07-03</h3>
-  <p>Angela T is currently classified as Signature-only. She had a PDI phase starting July 3 before stepping down to Signature.</p>
-  <div class="change">program: "Signature" → "Both"<br>pdiAdmit: (not set) → "2026-07-03"</div>
-  <button id="btn1" onclick="fix1()">Apply Fix 1</button>
+<div style="margin-bottom:16px">
+  <input id="search" placeholder="Search name (e.g. Cassie)" oninput="filterTable()">
+  <button onclick="filterTable()">Filter</button>
+  <button onclick="document.getElementById('search').value='';filterTable()" 
+          style="background:#888">Clear</button>
+  <span id="count" style="margin-left:12px;font-size:12px;color:#666"></span>
 </div>
 
-<div class="fix">
-  <h3>Fix 2 — Carlos L &amp; Jessica C: add startDate/endDate so calendar treats them as discharged</h3>
-  <p>These clients were restored to Firebase for stipend/outcomes history but are missing the startDate/endDate fields the calendar uses to determine active status, causing them to appear as current clients.</p>
-  <div class="change">Carlos L: startDate = 2026-03-23, endDate = 2026-04-07<br>Jessica C: startDate = 2026-04-04, endDate = 2026-04-21</div>
-  <button id="btn2" onclick="fix2()">Apply Fix 2</button>
-</div>
-
-<div class="fix">
-  <h3>Fix 3 — George W: add startDate/endDate (same reason as Fix 2)</h3>
-  <div class="change">George W: startDate = 2026-04-11, endDate = 2026-05-18</div>
-  <button id="btn3" onclick="fix3()">Apply Fix 3</button>
-</div>
-
-<div class="log" id="log">Ready.</div>
+<table id="tbl">
+<thead><tr>
+  <th>Name</th><th>program</th><th>pdiAdmit</th><th>pdiDischarge</th>
+  <th>sigAdmit</th><th>sigDischarge</th><th>startDate</th><th>endDate</th>
+  <th>Financial?</th>
+</tr></thead>
+<tbody id="tbody"></tbody>
+</table>
 
 <script>
 firebase.initializeApp({
@@ -53,115 +49,71 @@ firebase.initializeApp({
   databaseURL:'https://pdi-signature-schedule-default-rtdb.firebaseio.com',
   projectId:'pdi-signature-schedule'
 });
-var FB = firebase.database().ref('schedule_v3');
 
-function log(msg, cls){
-  var el=document.getElementById('log');
-  var line=document.createElement('div');
-  line.textContent=new Date().toISOString().slice(11,19)+' '+msg;
-  if(cls) line.className=cls;
-  el.appendChild(line);
-  el.scrollTop=el.scrollHeight;
+var SIG_HARD = ['tomas w','jarrod w','emma t','david r','joseph g','arianna b',
+                'alex a','peter s','george r','chayse b','louis r','jack s',
+                'layla s (r)','layla s r','william c'];
+var PDI_HARD = ['matthew h','leslie k','abbegail m','alex r','francis r','thomas w','norman p'];
+var STEP_HARD= ['carlos l','jessica c','george w','marc c','michael f',
+                'kevin c','layla s','blake p','angela t'];
+var ALL_HARD = SIG_HARD.concat(PDI_HARD).concat(STEP_HARD);
+
+var allClients = [];
+
+firebase.database().ref('schedule_v3').once('value', function(snap){
+  var raw = snap.val();
+  if(!raw || !raw.blob){ document.getElementById('tbody').innerHTML='<tr><td colspan="9" class="warn">Cannot read blob</td></tr>'; return; }
+  try{
+    var d = JSON.parse(raw.blob);
+    allClients = (d.clients||[]).sort(function(a,b){return (a.name||'').localeCompare(b.name||'');});
+    renderTable(allClients);
+  }catch(e){ document.getElementById('tbody').innerHTML='<tr><td colspan="9" class="warn">Parse error: '+e+'</td></tr>'; }
+});
+
+function val(v){ return v||'<span class="na">—</span>'; }
+
+function financialStatus(c){
+  var p=(c.program||'').trim();
+  var n=(c.name||'').toLowerCase().trim();
+  var isHard = ALL_HARD.indexOf(n)>=0;
+  if(isHard) return '<span style="color:#888">Hardcoded</span>';
+  if(p==='Signature'||p==='Both'){
+    if(c.sigAdmit) return '<span class="ok">→ Sig tab ✓</span>';
+    else return '<span class="warn">No sigAdmit</span>';
+  }
+  if(p==='PDI'){
+    if(c.pdiAdmit) return '<span class="ok">→ PDI tab ✓</span>';
+    else return '<span class="warn">No pdiAdmit</span>';
+  }
+  if(p==='Both'&&c.pdiAdmit&&c.sigAdmit) return '<span class="ok">→ Step tab ✓</span>';
+  return '<span class="warn">No program or missing dates</span>';
 }
 
-function loadBlob(cb){
-  FB.once('value',function(snap){
-    var raw=snap.val();
-    if(!raw||!raw.blob){log('ERROR: Cannot read Firebase blob.','err');return;}
-    try{cb(JSON.parse(raw.blob));}
-    catch(e){log('ERROR parsing blob: '+e,'err');}
-  });
+function renderTable(clients){
+  var rows = clients.map(function(c){
+    var n=(c.name||'').toLowerCase().trim();
+    var isHard=ALL_HARD.indexOf(n)>=0;
+    var rowClass=!isHard&&((c.program||'').trim()==='Signature'||(c.program||'').trim()==='Both')?' class="match"':'';
+    return '<tr'+rowClass+'>'
+      +'<td>'+val(c.name)+'</td>'
+      +'<td><b>'+val(c.program)+'</b></td>'
+      +'<td>'+val(c.pdiAdmit)+'</td>'
+      +'<td>'+val(c.pdiDischarge||c.pdiDisch)+'</td>'
+      +'<td>'+val(c.sigAdmit)+'</td>'
+      +'<td>'+val(c.sigDischarge||c.sigDisch)+'</td>'
+      +'<td>'+val(c.startDate)+'</td>'
+      +'<td>'+val(c.endDate)+'</td>'
+      +'<td>'+financialStatus(c)+'</td>'
+      +'</tr>';
+  }).join('');
+  document.getElementById('tbody').innerHTML = rows || '<tr><td colspan="9" class="na">No clients</td></tr>';
+  document.getElementById('count').textContent = clients.length + ' clients';
 }
 
-function saveBlob(blob, onDone){
-  var b=JSON.stringify(blob);
-  log('Saving ('+Math.round(b.length/1024)+' KB)...');
-  FB.set({blob:b,ts:Date.now()}).then(function(){
-    log('Saved successfully.','done');
-    onDone&&onDone();
-  }).catch(function(e){log('ERROR saving: '+e,'err');});
-}
-
-function findClient(clients, name){
-  return clients.findIndex(function(c){
-    return c.name&&c.name.toLowerCase().indexOf(name.toLowerCase())>=0;
-  });
-}
-
-// Fix 1 — Angela T
-function fix1(){
-  var btn=document.getElementById('btn1');
-  btn.disabled=true; btn.textContent='Applying...';
-  log('Fix 1: Loading blob...');
-  loadBlob(function(blob){
-    var clients=blob.clients||[];
-    var idx=findClient(clients,'angela');
-    if(idx<0){log('ERROR: Angela T not found.','err');btn.disabled=false;return;}
-    var c=clients[idx];
-    log('Found: '+c.name+' (program='+c.program+', pdiAdmit='+(c.pdiAdmit||'none')+')');
-    if(c.program==='Both'&&c.pdiAdmit==='2026-07-03'){
-      log('Already correct — no change needed.','done');
-      btn.textContent='Already Done ✓'; return;
-    }
-    clients[idx].program='Both';
-    clients[idx].pdiAdmit='2026-07-03';
-    blob.clients=clients;
-    saveBlob(blob,function(){btn.textContent='Fix 1 Done ✓';});
-  });
-}
-
-// Fix 2 — Carlos L + Jessica C startDate/endDate
-function fix2(){
-  var btn=document.getElementById('btn2');
-  btn.disabled=true; btn.textContent='Applying...';
-  log('Fix 2: Loading blob...');
-  loadBlob(function(blob){
-    var clients=blob.clients||[];
-    var fixes=[
-      {search:'carlos',startDate:'2026-03-23',endDate:'2026-04-07'},
-      {search:'jessica',startDate:'2026-04-04',endDate:'2026-04-21'},
-    ];
-    var changed=0;
-    fixes.forEach(function(f){
-      var idx=findClient(clients,f.search);
-      if(idx<0){log('WARNING: '+f.search+' not found — may not have been restored yet.','err');return;}
-      var c=clients[idx];
-      log('Found: '+c.name+' — setting startDate='+f.startDate+', endDate='+f.endDate);
-      clients[idx].startDate=f.startDate;
-      clients[idx].endDate=f.endDate;
-      // Also ensure pdiAdmit/sigAdmit/sigDischarge are correct
-      if(f.search==='carlos'){
-        clients[idx].sigDischarge=clients[idx].sigDischarge||'2026-04-07';
-      }
-      if(f.search==='jessica'){
-        clients[idx].sigDischarge=clients[idx].sigDischarge||'2026-04-21';
-      }
-      changed++;
-    });
-    if(!changed){log('No clients found to fix.','err');btn.disabled=false;return;}
-    blob.clients=clients;
-    saveBlob(blob,function(){btn.textContent='Fix 2 Done ✓';});
-  });
-}
-
-// Fix 3 — George W
-function fix3(){
-  var btn=document.getElementById('btn3');
-  btn.disabled=true; btn.textContent='Applying...';
-  log('Fix 3: Loading blob...');
-  loadBlob(function(blob){
-    var clients=blob.clients||[];
-    var idx=findClient(clients,'george w');
-    if(idx<0){idx=findClient(clients,'george');}
-    if(idx<0){log('ERROR: George W not found.','err');btn.disabled=false;return;}
-    var c=clients[idx];
-    log('Found: '+c.name+' — setting startDate=2026-04-11, endDate=2026-05-18');
-    clients[idx].startDate='2026-04-11';
-    clients[idx].endDate='2026-05-18';
-    clients[idx].sigDischarge=clients[idx].sigDischarge||'2026-05-18';
-    blob.clients=clients;
-    saveBlob(blob,function(){btn.textContent='Fix 3 Done ✓';});
-  });
+function filterTable(){
+  var q = document.getElementById('search').value.toLowerCase().trim();
+  if(!q){ renderTable(allClients); return; }
+  renderTable(allClients.filter(function(c){ return (c.name||'').toLowerCase().indexOf(q)>=0; }));
 }
 </script>
 </body>
