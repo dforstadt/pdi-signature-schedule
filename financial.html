@@ -1132,8 +1132,7 @@ firebase.database().ref('schedule_v3').on('value',function(snap){
     var p=(c.program||'').trim();
     if(p!=='PDI'&&p!=='Both')return false;
     var admit=c.pdiAdmit||'',disch=c.pdiDischarge||c.pdiDisch||'';
-    // Guard: skip Sig-only clients erroneously tagged with pdiAdmit=sigAdmit
-    if(p==='Both'&&c.sigAdmit&&admit===c.sigAdmit)return false;
+    if(c.sigAdmit&&admit&&admit===c.sigAdmit)return false;
     return admit&&admit<=today&&(!disch||disch>=today);
   });
   document.getElementById('sig-a-census').value=activeSig.length;
