@@ -333,9 +333,13 @@ function applyData(d){
       // Ensure startDate/endDate are set (calendar active-client filter uses these)
       if(!c.startDate&&(c.pdiAdmit||c.sigAdmit)) c.startDate=c.pdiAdmit||c.sigAdmit;
       if(!c.endDate){
-        var e=(c.program==='PDI')?c.pdiDischarge||c.pdiDisch:
-              (c.program==='Signature')?c.sigDischarge||c.sigDisch:
-              c.sigDischarge||c.sigDisch||c.pdiDischarge||c.pdiDisch;
+        var e;
+        if(c.program==='PDI') e=c.pdiDischarge||c.pdiDisch;
+        else if(c.program==='Signature') e=c.sigDischarge||c.sigDisch;
+        // For Both: ONLY sigDischarge ends the program.
+        // pdiDischarge is an intermediate transition — never use it as endDate
+        // for a step-down client, or they disappear from calendar mid-program.
+        else e=c.sigDischarge||c.sigDisch;
         if(e) c.endDate=e;
       }
     });
