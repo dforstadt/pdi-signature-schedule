@@ -1,82 +1,122 @@
 <!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>Data Fix</title>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<style>body{font-family:sans-serif;padding:40px;max-width:700px}button{padding:10px 20px;margin:8px 4px;border-radius:6px;cursor:pointer;border:none;background:#1e170e;color:#fff;font-size:14px}.done{background:#1D9E75}pre{background:#f5f5f5;padding:12px;border-radius:6px;font-size:12px;white-space:pre-wrap}</style>
-</head><body>
-<h2>Firebase Data Corrections</h2>
-<p>These fixes update client records in Firebase to match the authoritative program data.</p>
-<div id="log"><pre>Ready. Click a button to apply fix.</pre></div>
-<button onclick="fixAngelaT()">Fix Angela T → program=Both, pdiAdmit=2026-07-03</button>
-<button onclick="fixGeorge()">Fix George → George W, program=Both, PDI/Sig dates</button>
-<button onclick="fixAll()">Fix All (Both Above)</button>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin — Restore Missing Clients</title>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+<style>
+  body{font-family:Arial,sans-serif;max-width:700px;margin:40px auto;padding:20px;}
+  h2{color:#1B2A4A}
+  .client{background:#f5f3ee;padding:12px;margin:10px 0;border-radius:6px;border-left:4px solid #1B2A4A}
+  .log{background:#1B2A4A;color:#90EE90;padding:16px;border-radius:6px;font-family:monospace;font-size:13px;min-height:120px;white-space:pre-wrap;}
+  button{background:#1B2A4A;color:white;padding:12px 28px;border:none;border-radius:6px;font-size:14px;cursor:pointer;margin-top:16px}
+  button:hover{background:#2A3F6A}
+  .warn{background:#FEF6EC;border-left:4px solid #B87A00;padding:12px;border-radius:6px;margin-bottom:16px}
+</style>
+</head>
+<body>
+<h2>Admin — Restore Missing Clients to Firebase</h2>
+<div class="warn">⚠ This page will add Carlos L, Jessica C, and George W back into the Firebase database. They were lost due to a previous blob overwrite. This operation is safe — it only ADDS records, it does not delete anything.</div>
+
+<h3>Clients to Restore</h3>
+<div class="client"><strong>Carlos L</strong> — Program: Both | PDI: 2026-03-23 → 2026-03-31 | Sig: 2026-04-01 → 2026-04-07</div>
+<div class="client"><strong>Jessica C</strong> — Program: Both | PDI: 2026-04-04 → 2026-04-21 | Sig: 2026-04-14 → 2026-04-21</div>
+<div class="client"><strong>George W</strong> — Program: Both | PDI: 2026-04-11 → 2026-04-22 | Sig: 2026-04-24 → 2026-05-18</div>
+
+<button onclick="restore()">Restore Clients</button>
+
+<h3 style="margin-top:24px">Log</h3>
+<div class="log" id="log">Ready. Press Restore Clients to begin.</div>
+
 <script>
 firebase.initializeApp({
-  apiKey:"AIzaSyCERxntgytkfCHWN7EoAVYVmLBcfWyYZ5A",
-  databaseURL:"https://pdi-signature-schedule-default-rtdb.firebaseio.com",
-  projectId:"pdi-signature-schedule"
+  apiKey:'AIzaSyCERxntgytkfCHWN7EoAVYVmLBcfWyYZ5A',
+  databaseURL:'https://pdi-signature-schedule-default-rtdb.firebaseio.com',
+  projectId:'pdi-signature-schedule'
 });
-var db=firebase.database();
-var log=document.getElementById('log').querySelector('pre');
-function lg(msg){log.textContent+=msg+'\n';}
+var db = firebase.database();
+var FB = db.ref('schedule_v3');
+var MISSING = [
+  {
+    "name": "Carlos L",
+    "program": "Both",
+    "pdiAdmit": "2026-03-23",
+    "pdiDischarge": "2026-03-31",
+    "sigAdmit": "2026-04-01",
+    "sigDischarge": "2026-04-07",
+    "rate": 60000,
+    "companionRate": 0
+  },
+  {
+    "name": "Jessica C",
+    "program": "Both",
+    "pdiAdmit": "2026-04-04",
+    "pdiDischarge": "2026-04-21",
+    "sigAdmit": "2026-04-14",
+    "sigDischarge": "2026-04-21",
+    "rate": 60000,
+    "companionRate": 0
+  },
+  {
+    "name": "George W",
+    "program": "Both",
+    "pdiAdmit": "2026-04-11",
+    "pdiDischarge": "2026-04-22",
+    "sigAdmit": "2026-04-24",
+    "sigDischarge": "2026-05-18",
+    "rate": 70000,
+    "companionRate": 0
+  }
+];
 
-function fixAngelaT(){
-  lg('Loading blob...');
-  db.ref('schedule_v3').once('value',function(snap){
-    var raw=snap.val();
-    if(!raw||!raw.blob){lg('ERROR: no blob');return;}
-    var d=JSON.parse(raw.blob);
-    var clients=d.clients||[];
-    var fixed=0;
-    clients.forEach(function(c){
-      if(c.name==='Angela T'){
-        lg('Found Angela T: program='+c.program+' pdiAdmit='+c.pdiAdmit);
-        c.program='Both';
-        c.pdiAdmit='2026-07-03';
-        // Keep sigAdmit as-is (2026-06-25)
-        fixed++;
-        lg('Fixed: program=Both, pdiAdmit=2026-07-03');
+function log(msg) {
+  var el = document.getElementById('log');
+  el.textContent += '\n' + new Date().toISOString().slice(11,19) + ' ' + msg;
+  el.scrollTop = el.scrollHeight;
+}
+
+function generateId() {
+  return 'c_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
+}
+
+function restore() {
+  log('Reading current blob from Firebase...');
+  FB.once('value', function(snap) {
+    var raw = snap.val();
+    if (!raw || !raw.blob) { log('ERROR: Could not read blob.'); return; }
+    var blob;
+    try { blob = JSON.parse(raw.blob); } catch(e) { log('ERROR: Could not parse blob: '+e); return; }
+    var clients = blob.clients || [];
+    var names = clients.map(function(c){return c.name;});
+    log('Current clients in Firebase: ' + names.join(', '));
+
+    var added = 0;
+    MISSING.forEach(function(mc) {
+      if (names.indexOf(mc.name) >= 0) {
+        log('SKIP: ' + mc.name + ' already exists.');
+        return;
       }
+      var newClient = Object.assign({}, mc, {id: generateId(), addedBy:'admin-restore', addedAt: new Date().toISOString()});
+      clients.push(newClient);
+      log('ADDED: ' + mc.name + ' (id: ' + newClient.id + ')');
+      added++;
     });
-    if(!fixed){lg('Angela T not found');return;}
-    d.clients=clients;
-    db.ref('schedule_v3').update({blob:JSON.stringify(d)},function(err){
-      if(err)lg('ERROR: '+err);
-      else{lg('Angela T SAVED successfully ✓');document.querySelector('button').classList.add('done');}
+
+    if (added === 0) { log('No clients needed restoring — all already present.'); return; }
+
+    blob.clients = clients;
+    var newBlob = JSON.stringify(blob);
+    var ts = Date.now();
+    log('Saving blob back to Firebase (' + Math.round(newBlob.length/1024) + ' KB)...');
+    FB.set({blob: newBlob, ts: ts}).then(function() {
+      log('SUCCESS: ' + added + ' client(s) restored. Blob saved.');
+      log('Done. You can close this page.');
+    }).catch(function(e) {
+      log('ERROR saving: ' + e);
     });
   });
 }
-
-function fixGeorge(){
-  lg('Loading blob...');
-  db.ref('schedule_v3').once('value',function(snap){
-    var raw=snap.val();
-    if(!raw||!raw.blob){lg('ERROR: no blob');return;}
-    var d=JSON.parse(raw.blob);
-    var clients=d.clients||[];
-    var fixed=0;
-    clients.forEach(function(c){
-      if(c.name==='George'&&(!c.program||c.program=='')){
-        lg('Found George (orphan): id='+c.id+' program='+c.program);
-        c.name='George W';
-        c.program='Both';
-        c.pdiAdmit='2026-04-11';
-        c.pdiDischarge='2026-04-22';
-        c.sigAdmit='2026-04-24';
-        c.sigDischarge='2026-05-18';
-        fixed++;
-        lg('Fixed: renamed George → George W, program=Both, dates set');
-      }
-    });
-    if(!fixed){lg('Orphan George not found (may already be fixed)');return;}
-    d.clients=clients;
-    db.ref('schedule_v3').update({blob:JSON.stringify(d)},function(err){
-      if(err)lg('ERROR: '+err);
-      else lg('George W SAVED successfully ✓');
-    });
-  });
-}
-
-function fixAll(){fixAngelaT();setTimeout(fixGeorge,2000);}
 </script>
-</body></html>
+</body>
+</html>
