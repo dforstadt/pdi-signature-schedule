@@ -284,7 +284,8 @@ function undo(){
       var blob=getBlob();
       try{localStorage.setItem(LS_KEY,blob);}catch(e){}
       var ts=Date.now();_lastSaveTs=ts;
-      try{FB.set({blob:blob,ts:ts}).catch(function(){});}catch(e){}
+      try{FB.set({blob:blob,ts:ts,v:(((window._fbVersion||0)+1))}).catch(function(){});
+      window._fbVersion=(window._fbVersion||0)+1;}catch(e){}
       renderAll();renderUndoBtn();
       showUndoToast();
     }
