@@ -246,15 +246,15 @@ function render(fbClients){
     // Never use pdiAdmit to infer PDI status for a Signature-only client.
     var hasPdi = prog==='PDI' || prog==='Both';
     var hasSig = prog==='Signature' || prog==='Both';
-    // If program field is missing, fall back to checking admit dates
-    // (covers older records before program field was added)
+    // If program field is missing, infer from admit dates
     if(!prog){
       hasPdi = !!c.pdiAdmit;
       hasSig = !!c.sigAdmit;
-      // But only treat as PDI if pdiAdmit differs from sigAdmit
-      // (erroneous entries have pdiAdmit === sigAdmit)
       if(hasPdi && hasSig && c.pdiAdmit === c.sigAdmit) hasPdi = false;
     }
+    // Also catch clients with sigAdmit but no program — common when
+    // calendar schedules sessions before program field is confirmed
+    if(!hasSig && !hasPdi && c.sigAdmit) hasSig = true;
     fbMap[k]={
       name:c.name,
       pdiAdmit: hasPdi?(c.pdiAdmit||null):null,
