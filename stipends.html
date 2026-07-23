@@ -445,6 +445,13 @@ FB.on('value',function(snap){
   var calMap={};var extras=[];
   (d.clients||[]).forEach(function(cl){
     if(!cl.name)return;
+    // Normalize program to canonical form (case-insensitive)
+    if(cl.program){
+      var pn=cl.program.trim().toLowerCase();
+      if(pn==='signature'||pn==='sig') cl.program='Signature';
+      else if(pn==='pdi') cl.program='PDI';
+      else if(pn==='both') cl.program='Both';
+    }
     // Infer program if missing: sigAdmit→Signature, pdiAdmit only→PDI
     if(!cl.program){
       if(cl.sigAdmit&&cl.pdiAdmit&&cl.pdiAdmit!==cl.sigAdmit) cl.program='Both';
