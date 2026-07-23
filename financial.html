@@ -1139,120 +1139,150 @@ firebase.database().ref('schedule_v3').on('value',function(snap){
   });
 
   // ── Dynamic rows for new clients not in hardcoded table ─────────────────
-  var SIG_RATE   = 21000/7;   // $3,000/day revenue
-  var SIG_WCOST  = 9075/7;    // ~$1,296/day cost
-  var SIG_HARD   = ['Tomas W', 'Jarrod W', 'Emma T', 'David R', 'Joseph G', 'Arianna B', 'Alex A', 'Peter S', 'George R', 'Chayse B', 'Louis R', 'Jack S', 'Layla S (R)', 'William C'];
-  var PDI_HARD   = ['Matthew H', 'Leslie K', 'Abbegail M', 'Alex R', 'Francis R', 'Thomas W', 'Norman P'];
-  var STEP_HARD  = ['Carlos L', 'Jessica C', 'George W', 'Marc C', 'Michael F', 'Kevin C', 'Layla S', 'Blake P', 'Angela T'];
+  // Runs on every Firebase update — adds rows for clients added since last deploy
+  (function(){
+    var SIG_RATE  = 21000/7;
+    var SIG_WCOST = 9075/7;
 
-  function losD(a,b){ if(!a)return 0; var d=(new Date(b||today))-(new Date(a)); return Math.max(0,Math.round(d/86400000)); }
-  function pct(v){ return Math.round(v*10)/10+'%'; }
-  function money(v){ return '$'+Math.round(Math.abs(v)).toLocaleString(); }
-  function tdR(v,col){ return '<td style="text-align:right'+(col?';color:'+col:'')+'">'+(v||'—')+'</td>'; }
+    // Normalise a name for comparison: lowercase, strip trailing periods/spaces
+    function normName(s){ return (s||'').toLowerCase().trim().replace(/\.$/,''); }
 
-  // Sig dynamic rows
-  var sigDyn = clients.filter(function(c){
-    var p=(c.program||'').trim();
-    if(p!=='Signature'&&p!=='Both')return false;
-    if(!c.sigAdmit)return false;
-    return SIG_HARD.every(function(n){return n.toLowerCase()!==c.name.toLowerCase();});
-  }).sort(function(a,b){ return a.sigAdmit>b.sigAdmit?1:-1; });
+    // All hardcoded names (normalised)
+    var SIG_HARD  = ['Tomas W','Jarrod W','Emma T','David R','Joseph G','Arianna B',
+                     'Alex A','Peter S','George R','Chayse B','Louis R','Jack S',
+                     'Layla S (R)','Layla S R','William C'].map(normName);
+    var PDI_HARD  = ['Matthew H','Leslie K','Abbegail M','Alex R','Francis R',
+                     'Thomas W','Norman P'].map(normName);
+    var STEP_HARD = ['Carlos L','Jessica C','George W','Marc C','Michael F',
+                     'Kevin C','Layla S','Blake P','Angela T'].map(normName);
+    var ALL_HARD  = SIG_HARD.concat(PDI_HARD).concat(STEP_HARD);
 
-  var sigHtml = sigDyn.map(function(c){
-    var disch = c.sigDischarge||c.sigDisch||c.endDate||'';
-    var los   = losD(c.sigAdmit, disch||today);
-    var isAct = !disch||disch>=today;
-    var rev   = Math.round(los * SIG_RATE);
-    var cost  = Math.round(los * SIG_WCOST) + 200; // +$200 H&P
-    var profit= rev - cost;
-    var margin= rev>0?profit/rev*100:0;
-    var mc    = margin>=55?'var(--green)':margin>=50?'var(--amber)':'var(--red)';
-    var badge = isAct
-      ? '<span style="color:var(--sig);font-size:10px">●</span>'
-      : '<span style="color:var(--tx3);font-size:9px">✓</span>';
-    return '<tr>'
-      +'<td><b>'+c.name+'</b> '+badge+'</td>'
-      +tdR(c.sigAdmit?c.sigAdmit.slice(5).replace('-','/'):'—','var(--tx3)')
-      +tdR(disch?(isAct?'Active':disch.slice(5).replace('-','/')):'Active','var(--tx3)')
-      +'<td style="text-align:center;color:'+(isAct?'var(--sig)':'var(--tx3)')+'">'+los+'</td>'
-      +tdR(money(rev))
-      +tdR(money(cost),'var(--amber)')
-      +tdR((profit>=0?'+':'-')+money(profit),(profit>=0?'var(--green)':'var(--red)'))
-      +tdR(pct(margin),mc)
-      +'</tr>';
-  }).join('');
-  var sigDynEl=document.getElementById('sig-dynamic-rows');
-  if(sigDynEl) sigDynEl.innerHTML=sigHtml;
+    function isHardcoded(name, list){ var n=normName(name); return list.indexOf(n)>=0; }
+    function losD(a,b){
+      if(!a)return 0;
+      var d=(new Date(b||today))-(new Date(a));
+      return Math.max(0,Math.round(d/86400000));
+    }
+    function money(v){ return '$'+Math.round(Math.abs(v)).toLocaleString(); }
+    function pct(v){ return (Math.round(v*10)/10)+'%'; }
+    function mc(m){ return m>=55?'var(--green)':m>=50?'var(--amber)':'var(--red)'; }
+    function tdR(v,col){
+      return '<td style="text-align:right'+(col?';color:'+col:'')+'">'+(v||'—')+'</td>';
+    }
 
-  // PDI dynamic rows ($70K default rate)
-  var pdiDyn = clients.filter(function(c){
-    var p=(c.program||'').trim();
-    if(p!=='PDI')return false;
-    if(!c.pdiAdmit)return false;
-    return PDI_HARD.every(function(n){return n.toLowerCase()!==c.name.toLowerCase();})
-        && STEP_HARD.every(function(n){return n.toLowerCase()!==c.name.toLowerCase();});
-  }).sort(function(a,b){ return a.pdiAdmit>b.pdiAdmit?1:-1; });
+    // ── SIG dynamic rows ────────────────────────────────────────────────
+    var sigDyn = clients.filter(function(c){
+      var p = (c.program||'').trim();
+      if(p!=='Signature'&&p!=='Both') return false;
+      if(!c.sigAdmit) return false;
+      // Exclude if name matches any hardcoded Sig OR step-down client
+      return !isHardcoded(c.name, SIG_HARD.concat(STEP_HARD));
+    }).sort(function(a,b){ return a.sigAdmit>b.sigAdmit?1:-1; });
 
-  var pdiDynHtml = pdiDyn.map(function(c){
-    var disch = c.pdiDischarge||c.pdiDisch||'';
-    var days  = losD(c.pdiAdmit, disch||today);
-    var rev   = 70000;
-    var varC  = Math.round(days*(150+150+75) + Math.floor(days/7)*2*600);
-    var fixC  = 23738;
-    var tot   = varC+fixC;
-    var profit= rev-tot;
-    var margin= profit/rev*100;
-    var mc    = margin>=55?'var(--green)':margin>=50?'var(--amber)':'var(--red)';
-    var act   = !disch||disch>=today;
-    return '<tr>'
-      +'<td><b>'+c.name+'</b>'+(act?' <span style="color:var(--pdi);font-size:10px">●</span>':' <span style="font-size:9px;color:var(--tx3)">✓</span>')+'</td>'
-      +'<td style="color:var(--tx3)">'+days+'</td>'
-      +'<td style="text-align:right">'+money(rev)+'</td>'
-      +tdR(money(varC))+tdR(money(fixC))+tdR(money(tot))
-      +tdR((profit>=0?'+':'-')+money(profit),(profit>=0?'var(--green)':'var(--red)'))
-      +'<td style="text-align:right;font-weight:700;color:'+mc+'">'+pct(margin)+'</td>'
-      +'</tr>';
-  }).join('');
-  var pdiDynEl=document.getElementById('pdi-dynamic-rows');
-  if(pdiDynEl) pdiDynEl.innerHTML=pdiDynHtml;
+    var sigHtml = sigDyn.map(function(c){
+      var disch = c.sigDischarge||c.sigDisch||c.endDate||'';
+      var los   = losD(c.sigAdmit, disch||today);
+      var isAct = !disch||disch>=today;
+      var rev   = Math.round(los*SIG_RATE);
+      var cost  = Math.round(los*SIG_WCOST)+200;
+      var profit= rev-cost;
+      var margin= rev>0?profit/rev*100:0;
+      var badge = isAct
+        ? '<span style="color:var(--sig);font-size:10px">&#9679;</span>'
+        : '<span style="color:var(--tx3);font-size:9px">&#10003;</span>';
+      var admitFmt = c.sigAdmit ? c.sigAdmit.slice(5).replace('-','/') : '—';
+      var dischFmt = disch ? (isAct?'Active':disch.slice(5).replace('-','/')) : 'Active';
+      return '<tr>'
+        +'<td><b>'+c.name+'</b> '+badge+'</td>'
+        +'<td style="color:var(--tx3)">'+admitFmt+'</td>'
+        +'<td style="color:var(--tx3)">'+dischFmt+'</td>'
+        +'<td style="text-align:center;color:'+(isAct?'var(--sig)':'var(--tx3)')+'">'+los+'</td>'
+        +tdR(money(rev))
+        +tdR(money(cost),'var(--amber)')
+        +tdR((profit>=0?'+':'')+money(profit),(profit>=0?'var(--green)':'var(--red)'))
+        +tdR(pct(margin),mc(margin))
+        +'</tr>';
+    }).join('');
+    var sigDynEl = document.getElementById('sig-dynamic-rows');
+    if(sigDynEl) sigDynEl.innerHTML = sigHtml;
 
-  // Step-Down dynamic rows
-  var stepDyn = clients.filter(function(c){
-    var p=(c.program||'').trim();
-    if(p!=='Both')return false;
-    if(!c.pdiAdmit||!c.sigAdmit)return false;
-    if(c.pdiAdmit===c.sigAdmit)return false; // erroneous
-    return STEP_HARD.every(function(n){return n.toLowerCase()!==c.name.toLowerCase();});
-  }).sort(function(a,b){ return a.pdiAdmit>b.pdiAdmit?1:-1; });
+    // ── PDI-only dynamic rows ────────────────────────────────────────────
+    var pdiDyn = clients.filter(function(c){
+      if((c.program||'').trim()!=='PDI') return false;
+      if(!c.pdiAdmit) return false;
+      return !isHardcoded(c.name, ALL_HARD);
+    }).sort(function(a,b){ return a.pdiAdmit>b.pdiAdmit?1:-1; });
 
-  var stepHtml = stepDyn.map(function(c){
-    var pd=c.pdiDischarge||c.pdiDisch||'', sd=c.sigDischarge||c.sigDisch||c.endDate||'';
-    var pDays=losD(c.pdiAdmit,pd||today), sDays=losD(c.sigAdmit,sd||today);
-    var pdiRev=70000, sigRev=Math.round(sDays/7*21000);
-    var totRev=pdiRev+sigRev;
-    var pdiV=Math.round(pDays*(150+150+75)+Math.floor(pDays/7)*2*600);
-    var sigW=Math.round(sDays/7*9075);
-    var fixC=27626;
-    var tot=pdiV+sigW+fixC;
-    var profit=totRev-tot; var margin=profit/totRev*100;
-    var mc=margin>=50?'var(--green)':margin>=44?'var(--amber)':'var(--red)';
-    var isAct=(!pd||pd>=today)||(!sd||sd>=today);
-    var badge=isAct?'<span style="color:var(--step);font-size:10px">●</span>':'<span style="font-size:9px;color:var(--tx3)">✓</span>';
-    var pRange=(c.pdiAdmit?c.pdiAdmit.slice(5,10).replace('-','/'):'?')+(pd?'–'+pd.slice(5,10).replace('-','/'):'–active');
-    var sRange=(c.sigAdmit?c.sigAdmit.slice(5,10).replace('-','/'):'?')+(sd?'–'+sd.slice(5,10).replace('-','/'):'–active');
-    return '<tr>'
-      +'<td><b>'+c.name+'</b> '+badge+'</td>'
-      +'<td style="color:var(--tx3)">'+pRange+' ('+pDays+'d)</td>'
-      +'<td style="color:var(--tx3)">'+sRange+' ('+sDays+'d)</td>'
-      +tdR(money(pdiV))+tdR(money(sigW))+tdR(money(fixC))+tdR(money(tot))
-      +tdR(money(totRev)+' <span style="font-size:9px;color:var(--green);font-weight:600">+'
-        +money(profit)+'</span>','')
-      +'<td style="text-align:right;font-weight:700;color:'+mc+'">'+pct(margin)+'</td>'
-      +'</tr>';
-  }).join('');
-  var stepDynEl=document.getElementById('step-dynamic-rows');
-  if(stepDynEl) stepDynEl.innerHTML=stepHtml;
+    var pdiHtml = pdiDyn.map(function(c){
+      var disch = c.pdiDischarge||c.pdiDisch||'';
+      var days  = losD(c.pdiAdmit, disch||today);
+      var isAct = !disch||disch>=today;
+      var rev   = 70000;
+      var varC  = Math.round(days*375 + Math.floor(days/7)*600);
+      var fixC  = 23738;
+      var tot   = varC+fixC;
+      var profit= rev-tot;
+      var margin= profit/rev*100;
+      return '<tr>'
+        +'<td><b>'+c.name+'</b> '+(isAct?'<span style="color:var(--pdi);font-size:10px">&#9679;</span>':'<span style="font-size:9px;color:var(--tx3)">&#10003;</span>')+'</td>'
+        +'<td style="color:var(--tx3)">'+days+'</td>'
+        +tdR(money(rev))
+        +tdR(money(varC))+tdR(money(fixC))+tdR(money(tot))
+        +tdR((profit>=0?'+':'')+money(profit),(profit>=0?'var(--green)':'var(--red)'))
+        +'<td style="text-align:right;font-weight:700;color:'+mc(margin)+'">'+pct(margin)+'</td>'
+        +'</tr>';
+    }).join('');
+    var pdiDynEl = document.getElementById('pdi-dynamic-rows');
+    if(pdiDynEl) pdiDynEl.innerHTML = pdiHtml;
 
+    // ── Step-down dynamic rows ───────────────────────────────────────────
+    var stepDyn = clients.filter(function(c){
+      if((c.program||'').trim()!=='Both') return false;
+      if(!c.pdiAdmit||!c.sigAdmit) return false;
+      if(c.pdiAdmit===c.sigAdmit) return false;  // erroneous entry
+      return !isHardcoded(c.name, STEP_HARD);
+    }).sort(function(a,b){ return a.pdiAdmit>b.pdiAdmit?1:-1; });
+
+    var stepHtml = stepDyn.map(function(c){
+      var pd = c.pdiDischarge||c.pdiDisch||'';
+      var sd = c.sigDischarge||c.sigDisch||c.endDate||'';
+      var pDays = losD(c.pdiAdmit, pd||today);
+      var sDays = losD(c.sigAdmit,  sd||today);
+      var isAct = (!pd||pd>=today)||(!sd||sd>=today);
+      var pdiRev = 70000;
+      var sigRev = Math.round(sDays/7*21000);
+      var totRev = pdiRev+sigRev;
+      var pdiV   = Math.round(pDays*375+Math.floor(pDays/7)*600);
+      var sigW   = Math.round(sDays/7*9075);
+      var fixC   = 27626;
+      var tot    = pdiV+sigW+fixC;
+      var profit = totRev-tot;
+      var margin = profit/totRev*100;
+      var pRange = (c.pdiAdmit||'?').slice(5).replace('-','/')
+                 + (pd?'–'+pd.slice(5).replace('-','/'):pd?'':'–active')
+                 +' ('+pDays+'d)';
+      var sRange = (c.sigAdmit||'?').slice(5).replace('-','/')
+                 + (sd?'–'+sd.slice(5).replace('-','/'):sd?'':'–active')
+                 +' ('+sDays+'d)';
+      return '<tr>'
+        +'<td><b>'+c.name+'</b> '+(isAct?'<span style="color:var(--step);font-size:10px">&#9679;</span>':'<span style="color:var(--tx3);font-size:9px">&#10003;</span>')+'</td>'
+        +'<td style="color:var(--tx3)">'+pRange+'</td>'
+        +'<td style="color:var(--tx3)">'+sRange+'</td>'
+        +tdR(money(pdiV))+tdR(money(sigW))+tdR(money(fixC))+tdR(money(tot))
+        +'<td style="text-align:right">'+money(totRev)
+          +' <span style="font-size:9px;color:'+(profit>=0?'var(--green)':'var(--red)')
+          +';font-weight:600">'+(profit>=0?'+':'')+money(profit)+'</span></td>'
+        +'<td style="text-align:right;font-weight:700;color:'+mc(margin)+'">'+pct(margin)+'</td>'
+        +'</tr>';
+    }).join('');
+    var stepDynEl = document.getElementById('step-dynamic-rows');
+    if(stepDynEl) stepDynEl.innerHTML = stepHtml;
+
+    // Console log for debugging
+    console.log('[Financial] Dynamic clients found — Sig:'+sigDyn.length+' PDI:'+pdiDyn.length+' Step:'+stepDyn.length);
+    if(sigDyn.length) console.log('[Financial] New Sig clients:', sigDyn.map(function(c){return c.name+' ('+c.program+')';}).join(', '));
+
+  })(); // end IIFE
   document.getElementById('sig-a-census').value=activeSig.length;
   document.getElementById('pdi-a-eps').value=activePDI.length;
   calcAll();
