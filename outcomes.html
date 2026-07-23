@@ -366,9 +366,9 @@ firebase.initializeApp({
   databaseURL:'https://pdi-signature-schedule-default-rtdb.firebaseio.com',
   projectId:'pdi-signature-schedule'
 });
-firebase.database().ref('schedule_v3').once('value',function(snap){
+firebase.database().ref('schedule_v3').on('value',function(snap){
   document.getElementById('ldot').className='ldot on';
-  document.getElementById('llbl').textContent='Live';
+  document.getElementById('llbl').textContent='Live • Auto-updating';
   var clients=[];
   var raw=snap.val();
   if(raw&&raw.blob){try{var d=JSON.parse(raw.blob);if(Array.isArray(d.clients))clients=d.clients;}catch(e){}}
