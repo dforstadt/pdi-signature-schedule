@@ -443,7 +443,16 @@ FB.on('value',function(snap){
       var d=JSON.parse(raw.blob);
       if(Array.isArray(d.clients)){
   var calMap={};var extras=[];
-  (d.clients||[]).forEach(function(cl){if(!cl.name||!cl.program)return;var k=cl.name.toLowerCase().trim();if(!calMap[k])calMap[k]=cl;else extras.push(cl);});
+  (d.clients||[]).forEach(function(cl){
+    if(!cl.name)return;
+    // Infer program if missing: sigAdmit→Signature, pdiAdmit only→PDI
+    if(!cl.program){
+      if(cl.sigAdmit&&cl.pdiAdmit&&cl.pdiAdmit!==cl.sigAdmit) cl.program='Both';
+      else if(cl.sigAdmit) cl.program='Signature';
+      else if(cl.pdiAdmit) cl.program='PDI';
+      else return; // no program and no dates — skip
+    }
+    if(!cl.program)return;var k=cl.name.toLowerCase().trim();if(!calMap[k])calMap[k]=cl;else extras.push(cl);});
   var merged=[];
   PRE_CALENDAR.forEach(function(h){var k=h.name.toLowerCase().trim();if(calMap[k]){
     var fb=calMap[k];
