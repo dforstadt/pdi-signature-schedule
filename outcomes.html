@@ -230,19 +230,55 @@ function mkChart(id,cfg){if(charts[id])charts[id].destroy();var ctx=document.get
 
 function render(fbClients){
   var today=new Date().toISOString().slice(0,10);
-  // Merge Firebase discharge dates
+
+  // ── Build episodes fresh from Firebase on every render ─────────────────
+  // Firebase is authoritative. ALL_EPISODES provides fallback for clients
+  // not yet in Firebase (early 2025 clients). Merge: Firebase wins on
+  // dates; ALL_EPISODES wins on clients not in Firebase.
   var fbMap={};
-  (fbClients||[]).forEach(function(c){if(c.name){var k=c.name.toLowerCase();if(!fbMap[k])fbMap[k]={sigDisch:c.sigDischarge||c.sigDisch||null,pdiDisch:c.pdiDischarge||c.pdiDisch||null};}});
-  ALL_EPISODES.forEach(function(ep){
-    var live=fbMap[ep.name.toLowerCase()]||{};
-    // Only apply discharge if it falls strictly AFTER this episode's own admit
-    // (prevents Layla S readmission getting the first-admission's sigDisch)
-    if(!ep.sigDisch&&live.sigDisch&&ep.sigAdmit&&live.sigDisch>ep.sigAdmit)ep.sigDisch=live.sigDisch;
-    if(!ep.pdiDisch&&live.pdiDisch&&ep.pdiAdmit&&live.pdiDisch>ep.pdiAdmit)ep.pdiDisch=live.pdiDisch;
+  (fbClients||[]).forEach(function(c){
+    if(!c.name) return;
+    var k=c.name.toLowerCase().trim();
+    // Build a canonical episode from this Firebase client record
+    var prog=c.program||'';
+    var hasPdi=prog==='PDI'||prog==='Both'||c.pdiAdmit;
+    var hasSig=prog==='Signature'||prog==='Both'||c.sigAdmit;
+    fbMap[k]={
+      name:c.name,
+      pdiAdmit: hasPdi?(c.pdiAdmit||null):null,
+      pdiDisch:  c.pdiDischarge||c.pdiDisch||null,
+      sigAdmit: hasSig?(c.sigAdmit||null):null,
+      sigDisch:  c.sigDischarge||c.sigDisch||null,
+      _fromFB:true
+    };
   });
 
-  var pdiEps=ALL_EPISODES.filter(function(e){return e.pdiAdmit;}).sort(function(a,b){return a.pdiAdmit>b.pdiAdmit?1:-1;});
-  var sigEps=ALL_EPISODES.filter(function(e){return e.sigAdmit;}).sort(function(a,b){return a.sigAdmit>b.sigAdmit?1:-1;});
+  // Start from ALL_EPISODES (covers pre-Firebase clients like Matthew H, Leslie K)
+  // then overlay/add any Firebase clients
+  var epMap={};
+  ALL_EPISODES.forEach(function(ep){
+    epMap[ep.name.toLowerCase().trim()]=Object.assign({},ep);
+  });
+  // Overlay Firebase data — Firebase always wins on dates
+  Object.keys(fbMap).forEach(function(k){
+    var fb=fbMap[k];
+    if(epMap[k]){
+      // Update existing entry with Firebase data
+      var ep=epMap[k];
+      if(fb.pdiAdmit) ep.pdiAdmit=fb.pdiAdmit;
+      if(fb.pdiDisch) ep.pdiDisch=fb.pdiDisch;
+      if(fb.sigAdmit) ep.sigAdmit=fb.sigAdmit;
+      if(fb.sigDisch && fb.sigDisch>ep.sigAdmit) ep.sigDisch=fb.sigDisch;
+    } else if(fb.pdiAdmit||fb.sigAdmit){
+      // New client from Firebase not in hardcoded list — add them
+      epMap[k]=fb;
+    }
+  });
+  // Convert map back to array for processing
+  var ALL_EPS_LIVE=Object.values(epMap);
+
+  var pdiEps=ALL_EPS_LIVE.filter(function(e){return e.pdiAdmit;}).sort(function(a,b){return a.pdiAdmit>b.pdiAdmit?1:-1;});
+  var sigEps=ALL_EPS_LIVE.filter(function(e){return e.sigAdmit;}).sort(function(a,b){return a.sigAdmit>b.sigAdmit?1:-1;});
   var convEps=pdiEps.filter(function(e){return e.sigAdmit;});
   var pdiOnly=pdiEps.filter(function(e){return !e.sigAdmit;});
   var pdiActive=pdiEps.filter(function(e){return !e.pdiDisch||e.pdiDisch>=today;});
