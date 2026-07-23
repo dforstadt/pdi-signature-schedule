@@ -2,86 +2,46 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Admin — Add Missing Client</title>
+<title>Client Record Audit & Fix</title>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 <style>
 *{box-sizing:border-box}
-body{font-family:Arial,sans-serif;max-width:620px;margin:48px auto;padding:24px;background:#f7f5f2;}
+body{font-family:Arial,sans-serif;max-width:700px;margin:40px auto;padding:24px;background:#f7f5f2;}
 h2{color:#1B2A4A;margin:0 0 4px}
-.sub{color:#888;font-size:13px;margin:0 0 24px}
-.card{background:white;border-radius:8px;padding:24px;margin-bottom:16px;border:1px solid #e0ddd8;}
-label{display:block;font-size:11px;font-weight:bold;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;margin-top:14px;}
-input,select{width:100%;padding:9px 12px;border:1px solid #d0ccc5;border-radius:6px;font-size:13px;color:#1B2A4A;}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-button{background:#1B2A4A;color:white;padding:11px 28px;border:none;border-radius:6px;
-       font-size:13px;cursor:pointer;width:100%;margin-top:16px;font-weight:600;}
-button:hover{background:#2A3F6A;}
-button:disabled{background:#aaa;cursor:not-allowed;}
+.sub{color:#888;font-size:13px;margin:0 0 20px}
+.card{background:white;border-radius:8px;padding:20px;margin-bottom:16px;border:1px solid #e0ddd8;}
+.field{margin-bottom:12px}
+label{display:block;font-size:11px;font-weight:bold;color:#888;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+input,select{width:100%;padding:8px 12px;border:1px solid #ccc;border-radius:6px;font-size:13px;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+button{background:#1B2A4A;color:white;padding:10px 24px;border:none;border-radius:6px;
+       font-size:13px;cursor:pointer;font-weight:600;}
+button:hover{background:#2A3F6A} button:disabled{background:#aaa}
 .log{background:#1B2A4A;color:#90EE90;padding:14px;border-radius:6px;font-family:monospace;
-     font-size:12px;min-height:80px;white-space:pre-wrap;margin-top:16px;}
-.warn{background:#FEF6EC;border-left:4px solid #B87A00;padding:12px;border-radius:6px;
-      font-size:12px;color:#7A4A00;margin-bottom:16px;}
-.note{font-size:11px;color:#888;margin-top:4px;}
+     font-size:12px;min-height:100px;white-space:pre-wrap;margin-top:16px}
+.raw{background:#f0ede8;padding:12px;border-radius:6px;font-family:monospace;font-size:11px;
+     white-space:pre-wrap;word-break:break-all;margin-top:8px;max-height:200px;overflow-y:auto}
+.warn{color:#c04}
+.ok{color:#157A52}
 </style>
 </head>
 <body>
-<h2>Admin — Add Missing Client to Firebase</h2>
-<p class="sub">For clients visible in the calendar but missing from the client roster (and therefore invisible to the financial model, stipends, and outcomes pages).</p>
-
-<div class="warn">⚠ This adds the client directly to Firebase. Enter the details exactly as shown in the calendar. Do not add clients already in the roster — use the inspector at admin-fix2.html to confirm first.</div>
+<h2>Client Record Audit & Fix</h2>
+<p class="sub">Reads a client's exact Firebase record, shows all fields, and lets you correct missing ones.</p>
 
 <div class="card">
-  <label>Client Name</label>
-  <input id="name" placeholder="e.g. Cassie W" />
-
-  <label>Program</label>
-  <select id="program">
-    <option value="Signature">Signature (residential only)</option>
-    <option value="PDI">PDI (diagnostic only)</option>
-    <option value="Both">Both (PDI → Signature step-down)</option>
-  </select>
-
-  <div id="pdi-fields" style="display:none">
-    <div class="row2">
-      <div>
-        <label>PDI Admit Date</label>
-        <input id="pdiAdmit" type="date" />
-      </div>
-      <div>
-        <label>PDI Discharge Date</label>
-        <input id="pdiDischarge" type="date" />
-        <div class="note">Leave blank if still active</div>
-      </div>
+  <div class="field">
+    <label>Search name (partial match)</label>
+    <div style="display:flex;gap:8px">
+      <input id="search" placeholder="e.g. Cassie" value="Cassie" style="flex:1">
+      <button onclick="find()">Find</button>
     </div>
   </div>
-
-  <div id="sig-fields">
-    <div class="row2">
-      <div>
-        <label>Sig Admit Date</label>
-        <input id="sigAdmit" type="date" />
-      </div>
-      <div>
-        <label>Sig Discharge Date</label>
-        <input id="sigDischarge" type="date" />
-        <div class="note">Leave blank if still active</div>
-      </div>
-    </div>
-  </div>
-
-  <label>Rate (annual, for financial model)</label>
-  <select id="rate">
-    <option value="70000">$70,000 (standard)</option>
-    <option value="60000">$60,000</option>
-    <option value="80000">$80,000</option>
-    <option value="90000">$90,000</option>
-  </select>
-
-  <button id="btn" onclick="addClient()">Add Client to Firebase</button>
 </div>
 
-<div class="log" id="log">Ready. Fill in the details above and click Add.</div>
+<div id="results"></div>
+<div class="log" id="log">Ready. Enter a name and click Find.</div>
 
 <script>
 firebase.initializeApp({
@@ -90,75 +50,110 @@ firebase.initializeApp({
   projectId:'pdi-signature-schedule'
 });
 var FB = firebase.database().ref('schedule_v3');
+var ALL_CLIENTS=[], ALL_EVENTS=[];
 
-document.getElementById('program').addEventListener('change', function(){
-  var p = this.value;
-  document.getElementById('pdi-fields').style.display = (p==='PDI'||p==='Both') ? '' : 'none';
-  document.getElementById('sig-fields').style.display = (p==='Signature'||p==='Both') ? '' : 'none';
+function log(m,ok){
+  var el=document.getElementById('log');
+  el.textContent+=(el.textContent?'\n':'')+new Date().toISOString().slice(11,19)+' '+m;
+  el.scrollTop=el.scrollHeight;
+}
+
+FB.once('value',function(snap){
+  var raw=snap.val();
+  if(!raw||!raw.blob){log('ERROR: cannot read blob');return;}
+  try{
+    var d=JSON.parse(raw.blob);
+    ALL_CLIENTS=d.clients||[];
+    ALL_EVENTS=d.events||[];
+    log('Loaded: '+ALL_CLIENTS.length+' clients, '+ALL_EVENTS.length+' events');
+  }catch(e){log('Parse error: '+e);}
 });
 
-function log(msg){ var el=document.getElementById('log'); el.textContent+=(el.textContent?'\n':'')+new Date().toISOString().slice(11,19)+' '+msg; el.scrollTop=el.scrollHeight; }
+function find(){
+  var q=document.getElementById('search').value.toLowerCase().trim();
+  if(!q){log('Enter a search term');return;}
+  var found=ALL_CLIENTS.filter(function(c){return (c.name||'').toLowerCase().indexOf(q)>=0;});
+  log('Search "'+q+'": '+found.length+' client(s) found');
+  
+  var html='';
+  if(!found.length){
+    // Also search events for client names
+    var evNames=new Set();
+    ALL_EVENTS.forEach(function(ev){if(ev.clientName&&ev.clientName.toLowerCase().indexOf(q)>=0)evNames.add(ev.clientName);});
+    if(evNames.size){
+      html='<div class="card"><p class="warn">Not in client roster. Found in events as: '+[...evNames].join(', ')+'<br>This means sessions exist but no formal client record. Use Add Client form.</p></div>';
+    } else {
+      html='<div class="card"><p class="warn">No client or event found matching "'+q+'"</p></div>';
+    }
+  }
 
-function generateId(){ return 'c_'+Date.now()+'_'+Math.random().toString(36).slice(2,7); }
+  found.forEach(function(c){
+    var evs=ALL_EVENTS.filter(function(ev){return ev.clientId===c.id;});
+    var firstEv=evs.sort(function(a,b){return (a.date||'')>(b.date||'')?1:-1;})[0];
+    
+    var prog=c.program||'';
+    var sigA=c.sigAdmit||'';
+    var sigD=c.sigDischarge||c.sigDisch||'';
+    var pdiA=c.pdiAdmit||'';
+    var pdiD=c.pdiDischarge||c.pdiDisch||'';
+    
+    var issues=[];
+    if(!prog) issues.push('<span class="warn">⚠ program is empty — financial/outcomes/stipends cannot classify this client</span>');
+    if(!sigA&&!pdiA) issues.push('<span class="warn">⚠ no sigAdmit or pdiAdmit — no admit date set</span>');
+    if(prog==='Signature'&&!sigA) issues.push('<span class="warn">⚠ Signature program but no sigAdmit</span>');
+    if(!issues.length) issues.push('<span class="ok">✓ Record looks complete</span>');
 
-function addClient(){
-  var name = document.getElementById('name').value.trim();
-  var prog = document.getElementById('program').value;
-  var pdiA = document.getElementById('pdiAdmit').value||null;
-  var pdiD = document.getElementById('pdiDischarge').value||null;
-  var sigA = document.getElementById('sigAdmit').value||null;
-  var sigD = document.getElementById('sigDischarge').value||null;
-  var rate = parseInt(document.getElementById('rate').value);
+    html+='<div class="card">'
+      +'<b style="font-size:15px">'+c.name+'</b>'
+      +'<div style="margin:8px 0">'+issues.join('<br>')+'</div>'
+      +'<div class="raw">'+JSON.stringify(c,null,2)+'</div>'
+      +'<div style="margin-top:12px;font-size:12px;color:#666">'+evs.length+' events in calendar'+(firstEv?' | first: '+firstEv.date:'')+'</div>'
+      +'<div style="margin-top:16px;padding-top:16px;border-top:1px solid #eee">'
+      +'<b>Fix this record:</b>'
+      +'<div class="row2" style="margin-top:8px">'
+      +'<div><label>program</label>'
+      +'<select id="p-prog-'+c.id+'">'
+      +'<option value=""'+(prog===''?' selected':'')+'>(not set)</option>'
+      +'<option value="Signature"'+(prog==='Signature'?' selected':'')+'>Signature</option>'
+      +'<option value="PDI"'+(prog==='PDI'?' selected':'')+'>PDI</option>'
+      +'<option value="Both"'+(prog==='Both'?' selected':'')+'>Both</option>'
+      +'</select></div>'
+      +'<div><label>sigAdmit</label><input type="date" id="p-sigA-'+c.id+'" value="'+sigA+'"></div>'
+      +'</div>'
+      +'<div class="row2" style="margin-top:8px">'
+      +'<div><label>sigDischarge</label><input type="date" id="p-sigD-'+c.id+'" value="'+sigD+'"></div>'
+      +'<div><label>pdiAdmit (if step-down)</label><input type="date" id="p-pdiA-'+c.id+'" value="'+pdiA+'"></div>'
+      +'</div>'
+      +'<button style="margin-top:12px" onclick="fix('+JSON.stringify(c.id)+')">Save Fix</button>'
+      +'</div></div>';
+  });
+  document.getElementById('results').innerHTML=html;
+}
 
-  if(!name){ log('ERROR: Name is required.'); return; }
-  if((prog==='PDI'||prog==='Both') && !pdiA){ log('ERROR: PDI Admit date required for PDI/Both programs.'); return; }
-  if((prog==='Signature'||prog==='Both') && !sigA){ log('ERROR: Sig Admit date required for Signature/Both programs.'); return; }
-
-  var btn = document.getElementById('btn');
-  btn.disabled = true; btn.textContent = 'Loading...';
-  log('Reading current blob...');
-
-  FB.once('value', function(snap){
-    var raw = snap.val();
-    if(!raw||!raw.blob){ log('ERROR: Cannot read blob.'); btn.disabled=false; return; }
-    var blob;
-    try{ blob=JSON.parse(raw.blob); }catch(e){ log('ERROR: '+e); btn.disabled=false; return; }
-
-    var clients = blob.clients || [];
-    // Check for duplicate
-    var dup = clients.find(function(c){ return (c.name||'').toLowerCase().trim()===(name||'').toLowerCase().trim(); });
-    if(dup){ log('WARNING: "'+name+'" already exists in Firebase (id: '+dup.id+'). Aborting to avoid duplicate.'); btn.disabled=false; btn.textContent='Add Client to Firebase'; return; }
-
-    var startDate = pdiA || sigA;
-    var endDate   = (prog==='Both' ? sigD : prog==='PDI' ? pdiD : sigD) || null;
-
-    var newClient = {
-      id:          generateId(),
-      name:        name,
-      program:     prog,
-      pdiAdmit:    pdiA,
-      pdiDischarge: pdiD,
-      sigAdmit:    sigA,
-      sigDischarge: sigD,
-      startDate:   startDate,
-      endDate:     endDate,
-      rate:        rate,
-      companionRate: 0,
-      addedBy:     'admin-add',
-      addedAt:     new Date().toISOString()
-    };
-
-    log('Adding: '+JSON.stringify({name,program:prog,pdiAdmit:pdiA,sigAdmit:sigA,sigDischarge:sigD}));
-    clients.push(newClient);
-    blob.clients = clients;
-
-    var newBlob = JSON.stringify(blob);
-    log('Saving ('+Math.round(newBlob.length/1024)+' KB)...');
-    FB.set({blob:newBlob, ts:Date.now()}).then(function(){
-      log('SUCCESS — '+name+' added to Firebase (id: '+newClient.id+').');
-      log('The financial model, stipends, and outcomes pages will update automatically.');
-      btn.textContent = 'Done ✓';
-    }).catch(function(e){ log('ERROR saving: '+e); btn.disabled=false; btn.textContent='Retry'; });
+function fix(cid){
+  var prog=document.getElementById('p-prog-'+cid).value;
+  var sigA=document.getElementById('p-sigA-'+cid).value||null;
+  var sigD=document.getElementById('p-sigD-'+cid).value||null;
+  var pdiA=document.getElementById('p-pdiA-'+cid).value||null;
+  log('Fixing client id='+cid+' → program='+prog+' sigAdmit='+sigA);
+  FB.once('value',function(snap){
+    var raw=snap.val();
+    var blob=JSON.parse(raw.blob);
+    var clients=blob.clients||[];
+    var idx=clients.findIndex(function(c){return c.id===cid;});
+    if(idx<0){log('ERROR: client not found'); return;}
+    clients[idx].program=prog||clients[idx].program;
+    if(sigA) clients[idx].sigAdmit=sigA;
+    if(sigD) clients[idx].sigDischarge=sigD;
+    if(pdiA) clients[idx].pdiAdmit=pdiA;
+    // Fix startDate/endDate too
+    clients[idx].startDate=clients[idx].startDate||pdiA||sigA;
+    clients[idx].endDate=clients[idx].endDate||(prog==='Signature'?sigD:sigD||null);
+    blob.clients=clients;
+    FB.set({blob:JSON.stringify(blob),ts:Date.now()}).then(function(){
+      log('Saved. All pages will update automatically via real-time listener.');
+      ALL_CLIENTS=clients; // update local copy
+    }).catch(function(e){log('ERROR: '+e);});
   });
 }
 </script>
