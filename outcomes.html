@@ -244,8 +244,9 @@ function render(fbClients){
     // Drive PDI/Sig purely from the program field.
     // Many Sig-only clients have pdiAdmit erroneously set = sigAdmit in Firebase.
     // Never use pdiAdmit to infer PDI status for a Signature-only client.
-    var hasPdi = prog==='PDI' || prog==='Both';
-    var hasSig = prog==='Signature' || prog==='Both';
+    var progL = prog.toLowerCase();
+    var hasPdi = progL==='pdi' || progL==='both';
+    var hasSig = progL==='signature' || progL==='both' || progL==='sig';
     // If program field is missing, infer from admit dates
     if(!prog){
       hasPdi = !!c.pdiAdmit;
