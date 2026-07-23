@@ -1126,8 +1126,8 @@ firebase.database().ref('schedule_v3').on('value',function(snap){
   if(raw&&raw.blob){try{var d=JSON.parse(raw.blob);clients=d.clients||[];}catch(e){}}
   var today=new Date().toISOString().slice(0,10);
   var activeSig=clients.filter(function(c){
-    var p=(c.program||'').trim();
-    if(p!=='Signature'&&p!=='Both')return false;
+    var p=(c.program||'').trim().toLowerCase();
+    if(p!=='signature'&&p!=='both'&&p!=='sig')return false;
     var admit=c.sigAdmit||'',disch=c.sigDischarge||c.sigDisch||c.endDate||'';
     return admit&&admit<=today&&(!disch||disch>=today);
   });
