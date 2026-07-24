@@ -936,7 +936,7 @@ function renderByStaff(D){
              '<span>No approvals</span>')+
           '</div>'+
         '</div>'+
-      '</div>'+
+      '</div>';  // close html+= chain
     if(!activeWeeks.length&&_isPinned){
       var _btn1='<button data-pstaff="'+encodeURIComponent(staff)+'" ';
       _btn1+='onclick="window.openAddManualStandalone(decodeURIComponent(this.dataset.pstaff))" ';
@@ -949,7 +949,7 @@ function renderByStaff(D){
       html+='</div></div></div>';
       return;
     }
-      '<div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">'+
+    html+='<div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">'+
         '<thead><tr style="background:#f8f7f5">'+
           '<th style="padding:8px 14px;text-align:left;font-size:10px;font-weight:600;color:var(--tx2)">Pay Period</th>'+
           '<th style="padding:8px 10px;text-align:center;font-size:10px;font-weight:600;color:#7F77DD">Sig Census</th>'+
