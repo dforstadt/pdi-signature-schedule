@@ -1589,7 +1589,7 @@ window.openManualModal = function openManualModal(staff, wk){
             + (e.notes?' · '+e.notes:'')
             + (e.endWeek&&e.endWeek!==e.startWeek?' <span style="color:#aaa">(recurring)</span>':'')
             + '</span>'
-            + '<button onclick="deleteManualEntryFromModal('' + e._key + '')" '
+            + '<button data-mkey="' + e._key + '" onclick="window.deleteManualEntryFromModal(this.dataset.mkey)" '
             + 'style="font-size:10px;color:#c00;background:none;border:none;cursor:pointer;padding:0 4px">✕</button>'
             + '</div>';
         }).join('')
