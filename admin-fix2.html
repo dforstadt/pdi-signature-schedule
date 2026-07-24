@@ -1,161 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Client Record Audit & Fix</title>
+<head><meta charset="UTF-8"><title>Admin — Provider Fix</title>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 <style>
-*{box-sizing:border-box}
-body{font-family:Arial,sans-serif;max-width:700px;margin:40px auto;padding:24px;background:#f7f5f2;}
-h2{color:#1B2A4A;margin:0 0 4px}
-.sub{color:#888;font-size:13px;margin:0 0 20px}
-.card{background:white;border-radius:8px;padding:20px;margin-bottom:16px;border:1px solid #e0ddd8;}
-.field{margin-bottom:12px}
-label{display:block;font-size:11px;font-weight:bold;color:#888;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
-input,select{width:100%;padding:8px 12px;border:1px solid #ccc;border-radius:6px;font-size:13px;}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-button{background:#1B2A4A;color:white;padding:10px 24px;border:none;border-radius:6px;
-       font-size:13px;cursor:pointer;font-weight:600;}
-button:hover{background:#2A3F6A} button:disabled{background:#aaa}
-.log{background:#1B2A4A;color:#90EE90;padding:14px;border-radius:6px;font-family:monospace;
-     font-size:12px;min-height:100px;white-space:pre-wrap;margin-top:16px}
-.raw{background:#f0ede8;padding:12px;border-radius:6px;font-family:monospace;font-size:11px;
-     white-space:pre-wrap;word-break:break-all;margin-top:8px;max-height:200px;overflow-y:auto}
-.warn{color:#c04}
-.ok{color:#157A52}
-</style>
-</head>
+body{font-family:Arial,sans-serif;max-width:620px;margin:48px auto;padding:24px;background:#f7f5f2}
+h2{color:#1B2A4A;margin:0 0 4px}.sub{color:#888;font-size:13px;margin:0 0 24px}
+.card{background:white;border-radius:8px;padding:20px;margin-bottom:16px;border:1px solid #e0ddd8}
+button{background:#1B2A4A;color:white;padding:10px 24px;border:none;border-radius:6px;font-size:13px;cursor:pointer;width:100%;margin-top:10px}
+button:hover{background:#2A3F6A}button:disabled{background:#aaa}
+.log{background:#1B2A4A;color:#90EE90;padding:14px;border-radius:6px;font-family:monospace;font-size:12px;min-height:80px;white-space:pre-wrap;margin-top:16px}
+</style></head>
 <body>
-<h2>Client Record Audit & Fix</h2>
-<p class="sub">Reads a client's exact Firebase record, shows all fields, and lets you correct missing ones.</p>
-
+<h2>Admin — Provider Stipend Fix</h2>
+<p class="sub">Sets Dr. Flavia to "not eligible" in the Firebase provider roster.</p>
 <div class="card">
-  <div class="field">
-    <label>Search name (partial match)</label>
-    <div style="display:flex;gap:8px">
-      <input id="search" placeholder="e.g. Cassie" value="Cassie" style="flex:1">
-      <button onclick="find()">Find</button>
-    </div>
-  </div>
+  <p style="font-size:13px;margin:0 0 12px">Sets <strong>Dr. Flavia</strong> stipendType = "none" / noStipend = true in Firebase.</p>
+  <button id="btn" onclick="fix()">Apply Fix</button>
 </div>
-
-<div id="results"></div>
-<div class="log" id="log">Ready. Enter a name and click Find.</div>
-
+<div class="log" id="log">Ready.</div>
 <script>
-firebase.initializeApp({
-  apiKey:'AIzaSyCERxntgytkfCHWN7EoAVYVmLBcfWyYZ5A',
-  databaseURL:'https://pdi-signature-schedule-default-rtdb.firebaseio.com',
-  projectId:'pdi-signature-schedule'
-});
-var FB = firebase.database().ref('schedule_v3');
-var ALL_CLIENTS=[], ALL_EVENTS=[];
-
-function log(m,ok){
-  var el=document.getElementById('log');
-  el.textContent+=(el.textContent?'\n':'')+new Date().toISOString().slice(11,19)+' '+m;
-  el.scrollTop=el.scrollHeight;
-}
-
-FB.once('value',function(snap){
-  var raw=snap.val();
-  if(!raw||!raw.blob){log('ERROR: cannot read blob');return;}
-  try{
-    var d=JSON.parse(raw.blob);
-    ALL_CLIENTS=d.clients||[];
-    ALL_EVENTS=d.events||[];
-    log('Loaded: '+ALL_CLIENTS.length+' clients, '+ALL_EVENTS.length+' events');
-  }catch(e){log('Parse error: '+e);}
-});
-
-function find(){
-  var q=document.getElementById('search').value.toLowerCase().trim();
-  if(!q){log('Enter a search term');return;}
-  var found=ALL_CLIENTS.filter(function(c){return (c.name||'').toLowerCase().indexOf(q)>=0;});
-  log('Search "'+q+'": '+found.length+' client(s) found');
-  
-  var html='';
-  if(!found.length){
-    // Also search events for client names
-    var evNames=new Set();
-    ALL_EVENTS.forEach(function(ev){if(ev.clientName&&ev.clientName.toLowerCase().indexOf(q)>=0)evNames.add(ev.clientName);});
-    if(evNames.size){
-      html='<div class="card"><p class="warn">Not in client roster. Found in events as: '+[...evNames].join(', ')+'<br>This means sessions exist but no formal client record. Use Add Client form.</p></div>';
-    } else {
-      html='<div class="card"><p class="warn">No client or event found matching "'+q+'"</p></div>';
+firebase.initializeApp({apiKey:"AIzaSyCERxntgytkfCHWN7EoAVYVmLBcfWyYZ5A",
+  databaseURL:"https://pdi-signature-schedule-default-rtdb.firebaseio.com",
+  projectId:"pdi-signature-schedule"});
+var FB=firebase.database().ref("schedule_v3");
+function log(m){var el=document.getElementById("log");el.textContent+=(el.textContent?"\n":"")+new Date().toISOString().slice(11,19)+" "+m;el.scrollTop=el.scrollHeight;}
+function fix(){
+  var btn=document.getElementById("btn");btn.disabled=true;btn.textContent="Working...";
+  log("Reading blob...");
+  FB.once("value",function(snap){
+    var raw=snap.val();if(!raw||!raw.blob){log("ERROR: cannot read blob");btn.disabled=false;return;}
+    var blob;try{blob=JSON.parse(raw.blob);}catch(e){log("ERROR: "+e);btn.disabled=false;return;}
+    var providers=blob.providers||{};
+    // Fix Dr. Flavia
+    var found=false;
+    Object.keys(providers).forEach(function(k){
+      if(k.toLowerCase().indexOf("flavia")>=0){
+        log("Found provider: "+k);
+        providers[k].stipendType="none";
+        providers[k].noStipend=true;
+        found=true;
+      }
+    });
+    if(!found){
+      log("Dr. Flavia not found in providers — she may not have sessions in Firebase.");
+      log("The noStipend exclusion list in stipends.html already excludes her by name.");
+      log("No Firebase change needed.");
+      btn.textContent="Done (no change needed)";
+      return;
     }
-  }
-
-  found.forEach(function(c){
-    var evs=ALL_EVENTS.filter(function(ev){return ev.clientId===c.id;});
-    var firstEv=evs.sort(function(a,b){return (a.date||'')>(b.date||'')?1:-1;})[0];
-    
-    var prog=c.program||'';
-    var sigA=c.sigAdmit||'';
-    var sigD=c.sigDischarge||c.sigDisch||'';
-    var pdiA=c.pdiAdmit||'';
-    var pdiD=c.pdiDischarge||c.pdiDisch||'';
-    
-    var issues=[];
-    if(!prog) issues.push('<span class="warn">⚠ program is empty — financial/outcomes/stipends cannot classify this client</span>');
-    if(!sigA&&!pdiA) issues.push('<span class="warn">⚠ no sigAdmit or pdiAdmit — no admit date set</span>');
-    if(prog==='Signature'&&!sigA) issues.push('<span class="warn">⚠ Signature program but no sigAdmit</span>');
-    if(!issues.length) issues.push('<span class="ok">✓ Record looks complete</span>');
-
-    html+='<div class="card">'
-      +'<b style="font-size:15px">'+c.name+'</b>'
-      +'<div style="margin:8px 0">'+issues.join('<br>')+'</div>'
-      +'<div class="raw">'+JSON.stringify(c,null,2)+'</div>'
-      +'<div style="margin-top:12px;font-size:12px;color:#666">'+evs.length+' events in calendar'+(firstEv?' | first: '+firstEv.date:'')+'</div>'
-      +'<div style="margin-top:16px;padding-top:16px;border-top:1px solid #eee">'
-      +'<b>Fix this record:</b>'
-      +'<div class="row2" style="margin-top:8px">'
-      +'<div><label>program</label>'
-      +'<select id="p-prog-'+c.id+'">'
-      +'<option value=""'+(prog===''?' selected':'')+'>(not set)</option>'
-      +'<option value="Signature"'+(prog==='Signature'?' selected':'')+'>Signature</option>'
-      +'<option value="PDI"'+(prog==='PDI'?' selected':'')+'>PDI</option>'
-      +'<option value="Both"'+(prog==='Both'?' selected':'')+'>Both</option>'
-      +'</select></div>'
-      +'<div><label>sigAdmit</label><input type="date" id="p-sigA-'+c.id+'" value="'+sigA+'"></div>'
-      +'</div>'
-      +'<div class="row2" style="margin-top:8px">'
-      +'<div><label>sigDischarge</label><input type="date" id="p-sigD-'+c.id+'" value="'+sigD+'"></div>'
-      +'<div><label>pdiAdmit (if step-down)</label><input type="date" id="p-pdiA-'+c.id+'" value="'+pdiA+'"></div>'
-      +'</div>'
-      +'<button style="margin-top:12px" onclick="fix('+JSON.stringify(c.id)+')">Save Fix</button>'
-      +'</div></div>';
-  });
-  document.getElementById('results').innerHTML=html;
-}
-
-function fix(cid){
-  var prog=document.getElementById('p-prog-'+cid).value;
-  var sigA=document.getElementById('p-sigA-'+cid).value||null;
-  var sigD=document.getElementById('p-sigD-'+cid).value||null;
-  var pdiA=document.getElementById('p-pdiA-'+cid).value||null;
-  log('Fixing client id='+cid+' → program='+prog+' sigAdmit='+sigA);
-  FB.once('value',function(snap){
-    var raw=snap.val();
-    var blob=JSON.parse(raw.blob);
-    var clients=blob.clients||[];
-    var idx=clients.findIndex(function(c){return c.id===cid;});
-    if(idx<0){log('ERROR: client not found'); return;}
-    clients[idx].program=prog||clients[idx].program;
-    if(sigA) clients[idx].sigAdmit=sigA;
-    if(sigD) clients[idx].sigDischarge=sigD;
-    if(pdiA) clients[idx].pdiAdmit=pdiA;
-    // Fix startDate/endDate too
-    clients[idx].startDate=clients[idx].startDate||pdiA||sigA;
-    clients[idx].endDate=clients[idx].endDate||(prog==='Signature'?sigD:sigD||null);
-    blob.clients=clients;
-    FB.set({blob:JSON.stringify(blob),ts:Date.now()}).then(function(){
-      log('Saved. All pages will update automatically via real-time listener.');
-      ALL_CLIENTS=clients; // update local copy
-    }).catch(function(e){log('ERROR: '+e);});
+    blob.providers=providers;
+    var b=JSON.stringify(blob);
+    log("Saving ("+Math.round(b.length/1024)+" KB)...");
+    FB.set({blob:b,ts:Date.now()}).then(function(){
+      log("SUCCESS — Dr. Flavia set to not eligible.");
+      btn.textContent="Done ✓";
+    }).catch(function(e){log("ERROR: "+e);btn.disabled=false;btn.textContent="Retry";});
   });
 }
-</script>
-</body>
-</html>
+</script></body></html>
