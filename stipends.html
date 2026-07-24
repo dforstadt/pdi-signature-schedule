@@ -539,9 +539,9 @@ function wkLabel(wStart){
 }
 function fmtMoney(n){return n===0?'\u2014':'$'+n.toLocaleString();}
 function noStipend(prov){
-  // Check case-insensitive for Nichole Bessent (flat-fee coverage, manual entries only)
+  // Nichole Bessent — flat fee coverage only, excluded from all session/weekly calculation
   var provL=(prov||'').toLowerCase();
-  if(provL.indexOf('nichole')>=0||provL==='nichole b'||provL==='nichole bessent') return true;
+  if(provL.indexOf('nichole')>=0||provL.indexOf('bessent')>=0||provL==='nichole b') return true;
   var excl=['Anthony Ferkel','Anthony','Alice','Dr. Flavia','Flavia'];for(var i=0;i<excl.length;i++){if(prov===excl[i])return true;}var p=DATA.providers[prov];if(!p)return false;var st=p.stipendType;if(st)return st==='none';return!!p.noStipend;}
 function provType(prov){var p=DATA.providers[prov];if(!p)return 'session';var st=p.stipendType;if(st==='weekly'||st==='pdi_weekly')return 'weekly';return p.type||'session';}
 function isPDIWeekly(prov){var p=DATA.providers[prov];return!!(p&&p.stipendType==='pdi_weekly');}
