@@ -345,7 +345,6 @@ window.onerror=function(msg,src,line,col,err){
   <div class="nav-tab" onclick="showTab('roster')">Weekly Staff Roster</div>
   <div class="nav-tab" onclick="showTab('byclient')">By Client</div>
   <div class="nav-tab" onclick="showTab('bystaff')">Stipend Approval</div>
-  <div class="nav-tab" onclick="showTab('manual')">Manual Adjustments</div>
 </div>
 
 <!-- FILTERS -->
@@ -966,10 +965,10 @@ function renderByStaff(D){
         '<td style="padding:7px 10px;text-align:right;border-top:.5px solid var(--bd)">'+fmt$(r.pdi)+'</td>'+
         '<td style="padding:7px 10px;text-align:right;border-top:.5px solid var(--bd)">'+
           (r.manual?'<span style="color:#D4537E;font-weight:600">'+fmt$(r.manual)+'</span>':'<span style="color:#ccc">—</span>')+
-          ' <button onclick="openManualModal('+JSON.stringify(staff)+','+JSON.stringify(wk)+')" '+
-            'title="Add manual adjustment" '+
-            'style="margin-left:4px;width:18px;height:18px;border-radius:50%;border:1px solid #D4537E44;background:#D4537E11;'+
-            'color:#D4537E;cursor:pointer;font-size:11px;font-weight:700;line-height:1;padding:0;vertical-align:middle">+</button>'+
+          ' <button data-staff="'+encodeURIComponent(staff)+'" data-wk="'+wk+'"'+
+            ' onclick="window.openManualModal(decodeURIComponent(this.dataset.staff),this.dataset.wk)"'+
+            ' title="Add manual adjustment"'+
+            ' style="margin-left:4px;width:18px;height:18px;border-radius:50%;border:1px solid #D4537E44;background:#D4537E11;color:#D4537E;cursor:pointer;font-size:11px;font-weight:700;line-height:1;padding:0;vertical-align:middle">+</button>'+
         '</td>'+
         '<td style="padding:7px 14px;text-align:center;border-top:.5px solid var(--bd)">'+
           '<button id="'+bid+'" onclick="toggleWeekApproval(\''+apvKey(staff,wk)+'\',\''+bid+'\')" '+
