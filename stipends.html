@@ -937,6 +937,10 @@ function renderByStaff(D){
           '</div>'+
         '</div>'+
       '</div>'+
+    if(!activeWeeks.length&&_isPinned){
+      html+='<div style="padding:14px 20px">'+'<div style="color:#888;font-size:12px;font-style:italic;margin-bottom:10px">No entries for selected period.</div>'+'<button data-staff="'+encodeURIComponent(staff)+'" '+'onclick="window.openAddManualStandalone(decodeURIComponent(this.dataset.staff))" '+'style="padding:5px 16px;border:1px solid #D4537E66;background:#D4537E11;color:#D4537E;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">'+"+ Add Line Item</button>'+'</div></div></div>';
+      return;
+    }
       '<div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">'+
         '<thead><tr style="background:#f8f7f5">'+
           '<th style="padding:8px 14px;text-align:left;font-size:10px;font-weight:600;color:var(--tx2)">Pay Period</th>'+
@@ -987,6 +991,9 @@ function renderByStaff(D){
       '</tr>';
     });
 
+    if(_isPinned){
+      html+='<tbody><tr><td colspan="9" style="padding:8px 14px;border-top:.5px solid #f0ede8">'+'<button data-staff="'+encodeURIComponent(staff)+'" '+'onclick="window.openAddManualStandalone(decodeURIComponent(this.dataset.staff))" '+'style="padding:4px 14px;border:1px solid #D4537E44;background:#D4537E11;color:#D4537E;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer">'+"+ Add Line Item</button>'+'</td></tr></tbody>';
+    }
     html+='</tbody></table></div></div>';
   });
 
@@ -1662,7 +1669,7 @@ loadApprovals = function(cb){
 };
 
 
-window.openAddManualStandalone = function(){
+window.openAddManualStandalone = function(prefillProvider){
   var ov = document.getElementById('man-standalone-overlay'); if(!ov)return;
   // Populate provider list
   var dl = document.getElementById('man-sa-prov-list');
@@ -1672,7 +1679,7 @@ window.openAddManualStandalone = function(){
       names = Object.keys(DATA.providers).concat(['Nichole Bessent']);
     dl.innerHTML = names.map(function(p){return'<option value="'+p+'">';}).join('');
   }
-  document.getElementById('man-sa-prov').value  = '';
+  document.getElementById('man-sa-prov').value  = prefillProvider||'';
   document.getElementById('man-sa-amt').value   = '';
   document.getElementById('man-sa-start').value = '';
   document.getElementById('man-sa-end').value   = '';
