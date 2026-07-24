@@ -1000,7 +1000,15 @@ function renderByStaff(D){
     });
 
     if(_isPinned){
-      html+='<tbody><tr><td colspan="9" style="padding:8px 14px;border-top:.5px solid #f0ede8">'+'<button data-staff="'+encodeURIComponent(staff)+'" '+'onclick="window.openAddManualStandalone(decodeURIComponent(this.dataset.staff))" '+'style="padding:4px 14px;border:1px solid #D4537E44;background:#D4537E11;color:#D4537E;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer">'+"+ Add Line Item</button>'+'</td></tr></tbody>';
+      var _btn2='';
+      _btn2+='<button data-pstaff="'+encodeURIComponent(staff)+'" ';
+      _btn2+='onclick="window.openAddManualStandalone(decodeURIComponent(this.dataset.pstaff))" ';
+      _btn2+='style="padding:4px 14px;border:1px solid #D4537E44;background:#D4537E11;';
+      _btn2+='color:#D4537E;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer">';
+      _btn2+='+ Add Line Item</button>';
+      html+='<tbody><tr><td colspan="9" style="padding:8px 14px;border-top:.5px solid #f0ede8">';
+      html+=_btn2;
+      html+='</td></tr></tbody>';
     }
     html+='</tbody></table></div></div>';
   });
