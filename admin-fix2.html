@@ -1,58 +1,63 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><meta charset="UTF-8"><title>Add Nichole Bessent Entry</title>
+<head><meta charset="UTF-8"><title>Admin — Fix Nichole Bessent</title>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 <style>
-body{font-family:Arial,sans-serif;max-width:560px;margin:60px auto;padding:24px;background:#f7f5f2}
+body{font-family:Arial,sans-serif;max-width:640px;margin:60px auto;padding:24px;background:#f7f5f2}
 h2{color:#1B2A4A;margin:0 0 4px}.sub{color:#888;font-size:13px;margin:0 0 20px}
 .card{background:white;border-radius:8px;padding:20px;margin-bottom:16px;border:1px solid #e0ddd8}
-.field{font-size:13px;margin-bottom:6px;color:#444}
-.val{font-weight:600;color:#1B2A4A}
 button{background:#1B2A4A;color:white;padding:10px 24px;border:none;border-radius:6px;font-size:13px;cursor:pointer;width:100%;margin-top:10px}
 button:disabled{background:#aaa}
-.log{background:#1B2A4A;color:#90EE90;padding:14px;border-radius:6px;font-family:monospace;font-size:12px;min-height:60px;white-space:pre-wrap;margin-top:16px}
+.log{background:#1B2A4A;color:#90EE90;padding:14px;border-radius:6px;font-family:monospace;font-size:12px;min-height:100px;white-space:pre-wrap;margin-top:16px}
 </style></head>
 <body>
-<h2>Add Nichole Bessent Stipend</h2>
-<p class="sub">Adds a $150 flat fee entry for the week of Jun 13–19, 2026.</p>
+<h2>Admin — Fix Nichole Bessent Provider Record</h2>
+<p class="sub">Finds ALL provider entries in Firebase containing "nichole" or "bessent", sets noStipend=true and stipendType="none" on each, and shows the exact provider key so you can confirm the name.</p>
 <div class="card">
-  <div class="field">Provider: <span class="val">Nichole Bessent</span></div>
-  <div class="field">Type: <span class="val">Flat Fee (Coverage)</span></div>
-  <div class="field">Amount: <span class="val">$150.00</span></div>
-  <div class="field">Week: <span class="val">Jun 13 – Jun 19, 2026</span></div>
-  <div class="field">Notes: <span class="val">Flat fee stipend — not calculated by direct service hours</span></div>
-  <button id="btn" onclick="addEntry()">Add to Firebase</button>
+  <p style="font-size:13px;margin:0 0 12px">This will scan the providers object in Firebase, find Nichole Bessent under whatever key she's stored, and mark her as not eligible for automated stipend calculation.</p>
+  <button id="btn" onclick="fix()">Scan & Fix</button>
 </div>
 <div class="log" id="log">Ready.</div>
 <script>
 firebase.initializeApp({apiKey:"AIzaSyCERxntgytkfCHWN7EoAVYVmLBcfWyYZ5A",
   databaseURL:"https://pdi-signature-schedule-default-rtdb.firebaseio.com",
   projectId:"pdi-signature-schedule"});
-var REF = firebase.database().ref("schedule_v3/manual_stipends");
+var FB=firebase.database().ref("schedule_v3");
 function log(m){var el=document.getElementById("log");el.textContent+=(el.textContent?"\n":"")+new Date().toISOString().slice(11,19)+" "+m;}
-function addEntry(){
-  var btn=document.getElementById("btn");btn.disabled=true;btn.textContent="Adding...";
-  log("Checking for existing entry...");
-  REF.once("value",function(s){
-    var existing=s.val();
-    if(existing){
-      var dupe=Object.values(existing).find(function(e){
-        return e.provider==="Nichole Bessent"&&e.startWeek==="2026-06-13";
-      });
-      if(dupe){log("Entry already exists — no duplicate added.");btn.textContent="Already exists ✓";return;}
+function fix(){
+  var btn=document.getElementById("btn");btn.disabled=true;btn.textContent="Scanning...";
+  FB.once("value",function(snap){
+    var raw=snap.val();
+    if(!raw||!raw.blob){log("ERROR: cannot read blob");btn.disabled=false;return;}
+    var blob;try{blob=JSON.parse(raw.blob);}catch(e){log("ERROR: "+e);btn.disabled=false;return;}
+    var providers=blob.providers||{};
+    log("Total providers in Firebase: "+Object.keys(providers).length);
+    log("All provider keys: "+Object.keys(providers).join(", "));
+    // Find Nichole variants
+    var found=[];
+    Object.keys(providers).forEach(function(k){
+      var kl=k.toLowerCase();
+      if(kl.indexOf("nichole")>=0||kl.indexOf("bessent")>=0){
+        found.push(k);
+        log("FOUND: \""+k+"\" — stipendType="+providers[k].stipendType+" noStipend="+providers[k].noStipend);
+        providers[k].stipendType="none";
+        providers[k].noStipend=true;
+        providers[k].type="none";
+      }
+    });
+    if(!found.length){
+      log("No provider found with 'nichole' or 'bessent' in key.");
+      log("Her sessions may be logged under a completely different name.");
+      log("Check the provider keys listed above to find her.");
+      btn.textContent="No match found";
+      return;
     }
-    REF.push({
-      provider:"Nichole Bessent",
-      startWeek:"2026-06-13",
-      endWeek:null,
-      amountPerWeek:150,
-      type:"Flat Fee",
-      notes:"Flat fee stipend — not calculated by direct service hours",
-      addedAt:new Date().toISOString()
-    }).then(function(){
-      log("SUCCESS — Nichole Bessent $150 added for week of Jun 13–19, 2026.");
-      log("This will appear in the Stipend Approval page automatically.");
+    blob.providers=providers;
+    var b=JSON.stringify(blob);
+    log("Saving ("+Math.round(b.length/1024)+" KB)...");
+    FB.set({blob:b,ts:Date.now()}).then(function(){
+      log("SUCCESS — set noStipend=true on: "+found.join(", "));
       btn.textContent="Done ✓";
     }).catch(function(e){log("ERROR: "+e);btn.disabled=false;btn.textContent="Retry";});
   });
