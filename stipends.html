@@ -1550,144 +1550,149 @@ function exportByClientExcel(){
 
 
 
-// ── Manual Adjustments ────────────────────────────────────────────────────
+// ── Manual Adjustments — real-time, persists through re-renders ────────────
 var MANUAL_REF = firebase.database().ref('schedule_v3/manual_stipends');
 var manualEntries = [];
 var _manModalStaff = null, _manModalWk = null;
+var _manRealtimeStarted = false;
 
-function loadManualEntries(cb){
-  MANUAL_REF.once('value', function(s){
+// Start a real-time listener so manual entries never disappear on Firebase updates
+function startManualListener(){
+  if(_manRealtimeStarted) return;
+  _manRealtimeStarted = true;
+  MANUAL_REF.on('value', function(s){
     var d = s.val();
     manualEntries = d ? Object.entries(d).map(function(kv){
       return Object.assign({_key: kv[0]}, kv[1]);
     }) : [];
-    if(cb) cb();
-  });
-}
-
-window.injectManualItems = function injectManualItems(D){
-  // Remove previously injected manual items to avoid doubling on re-render
-  D.lineItems = D.lineItems.filter(function(li){ return li.type !== 'Manual'; });
-  if(!manualEntries.length) return;
-  function getFri(dateStr){
-    var d = new Date(dateStr + 'T12:00:00');
-    var diff = (d.getDay() + 2) % 7;
-    d.setDate(d.getDate() - diff);
-    return d.toISOString().slice(0, 10);
-  }
-  function nextFri(dateStr){
-    var d = new Date(dateStr + 'T12:00:00');
-    d.setDate(d.getDate() + 7);
-    return d.toISOString().slice(0, 10);
-  }
-  manualEntries.forEach(function(e){
-    if(!e.provider || !e.startWeek || !e.amountPerWeek) return;
-    var start = getFri(e.startWeek);
-    var end   = e.endWeek ? getFri(e.endWeek) : start;
-    var wk = start; var safety = 0;
-    while(wk <= end && safety++ < 52){
-      D.lineItems.push({
-        week: wkLabel(wk), wStart: wk, client: 'Manual',
-        track: 'Signature', staff: e.provider, type: 'Manual',
-        sessHrs: '', rate: '', amount: e.amountPerWeek,
-        counted: e.amountPerWeek, notes: e.notes || '', _manKey: e._key
-      });
-      wk = nextFri(wk);
+    // Re-inject into last rendered D and refresh the approval tab only
+    if(window._lastD){
+      window.injectManualItems(window._lastD);
+      renderByStaff(window._lastD);
     }
   });
 }
 
-window.openManualModal = function openManualModal(staff, wk){
-  _manModalStaff = staff;
-  _manModalWk    = wk;
-  var overlay = document.getElementById('man-modal-overlay');
-  if(!overlay) return;
-  // Set title
-  document.getElementById('man-modal-title').textContent = 'Manual Adjustment — ' + staff;
-  document.getElementById('man-modal-sub').textContent   = 'Billing week: ' + wkLabel(wk);
-  document.getElementById('man-modal-amt').value   = '';
-  document.getElementById('man-modal-notes').value = '';
-  // Show existing entries for this staff + week
-  var existing = manualEntries.filter(function(e){
-    if(e.provider !== staff) return false;
-    // Check if this entry covers wk
-    function getFri(s){ var d=new Date(s+'T12:00:00');d.setDate(d.getDate()-((d.getDay()+2)%7));return d.toISOString().slice(0,10); }
-    var start = getFri(e.startWeek);
-    var end   = e.endWeek ? getFri(e.endWeek) : start;
-    return wk >= start && wk <= end;
+function loadManualEntries(cb){
+  // Just start the real-time listener; entries are already up-to-date
+  startManualListener();
+  if(cb) cb();
+}
+
+// Inject manual line items into D.lineItems (called before every render)
+window.injectManualItems = function(D){
+  D.lineItems = D.lineItems.filter(function(li){ return li.type !== 'Manual'; });
+  if(!manualEntries.length) return;
+  function getFri(s){ var d=new Date(s+'T12:00:00'); d.setDate(d.getDate()-((d.getDay()+2)%7)); return d.toISOString().slice(0,10); }
+  function nextFri(s){ var d=new Date(s+'T12:00:00'); d.setDate(d.getDate()+7); return d.toISOString().slice(0,10); }
+  manualEntries.forEach(function(e){
+    if(!e.provider||!e.startWeek||!e.amountPerWeek) return;
+    var start=getFri(e.startWeek), end=e.endWeek?getFri(e.endWeek):start;
+    var wk=start, safety=0;
+    while(wk<=end&&safety++<52){
+      D.lineItems.push({
+        week:wkLabel(wk), wStart:wk, client:'Manual',
+        track:'Signature', staff:e.provider, type:'Manual',
+        sessHrs:'', rate:'', amount:e.amountPerWeek,
+        counted:e.amountPerWeek, notes:e.notes||'', _manKey:e._key
+      });
+      wk=nextFri(wk);
+    }
   });
-  var existHtml = existing.length
-    ? '<div style="font-size:10px;font-weight:600;color:#888;margin-bottom:6px">EXISTING ENTRIES THIS WEEK</div>'
-      + existing.map(function(e){
-          return '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:#f7f5f2;border-radius:6px;margin-bottom:4px;font-size:11px">'
-            + '<span><b>$' + (e.amountPerWeek||0).toLocaleString() + '/wk</b>'
-            + (e.notes?' · '+e.notes:'')
-            + (e.endWeek&&e.endWeek!==e.startWeek?' <span style="color:#aaa">(recurring)</span>':'')
-            + '</span>'
-            + '<button data-mkey="' + e._key + '" onclick="window.deleteManualEntryFromModal(this.dataset.mkey)" '
-            + 'style="font-size:10px;color:#c00;background:none;border:none;cursor:pointer;padding:0 4px">✕</button>'
-            + '</div>';
-        }).join('')
-    : '';
-  document.getElementById('man-modal-existing').innerHTML = existHtml;
-  overlay.style.display = 'flex';
-  setTimeout(function(){ var a=document.getElementById('man-modal-amt'); if(a)a.focus(); }, 50);
+};
+
+// Add a new manual entry
+function addManualEntry(){
+  var prov  = (document.getElementById('man-prov').value||'').trim();
+  var start = document.getElementById('man-start').value;
+  var end   = document.getElementById('man-end').value||null;
+  var amt   = parseFloat(document.getElementById('man-amt').value);
+  var type  = document.getElementById('man-type').value;
+  var notes = (document.getElementById('man-notes').value||'').trim();
+  if(!prov){alert('Provider name required.');return;}
+  if(!start){alert('Start week required.');return;}
+  if(isNaN(amt)||amt<=0){alert('Amount must be > 0.');return;}
+  MANUAL_REF.push({provider:prov,startWeek:start,endWeek:end,amountPerWeek:amt,
+    type:type,notes:notes,addedAt:new Date().toISOString()});
+  // Real-time listener will pick this up automatically
+  document.getElementById('man-prov').value='';
+  document.getElementById('man-amt').value='';
+  document.getElementById('man-notes').value='';
+  document.getElementById('man-start').value='';
+  document.getElementById('man-end').value='';
 }
 
-window.closeManualModal = function closeManualModal(){
-  var overlay = document.getElementById('man-modal-overlay');
-  if(overlay) overlay.style.display = 'none';
-  _manModalStaff = null; _manModalWk = null;
-}
-
-window.deleteManualEntryFromModal = function deleteManualEntryFromModal(key){
+// Delete a manual entry
+function deleteManualEntry(key){
   if(!confirm('Delete this entry?')) return;
-  MANUAL_REF.child(key).remove().then(function(){
-    loadManualEntries(function(){
-      openManualModal(_manModalStaff, _manModalWk); // refresh modal
-      if(window._lastD){ injectManualItems(window._lastD); renderByStaff(window._lastD); }
-    });
-  });
+  MANUAL_REF.child(key).remove();
+  // Real-time listener handles re-render
 }
 
-window.saveManualModal = function saveManualModal(){
-  if(!_manModalStaff || !_manModalWk){ closeManualModal(); return; }
-  var amt   = parseFloat(document.getElementById('man-modal-amt').value);
-  var type  = document.getElementById('man-modal-type').value;
-  var notes = (document.getElementById('man-modal-notes').value || '').trim();
-  if(isNaN(amt) || amt <= 0){ alert('Enter an amount > 0.'); return; }
-  MANUAL_REF.push({
-    provider: _manModalStaff,
-    startWeek: _manModalWk,
-    endWeek: null,
-    amountPerWeek: amt,
-    type: type,
-    notes: notes,
-    addedAt: new Date().toISOString()
-  }).then(function(){
-    closeManualModal();
-    loadManualEntries(function(){
-      if(window._lastD){ injectManualItems(window._lastD); renderByStaff(window._lastD); }
-    });
+// Open per-row modal (+ button on each week)
+window.openManualModal = function(staff, wk){
+  _manModalStaff=staff; _manModalWk=wk;
+  var ov=document.getElementById('man-modal-overlay'); if(!ov)return;
+  document.getElementById('man-modal-title').textContent='Manual Adjustment — '+staff;
+  document.getElementById('man-modal-sub').textContent='Billing week: '+wkLabel(wk);
+  document.getElementById('man-modal-amt').value='';
+  document.getElementById('man-modal-notes').value='';
+  // Show existing entries for this week
+  var existing=manualEntries.filter(function(e){
+    if(e.provider!==staff) return false;
+    function getFri(s){var d=new Date(s+'T12:00:00');d.setDate(d.getDate()-((d.getDay()+2)%7));return d.toISOString().slice(0,10);}
+    var s=getFri(e.startWeek), en=e.endWeek?getFri(e.endWeek):s;
+    return wk>=s&&wk<=en;
   });
-}
+  var existHtml=existing.length
+    ? '<div style="font-size:10px;font-weight:600;color:#888;margin-bottom:6px">EXISTING THIS WEEK</div>'
+      +existing.map(function(e){
+        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:#f7f5f2;border-radius:6px;margin-bottom:4px;font-size:11px">'
+          +'<span><b>$'+(e.amountPerWeek||0).toLocaleString()+'</b>'+(e.notes?' · '+e.notes:'')
+          +(e.endWeek&&e.endWeek!==e.startWeek?' <span style="color:#aaa">(recurring)</span>':'')+'</span>'
+          +'<button data-mkey="'+e._key+'" onclick="deleteManualEntryFromModal(this.dataset.mkey)"'
+          +' style="font-size:10px;color:#c00;background:none;border:none;cursor:pointer;padding:0 4px">✕</button>'
+          +'</div>';}).join('')
+    : '';
+  document.getElementById('man-modal-existing').innerHTML=existHtml;
+  ov.style.display='flex';
+  setTimeout(function(){var a=document.getElementById('man-modal-amt');if(a)a.focus();},50);
+};
 
-// Close modal on overlay click
-document.addEventListener('click', function(e){
-  var ov = document.getElementById('man-modal-overlay');
-  if(ov && e.target === ov) closeManualModal();
-});
-// Close on Escape
-document.addEventListener('keydown', function(e){
-  if(e.key === 'Escape') closeManualModal();
-});
+window.closeManualModal = function(){
+  var ov=document.getElementById('man-modal-overlay');
+  if(ov)ov.style.display='none';
+  _manModalStaff=null; _manModalWk=null;
+};
 
-// Load manual entries alongside approvals on init
-var _origLoadApprovals = loadApprovals;
-loadApprovals = function(cb){
-  _origLoadApprovals(function(){
-    loadManualEntries(function(){ if(cb) cb(); });
-  });
+window.deleteManualEntryFromModal = function(key){
+  if(!confirm('Delete this entry?')) return;
+  MANUAL_REF.child(key).remove();
+  window.closeManualModal();
+};
+
+window.saveManualModal = function(){
+  if(!_manModalStaff||!_manModalWk){window.closeManualModal();return;}
+  var amt  =parseFloat(document.getElementById('man-modal-amt').value);
+  var type =document.getElementById('man-modal-type').value;
+  var notes=(document.getElementById('man-modal-notes').value||'').trim();
+  if(isNaN(amt)||amt<=0){alert('Enter an amount > 0.');return;}
+  MANUAL_REF.push({provider:_manModalStaff,startWeek:_manModalWk,endWeek:null,
+    amountPerWeek:amt,type:type,notes:notes,addedAt:new Date().toISOString()});
+  window.closeManualModal();
+};
+
+document.addEventListener('click',function(e){
+  var ov=document.getElementById('man-modal-overlay');
+  if(ov&&e.target===ov)window.closeManualModal();
+});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')window.closeManualModal();});
+
+// Override loadApprovals to start the manual listener alongside approvals
+var _origLoadApprovals=loadApprovals;
+loadApprovals=function(cb){
+  startManualListener();
+  _origLoadApprovals(function(){if(cb)cb();});
 };
 
 
