@@ -847,7 +847,7 @@ function toggleApproval(key){
   approvals[key]=!approvals[key];
   saveApprovals();
   // Re-render the tab so all buttons refresh
-  if(window._lastD)renderByStaff(window._lastD);
+  if(window._lastD){injectManualItems(window._lastD);renderByStaff(window._lastD);}
 }
 
 function renderByStaff(D){
@@ -869,8 +869,10 @@ function renderByStaff(D){
     var prov=li.staff;
     if(!staffMap[prov])staffMap[prov]={weeks:{}};
     var wk=li.wStart;
-    if(!staffMap[prov].weeks[wk])staffMap[prov].weeks[wk]={sigHrs:0,sigSess:0,sigWkly:0,pdi:0};
-    if(li.track==='Signature'){
+    if(!staffMap[prov].weeks[wk])staffMap[prov].weeks[wk]={sigHrs:0,sigSess:0,sigWkly:0,pdi:0,manual:0};
+    if(li.type==='Manual'){
+      staffMap[prov].weeks[wk].manual+=(li.amount||0);
+    } else if(li.track==='Signature'){
       if(li.type==='Session'){staffMap[prov].weeks[wk].sigHrs+=li.sessHrs||0;staffMap[prov].weeks[wk].sigSess+=li.amount||0;}
       else{staffMap[prov].weeks[wk].sigWkly+=li.amount||0;}
     }else{
@@ -993,6 +995,8 @@ function toggleProvApproval(apvKey,btnId){
 function render(){
   try{
     var D=computeStipends();
+    // Inject manual adjustments into lineItems so they flow through all renders
+    injectManualItems(D);
     window._lastD=D;
 
     renderSummary(D);
@@ -1501,80 +1505,161 @@ function exportByClientExcel(){
   };
 })();
 
-// Manual Stipend Adjustments
-var MANUAL_REF=firebase.database().ref("schedule_v3/manual_stipends");
+// ── Manual Adjustments (on Stipend Approval tab) ──────────────────────────
+var MANUAL_REF=firebase.database().ref('schedule_v3/manual_stipends');
 var manualEntries=[];
+var _manLoaded=false;
+
+// Load manual entries from Firebase
 function loadManualEntries(cb){
-  MANUAL_REF.once("value",function(s){
+  MANUAL_REF.once('value',function(s){
     var d=s.val();
-    manualEntries=d?Object.entries(d).map(function(kv){return Object.assign({_key:kv[0]},kv[1]);}):
-[];
+    manualEntries=d?Object.entries(d).map(function(kv){
+      return Object.assign({_key:kv[0]},kv[1]);
+    }):[];
     if(cb)cb();
   });
 }
-function addManualEntry(){
-  var prov=(document.getElementById("man-prov").value||"").trim();
-  var week=document.getElementById("man-week").value;
-  var amt=parseFloat(document.getElementById("man-amt").value);
-  var type=document.getElementById("man-type").value;
-  var notes=(document.getElementById("man-notes").value||"").trim();
-  if(!prov){alert("Provider required.");return;}
-  if(!week){alert("Billing week required.");return;}
-  if(!amt||isNaN(amt)||amt<=0){alert("Amount must be > 0.");return;}
-  MANUAL_REF.push({provider:prov,week:week,amount:amt,type:type,notes:notes,
-    addedAt:new Date().toISOString()}).then(function(){
-    document.getElementById("man-prov").value="";
-    document.getElementById("man-amt").value="";
-    document.getElementById("man-notes").value="";
-    loadManualEntries(renderManualTab);
+
+// Expand recurring entries into per-week line items, inject into D.lineItems
+function injectManualItems(D){
+  if(!manualEntries.length)return;
+  // Friday-step weeks (same logic as rest of page)
+  function nextFri(dateStr){
+    var d=new Date(dateStr+'T12:00:00');
+    d.setDate(d.getDate()+7);
+    return d.toISOString().slice(0,10);
+  }
+  function getFri(dateStr){
+    // Snap to Friday on or before
+    var d=new Date(dateStr+'T12:00:00');
+    var day=d.getDay(); // 0=Sun..6=Sat, Fri=5
+    var diff=(day+2)%7; // days back to Friday
+    d.setDate(d.getDate()-diff);
+    return d.toISOString().slice(0,10);
+  }
+  manualEntries.forEach(function(e){
+    if(!e.provider||!e.startWeek||!e.amountPerWeek)return;
+    var start=getFri(e.startWeek);
+    var end=e.endWeek?getFri(e.endWeek):start;
+    var wk=start;
+    var safety=0;
+    while(wk<=end&&safety++<52){
+      var wEnd=new Date(wk+'T12:00:00');wEnd.setDate(wEnd.getDate()+6);
+      var wEndStr=wEnd.toISOString().slice(0,10);
+      D.lineItems.push({
+        week:wkLabel(wk),
+        wStart:wk,
+        client:'Manual',
+        track:'Signature',
+        staff:e.provider,
+        type:'Manual',
+        sessHrs:'',
+        rate:'',
+        amount:e.amountPerWeek,
+        counted:e.amountPerWeek,
+        notes:e.notes||''
+      });
+      wk=nextFri(wk);
+    }
   });
 }
-function deleteManualEntry(key){
-  if(!confirm("Delete this entry?"))return;
-  MANUAL_REF.child(key).remove().then(function(){loadManualEntries(renderManualTab);});
-}
-function renderManualTab(){
-  var wrap=document.getElementById("man-table-wrap");if(!wrap)return;
-  var dl=document.getElementById("man-prov-list");
-  if(dl){
-    var names=["Nichole Bessent"];
-    if(typeof S!=="undefined"&&S&&S.providers)names=Object.keys(S.providers).concat(["Nichole Bessent"]);
-    dl.innerHTML=names.map(function(p){return"<option value='"+p+"'>";}).join("");
+
+// Toggle panel open/close
+function toggleManualPanel(){
+  var body=document.getElementById('man-panel-body');
+  var icon=document.getElementById('man-toggle-icon');
+  if(!body)return;
+  var open=body.style.display==='block';
+  body.style.display=open?'none':'block';
+  if(icon)icon.innerHTML=open?'&#8964;':'&#8963;';
+  if(!open&&!_manLoaded){
+    _manLoaded=true;
+    loadManualEntries(function(){renderManualEntries();if(window._lastD){injectManualItems(window._lastD);renderByStaff(window._lastD);}});
+  } else if(!open){
+    renderManualEntries();
   }
-  var sorted=manualEntries.slice().sort(function(a,b){return a.week>b.week?-1:1;});
-  if(!sorted.length){wrap.innerHTML="<p style='color:#999;font-size:12px;text-align:center;padding:20px'>No entries yet.</p>";return;}
-  var total=sorted.reduce(function(s,e){return s+(e.amount||0);},0);
-  var rows=sorted.map(function(e){
-    var wl=(typeof wkLabel==="function"&&e.week)?wkLabel(e.week):e.week;
-    return"<tr style='border-bottom:1px solid #eee'>"
-      +"<td style='padding:7px 10px;font-size:12px'>"+wl+"</td>"
-      +"<td style='padding:7px 10px;font-size:12px;font-weight:600'>"+(e.provider||"")+"</td>"
-      +"<td style='padding:7px 10px;font-size:12px'>"+(e.type||"")+"</td>"
-      +"<td style='padding:7px 10px;font-size:12px;text-align:right;font-weight:600'>$"+(e.amount||0).toLocaleString()+"</td>"
-      +"<td style='padding:7px 10px;font-size:12px;color:#666'>"+(e.notes||"")+"</td>"
-      +"<td><button onclick='deleteManualEntry(\""+e._key+"\")' style='font-size:10px;color:#c00;background:none;border:1px solid #c0000030;border-radius:4px;padding:2px 8px;cursor:pointer'>x</button></td>"
-      +"</tr>";
-  }).join("");
-  wrap.innerHTML="<table style='width:100%;border-collapse:collapse'>"
-    +"<thead><tr style='background:#f0ede8'>"
-    +"<th style='padding:8px 10px;font-size:11px;text-align:left'>Week</th>"
-    +"<th style='padding:8px 10px;font-size:11px;text-align:left'>Provider</th>"
-    +"<th style='padding:8px 10px;font-size:11px;text-align:left'>Type</th>"
-    +"<th style='padding:8px 10px;font-size:11px;text-align:right'>Amount</th>"
-    +"<th style='padding:8px 10px;font-size:11px;text-align:left'>Notes</th>"
-    +"<th></th></tr></thead><tbody>"+rows+"</tbody>"
-    +"<tfoot><tr style='background:#f7f5f2;font-weight:700'>"
-    +"<td colspan='3' style='padding:8px 10px;font-size:12px'>Total Manual Adjustments</td>"
-    +"<td style='padding:8px 10px;font-size:12px;text-align:right'>$"+total.toLocaleString()+"</td>"
-    +"<td colspan='2'></td></tr></tfoot></table>";
 }
-(function(){
-  var _orig=window.showTab;var _loaded=false;
-  window.showTab=function(tab){
-    _orig(tab);
-    if(tab==="manual"&&!_loaded){_loaded=true;loadManualEntries(renderManualTab);}
-  };
-})();
+
+// Add a new entry
+function addManualEntry(){
+  var prov=(document.getElementById('man-prov').value||'').trim();
+  var start=document.getElementById('man-start').value;
+  var end=document.getElementById('man-end').value||null;
+  var amt=parseFloat(document.getElementById('man-amt').value);
+  var type=(document.getElementById('man-type').value||'Coverage');
+  var notes=(document.getElementById('man-notes').value||'').trim();
+  if(!prov){alert('Provider name required.');return;}
+  if(!start){alert('Start week (Friday) required.');return;}
+  if(isNaN(amt)||amt<=0){alert('Amount per week must be > 0.');return;}
+  var entry={provider:prov,startWeek:start,endWeek:end,amountPerWeek:amt,type:type,notes:notes,addedAt:new Date().toISOString()};
+  MANUAL_REF.push(entry).then(function(){
+    manualEntries.push(Object.assign({_key:'pending'},entry));
+    document.getElementById('man-prov').value='';
+    document.getElementById('man-amt').value='';
+    document.getElementById('man-notes').value='';
+    document.getElementById('man-start').value='';
+    document.getElementById('man-end').value='';
+    loadManualEntries(function(){
+      renderManualEntries();
+      if(window._lastD){injectManualItems(window._lastD);renderByStaff(window._lastD);}
+    });
+  });
+}
+
+// Delete an entry
+function deleteManualEntry(key){
+  if(!confirm('Delete this manual entry?'))return;
+  MANUAL_REF.child(key).remove().then(function(){
+    loadManualEntries(function(){
+      renderManualEntries();
+      if(window._lastD){injectManualItems(window._lastD);renderByStaff(window._lastD);}
+    });
+  });
+}
+
+// Populate provider datalist
+function populateProviderList(){
+  var dl=document.getElementById('man-prov-list');
+  if(!dl)return;
+  var names=['Nichole Bessent'];
+  if(typeof DATA!=='undefined'&&DATA&&DATA.providers)
+    names=Object.keys(DATA.providers).concat(['Nichole Bessent']);
+  dl.innerHTML=names.map(function(p){return'<option value="'+p+'">';}).join('');
+}
+
+// Render existing entries list inside panel
+function renderManualEntries(){
+  var wrap=document.getElementById('man-entries-list');if(!wrap)return;
+  populateProviderList();
+  if(!manualEntries.length){
+    wrap.innerHTML='<p style="font-size:11px;color:#aaa;margin:8px 0 0">No entries yet.</p>';return;
+  }
+  var rows=manualEntries.slice().sort(function(a,b){return(a.startWeek||'')>(b.startWeek||'')?-1:1;})
+  .map(function(e){
+    var range=e.startWeek+(e.endWeek&&e.endWeek!==e.startWeek?' → '+e.endWeek:'');
+    return '<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:#f7f5f2;border-radius:6px;margin-bottom:6px;font-size:11px">'
+      +'<div style="flex:1;min-width:0">'
+      +'<span style="font-weight:600;color:#1B2A4A">'+e.provider+'</span>'
+      +' &nbsp;·&nbsp; <span style="color:#888">'+range+'</span>'
+      +' &nbsp;·&nbsp; <span style="font-weight:600;color:#157A52">$'+(e.amountPerWeek||0).toLocaleString()+'/wk</span>'
+      +(e.notes?' &nbsp;·&nbsp; <span style="color:#888;font-style:italic">'+e.notes+'</span>':'')
+      +'</div>'
+      +'<button onclick="deleteManualEntry(\''+e._key+'\')" '
+        +'style="font-size:10px;color:#c00;background:none;border:1px solid rgba(192,0,0,.2);border-radius:4px;padding:2px 8px;cursor:pointer;flex-shrink:0">&#215;</button>'
+      +'</div>';
+  }).join('');
+  wrap.innerHTML='<div style="margin-top:10px;font-size:10px;font-weight:600;color:#888;margin-bottom:6px">EXISTING ENTRIES</div>'+rows;
+}
+
+// Load on page init alongside approvals
+var _origLoadApprovals=loadApprovals;
+loadApprovals=function(cb){
+  _origLoadApprovals(function(){
+    loadManualEntries(function(){if(cb)cb();});
+  });
+};
+
 </script>
 </body>
 </html>
