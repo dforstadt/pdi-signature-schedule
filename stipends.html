@@ -895,6 +895,11 @@ function renderByStaff(D){
   function isApvd(staff,wkISO){return !!approvals[apvKey(staff,wkISO)];}
   function btnId(staff,wkISO){return 'apv_'+staff.replace(/[^a-zA-Z0-9]/g,'_')+'_'+wkISO.replace(/-/g,'');}
 
+  var PINNED_PROVIDERS=['Nichole Bessent'];
+  PINNED_PROVIDERS.forEach(function(p){
+    if(!staffMap[p]) staffMap[p]={weeks:{},_pinned:true};
+    else staffMap[p]._pinned=true;
+  });
   var staffList=Object.keys(staffMap).sort();
   if(!staffList.length){
     el.innerHTML='<div style="padding:40px;text-align:center;color:var(--tx3)">No stipend data for selected period.</div>';
@@ -914,11 +919,12 @@ function renderByStaff(D){
   '</div>';
 
   staffList.forEach(function(staff){
+    var _isPinned=!!(staffMap[staff]&&staffMap[staff]._pinned);
     var wdata=staffMap[staff].weeks;
     var activeWeeks=weeks.filter(function(wk){
-      var r=wdata[wk];return r&&(r.sigSess+r.sigWkly+r.pdi)>0;
+      var r=wdata[wk];return r&&(r.sigSess+r.sigWkly+r.pdi+(r.manual||0))>0;
     });
-    if(!activeWeeks.length)return;
+    if(!activeWeeks.length&&!_isPinned)return;
 
     var allApvd=activeWeeks.length>0&&activeWeeks.every(function(wk){return isApvd(staff,wk);});
     var anyApvd=activeWeeks.some(function(wk){return isApvd(staff,wk);});
