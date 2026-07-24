@@ -1890,8 +1890,8 @@ function buildProvModal(){
       '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--tx)">'+esc(name)+'</div>'+
       '<div style="font-size:10px;color:var(--tx3)">'+cnt+' session'+(cnt!==1?'s':'')+'</div></div>'+
       '<span style="font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;background:'+bc+'18;color:'+bc+';border:1px solid '+bc+'44;white-space:nowrap;flex-shrink:0">'+bl+'</span>'+
-      '<button onclick="openEditStipend(_provNames['+idx+'])" style="padding:5px 10px;border-radius:var(--r);border:.5px solid var(--bd2);background:var(--bg);cursor:pointer;font-size:11px;color:var(--tx2);font-family:var(--f);flex-shrink:0">Edit</button>'+
-      '<button onclick="deleteProvider(_provNames['+idx+'])" style="padding:5px 10px;border-radius:var(--r);border:.5px solid var(--bd-err);background:var(--bg-warn);cursor:pointer;font-size:11px;font-weight:500;color:var(--tx-err);font-family:var(--f);flex-shrink:0">Remove</button>'+
+      '<button data-prov-edit="'+encodeURIComponent(name)+'" style="padding:5px 10px;border-radius:var(--r);border:.5px solid var(--bd2);background:var(--bg);cursor:pointer;font-size:11px;color:var(--tx2);font-family:var(--f);flex-shrink:0">Edit</button>'+
+      '<button data-prov-del="'+encodeURIComponent(name)+'" style="padding:5px 10px;border-radius:var(--r);border:.5px solid var(--bd-err);background:var(--bg-warn);cursor:pointer;font-size:11px;font-weight:500;color:var(--tx-err);font-family:var(--f);flex-shrink:0">Remove</button>'+
     '</div>';
   }).join('');
   showModal(
@@ -1910,7 +1910,15 @@ function buildProvModal(){
     '</div>'+
     '<div style="display:flex;justify-content:flex-end"><button onclick="closeModal()" style="padding:8px 24px;border-radius:var(--r);border:none;background:#6b5c45;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--f)">Done</button></div>'
   );
-  setTimeout(function(){var i=document.getElementById('np-name');if(i)i.focus();},30);
+
+  // Delegate Edit/Remove clicks — avoids inline onclick scope issues
+  var mbox=document.getElementById('mbox');
+  if(mbox)mbox.addEventListener('click',function _provClick(e){
+    var ed=e.target.closest('[data-prov-edit]');
+    var dl=e.target.closest('[data-prov-del]');
+    if(ed){mbox.removeEventListener('click',_provClick);openEditStipend(decodeURIComponent(ed.dataset.provEdit));}
+    if(dl){mbox.removeEventListener('click',_provClick);deleteProvider(decodeURIComponent(dl.dataset.provDel));}
+  });  setTimeout(function(){var i=document.getElementById('np-name');if(i)i.focus();},30);
 }
 function provColChange(idx,val){
   var name=window._provNames&&window._provNames[idx];
