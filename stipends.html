@@ -938,7 +938,15 @@ function renderByStaff(D){
         '</div>'+
       '</div>'+
     if(!activeWeeks.length&&_isPinned){
-      html+='<div style="padding:14px 20px">'+'<div style="color:#888;font-size:12px;font-style:italic;margin-bottom:10px">No entries for selected period.</div>'+'<button data-staff="'+encodeURIComponent(staff)+'" '+'onclick="window.openAddManualStandalone(decodeURIComponent(this.dataset.staff))" '+'style="padding:5px 16px;border:1px solid #D4537E66;background:#D4537E11;color:#D4537E;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">'+"+ Add Line Item</button>'+'</div></div></div>';
+      var _btn1='<button data-pstaff="'+encodeURIComponent(staff)+'" ';
+      _btn1+='onclick="window.openAddManualStandalone(decodeURIComponent(this.dataset.pstaff))" ';
+      _btn1+='style="padding:5px 16px;border:1px solid #D4537E66;background:#D4537E11;';
+      _btn1+='color:#D4537E;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">';
+      _btn1+='+ Add Line Item</button>';
+      html+='<div style="padding:14px 20px">';
+      html+='<div style="color:#888;font-size:12px;font-style:italic;margin-bottom:10px">No entries for selected period.</div>';
+      html+=_btn1;
+      html+='</div></div></div>';
       return;
     }
       '<div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">'+
