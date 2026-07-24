@@ -1707,6 +1707,10 @@ window.openAddManualStandalone = function(prefillProvider){
     dl.innerHTML = names.map(function(p){return'<option value="'+p+'">';}).join('');
   }
   document.getElementById('man-sa-prov').value  = prefillProvider||'';
+  var _recEl=document.getElementById('man-sa-recurring');
+  if(_recEl){_recEl.checked=false;}
+  var _endWrap=document.getElementById('man-sa-end-wrap');
+  if(_endWrap)_endWrap.style.display='none';
   document.getElementById('man-sa-amt').value   = '';
   document.getElementById('man-sa-start').value = '';
   document.getElementById('man-sa-end').value   = '';
@@ -1719,7 +1723,8 @@ window.saveStandaloneManual = function(){
   var prov  = (document.getElementById('man-sa-prov').value||'').trim();
   var amt   = parseFloat(document.getElementById('man-sa-amt').value);
   var start = document.getElementById('man-sa-start').value;
-  var end   = document.getElementById('man-sa-end').value||null;
+  var _recur=document.getElementById('man-sa-recurring')&&document.getElementById('man-sa-recurring').checked;
+  var end   = (_recur&&document.getElementById('man-sa-end').value)||null;
   var type  = document.getElementById('man-sa-type').value;
   var notes = (document.getElementById('man-sa-notes').value||'').trim();
   if(!prov){alert('Provider name required.');return;}
@@ -1818,10 +1823,15 @@ document.addEventListener('click',function(e){
           style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:12px;box-sizing:border-box">
       </div>
       <div>
-        <div style="font-size:10px;font-weight:600;color:#888;margin-bottom:3px">END WEEK (optional)</div>
-        <input id="man-sa-end" type="date"
-          style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:12px;box-sizing:border-box">
-        <div style="font-size:9px;color:#aaa;margin-top:2px">Leave blank = single week</div>
+        <div style="font-size:10px;font-weight:600;color:#888;margin-bottom:3px">RECURRING</div>
+        <label style="display:flex;align-items:center;gap:6px;padding:8px 10px;border:1px solid #ddd;border-radius:6px;cursor:pointer">
+          <input type="checkbox" id="man-sa-recurring" onchange="document.getElementById('man-sa-end-wrap').style.display=this.checked?'block':'none'">
+          <span style="font-size:12px;color:#555">Repeats weekly</span>
+        </label>
+        <div id="man-sa-end-wrap" style="display:none;margin-top:6px">
+          <div style="font-size:9px;color:#888;margin-bottom:3px">END WEEK (Friday)</div>
+          <input id="man-sa-end" type="date" style="width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:12px;box-sizing:border-box">
+        </div>
       </div>
     </div>
     <div style="margin-bottom:16px">
