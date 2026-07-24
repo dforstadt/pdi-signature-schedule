@@ -430,7 +430,7 @@ var PRE_CALENDAR=[
   {id:'hist_leslie_k',  name:'Leslie K',  program:'PDI', pdiAdmit:'2025-09-25',pdiDischarge:'2025-10-03',sigAdmit:null,sigDischarge:null},
   {id:'hist_abbegail_m',name:'Abbegail M',program:'PDI', pdiAdmit:'2025-10-08',pdiDischarge:'2025-10-18',sigAdmit:null,sigDischarge:null},
   {id:'hist_alex_r',    name:'Alex R',    program:'PDI', pdiAdmit:'2025-12-03',pdiDischarge:'2025-12-12',sigAdmit:null,sigDischarge:null},
-  {id:'hist_carlos_l',  name:'Carlos L',  program:'Both',pdiAdmit:'2026-03-23',pdiDischarge:'2026-03-31',sigAdmit:'2026-04-01',sigDischarge:'2026-04-01'},
+  {id:'hist_carlos_l',  name:'Carlos L',  program:'Both',pdiAdmit:'2026-03-23',pdiDischarge:'2026-03-31',sigAdmit:'2026-04-01',sigDischarge:'2026-04-07'},
   {id:'hist_jessica_c', name:'Jessica C', program:'Both',pdiAdmit:'2026-04-04',pdiDischarge:'2026-04-21',sigAdmit:'2026-04-14',sigDischarge:'2026-04-21'},
   {id:'hist_george_w',  name:'George W',  program:'Both',pdiAdmit:'2026-04-11',pdiDischarge:'2026-04-22',sigAdmit:'2026-04-24',sigDischarge:'2026-05-18'}
 ];
@@ -684,10 +684,12 @@ function computeStipends(){
 
       // Active Signature clients this week: sigAdmit ≤ wEnd AND (no sigDisch OR sigDisch ≥ wStart)
       var activeSig=DATA.clients.filter(function(c){
-        var prog=c.program||'';
-        if(prog!=='Signature'&&prog!=='Both')return false;
+        var prog=(c.program||'').trim().toLowerCase();
+        var isSig=prog==='signature'||prog==='both'||prog==='sig';
+        if(!isSig&&c.sigAdmit&&!c.program) isSig=true;
+        if(!isSig) return false;
         var admit=toISO(c.sigAdmit);
-        var disch=toISO(c.sigDischarge||c.sigDisch);
+        var disch=toISO(c.sigDischarge||c.sigDisch||c.endDate);
         if(!admit||admit>wEnd)return false;
         if(disch&&disch<wStart)return false;
         return true;
