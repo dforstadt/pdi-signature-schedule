@@ -240,7 +240,38 @@ td.money.zero{color:var(--tx3);}
     onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
     Access Roster
   </button>
-  <div style="font-size:10px;color:#b0a090;margin-top:20px">Lifeskills Behavioral Health &nbsp;·&nbsp; Confidential</div>
+  
+  <!-- MANUAL ADJUSTMENTS TAB -->
+  <div id="tab-manual" class="hidden" style="padding:20px">
+    <div style="max-width:700px">
+      <h3 style="margin-bottom:4px;color:#1B2A4A">Manual Stipend Adjustments</h3>
+      <p style="font-size:12px;color:#888;margin-bottom:20px">Per-diem coverage, corrections, and one-off entries (e.g. Nichole Bessent coverage days). Saved to Firebase and shown per provider.</p>
+      <div style="background:#f7f5f2;border-radius:8px;padding:16px;margin-bottom:20px;border:1px solid #e0ddd8">
+        <div style="font-size:12px;font-weight:600;color:#1B2A4A;margin-bottom:12px">Add Entry</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <div><label style="font-size:10px;font-weight:600;color:#888;display:block;margin-bottom:3px">PROVIDER</label>
+            <input id="man-prov" placeholder="e.g. Nichole Bessent" list="man-prov-list" style="width:100%;padding:7px 10px;border:1px solid #ccc;border-radius:6px;font-size:12px">
+            <datalist id="man-prov-list"></datalist></div>
+          <div><label style="font-size:10px;font-weight:600;color:#888;display:block;margin-bottom:3px">BILLING WEEK (Friday)</label>
+            <input id="man-week" type="date" style="width:100%;padding:7px 10px;border:1px solid #ccc;border-radius:6px;font-size:12px"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 2fr;gap:10px;margin-bottom:12px">
+          <div><label style="font-size:10px;font-weight:600;color:#888;display:block;margin-bottom:3px">AMOUNT ($)</label>
+            <input id="man-amt" type="number" placeholder="0.00" min="0" step="0.01" style="width:100%;padding:7px 10px;border:1px solid #ccc;border-radius:6px;font-size:12px"></div>
+          <div><label style="font-size:10px;font-weight:600;color:#888;display:block;margin-bottom:3px">TYPE</label>
+            <select id="man-type" style="width:100%;padding:7px 10px;border:1px solid #ccc;border-radius:6px;font-size:12px">
+              <option>Coverage</option><option>PDI Flat</option><option>Session</option>
+              <option>Weekly Stipend</option><option>Adjustment</option><option>Other</option>
+            </select></div>
+          <div><label style="font-size:10px;font-weight:600;color:#888;display:block;margin-bottom:3px">NOTES</label>
+            <input id="man-notes" placeholder="e.g. Nicole coverage 3d x 9 clients" style="width:100%;padding:7px 10px;border:1px solid #ccc;border-radius:6px;font-size:12px"></div>
+        </div>
+        <button onclick="addManualEntry()" style="background:#1B2A4A;color:white;padding:8px 20px;border:none;border-radius:6px;font-size:12px;cursor:pointer;font-weight:600">Add Entry</button>
+      </div>
+      <div id="man-table-wrap"><p style="color:#999;font-size:12px;text-align:center;padding:20px">Open this tab to load entries.</p></div>
+    </div>
+  </div>
+<div style="font-size:10px;color:#b0a090;margin-top:20px">Lifeskills Behavioral Health &nbsp;·&nbsp; Confidential</div>
 </div>
 </div>
 <script>
@@ -314,6 +345,7 @@ window.onerror=function(msg,src,line,col,err){
   <div class="nav-tab" onclick="showTab('roster')">Weekly Staff Roster</div>
   <div class="nav-tab" onclick="showTab('byclient')">By Client</div>
   <div class="nav-tab" onclick="showTab('bystaff')">Stipend Approval</div>
+  <div class="nav-tab" onclick="showTab('manual')">Manual Adjustments</div>
 </div>
 
 <!-- FILTERS -->
@@ -519,7 +551,7 @@ function showTab(tab){
   currentTab=tab;
   document.querySelectorAll('.nav-tab').forEach(function(el){el.classList.remove('active');});
   document.querySelectorAll('[id^="tab-"]').forEach(function(el){el.classList.add('hidden');});
-  var tabs=['summary','lineitems','roster','byclient','bystaff'];
+  var tabs=['summary','lineitems','roster','byclient','bystaff','manual'];
   var idx=tabs.indexOf(tab);
   if(idx>-1){document.querySelectorAll('.nav-tab')[idx].classList.add('active');}
   var el=document.getElementById('tab-'+tab);
@@ -1466,6 +1498,81 @@ function exportByClientExcel(){
         cEl.innerHTML=h;
       }
     }
+  };
+})();
+
+// Manual Stipend Adjustments
+var MANUAL_REF=firebase.database().ref("schedule_v3/manual_stipends");
+var manualEntries=[];
+function loadManualEntries(cb){
+  MANUAL_REF.once("value",function(s){
+    var d=s.val();
+    manualEntries=d?Object.entries(d).map(function(kv){return Object.assign({_key:kv[0]},kv[1]);}):
+[];
+    if(cb)cb();
+  });
+}
+function addManualEntry(){
+  var prov=(document.getElementById("man-prov").value||"").trim();
+  var week=document.getElementById("man-week").value;
+  var amt=parseFloat(document.getElementById("man-amt").value);
+  var type=document.getElementById("man-type").value;
+  var notes=(document.getElementById("man-notes").value||"").trim();
+  if(!prov){alert("Provider required.");return;}
+  if(!week){alert("Billing week required.");return;}
+  if(!amt||isNaN(amt)||amt<=0){alert("Amount must be > 0.");return;}
+  MANUAL_REF.push({provider:prov,week:week,amount:amt,type:type,notes:notes,
+    addedAt:new Date().toISOString()}).then(function(){
+    document.getElementById("man-prov").value="";
+    document.getElementById("man-amt").value="";
+    document.getElementById("man-notes").value="";
+    loadManualEntries(renderManualTab);
+  });
+}
+function deleteManualEntry(key){
+  if(!confirm("Delete this entry?"))return;
+  MANUAL_REF.child(key).remove().then(function(){loadManualEntries(renderManualTab);});
+}
+function renderManualTab(){
+  var wrap=document.getElementById("man-table-wrap");if(!wrap)return;
+  var dl=document.getElementById("man-prov-list");
+  if(dl){
+    var names=["Nichole Bessent"];
+    if(typeof S!=="undefined"&&S&&S.providers)names=Object.keys(S.providers).concat(["Nichole Bessent"]);
+    dl.innerHTML=names.map(function(p){return"<option value='"+p+"'>";}).join("");
+  }
+  var sorted=manualEntries.slice().sort(function(a,b){return a.week>b.week?-1:1;});
+  if(!sorted.length){wrap.innerHTML="<p style='color:#999;font-size:12px;text-align:center;padding:20px'>No entries yet.</p>";return;}
+  var total=sorted.reduce(function(s,e){return s+(e.amount||0);},0);
+  var rows=sorted.map(function(e){
+    var wl=(typeof wkLabel==="function"&&e.week)?wkLabel(e.week):e.week;
+    return"<tr style='border-bottom:1px solid #eee'>"
+      +"<td style='padding:7px 10px;font-size:12px'>"+wl+"</td>"
+      +"<td style='padding:7px 10px;font-size:12px;font-weight:600'>"+(e.provider||"")+"</td>"
+      +"<td style='padding:7px 10px;font-size:12px'>"+(e.type||"")+"</td>"
+      +"<td style='padding:7px 10px;font-size:12px;text-align:right;font-weight:600'>$"+(e.amount||0).toLocaleString()+"</td>"
+      +"<td style='padding:7px 10px;font-size:12px;color:#666'>"+(e.notes||"")+"</td>"
+      +"<td><button onclick='deleteManualEntry(\""+e._key+"\")' style='font-size:10px;color:#c00;background:none;border:1px solid #c0000030;border-radius:4px;padding:2px 8px;cursor:pointer'>x</button></td>"
+      +"</tr>";
+  }).join("");
+  wrap.innerHTML="<table style='width:100%;border-collapse:collapse'>"
+    +"<thead><tr style='background:#f0ede8'>"
+    +"<th style='padding:8px 10px;font-size:11px;text-align:left'>Week</th>"
+    +"<th style='padding:8px 10px;font-size:11px;text-align:left'>Provider</th>"
+    +"<th style='padding:8px 10px;font-size:11px;text-align:left'>Type</th>"
+    +"<th style='padding:8px 10px;font-size:11px;text-align:right'>Amount</th>"
+    +"<th style='padding:8px 10px;font-size:11px;text-align:left'>Notes</th>"
+    +"<th></th></tr></thead><tbody>"+rows+"</tbody>"
+    +"<tfoot><tr style='background:#f7f5f2;font-weight:700'>"
+    +"<td colspan='3' style='padding:8px 10px;font-size:12px'>Total Manual Adjustments</td>"
+    +"<td style='padding:8px 10px;font-size:12px;text-align:right'>$"+total.toLocaleString()+"</td>"
+    +"<td colspan='2'></td></tr></tfoot></table>";
+}
+(function(){
+  var _orig=window.showTab;var _loaded=false;
+  window.showTab=function(tab){
+    _orig(tab);
+    if(tab==="manual"&&!_loaded){_loaded=true;loadManualEntries(renderManualTab);}
   };
 })();
 </script>
