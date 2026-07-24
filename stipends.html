@@ -847,7 +847,7 @@ function toggleApproval(key){
   approvals[key]=!approvals[key];
   saveApprovals();
   // Re-render the tab so all buttons refresh
-  if(window._lastD){injectManualItems(window._lastD);renderByStaff(window._lastD);}
+  if(window._lastD){if(window.injectManualItems)window.injectManualItems(window._lastD);renderByStaff(window._lastD);}
 }
 
 function renderByStaff(D){
@@ -1004,7 +1004,7 @@ function render(){
   try{
     var D=computeStipends();
     // Inject manual adjustments into lineItems so they flow through all renders
-    injectManualItems(D);
+    if(window.injectManualItems) window.injectManualItems(D);
     window._lastD=D;
 
     renderSummary(D);
@@ -1530,7 +1530,7 @@ function loadManualEntries(cb){
   });
 }
 
-function injectManualItems(D){
+window.injectManualItems = function injectManualItems(D){
   // Remove previously injected manual items to avoid doubling on re-render
   D.lineItems = D.lineItems.filter(function(li){ return li.type !== 'Manual'; });
   if(!manualEntries.length) return;
@@ -1562,7 +1562,7 @@ function injectManualItems(D){
   });
 }
 
-function openManualModal(staff, wk){
+window.openManualModal = function openManualModal(staff, wk){
   _manModalStaff = staff;
   _manModalWk    = wk;
   var overlay = document.getElementById('man-modal-overlay');
@@ -1599,13 +1599,13 @@ function openManualModal(staff, wk){
   setTimeout(function(){ var a=document.getElementById('man-modal-amt'); if(a)a.focus(); }, 50);
 }
 
-function closeManualModal(){
+window.closeManualModal = function closeManualModal(){
   var overlay = document.getElementById('man-modal-overlay');
   if(overlay) overlay.style.display = 'none';
   _manModalStaff = null; _manModalWk = null;
 }
 
-function deleteManualEntryFromModal(key){
+window.deleteManualEntryFromModal = function deleteManualEntryFromModal(key){
   if(!confirm('Delete this entry?')) return;
   MANUAL_REF.child(key).remove().then(function(){
     loadManualEntries(function(){
@@ -1615,7 +1615,7 @@ function deleteManualEntryFromModal(key){
   });
 }
 
-function saveManualModal(){
+window.saveManualModal = function saveManualModal(){
   if(!_manModalStaff || !_manModalWk){ closeManualModal(); return; }
   var amt   = parseFloat(document.getElementById('man-modal-amt').value);
   var type  = document.getElementById('man-modal-type').value;
