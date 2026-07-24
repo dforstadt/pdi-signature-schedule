@@ -257,7 +257,7 @@ td.money.zero{color:var(--tx3);}
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr 2fr;gap:10px;margin-bottom:12px">
           <div><label style="font-size:10px;font-weight:600;color:#888;display:block;margin-bottom:3px">AMOUNT ($)</label>
-            <input id="man-amt" type="number" placeholder="0.00" min="0" step="0.01" style="width:100%;padding:7px 10px;border:1px solid #ccc;border-radius:6px;font-size:12px"></div>
+            <input id="man-amt" type="number" placeholder="0.00" step="0.01" style="width:100%;padding:7px 10px;border:1px solid #ccc;border-radius:6px;font-size:12px"></div>
           <div><label style="font-size:10px;font-weight:600;color:#888;display:block;margin-bottom:3px">TYPE</label>
             <select id="man-type" style="width:100%;padding:7px 10px;border:1px solid #ccc;border-radius:6px;font-size:12px">
               <option>Coverage</option><option>PDI Flat</option><option>Session</option>
@@ -989,7 +989,7 @@ function renderByStaff(D){
         '<td style="padding:7px 10px;text-align:right;border-top:.5px solid var(--bd)">'+fmt$(r.sigWkly)+'</td>'+
         '<td style="padding:7px 10px;text-align:right;border-top:.5px solid var(--bd)">'+fmt$(r.pdi)+'</td>'+
         '<td style="padding:7px 10px;text-align:right;border-top:.5px solid var(--bd)">'+
-          (r.manual?'<span style="color:#D4537E;font-weight:600">'+fmt$(r.manual)+'</span>':'<span style="color:#ccc">—</span>')+
+          (r.manual?'<span style="color:'+(r.manual<0?'#c04':'#D4537E')+';font-weight:600">'+fmt$(r.manual)+'</span>':'<span style="color:#ccc">—</span>')+
           ' <button data-staff="'+encodeURIComponent(staff)+'" data-wk="'+wk+'"'+
             ' onclick="window.openManualModal(decodeURIComponent(this.dataset.staff),this.dataset.wk)"'+
             ' title="Add manual adjustment"'+
@@ -1611,7 +1611,7 @@ function addManualEntry(){
   var notes = (document.getElementById('man-notes').value||'').trim();
   if(!prov){alert('Provider name required.');return;}
   if(!start){alert('Start week required.');return;}
-  if(isNaN(amt)||amt<=0){alert('Amount must be > 0.');return;}
+  if(isNaN(amt)||amt===0){alert('Amount cannot be zero.');return;}
   MANUAL_REF.push({provider:prov,startWeek:start,endWeek:end,amountPerWeek:amt,
     type:type,notes:notes,addedAt:new Date().toISOString()});
   // Real-time listener will pick this up automatically
@@ -1676,7 +1676,7 @@ window.saveManualModal = function(){
   var amt  =parseFloat(document.getElementById('man-modal-amt').value);
   var type =document.getElementById('man-modal-type').value;
   var notes=(document.getElementById('man-modal-notes').value||'').trim();
-  if(isNaN(amt)||amt<=0){alert('Enter an amount > 0.');return;}
+  if(isNaN(amt)||amt===0){alert('Amount cannot be zero.');return;}
   MANUAL_REF.push({provider:_manModalStaff,startWeek:_manModalWk,endWeek:null,
     amountPerWeek:amt,type:type,notes:notes,addedAt:new Date().toISOString()});
   window.closeManualModal();
@@ -1729,7 +1729,7 @@ window.saveStandaloneManual = function(){
   var notes = (document.getElementById('man-sa-notes').value||'').trim();
   if(!prov){alert('Provider name required.');return;}
   if(!start){alert('Start week required.');return;}
-  if(isNaN(amt)||amt<=0){alert('Amount must be > 0.');return;}
+  if(isNaN(amt)||amt===0){alert('Amount cannot be zero.');return;}
   MANUAL_REF.push({
     provider:prov, startWeek:start, endWeek:end,
     amountPerWeek:amt, type:type, notes:notes,
@@ -1769,7 +1769,7 @@ document.addEventListener('click',function(e){
       </div>
       <div>
         <div style="font-size:10px;font-weight:600;color:#888;margin-bottom:3px">AMOUNT ($)</div>
-        <input id="man-modal-amt" type="number" placeholder="0.00" min="0" step="0.01"
+        <input id="man-modal-amt" type="number" placeholder="0.00" step="0.01"
           style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:12px;box-sizing:border-box">
       </div>
     </div>
@@ -1814,7 +1814,7 @@ document.addEventListener('click',function(e){
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">
       <div>
         <div style="font-size:10px;font-weight:600;color:#888;margin-bottom:3px">AMOUNT / WK ($)</div>
-        <input id="man-sa-amt" type="number" placeholder="0.00" min="0" step="0.01"
+        <input id="man-sa-amt" type="number" placeholder="0.00" step="0.01"
           style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:12px;box-sizing:border-box">
       </div>
       <div>
