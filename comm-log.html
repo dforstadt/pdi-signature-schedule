@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Communication Log — Lifeskills PDI/Signature</title>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#1B2A4A;--navy2:#2A3F6A;--bg:#F7F5F2;--white:#FFFFFF;
+  --tx:#1A1A1A;--tx2:#555544;--tx3:#888877;--bd:#E0DDD8;
+  --sig:#6B5C45;--pdi:#4A6C8A;--purple:#8B5CF6;
+  --green:#157A52;--amber:#B87A00;--red:#991F10;
+  --r:8px;--f:'Arial',sans-serif;
+}
+body{font-family:var(--f);background:var(--bg);color:var(--tx);min-height:100vh;display:flex;flex-direction:column}
+
+/* Header */
+.hdr{background:var(--navy);padding:0 28px;height:52px;display:flex;align-items:center;gap:16px;flex-shrink:0}
+.hdr-logo{height:28px;opacity:.9}
+.hdr-title{color:rgba(255,252,245,.9);font-size:15px;font-weight:600;letter-spacing:.2px}
+.hdr-sub{color:rgba(255,252,245,.45);font-size:11px;margin-left:4px}
+.nav-link{color:rgba(255,252,245,.7);text-decoration:none;font-size:12px;padding:5px 10px;border-radius:5px;border:.5px solid rgba(255,252,245,.15)}
+.nav-link:hover{color:#fff;background:rgba(255,252,245,.1)}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#555;display:inline-block;transition:background .3s}
+.live-dot.on{background:#44CC77}
+.ldot-wrap{display:flex;align-items:center;gap:5px;margin-left:auto;font-size:11px;color:rgba(255,252,245,.5)}
+
+/* Layout */
+.layout{display:flex;flex:1;overflow:hidden;min-height:0}
+.sidebar{width:260px;flex-shrink:0;border-right:1px solid var(--bd);background:var(--white);overflow-y:auto;display:flex;flex-direction:column}
+.main{flex:1;overflow-y:auto;padding:0}
+
+/* Sidebar */
+.sidebar-hdr{padding:16px;border-bottom:1px solid var(--bd);position:sticky;top:0;background:var(--white);z-index:10}
+.sidebar-hdr h3{font-size:12px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
+.search-box{width:100%;padding:7px 10px;border:1px solid var(--bd);border-radius:6px;font-size:12px;font-family:var(--f);color:var(--tx)}
+.search-box:focus{outline:none;border-color:var(--purple)}
+.client-item{padding:11px 16px;cursor:pointer;border-bottom:.5px solid var(--bd);transition:background .1s;display:flex;flex-direction:column;gap:3px}
+.client-item:hover{background:#F0EDE8}
+.client-item.active{background:#EDE8F5;border-left:3px solid var(--purple)}
+.client-name{font-size:13px;font-weight:600;color:var(--navy)}
+.client-meta{font-size:10px;color:var(--tx3)}
+.client-badge{display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px;margin-right:3px}
+.badge-sig{background:#6B5C4520;color:var(--sig)}
+.badge-pdi{background:#4A6C8A20;color:var(--pdi)}
+.badge-both{background:#1D9E7520;color:#1D9E75}
+.client-count{font-size:10px;color:var(--purple);font-weight:600}
+
+/* Main area */
+.main-hdr{padding:18px 24px 14px;border-bottom:1px solid var(--bd);background:var(--white);position:sticky;top:0;z-index:9;display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.client-display-name{font-size:18px;font-weight:700;color:var(--navy);margin-bottom:2px}
+.client-display-meta{font-size:11px;color:var(--tx3)}
+.add-btn{background:var(--purple);color:var(--white);border:none;border-radius:6px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;flex-shrink:0}
+.add-btn:hover{background:#7C3AED}
+
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 40px;text-align:center;color:var(--tx3)}
+.empty-state svg{margin-bottom:16px;opacity:.3}
+.empty-state h3{font-size:14px;color:var(--tx2);margin-bottom:6px}
+.empty-state p{font-size:12px;line-height:1.6}
+
+/* Timeline */
+.timeline{padding:0 24px 40px}
+.date-group{margin-top:24px}
+.date-label{font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.6px;padding:6px 0;border-bottom:1px solid var(--bd);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.date-label span{font-size:12px;font-weight:600;color:var(--tx2)}
+.auto-tag{font-size:9px;background:var(--navy);color:rgba(255,252,245,.7);padding:1px 6px;border-radius:10px;font-weight:600;letter-spacing:.3px}
+
+/* Entry card */
+.entry{background:var(--white);border:1px solid var(--bd);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;position:relative;transition:box-shadow .15s}
+.entry:hover{box-shadow:0 2px 8px rgba(0,0,0,.07)}
+.entry.auto{border-left:3px solid var(--navy);background:#F7F8FC}
+.entry.endorsed{border-left:3px solid var(--green)}
+.entry-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px}
+.entry-who{font-size:13px;font-weight:600;color:var(--tx)}
+.entry-role{font-size:10px;color:var(--tx3);margin-top:1px}
+.method-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 10px;border-radius:12px;flex-shrink:0}
+.method-call{background:#EAF5EE;color:#157A52}
+.method-email{background:#EAF0F8;color:#2A6099}
+.method-text{background:#F3EEF8;color:#7C3AED}
+.method-message{background:#FEF9EC;color:#B87A00}
+.method-fax{background:#FDECEA;color:#991F10}
+.method-other{background:#F0EDE8;color:#6B5C45}
+.entry-notes{font-size:12px;color:var(--tx2);line-height:1.55;margin-bottom:8px}
+.entry-notes strong{color:var(--tx);font-weight:600}
+.entry-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:8px;border-top:.5px solid var(--bd)}
+.entry-meta{font-size:10px;color:var(--tx3)}
+.endorse-btn{font-size:11px;font-weight:600;padding:4px 12px;border-radius:14px;cursor:pointer;border:1.5px solid;transition:all .15s}
+.endorse-btn.pending{border-color:#ccc;background:transparent;color:var(--tx3)}
+.endorse-btn.pending:hover{border-color:var(--green);color:var(--green)}
+.endorse-btn.done{border-color:var(--green);background:var(--green);color:#fff}
+.delete-btn{font-size:10px;color:var(--red);background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:4px;opacity:.5}
+.delete-btn:hover{opacity:1;background:#FDECEA}
+
+/* Modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--white);border-radius:12px;padding:26px;width:500px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 8px 48px rgba(0,0,0,.22)}
+.modal h3{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:4px}
+.modal-sub{font-size:11px;color:var(--tx3);margin-bottom:20px}
+.form-row{display:grid;gap:10px;margin-bottom:12px}
+.form-row.two{grid-template-columns:1fr 1fr}
+.form-group label{display:block;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:8px 11px;border:1px solid var(--bd);border-radius:6px;font-size:13px;font-family:var(--f);color:var(--tx);resize:vertical}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--purple)}
+.method-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.method-btn{padding:8px;border:1.5px solid var(--bd);border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;text-align:center;background:transparent;color:var(--tx3);font-family:var(--f);transition:all .1s}
+.method-btn:hover{border-color:var(--purple);color:var(--purple)}
+.method-btn.sel{border-color:var(--purple);background:#EDE8F5;color:var(--purple)}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:.5px solid var(--bd)}
+.btn-cancel{padding:8px 18px;border:1px solid var(--bd);background:transparent;border-radius:6px;font-size:13px;cursor:pointer;color:var(--tx2)}
+.btn-save{padding:8px 22px;background:var(--purple);color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer}
+.btn-save:hover{background:#7C3AED}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-title">Communication Log <span class="hdr-sub">PDI &amp; Signature Program</span></div>
+  <a href="index.html" class="nav-link">&#x1F4C5; Calendar</a>
+  <a href="outcomes.html" target="_blank" class="nav-link">Metrics</a>
+  <div class="ldot-wrap">
+    <div class="live-dot" id="ldot"></div>
+    <span id="llbl" style="font-size:11px">Connecting…</span>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- Sidebar: client list -->
+  <div class="sidebar">
+    <div class="sidebar-hdr">
+      <h3>Clients</h3>
+      <input class="search-box" id="client-search" placeholder="Search clients…" oninput="filterClients()">
+    </div>
+    <div id="client-list"></div>
+  </div>
+
+  <!-- Main: communication timeline -->
+  <div class="main" id="main">
+    <div class="empty-state" id="empty-main">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      </svg>
+      <h3>Select a client</h3>
+      <p>Choose a client from the sidebar to view<br>or add communication entries.</p>
+    </div>
+    <div id="client-log" style="display:none">
+      <div class="main-hdr" id="main-hdr"></div>
+      <div class="timeline" id="timeline"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Entry Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3 id="modal-title">Add Communication Entry</h3>
+    <div class="modal-sub" id="modal-sub"></div>
+    <div class="form-row two">
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="f-date">
+      </div>
+      <div class="form-group">
+        <label>Contact Role</label>
+        <select id="f-role">
+          <option value="Referent">Referent</option>
+          <option value="Family">Family Member</option>
+          <option value="Insurance">Insurance / Payer</option>
+          <option value="Attorney">Attorney</option>
+          <option value="Guardian">Guardian / Conservator</option>
+          <option value="Facility">Referring Facility</option>
+          <option value="Physician">Referring Physician</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Contact Name</label>
+        <input type="text" id="f-contact" placeholder="e.g. Dr. Smith, Jane Smith (sister)">
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label>Method of Communication</label>
+      <div class="method-grid" id="method-grid">
+        <button class="method-btn" data-method="Call" onclick="selMethod(this)">📞 Phone Call</button>
+        <button class="method-btn" data-method="Email" onclick="selMethod(this)">✉️ Email</button>
+        <button class="method-btn" data-method="Text" onclick="selMethod(this)">💬 Text</button>
+        <button class="method-btn" data-method="Left Message" onclick="selMethod(this)">📨 Left Message</button>
+        <button class="method-btn" data-method="Portal" onclick="selMethod(this)">🔒 Portal</button>
+        <button class="method-btn" data-method="Other" onclick="selMethod(this)">📋 Other</button>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Nature / Purpose of Contact</label>
+        <textarea id="f-notes" rows="2" placeholder="Brief description of the reason for contact…"></textarea>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Outcome / Resolution</label>
+        <textarea id="f-outcome" rows="2" placeholder="What was communicated, agreed upon, or next steps…"></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveEntry()">Save Entry</button>
+    </div>
+  </div>
+</div>
+
+<script>
+firebase.initializeApp({
+  apiKey:'AIzaSyCERxntgytkfCHWN7EoAVYVmLBcfWyYZ5A',
+  databaseURL:'https://pdi-signature-schedule-default-rtdb.firebaseio.com',
+  projectId:'pdi-signature-schedule'
+});
+var DB  = firebase.database();
+var FB  = DB.ref('schedule_v3');
+var CLOG= DB.ref('schedule_v3/comm_log');
+
+var allClients=[], commEntries={}, selectedClient=null, selMethod_val='Call';
+
+// ── Bootstrap ────────────────────────────────────────────────────────────
+FB.on('value', function(snap){
+  var raw=snap.val();
+  document.getElementById('ldot').className='live-dot on';
+  document.getElementById('llbl').textContent='Live';
+  if(raw&&raw.blob){
+    try{
+      var d=JSON.parse(raw.blob);
+      // Normalize program
+      (d.clients||[]).forEach(function(c){
+        if(!c.program){
+          var pn='';
+          if(c.sigAdmit&&c.pdiAdmit&&c.pdiAdmit!==c.sigAdmit) pn='Both';
+          else if(c.sigAdmit) pn='Signature';
+          else if(c.pdiAdmit) pn='PDI';
+          c.program=pn;
+        }
+      });
+      allClients=(d.clients||[]).sort(function(a,b){
+        return (a.name||'').localeCompare(b.name||'');
+      });
+      renderClientList();
+    }catch(e){}
+  }
+},function(){
+  document.getElementById('ldot').style.background='#c00';
+  document.getElementById('llbl').textContent='Offline';
+});
+
+// Real-time comm log listener
+CLOG.on('value', function(snap){
+  commEntries=snap.val()||{};
+  if(selectedClient) renderLog(selectedClient);
+  renderClientList(); // update entry counts in sidebar
+});
+
+// ── Client List ──────────────────────────────────────────────────────────
+function filterClients(){
+  var q=(document.getElementById('client-search').value||'').toLowerCase();
+  renderClientList(q);
+}
+
+function renderClientList(q){
+  var el=document.getElementById('client-list');
+  var list=allClients.filter(function(c){
+    if(!q)return true;
+    return (c.name||'').toLowerCase().indexOf(q)>=0;
+  });
+  if(!list.length){el.innerHTML='<div style="padding:20px;text-align:center;color:#aaa;font-size:12px">No clients found</div>';return;}
+  el.innerHTML=list.map(function(c){
+    var prog=c.program||'';
+    var badge='<span class="client-badge badge-'+(prog==='Both'?'both':prog==='PDI'?'pdi':'sig')+'">'+prog+'</span>';
+    var admit=(c.program==='PDI'?c.pdiAdmit:c.sigAdmit||c.pdiAdmit)||'';
+    var disch=(c.program==='PDI'?c.pdiDischarge||c.pdiDisch:c.sigDischarge||c.sigDisch||c.endDate)||'';
+    var status=(!disch||disch>=(new Date().toISOString().slice(0,10)))
+      ?'<span style="color:#157A52;font-size:9px">● Active</span>'
+      :'<span style="color:#aaa;font-size:9px">Discharged</span>';
+    // Count entries for this client
+    var cnt=Object.values(commEntries).filter(function(e){return e.clientId===c.id;}).length;
+    var cntBadge=cnt?'<span class="client-count">'+cnt+' entries</span>':'';
+    var admitFmt=admit?admit.slice(5).replace('-','/'):'—';
+    return '<div class="client-item'+(selectedClient&&selectedClient.id===c.id?' active':'')+'"'
+      +' onclick="selectClient('+JSON.stringify(c.id)+')">'+
+      '<div style="display:flex;align-items:center;justify-content:space-between">'+
+        '<span class="client-name">'+esc(c.name)+'</span>'+status+'</div>'+
+      '<div class="client-meta">'+badge+' Admit: '+admitFmt+' '+cntBadge+'</div>'+
+      '</div>';
+  }).join('');
+}
+
+function selectClient(id){
+  selectedClient=allClients.find(function(c){return c.id===id;})||null;
+  renderClientList();
+  if(selectedClient){
+    document.getElementById('empty-main').style.display='none';
+    document.getElementById('client-log').style.display='block';
+    renderLog(selectedClient);
+    // Auto-generate admission entry if none exists
+    maybeAutoAdmit(selectedClient);
+  }
+}
+
+// ── Communication Log Render ─────────────────────────────────────────────
+function renderLog(client){
+  var entries=Object.entries(commEntries)
+    .map(function(kv){return Object.assign({_key:kv[0]},kv[1]);})
+    .filter(function(e){return e.clientId===client.id;})
+    .sort(function(a,b){return (b.date||'')>(a.date||'')?1:-1;});
+
+  // Header
+  var prog=client.program||'';
+  var admit=(prog==='PDI'?client.pdiAdmit:client.sigAdmit||client.pdiAdmit)||'';
+  var disch=(prog==='PDI'?client.pdiDischarge||client.pdiDisch:client.sigDischarge||client.sigDisch||client.endDate)||'';
+  var isActive=!disch||(disch>=(new Date().toISOString().slice(0,10)));
+  document.getElementById('main-hdr').innerHTML=
+    '<div>'+
+      '<div class="client-display-name">'+esc(client.name)+'</div>'+
+      '<div class="client-display-meta">'+prog+
+        (admit?' &nbsp;·&nbsp; Admit: '+fmt_date(admit):'')+ 
+        (disch?' &nbsp;·&nbsp; '+(isActive?'Active':'Discharged: '+fmt_date(disch)):'<span style="color:#157A52"> &nbsp;·&nbsp; ● Active</span>')+
+      '</div>'+
+    '</div>'+
+    '<button class="add-btn" onclick="openModal()">+ Add Entry</button>';
+
+  // Timeline
+  var tl=document.getElementById('timeline');
+  if(!entries.length){
+    tl.innerHTML='<div style="padding:40px 0;text-align:center;color:var(--tx3);font-size:13px">No communication entries yet.<br><br>'+
+      '<button class="add-btn" onclick="openModal()" style="margin:auto">+ Add First Entry</button></div>';
+    return;
+  }
+
+  // Group by date
+  var byDate={};
+  entries.forEach(function(e){
+    var d=e.date||'unknown';
+    if(!byDate[d])byDate[d]=[];
+    byDate[d].push(e);
+  });
+
+  tl.innerHTML=Object.keys(byDate).sort(function(a,b){return b>a?1:-1;}).map(function(dt){
+    var dayEntries=byDate[dt];
+    var isToday=dt===(new Date().toISOString().slice(0,10));
+    var dateLabel=dt==='unknown'?'Unknown Date':fmt_date_full(dt);
+    return '<div class="date-group">'+
+      '<div class="date-label">'+
+        '<span>'+dateLabel+'</span>'+
+        (isToday?'<span class="auto-tag">TODAY</span>':'')+
+      '</div>'+
+      dayEntries.map(function(e){return renderEntry(e);}).join('')+
+      '</div>';
+  }).join('');
+}
+
+function methodClass(m){
+  var map={Call:'method-call',Email:'method-email',Text:'method-text',
+           'Left Message':'method-message',Portal:'method-message',Other:'method-other'};
+  return map[m]||'method-other';
+}
+function methodIcon(m){
+  var map={Call:'📞',Email:'✉️',Text:'💬','Left Message':'📨',Portal:'🔒',Other:'📋'};
+  return (map[m]||'📋')+' '+m;
+}
+
+function renderEntry(e){
+  var isAuto=!!e.isAuto;
+  var isEndorsed=!!e.endorsed;
+  var endorseBtn=isAuto?'':
+    (isEndorsed
+      ? '<button class="endorse-btn done">✓ Endorsed by '+esc(e.endorsedBy||'Staff')+'</button>'
+      : '<button class="endorse-btn pending" onclick="endorse(\''+e._key+'\')">Endorse</button>');
+  return '<div class="entry'+(isAuto?' auto':'')+(isEndorsed?' endorsed':'')+'" id="entry-'+e._key+'">'+
+    '<div class="entry-top">'+
+      '<div>'+
+        '<div class="entry-who">'+(isAuto?'<em style="color:var(--tx3)">'+esc(e.contactName)+'</em>':esc(e.contactName||'Unknown Contact'))+'</div>'+
+        '<div class="entry-role">'+esc(e.contactRole||'')+'</div>'+
+      '</div>'+
+      '<span class="method-badge '+methodClass(e.method)+'">'+methodIcon(e.method||'Other')+'</span>'+
+    '</div>'+
+    (e.notes?'<div class="entry-notes"><strong>Nature:</strong> '+esc(e.notes)+'</div>':'')+
+    (e.outcome?'<div class="entry-notes"><strong>Outcome:</strong> '+esc(e.outcome)+'</div>':'')+
+    '<div class="entry-footer">'+
+      '<span class="entry-meta">'+fmt_time(e.addedAt)+(e.addedBy?' · '+esc(e.addedBy):'')+'</span>'+
+      '<div style="display:flex;gap:8px;align-items:center">'+
+        endorseBtn+
+        (isAuto?'':'<button class="delete-btn" onclick="deleteEntry(\''+e._key+'\')">✕</button>')+
+      '</div>'+
+    '</div>'+
+  '</div>';
+}
+
+// ── Auto-admit entry ─────────────────────────────────────────────────────
+function maybeAutoAdmit(client){
+  var existing=Object.values(commEntries).filter(function(e){
+    return e.clientId===client.id&&e.isAuto;
+  });
+  var admitDate=(client.program==='PDI'?client.pdiAdmit:client.sigAdmit||client.pdiAdmit)||null;
+  var dischDate=(client.program==='PDI'
+    ?client.pdiDischarge||client.pdiDisch
+    :client.sigDischarge||client.sigDisch||client.endDate)||null;
+  var hasAdmit=existing.some(function(e){return e.autoType==='Admission';});
+  var hasDisch=existing.some(function(e){return e.autoType==='Discharge';});
+
+  if(admitDate&&!hasAdmit){
+    CLOG.push({clientId:client.id,clientName:client.name,date:admitDate,
+      contactName:'Program Admission',contactRole:'Internal',method:'Other',
+      notes:'Client admitted to '+client.program+' program.',outcome:'',
+      isAuto:true,autoType:'Admission',addedAt:new Date().toISOString(),addedBy:'System'});
+  }
+  if(dischDate&&!hasDisch){
+    CLOG.push({clientId:client.id,clientName:client.name,date:dischDate,
+      contactName:'Program Discharge',contactRole:'Internal',method:'Other',
+      notes:'Client discharged from '+client.program+' program.',outcome:'',
+      isAuto:true,autoType:'Discharge',addedAt:new Date().toISOString(),addedBy:'System'});
+  }
+}
+
+// ── Modal ────────────────────────────────────────────────────────────────
+function openModal(){
+  if(!selectedClient)return;
+  document.getElementById('modal-title').textContent='Add Communication Entry';
+  document.getElementById('modal-sub').textContent=selectedClient.name+' — '+selectedClient.program+' Program';
+  document.getElementById('f-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('f-contact').value='';
+  document.getElementById('f-notes').value='';
+  document.getElementById('f-outcome').value='';
+  document.getElementById('f-role').value='Referent';
+  selMethod_val='Call';
+  document.querySelectorAll('.method-btn').forEach(function(b){
+    b.classList.toggle('sel',b.dataset.method==='Call');
+  });
+  document.getElementById('modal').classList.add('open');
+  setTimeout(function(){document.getElementById('f-contact').focus();},50);
+}
+
+function closeModal(){
+  document.getElementById('modal').classList.remove('open');
+}
+
+function selMethod(btn){
+  selMethod_val=btn.dataset.method;
+  document.querySelectorAll('.method-btn').forEach(function(b){b.classList.remove('sel');});
+  btn.classList.add('sel');
+}
+
+function saveEntry(){
+  if(!selectedClient)return;
+  var date=document.getElementById('f-date').value;
+  var contact=(document.getElementById('f-contact').value||'').trim();
+  var role=document.getElementById('f-role').value;
+  var notes=(document.getElementById('f-notes').value||'').trim();
+  var outcome=(document.getElementById('f-outcome').value||'').trim();
+  if(!date){alert('Date required.');return;}
+  if(!contact){alert('Contact name required.');return;}
+  if(!selMethod_val){alert('Select a communication method.');return;}
+  CLOG.push({
+    clientId:selectedClient.id,clientName:selectedClient.name,
+    date:date,contactName:contact,contactRole:role,
+    method:selMethod_val,notes:notes,outcome:outcome,
+    endorsed:false,endorsedBy:'',endorsedAt:'',
+    addedAt:new Date().toISOString(),addedBy:''
+  });
+  closeModal();
+}
+
+function endorse(key){
+  var name=prompt('Enter your name to endorse this entry:','');
+  if(!name||!name.trim())return;
+  CLOG.child(key).update({endorsed:true,endorsedBy:name.trim(),endorsedAt:new Date().toISOString()});
+}
+
+function deleteEntry(key){
+  if(!confirm('Delete this entry? This cannot be undone.'))return;
+  CLOG.child(key).remove();
+}
+
+// ── Utilities ────────────────────────────────────────────────────────────
+function esc(s){ var d=document.createElement('div');d.textContent=s||'';return d.innerHTML; }
+
+function fmt_date(iso){
+  if(!iso)return '';
+  var d=new Date(iso+'T12:00:00');
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+}
+function fmt_date_full(iso){
+  if(!iso)return '';
+  var d=new Date(iso+'T12:00:00');
+  return d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+}
+function fmt_time(iso){
+  if(!iso)return '';
+  var d=new Date(iso);
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' at '+
+    d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+}
+
+// Close modal on overlay click / Escape
+document.getElementById('modal').addEventListener('click',function(e){
+  if(e.target===this)closeModal();
+});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal();});
+</script>
+</body>
+</html>
