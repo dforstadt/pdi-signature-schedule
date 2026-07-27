@@ -147,7 +147,13 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);min-height:100vh;
       <p>Choose a client from the sidebar to view<br>or add communication entries.</p>
     </div>
     <div id="client-log" style="display:none">
-      <div class="main-hdr" id="main-hdr"></div>
+      <div class="main-hdr">
+        <div>
+          <div class="client-display-name" id="client-display-name"></div>
+          <div class="client-display-meta" id="client-display-meta"></div>
+        </div>
+        <button class="add-btn" id="add-entry-btn" onclick="openModal()">&#43; Add Entry</button>
+      </div>
       <div class="timeline" id="timeline"></div>
     </div>
   </div>
@@ -319,21 +325,15 @@ function renderLog(client){
   var admit=(prog==='PDI'?client.pdiAdmit:client.sigAdmit||client.pdiAdmit)||'';
   var disch=(prog==='PDI'?client.pdiDischarge||client.pdiDisch:client.sigDischarge||client.sigDisch||client.endDate)||'';
   var isActive=!disch||(disch>=(new Date().toISOString().slice(0,10)));
-  document.getElementById('main-hdr').innerHTML=
-    '<div>'+
-      '<div class="client-display-name">'+esc(client.name)+'</div>'+
-      '<div class="client-display-meta">'+prog+
-        (admit?' &nbsp;·&nbsp; Admit: '+fmt_date(admit):'')+ 
-        (disch?' &nbsp;·&nbsp; '+(isActive?'Active':'Discharged: '+fmt_date(disch)):'<span style="color:#157A52"> &nbsp;·&nbsp; ● Active</span>')+
-      '</div>'+
-    '</div>'+
-    '<button class="add-btn" onclick="openModal()">+ Add Entry</button>';
+  document.getElementById('client-display-name').textContent=client.name;
+  document.getElementById('client-display-meta').innerHTML=prog+
+    (admit?' &nbsp;·&nbsp; Admit: '+fmt_date(admit):'')+
+    (disch?' &nbsp;·&nbsp; '+(isActive?'Active':'Discharged: '+fmt_date(disch)):'<span style="color:#157A52"> &nbsp;·&nbsp; &#9679; Active</span>');
 
   // Timeline
   var tl=document.getElementById('timeline');
   if(!entries.length){
-    tl.innerHTML='<div style="padding:40px 0;text-align:center;color:var(--tx3);font-size:13px">No communication entries yet.<br><br>'+
-      '<button class="add-btn" onclick="openModal()" style="margin:auto">+ Add First Entry</button></div>';
+    tl.innerHTML='<div style="padding:40px 0;text-align:center;color:var(--tx3);font-size:13px">No communication entries yet. Use the <strong>+ Add Entry</strong> button above to log the first contact.</div>';
     return;
   }
 
