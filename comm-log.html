@@ -572,10 +572,13 @@ function renderFacesheet(){
 
   // Build date columns (last nDays weekdays)
   // Start from today, project forward nDays calendar days (weekdays only)
+  // Show nDays/2 before today through nDays/2 after today
+  // Past days stay visible (red/green); future days show upcoming
   var dateCols=[];
-  var fsEnd=new Date(TODAY+'T12:00:00');
-  fsEnd.setDate(fsEnd.getDate()+nDays);
-  var cur=new Date(TODAY+'T12:00:00');
+  var _half=Math.floor(nDays/2);
+  var fsStart=new Date(TODAY+'T12:00:00'); fsStart.setDate(fsStart.getDate()-_half);
+  var fsEnd=new Date(TODAY+'T12:00:00');   fsEnd.setDate(fsEnd.getDate()+Math.ceil(nDays/2));
+  var cur=new Date(fsStart);
   while(cur<=fsEnd){
     if(cur.getDay()!==0&&cur.getDay()!==6)dateCols.push(new Date(cur));
     cur.setDate(cur.getDate()+1);
