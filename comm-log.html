@@ -209,7 +209,7 @@ select:focus,input:focus{outline:none;border-color:var(--purple)}
     </div>
     <div class="day-grid" id="day-grid"></div>
     <div class="strip-legend">
-      <div class="leg"><div class="leg-dot" style="background:#EAF5EE;border-color:#157A5244"></div> Contacted</div>
+      <div class="leg"><div class="leg-dot" style="background:#EAF5EE;border-color:#157A5244"></div> Referent contacted</div>
       <div class="leg"><div class="leg-dot" style="background:#FDECEA;border-color:#99000033"></div> Not logged</div>
       <div class="leg"><div class="leg-dot" style="background:#F0EBF9;border-color:var(--purple)"></div> Today</div>
       <div class="leg"><div class="leg-dot" style="background:#F7F5F2;border-color:#E0DDD8"></div> Weekend / Future</div>
@@ -473,7 +473,9 @@ function entryHTML(e){
 }
 
 // ── Compliance strip ──────────────────────────────────────────────────────────
-var EXTERNAL_ROLES=['Referent','Family','Insurance','Guardian','Facility','Physician','Attorney'];
+// Only Referent contact turns the compliance indicator green.
+// Family, Insurance, and other contacts are still logged but do not satisfy the daily referent requirement.
+var REFERENT_ROLE='Referent';
 function renderCompliance(){
   var c=selectedClient;
   if(!c){document.getElementById('compliance-bar').style.display='none';return;}
@@ -484,7 +486,7 @@ function renderCompliance(){
   var contactedDays=new Set();
   Object.values(commEntries).forEach(function(e){
     if(e.clientId!==c.id||e.isAuto)return;
-    if(EXTERNAL_ROLES.indexOf(e.contactRole)>=0)contactedDays.add(e.date);
+    if(e.contactRole===REFERENT_ROLE)contactedDays.add(e.date); // Referent only
   });
   var endISO=disch&&disch<TODAY?disch:TODAY;
   var start=new Date(admit+'T12:00:00'), end=new Date(endISO+'T12:00:00');
@@ -545,7 +547,7 @@ function renderFacesheet(){
 
   var contactedDaysByClient={};
   Object.values(commEntries).forEach(function(e){
-    if(!e.isAuto&&EXTERNAL_ROLES.indexOf(e.contactRole)>=0){
+    if(!e.isAuto&&e.contactRole===REFERENT_ROLE){ // Referent only drives green indicator
       if(!contactedDaysByClient[e.clientId])contactedDaysByClient[e.clientId]=new Set();
       contactedDaysByClient[e.clientId].add(e.date);
     }
