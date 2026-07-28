@@ -350,6 +350,7 @@ DB.ref('schedule_v3').on('value',function(snap){
     providerList=Object.keys(d.providers||{}).sort();
     buildProviderSelect();
     buildDropdown();
+    renderFacesheet(); // re-render facesheet now that clients are loaded
   }catch(e){console.error(e);}
 },function(){
   document.getElementById('ldot').style.background='#c00';
