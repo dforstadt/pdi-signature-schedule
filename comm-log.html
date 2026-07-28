@@ -123,6 +123,34 @@ select:focus,input:focus{outline:none;border-color:var(--purple)}
 .btn-save{padding:8px 22px;background:var(--purple);color:#fff;border:none;
   border-radius:6px;font-size:13px;font-weight:700;cursor:pointer}
 .btn-save:hover{background:#6D28D9}
+
+/* Compliance strip */
+.compliance-bar{background:var(--white);border:1px solid var(--bd);border-radius:var(--r);
+  padding:14px 20px;margin-bottom:16px}
+.compliance-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.compliance-hdr h4{font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px}
+.compliance-stats{font-size:11px;color:var(--tx3)}
+.compliance-stats .pct{font-size:13px;font-weight:700;color:var(--navy)}
+.day-grid{display:flex;flex-wrap:wrap;gap:4px}
+.day-dot{width:32px;height:32px;border-radius:6px;border:1px solid;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-size:9px;font-weight:700;line-height:1.2;transition:transform .1s;position:relative}
+.day-dot:hover{transform:scale(1.1);z-index:2}
+.day-dot .dn{font-size:8px;opacity:.7}
+.day-dot.ok{background:#EAF5EE;border-color:#157A5244;color:var(--green)}
+.day-dot.ok::after{content:'✓';position:absolute;top:-4px;right:-4px;font-size:8px;
+  background:var(--green);color:#fff;border-radius:50%;width:12px;height:12px;
+  display:flex;align-items:center;justify-content:center}
+.day-dot.miss{background:#FDECEA;border-color:#99000033;color:var(--red)}
+.day-dot.today-dot{background:#F0EBF9;border-color:var(--purple);color:var(--purple)}
+.day-dot.today-dot.ok{background:#EAF5EE;border-color:#157A52}
+.day-dot.wknd{background:#F7F5F2;border-color:#E0DDD8;color:var(--tx3);cursor:default}
+.day-dot.wknd:hover{transform:none}
+.day-dot.future{background:#F7F5F2;border-color:#E0DDD8;color:#ccc;cursor:default}
+.day-dot.future:hover{transform:none}
+.strip-legend{display:flex;gap:12px;margin-top:8px;font-size:10px;color:var(--tx3)}
+.leg{display:flex;align-items:center;gap:4px}
+.leg-dot{width:10px;height:10px;border-radius:3px;border:1px solid}
 </style>
 </head>
 <body>
@@ -162,6 +190,25 @@ select:focus,input:focus{outline:none;border-color:var(--purple)}
       <div class="cb-meta" id="cb-meta"></div>
     </div>
     <div id="cb-count" style="font-size:12px;color:var(--tx3)"></div>
+  </div>
+
+  <!-- Compliance strip -->
+  <div class="compliance-bar" id="compliance-bar" style="display:none">
+    <div class="compliance-hdr">
+      <h4>Daily Referent Contact — Compliance Tracker</h4>
+      <div class="compliance-stats">
+        <span class="pct" id="comp-pct">—</span>
+        <span id="comp-stat"> days contacted</span>
+        <span style="margin-left:12px;font-size:10px;color:var(--tx3)">Tap a day to log quick contact</span>
+      </div>
+    </div>
+    <div class="day-grid" id="day-grid"></div>
+    <div class="strip-legend">
+      <div class="leg"><div class="leg-dot" style="background:#EAF5EE;border-color:#157A5244"></div> Contacted</div>
+      <div class="leg"><div class="leg-dot" style="background:#FDECEA;border-color:#99000033"></div> Not logged</div>
+      <div class="leg"><div class="leg-dot" style="background:#F0EBF9;border-color:var(--purple)"></div> Today</div>
+      <div class="leg"><div class="leg-dot" style="background:#F7F5F2;border-color:#E0DDD8"></div> Weekend / Future</div>
+    </div>
   </div>
 
   <!-- Log timeline -->
@@ -256,7 +303,7 @@ DB.ref('schedule_v3').on('value',function(snap){
 
 CLOG.on('value',function(snap){
   commEntries=snap.val()||{};
-  if(selectedClient) renderLog();
+  if(selectedClient){renderLog();renderCompliance();}
   buildDropdown();
 });
 
@@ -305,6 +352,7 @@ function selectClient(id){
   autoAnchor(selectedClient);
   renderBanner();
   renderLog();
+  renderCompliance();
 }
 
 function renderBanner(){
@@ -462,6 +510,73 @@ function fmtDFull(iso){if(!iso)return'';var d=new Date(iso+'T12:00:00');
 function fmtTime(iso){if(!iso)return'';var d=new Date(iso);
   return d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+
     ' '+d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});}
+
+// ── Compliance strip ──────────────────────────────────────────────────────
+function renderCompliance(){
+  var c=selectedClient;
+  if(!c){document.getElementById('compliance-bar').style.display='none';return;}
+  var admit=(c.program==='PDI'?c.pdiAdmit:c.sigAdmit||c.pdiAdmit)||null;
+  var disch=(c.program==='PDI'?c.pdiDischarge||c.pdiDisch:c.sigDischarge||c.sigDisch||c.endDate)||null;
+  if(!admit){document.getElementById('compliance-bar').style.display='none';return;}
+  document.getElementById('compliance-bar').style.display='block';
+
+  // Build set of days that have a referent-type entry
+  var contactedDays=new Set();
+  Object.values(commEntries).forEach(function(e){
+    if(e.clientId!==c.id||e.isAuto) return;
+    if(['Referent','Family','Insurance','Guardian','Facility','Physician'].indexOf(e.contactRole)>=0){
+      contactedDays.add(e.date);
+    }
+  });
+
+  // Build date range from admit to today (or disch if past)
+  var start=new Date(admit+'T12:00:00');
+  var endDate=disch&&disch<TODAY?new Date(disch+'T12:00:00'):new Date(TODAY+'T12:00:00');
+  var days=[]; var cur=new Date(start);
+  while(cur<=endDate){days.push(new Date(cur));cur.setDate(cur.getDate()+1);}
+
+  // Count weekdays
+  var wkdays=days.filter(function(d){return d.getDay()!==0&&d.getDay()!==6;});
+  var contacted=wkdays.filter(function(d){return contactedDays.has(d.toISOString().slice(0,10));});
+  var pct=wkdays.length?Math.round(contacted.length/wkdays.length*100):0;
+
+  document.getElementById('comp-pct').textContent=pct+'%';
+  document.getElementById('comp-stat').textContent=
+    ' ('+contacted.length+'/'+wkdays.length+' weekdays)';
+
+  var html=days.map(function(d){
+    var iso=d.toISOString().slice(0,10);
+    var dd=d.getDate(); var dw=['Su','Mo','Tu','We','Th','Fr','Sa'][d.getDay()];
+    var isWknd=d.getDay()===0||d.getDay()===6;
+    var isFuture=iso>TODAY; var isToday=iso===TODAY;
+    var isOk=contactedDays.has(iso);
+    var cls='day-dot';
+    if(isWknd) cls+=' wknd';
+    else if(isFuture) cls+=' future';
+    else if(isToday) cls+=' today-dot'+(isOk?' ok':'');
+    else cls+=(isOk?' ok':' miss');
+    var click=(isWknd||isFuture)?'':'onclick="quickLog(''+iso+'')"';
+    return '<div class="'+cls+'" '+click+' title="'+iso+'">'
+      +'<span class="dn">'+dw+'</span><span>'+dd+'</span></div>';
+  }).join('');
+  document.getElementById('day-grid').innerHTML=html;
+}
+
+function quickLog(iso){
+  // Quick-log: opens a minimal modal pre-filled for referent contact
+  selectedQuickDate=iso;
+  document.getElementById('m-sub').textContent=selectedClient.name+' — quick referent contact for '+fmtD(iso);
+  document.getElementById('f-date').value=iso;
+  document.getElementById('f-contact').value='';
+  document.getElementById('f-nature').value='';
+  document.getElementById('f-outcome').value='';
+  document.getElementById('f-role').value='Referent';
+  selMethod='Call';
+  document.querySelectorAll('.mb').forEach(function(b){b.classList.toggle('sel',b.dataset.m==='Call');});
+  document.getElementById('overlay').classList.add('open');
+  setTimeout(function(){document.getElementById('f-contact').focus();},60);
+}
+var selectedQuickDate=null;
 
 document.getElementById('overlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
 document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal();});
