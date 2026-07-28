@@ -444,7 +444,8 @@ function renderLog(){
   if(!selectedClient)return;
   var entries=Object.entries(commEntries)
     .map(function(kv){return Object.assign({_key:kv[0]},kv[1]);})
-    .filter(function(e){return e.clientId===selectedClient.id;})
+    .filter(function(e){
+      return e.clientId===selectedClient.id||e.clientName===selectedClient.name;})
     .sort(function(a,b){return(b.date||'')>(a.date||'')?1:-1;});
   if(!entries.length){
     document.getElementById('log-area').innerHTML='<div class="empty-log"><h3>No entries yet</h3><p>Click <strong>+ Add Entry</strong> to log the first communication.</p></div>';
@@ -502,8 +503,10 @@ function renderCompliance(){
   document.getElementById('compliance-bar').style.display='block';
   var contactedDays=new Set();
   Object.values(commEntries).forEach(function(e){
-    if(e.clientId!==c.id||e.isAuto)return;
-    if(e.contactRole===REFERENT_ROLE)contactedDays.add(e.date); // Referent only
+    // Match by clientId OR clientName as fallback (handles entries saved before id was set)
+    var matchesClient=(e.clientId&&e.clientId===c.id)||(e.clientName&&e.clientName===c.name);
+    if(!matchesClient||e.isAuto)return;
+    if((e.contactRole||'').toLowerCase()==='referent')contactedDays.add(e.date); // Referent only (case-insensitive)
   });
   var endISO=disch&&disch<TODAY?disch:TODAY;
   var start=new Date(admit+'T12:00:00'), end=new Date(endISO+'T12:00:00');
@@ -564,9 +567,11 @@ function renderFacesheet(){
 
   var contactedDaysByClient={};
   Object.values(commEntries).forEach(function(e){
-    if(!e.isAuto&&e.contactRole===REFERENT_ROLE){ // Referent only drives green indicator
-      if(!contactedDaysByClient[e.clientId])contactedDaysByClient[e.clientId]=new Set();
-      contactedDaysByClient[e.clientId].add(e.date);
+    if(!e.isAuto&&(e.contactRole||'').toLowerCase()==='referent'){ // Referent only drives green indicator
+      // Use clientId if available; fall back to clientName for entries saved before id was set
+      var key=e.clientId||('name:'+e.clientName);
+      if(!contactedDaysByClient[key])contactedDaysByClient[key]=new Set();
+      contactedDaysByClient[key].add(e.date);
     }
   });
 
@@ -598,7 +603,10 @@ function renderFacesheet(){
 
   var tbody=active.map(function(c){
     var admit=(c.program==='PDI'?c.pdiAdmit:c.sigAdmit||c.pdiAdmit)||'';
-    var contacted=contactedDaysByClient[c.id]||new Set();
+    // Check both id-keyed and name-keyed sets (handles both old and new entries)
+    var _s1=contactedDaysByClient[c.id]||new Set();
+    var _s2=contactedDaysByClient['name:'+c.name]||new Set();
+    var contacted=new Set([..._s1,..._s2]);
     var isClientNA=!!noReferentClients[c.id];
     var cells=dateCols.map(function(d){
       var iso=d.toISOString().slice(0,10);
