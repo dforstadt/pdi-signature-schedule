@@ -2050,7 +2050,7 @@ function fmt12Cal(t){
 // ── Weekend Outings on Calendar ─────────────────────────────────────────────
 window._outingData = {};  // { clientId: [outing, ...] }
 
-firebase.database().ref('schedule_v3/client_passes').on('value', function(snap) {
+firebase.database().ref('lifeskills_clinical/client_passes').on('value', function(snap) {
   var data = snap.val() || {};
   window._outingData = {};
   Object.keys(data).forEach(function(cid) {
