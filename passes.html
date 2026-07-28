@@ -19,90 +19,106 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--tx);min-heigh
 .ldot{width:7px;height:7px;border-radius:50%;background:#555;display:inline-block}
 .ldot.on{background:#44CC77}
 .live{margin-left:auto;display:flex;align-items:center;gap:5px;font-size:11px;color:rgba(255,252,245,.5)}
-.page{max-width:960px;margin:0 auto;padding:24px 20px 60px}
+.page{max-width:1000px;margin:0 auto;padding:24px 20px 60px}
 
-/* Selector */
 .selector{background:var(--white);border:1px solid var(--bd);border-radius:var(--r);padding:14px 18px;margin-bottom:20px;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
-.sel-group{display:flex;flex-direction:column;gap:4px}
+.sel-group{display:flex;flex-direction:column;gap:4px;flex:1;min-width:200px}
 .sel-group label{font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px}
-select{padding:8px 12px;border:1px solid var(--bd);border-radius:6px;font-size:13px;font-family:Arial,sans-serif;color:var(--tx)}
-select:focus{outline:none;border-color:var(--purple)}
-#client-select{min-width:240px}
+select,input[type=text],input[type=date],input[type=time],input[type=datetime-local]{padding:8px 12px;border:1px solid var(--bd);border-radius:6px;font-size:13px;font-family:Arial,sans-serif;color:var(--tx);width:100%}
+select:focus,input:focus,textarea:focus{outline:none;border-color:var(--purple)}
 
-/* Client banner */
-.banner{background:var(--white);border:1px solid var(--bd);border-radius:var(--r);padding:12px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px}
-.banner-name{font-size:16px;font-weight:700;color:var(--navy)}
+.banner{background:var(--white);border:1px solid var(--bd);border-radius:var(--r);padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:16px}
+.banner-name{font-size:17px;font-weight:700;color:var(--navy)}
 .banner-meta{font-size:11px;color:var(--tx3);margin-top:2px}
-.chip{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-right:4px;background:#EAF5EE;color:var(--green)}
+.prog-chip{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-right:4px;background:#EAF5EE;color:var(--green)}
 
-/* Section cards */
 .section{background:var(--white);border:1px solid var(--bd);border-radius:var(--r);margin-bottom:20px;overflow:hidden}
-.section-hdr{padding:14px 18px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
+.section-hdr{padding:14px 18px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;gap:10px}
 .section-title{font-size:13px;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:8px}
-.section-icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
-.icon-pass{background:#E8F0F8}
-.icon-tech{background:#F0EBF9}
-.icon-outing{background:#EAF5EE}
-.add-btn{padding:6px 14px;border:1.5px solid var(--navy);background:transparent;color:var(--navy);border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:Arial,sans-serif}
-.add-btn:hover{background:var(--navy);color:#fff}
+.sicon{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.sicon-pass{background:#E8F0FA}.sicon-tech{background:#F0EBF9}.sicon-outing{background:#EAF5EE}
 .section-body{padding:16px 18px}
+.add-btn{padding:6px 16px;border:1.5px solid var(--navy);background:transparent;color:var(--navy);border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;white-space:nowrap}
+.add-btn:hover{background:var(--navy);color:#fff}
 
-/* Pass table */
+/* Tables */
 table{width:100%;border-collapse:collapse;font-size:12px}
-th{text-align:left;padding:8px 10px;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--bd)}
-td{padding:10px 10px;border-bottom:.5px solid var(--bd);vertical-align:middle}
+th{text-align:left;padding:9px 10px;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;border-bottom:1.5px solid var(--bd);background:#FAFAF8}
+td{padding:10px 10px;border-bottom:.5px solid #F0EDE8;vertical-align:middle}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:#FAFAF8}
-.copy-box{display:flex;align-items:center;gap:6px;cursor:pointer}
-.copy-check{width:18px;height:18px;border-radius:4px;border:2px solid var(--bd);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .15s}
-.copy-check.checked{background:var(--green);border-color:var(--green);color:#fff;font-size:11px}
-.endorse-btn{font-size:11px;font-weight:600;padding:3px 10px;border-radius:10px;cursor:pointer;border:1.5px solid}
-.endorse-btn.pending{border-color:#ccc;background:transparent;color:var(--tx3)}
-.endorse-btn.pending:hover{border-color:var(--green);color:var(--green)}
-.endorse-btn.done{border-color:var(--green);background:var(--green);color:#fff;cursor:default;font-size:10px}
-.del-btn{background:none;border:none;color:var(--red);cursor:pointer;font-size:12px;opacity:.4;padding:2px 6px}
+.empty-row td{text-align:center;color:var(--tx3);padding:28px;font-size:12px;font-style:italic}
+
+/* Status chips */
+.chip{display:inline-block;font-size:10px;font-weight:700;padding:2px 9px;border-radius:10px}
+.chip-pend{background:#FEF9EC;color:var(--amber)}
+.chip-appr{background:#EAF5EE;color:var(--green)}
+.chip-routine{background:#E8F0FA;color:var(--teal)}
+.chip-one{background:#F0EBF9;color:var(--purple)}
+
+/* Toggle checkbox */
+.check-wrap{display:flex;align-items:center;gap:7px;cursor:pointer;user-select:none}
+.cbox{width:20px;height:20px;border-radius:5px;border:2px solid var(--bd);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex-shrink:0}
+.cbox.on{background:var(--green);border-color:var(--green);color:#fff;font-size:12px;font-weight:700}
+
+.endorse-btn{font-size:11px;font-weight:700;padding:3px 11px;border-radius:10px;cursor:pointer;border:1.5px solid;white-space:nowrap}
+.endorse-btn.pend{border-color:#ccc;background:transparent;color:var(--tx3)}
+.endorse-btn.pend:hover{border-color:var(--green);color:var(--green)}
+.endorse-btn.done{border-color:var(--green);background:var(--green);color:#fff;cursor:default;font-size:10px;padding:3px 9px}
+.print-btn{font-size:10px;font-weight:600;padding:3px 9px;border-radius:6px;cursor:pointer;border:1px solid #ddd;background:#fff;color:var(--tx2);font-family:Arial,sans-serif}
+.print-btn:hover{background:#F0EDE8}
+.del-btn{background:none;border:none;color:var(--red);cursor:pointer;font-size:13px;opacity:.35;padding:0 4px}
 .del-btn:hover{opacity:1}
-.empty-row td{text-align:center;color:var(--tx3);padding:24px;font-style:italic;font-size:12px}
 
-/* Tech schedule */
-.tech-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:14px}
+/* Technology tabs */
+.tech-tabs{display:flex;gap:0;border:1px solid var(--bd);border-radius:6px;overflow:hidden;margin-bottom:14px;width:fit-content}
+.tech-tab{padding:7px 18px;font-size:12px;font-weight:600;color:var(--tx3);cursor:pointer;background:transparent;border:none;font-family:Arial,sans-serif}
+.tech-tab.active{background:var(--navy);color:#fff}
+
+/* Tech weekly grid */
+.day-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:14px}
 .day-card{border:1px solid var(--bd);border-radius:6px;overflow:hidden}
-.day-card-hdr{background:#F0EDE8;padding:6px 8px;font-size:10px;font-weight:700;color:var(--sig);text-align:center}
-.day-card-body{padding:8px}
-.day-toggle{display:flex;align-items:center;gap:6px;margin-bottom:6px;cursor:pointer}
-.day-toggle input[type=checkbox]{width:14px;height:14px;cursor:pointer;accent-color:var(--purple)}
+.day-hdr{background:#F0EDE8;padding:7px;font-size:10px;font-weight:700;color:var(--sig);text-align:center;text-transform:uppercase;letter-spacing:.3px}
+.day-body{padding:8px}
+.day-toggle{display:flex;align-items:center;gap:5px;margin-bottom:6px;cursor:pointer}
+.day-toggle input[type=checkbox]{width:14px;height:14px;accent-color:var(--purple)}
 .day-toggle span{font-size:11px;color:var(--tx2)}
-.time-input{width:100%;padding:5px 7px;border:1px solid var(--bd);border-radius:4px;font-size:11px;font-family:Arial,sans-serif;color:var(--tx)}
-.time-input:focus{outline:none;border-color:var(--purple)}
-.tech-notes{width:100%;padding:8px 10px;border:1px solid var(--bd);border-radius:6px;font-size:12px;font-family:Arial,sans-serif;resize:vertical}
-.tech-notes:focus{outline:none;border-color:var(--purple)}
-.save-tech{padding:7px 20px;background:var(--purple);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:Arial,sans-serif}
-.save-tech:hover{background:#6D28D9}
-.saved-badge{display:none;font-size:11px;color:var(--green);font-weight:600;margin-left:10px}
+.ti{width:100%;padding:5px 7px;border:1px solid var(--bd);border-radius:4px;font-size:11px;font-family:Arial,sans-serif;color:var(--tx)}
+.ti:focus{outline:none;border-color:var(--purple)}
+.ti+.ti{margin-top:4px}
 
-/* Outing table */
-.tech-tag{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px}
-.tech-yes{background:#F0EBF9;color:var(--purple)}
-.tech-no{background:#F7F5F2;color:var(--tx3)}
+.save-bar{display:flex;align-items:center;gap:10px;margin-top:10px}
+.save-schedule-btn{padding:8px 20px;background:var(--purple);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif}
+.save-schedule-btn:hover{background:#6D28D9}
+.saved-msg{font-size:11px;color:var(--green);font-weight:600;display:none}
+
+/* Approve label */
+.appr-label{font-size:11px;color:var(--tx3)}
+.appr-by{font-size:11px;color:var(--green);font-weight:600}
 
 /* Modal */
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:999;align-items:center;justify-content:center}
 .overlay.open{display:flex}
-.modal{background:var(--white);border-radius:12px;padding:24px;width:480px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 8px 48px rgba(0,0,0,.2)}
+.modal{background:var(--white);border-radius:12px;padding:26px;width:500px;max-width:95vw;max-height:92vh;overflow-y:auto;box-shadow:0 8px 48px rgba(0,0,0,.22)}
 .modal h3{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:2px}
-.modal-sub{font-size:11px;color:var(--tx3);margin-bottom:16px}
-.fg{margin-bottom:11px}
-.fg label{display:block;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
-.fg input,.fg select,.fg textarea{width:100%;padding:8px 11px;border:1px solid var(--bd);border-radius:6px;font-size:13px;font-family:Arial,sans-serif}
-.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--purple)}
+.modal-sub{font-size:11px;color:var(--tx3);margin-bottom:18px}
+.fg{margin-bottom:12px}
+.fg>label{display:block;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.fg textarea{width:100%;padding:8px 11px;border:1px solid var(--bd);border-radius:6px;font-size:13px;font-family:Arial,sans-serif;resize:vertical}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-.modal-footer{display:flex;gap:10px;justify-content:flex-end;padding-top:14px;border-top:.5px solid var(--bd);margin-top:4px}
-.btn-cancel{padding:8px 18px;border:1px solid var(--bd);background:transparent;border-radius:6px;font-size:13px;cursor:pointer}
-.btn-save{padding:8px 22px;background:var(--navy);color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer}
-.btn-save:hover{background:#2A3F6A}
-.empty-state{text-align:center;padding:48px 20px;color:var(--tx3)}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;padding-top:14px;border-top:.5px solid var(--bd);margin-top:8px}
+.btn-cancel{padding:8px 18px;border:1px solid var(--bd);background:transparent;border-radius:6px;font-size:13px;cursor:pointer;color:var(--tx2)}
+.btn-save-modal{padding:8px 24px;background:var(--navy);color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer}
+.btn-save-modal:hover{background:#2A3F6A}
+.empty-state{text-align:center;padding:60px 20px;color:var(--tx3)}
 .empty-state h3{font-size:14px;color:var(--tx2);margin-bottom:6px}
+.radio-row{display:flex;gap:16px}
+.radio-row label{display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer}
+.radio-row input[type=radio]{accent-color:var(--purple)}
+.info-note{font-size:11px;color:var(--tx3);font-style:italic;margin-top:4px}
+
+@media print{.hdr,.selector,.add-btn,.print-btn,.del-btn,.endorse-btn.pend,.save-schedule-btn,.tech-tabs{display:none!important}.section{break-inside:avoid;box-shadow:none}}
 </style>
 </head>
 <body>
@@ -115,9 +131,8 @@ tr:hover td{background:#FAFAF8}
 </div>
 
 <div class="page">
-  <!-- Client selector -->
   <div class="selector">
-    <div class="sel-group" style="flex:1;min-width:200px">
+    <div class="sel-group">
       <label>Active Client</label>
       <select id="client-select" onchange="selectClient(this.value)">
         <option value="">— Select a client —</option>
@@ -125,178 +140,203 @@ tr:hover td{background:#FAFAF8}
     </div>
   </div>
 
-  <!-- Empty state -->
   <div class="empty-state" id="empty-state">
-    <h3>Select a client to manage their passes and privileges</h3>
+    <h3>Select a client above</h3>
     <p>Only active clients are shown.</p>
   </div>
 
-  <!-- Client content -->
   <div id="client-content" style="display:none">
-
-    <!-- Banner -->
     <div class="banner">
       <div style="flex:1">
         <div class="banner-name" id="banner-name"></div>
         <div class="banner-meta" id="banner-meta"></div>
       </div>
+      <div style="font-size:11px;color:var(--tx3);text-align:right" id="banner-bt"></div>
     </div>
 
-    <!-- ── Off-Site Passes ──────────────────────────────────────────── -->
+    <!-- ══ OFF-SITE PASSES ══════════════════════════════════════════════ -->
     <div class="section">
       <div class="section-hdr">
-        <div class="section-title">
-          <div class="section-icon icon-pass">🚗</div>
-          Off-Site Passes
-        </div>
-        <button class="add-btn" onclick="openPassModal()">+ Add Pass</button>
+        <div class="section-title"><div class="sicon sicon-pass">🚗</div>Off-Site Passes</div>
+        <button class="add-btn" onclick="openPassModal()">+ Create Pass</button>
       </div>
       <div class="section-body">
+        <p style="font-size:11px;color:var(--tx3);margin-bottom:12px">
+          Passes are created here, printed, and approved by the primary therapist before the client departs.
+          Check <strong>Therapist Approved</strong> after the physical copy has been signed.
+        </p>
         <table>
           <thead><tr>
-            <th>Date</th><th>Departure</th><th>Return</th>
-            <th>Destination</th><th>Physical Copy</th><th>Notes</th>
-            <th>Endorsed</th><th></th>
+            <th>Date</th><th>Departure</th><th>Return</th><th>Destination</th>
+            <th>Primary Therapist</th><th>Therapist Approved</th>
+            <th>Notes</th><th>Endorsed</th><th>Print</th><th></th>
           </tr></thead>
-          <tbody id="pass-tbody">
-            <tr class="empty-row"><td colspan="8">No passes logged yet.</td></tr>
-          </tbody>
+          <tbody id="pass-tbody"></tbody>
         </table>
       </div>
     </div>
 
-    <!-- ── Technology Time ──────────────────────────────────────────── -->
+    <!-- ══ TECHNOLOGY TIME ══════════════════════════════════════════════ -->
     <div class="section">
       <div class="section-hdr">
-        <div class="section-title">
-          <div class="section-icon icon-tech">💻</div>
-          Technology Time — Weekly Schedule
-        </div>
-        <div style="display:flex;align-items:center;gap:8px">
-          <span class="saved-badge" id="tech-saved">✓ Saved</span>
-          <button class="save-tech" onclick="saveTechSchedule()">Save Schedule</button>
-        </div>
+        <div class="section-title"><div class="sicon sicon-tech">💻</div>Technology Time</div>
+        <button class="add-btn" onclick="openTechModal()">+ Add Approval</button>
       </div>
       <div class="section-body">
-        <div class="tech-grid" id="tech-grid"></div>
-        <div class="fg" style="margin-top:8px">
-          <label>Additional Notes / Restrictions</label>
-          <textarea class="tech-notes" id="tech-notes" rows="2" placeholder="e.g. No social media. Personal email only. Supervised use."></textarea>
+        <div class="tech-tabs">
+          <button class="tech-tab active" id="ttab-routine" onclick="showTechTab('routine')">Routine Schedule</button>
+          <button class="tech-tab" id="ttab-onetime" onclick="showTechTab('onetime')">One-Time Approvals</button>
+        </div>
+
+        <!-- Routine weekly schedule -->
+        <div id="tech-routine">
+          <p style="font-size:11px;color:var(--tx3);margin-bottom:12px">Standing weekly technology schedule approved by the treatment team. Check each day and set the approved time window.</p>
+          <div class="day-grid" id="day-grid"></div>
+          <div class="fg">
+            <label>Approving Clinician</label>
+            <input type="text" id="routine-clinician" placeholder="Clinician name">
+          </div>
+          <div class="fg">
+            <label>Restrictions / Conditions</label>
+            <textarea id="routine-notes" rows="2" placeholder="e.g. No social media. Supervised use. Personal email only."></textarea>
+          </div>
+          <div class="save-bar">
+            <button class="save-schedule-btn" onclick="saveRoutine()">Save Routine Schedule</button>
+            <span class="saved-msg" id="routine-saved">✓ Saved</span>
+          </div>
+        </div>
+
+        <!-- One-time approvals -->
+        <div id="tech-onetime" style="display:none">
+          <table>
+            <thead><tr>
+              <th>Date</th><th>Time Window</th><th>Approved By</th>
+              <th>Notes</th><th>Endorsed</th><th></th>
+            </tr></thead>
+            <tbody id="techone-tbody"></tbody>
+          </table>
         </div>
       </div>
     </div>
 
-    <!-- ── Weekend Outings ─────────────────────────────────────────── -->
+    <!-- ══ WEEKEND OUTINGS ══════════════════════════════════════════════ -->
     <div class="section">
       <div class="section-hdr">
-        <div class="section-title">
-          <div class="section-icon icon-outing">🏕️</div>
-          Weekend Outings
-        </div>
+        <div class="section-title"><div class="sicon sicon-outing">🏕️</div>Weekend Outings</div>
         <button class="add-btn" onclick="openOutingModal()">+ Add Outing</button>
       </div>
       <div class="section-body">
         <table>
           <thead><tr>
             <th>Weekend</th><th>Destination</th><th>Departure</th><th>Return</th>
-            <th>Tech Allowed</th><th>Tech Assignment</th><th>Notes</th>
-            <th>Endorsed</th><th></th>
+            <th>BT Assigned</th><th>Tech During Outing</th>
+            <th>Notes</th><th>Endorsed</th><th></th>
           </tr></thead>
-          <tbody id="outing-tbody">
-            <tr class="empty-row"><td colspan="9">No weekend outings logged yet.</td></tr>
-          </tbody>
+          <tbody id="outing-tbody"></tbody>
         </table>
       </div>
-    </div>
-
-  </div><!-- /client-content -->
-</div><!-- /page -->
-
-<!-- ── Pass Modal ─────────────────────────────────────────────────── -->
-<div class="overlay" id="pass-overlay">
-  <div class="modal">
-    <h3>Add Off-Site Pass</h3>
-    <div class="modal-sub" id="pass-sub"></div>
-    <div class="row3 fg">
-      <div><label>Date</label><input type="date" id="p-date"></div>
-      <div><label>Departure Time</label><input type="time" id="p-depart"></div>
-      <div><label>Return Time</label><input type="time" id="p-return"></div>
-    </div>
-    <div class="fg"><label>Destination</label>
-      <input type="text" id="p-dest" placeholder="e.g. Whole Foods Market, Boca Raton"></div>
-    <div class="fg">
-      <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-        <input type="checkbox" id="p-copy" style="width:16px;height:16px;accent-color:var(--green)">
-        Physical copy of pass on file
-      </label>
-    </div>
-    <div class="fg"><label>Notes</label>
-      <textarea id="p-notes" rows="2" placeholder="Any conditions, accompaniment requirements, etc."></textarea>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-cancel" onclick="closePassModal()">Cancel</button>
-      <button class="btn-save" onclick="savePass()">Add Pass</button>
     </div>
   </div>
 </div>
 
-<!-- ── Outing Modal ───────────────────────────────────────────────── -->
+<!-- ══ PASS MODAL ══════════════════════════════════════════════════════ -->
+<div class="overlay" id="pass-overlay">
+  <div class="modal">
+    <h3>Create Off-Site Pass</h3>
+    <div class="modal-sub" id="pass-sub"></div>
+    <div class="row3 fg">
+      <div><label>Date</label><input type="date" id="p-date"></div>
+      <div><label>Departure</label><input type="time" id="p-depart"></div>
+      <div><label>Expected Return</label><input type="time" id="p-return"></div>
+    </div>
+    <div class="fg"><label>Destination</label>
+      <input type="text" id="p-dest" placeholder="e.g. Whole Foods, Boca Raton FL"></div>
+    <div class="fg"><label>Primary Therapist</label>
+      <input type="text" id="p-therapist" placeholder="Therapist name (will appear on printed pass)"></div>
+    <div class="fg"><label>Accompanying BT</label>
+      <input type="text" id="p-bt" placeholder="Behavioral technician assigned"></div>
+    <div class="fg"><label>Conditions / Notes</label>
+      <textarea id="p-notes" rows="2" placeholder="Any conditions, supervision requirements, restrictions…"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closePassModal()">Cancel</button>
+      <button class="btn-save-modal" onclick="savePass()">Create Pass</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TECH ONE-TIME MODAL ══════════════════════════════════════════ -->
+<div class="overlay" id="tech-overlay">
+  <div class="modal">
+    <h3>One-Time Technology Approval</h3>
+    <div class="modal-sub" id="tech-sub"></div>
+    <div class="row2 fg">
+      <div><label>Date</label><input type="date" id="t-date"></div>
+      <div><label>Approving Clinician</label>
+        <input type="text" id="t-clinician" placeholder="Clinician name"></div>
+    </div>
+    <div class="row2 fg">
+      <div><label>Start Time</label><input type="time" id="t-start"></div>
+      <div><label>End Time</label><input type="time" id="t-end"></div>
+    </div>
+    <div class="fg"><label>Notes / Restrictions</label>
+      <textarea id="t-notes" rows="2" placeholder="What is approved, any conditions…"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeTechModal()">Cancel</button>
+      <button class="btn-save-modal" onclick="saveTechOne()">Add Approval</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ OUTING MODAL ══════════════════════════════════════════════════ -->
 <div class="overlay" id="outing-overlay">
   <div class="modal">
     <h3>Add Weekend Outing</h3>
     <div class="modal-sub" id="outing-sub"></div>
     <div class="row2 fg">
-      <div><label>Weekend Start (Saturday)</label><input type="date" id="o-date"></div>
+      <div><label>Weekend (Saturday)</label><input type="date" id="o-date"></div>
       <div><label>Destination</label><input type="text" id="o-dest" placeholder="e.g. Family home, Miami"></div>
     </div>
     <div class="row2 fg">
-      <div><label>Departure Date &amp; Time</label><input type="datetime-local" id="o-depart"></div>
-      <div><label>Return Date &amp; Time</label><input type="datetime-local" id="o-return"></div>
+      <div><label>Departure</label><input type="datetime-local" id="o-depart"></div>
+      <div><label>Return</label><input type="datetime-local" id="o-return"></div>
+    </div>
+    <div class="fg"><label>Behavioral Technician Assigned</label>
+      <input type="text" id="o-bt" placeholder="BT name assigned to this outing">
+      <p class="info-note">The BT responsible for the client during this outing.</p>
     </div>
     <div class="fg">
-      <label style="margin-bottom:6px;display:block">Technology During Outing</label>
-      <div style="display:flex;gap:10px">
-        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
-          <input type="radio" name="o-tech" value="yes" id="o-tech-yes" style="accent-color:var(--purple)"> Allowed
-        </label>
-        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
-          <input type="radio" name="o-tech" value="no" id="o-tech-no" checked style="accent-color:var(--purple)"> Not allowed
-        </label>
-        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
-          <input type="radio" name="o-tech" value="limited" id="o-tech-lim" style="accent-color:var(--purple)"> Limited
-        </label>
+      <label>Technology During Outing</label>
+      <div class="radio-row">
+        <label><input type="radio" name="o-tech" value="Allowed"> Allowed</label>
+        <label><input type="radio" name="o-tech" value="Limited"> Limited</label>
+        <label><input type="radio" name="o-tech" value="None" checked> Not allowed</label>
       </div>
     </div>
-    <div class="fg"><label>Tech Assignment / Specifics</label>
-      <input type="text" id="o-tech-notes" placeholder="e.g. Personal phone only, no laptop. Supervised access.">
-    </div>
-    <div class="fg"><label>Notes / Conditions</label>
-      <textarea id="o-notes" rows="2" placeholder="Supervision requirements, curfew, check-in schedule…"></textarea>
-    </div>
+    <div class="fg"><label>Tech Specifics (if allowed)</label>
+      <input type="text" id="o-tech-detail" placeholder="e.g. Personal phone only, supervised"></div>
+    <div class="fg"><label>Conditions / Notes</label>
+      <textarea id="o-notes" rows="2" placeholder="Curfew, check-in schedule, supervision requirements…"></textarea></div>
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeOutingModal()">Cancel</button>
-      <button class="btn-save" onclick="saveOuting()">Add Outing</button>
+      <button class="btn-save-modal" onclick="saveOuting()">Add Outing</button>
     </div>
   </div>
 </div>
 
 <script>
-firebase.initializeApp({
-  apiKey:'AIzaSyCERxntgytkfCHWN7EoAVYVmLBcfWyYZ5A',
+firebase.initializeApp({apiKey:'AIzaSyCERxntgytkfCHWN7EoAVYVmLBcfWyYZ5A',
   databaseURL:'https://pdi-signature-schedule-default-rtdb.firebaseio.com',
-  projectId:'pdi-signature-schedule'
-});
-var DB=firebase.database();
-var PASSES_REF=DB.ref('schedule_v3/client_passes');
+  projectId:'pdi-signature-schedule'});
+var DB=firebase.database(), PR=DB.ref('schedule_v3/client_passes');
 var allClients=[], selectedClient=null, clientData={};
 var DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 var TODAY=(function(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})();
 
-// ── Load calendar clients ──────────────────────────────────────────────────
+// ── Load clients ─────────────────────────────────────────────────────────────
 DB.ref('schedule_v3').on('value',function(snap){
   document.getElementById('ldot').className='ldot on';
   document.getElementById('llbl').textContent='Live';
-  var raw=snap.val(); if(!raw||!raw.blob)return;
+  var raw=snap.val();if(!raw||!raw.blob)return;
   try{
     var d=JSON.parse(raw.blob);
     allClients=(d.clients||[]).map(function(c){
@@ -306,45 +346,31 @@ DB.ref('schedule_v3').on('value',function(snap){
         else if(c.pdiAdmit)c.program='PDI';
       }return c;
     }).filter(function(c){
-      // Active only
       var disch=(c.program==='PDI'?c.pdiDischarge||c.pdiDisch:c.sigDischarge||c.sigDisch||c.endDate)||'';
       return !disch||disch>=TODAY;
     }).sort(function(a,b){return(a.name||'').localeCompare(b.name||'');});
     buildDropdown();
   }catch(e){console.error(e);}
-},function(){
-  document.getElementById('ldot').style.background='#c00';
-  document.getElementById('llbl').textContent='Offline';
-});
+},function(){document.getElementById('ldot').style.background='#c00';});
 
 function buildDropdown(){
   var prev=document.getElementById('client-select').value;
-  var html='<option value="">— Select a client ('+allClients.length+' active) —</option>';
-  html+=allClients.map(function(c){
-    return'<option value="'+c.id+'">'+esc(c.name)+' ['+c.program+']</option>';
-  }).join('');
-  document.getElementById('client-select').innerHTML=html;
+  document.getElementById('client-select').innerHTML=
+    '<option value="">— Select a client ('+allClients.length+' active) —</option>'+
+    allClients.map(function(c){return'<option value="'+c.id+'">'+esc(c.name)+' ['+c.program+']</option>';}).join('');
   if(prev)document.getElementById('client-select').value=prev;
 }
 
-// ── Select client ──────────────────────────────────────────────────────────
 function selectClient(id){
   selectedClient=allClients.find(function(c){return c.id===id;})||null;
-  if(!selectedClient){
-    document.getElementById('empty-state').style.display='block';
-    document.getElementById('client-content').style.display='none';
-    return;
-  }
-  document.getElementById('empty-state').style.display='none';
-  document.getElementById('client-content').style.display='block';
+  document.getElementById('empty-state').style.display=selectedClient?'none':'block';
+  document.getElementById('client-content').style.display=selectedClient?'':'none';
+  if(!selectedClient)return;
   renderBanner();
-  buildTechGrid();
-  // Listen to this client's data
-  PASSES_REF.child(id).on('value',function(snap){
+  buildDayGrid();
+  PR.child(id).on('value',function(snap){
     clientData=snap.val()||{};
-    renderPasses();
-    renderOutings();
-    loadTechSchedule();
+    renderPasses();renderTechOne();renderOutings();loadRoutine();
   });
 }
 
@@ -352,34 +378,32 @@ function renderBanner(){
   var c=selectedClient;
   var admit=(c.program==='PDI'?c.pdiAdmit:c.sigAdmit||c.pdiAdmit)||'';
   document.getElementById('banner-name').textContent=c.name;
-  document.getElementById('banner-meta').innerHTML=
-    '<span class="chip">'+c.program+'</span>'+
-    (admit?'Admitted: '+fmtD(admit):'');
+  document.getElementById('banner-meta').innerHTML='<span class="prog-chip">'+c.program+'</span>'+(admit?'Admitted: '+fmtD(admit):'');
 }
 
-// ── PASSES ─────────────────────────────────────────────────────────────────
+// ── PASSES ───────────────────────────────────────────────────────────────────
 function renderPasses(){
   var passes=clientData.passes||{};
-  var list=Object.entries(passes)
-    .map(function(kv){return Object.assign({_key:kv[0]},kv[1]);})
+  var list=Object.entries(passes).map(function(kv){return Object.assign({_key:kv[0]},kv[1]);})
     .sort(function(a,b){return(b.date||'')>(a.date||'')?1:-1;});
-  var tbody=document.getElementById('pass-tbody');
-  if(!list.length){tbody.innerHTML='<tr class="empty-row"><td colspan="8">No passes logged yet. Click <strong>+ Add Pass</strong> to log one.</td></tr>';return;}
-  tbody.innerHTML=list.map(function(p){
-    var copyHtml='<div class="copy-box" onclick="toggleCopy(\''+p._key+'\')">'
-      +'<div class="copy-check'+(p.hasCopy?' checked':'')+'">'+( p.hasCopy?'✓':'')+'</div>'
-      +'<span style="font-size:11px;color:var(--tx3)">'+(p.hasCopy?'On file':'Pending')+'</span></div>';
-    var eBtn=p.endorsed
-      ?'<button class="endorse-btn done">✓ '+esc(p.endorsedBy||'Staff')+'</button>'
-      :'<button class="endorse-btn pending" onclick="endorsePass(\''+p._key+'\')">Endorse</button>';
+  var tb=document.getElementById('pass-tbody');
+  if(!list.length){tb.innerHTML='<tr class="empty-row"><td colspan="10">No passes yet. Click <strong>+ Create Pass</strong>.</td></tr>';return;}
+  tb.innerHTML=list.map(function(p){
+    var approvedHtml='<div class="check-wrap" onclick="toggleApproved(\''+p._key+'\')">'
+      +'<div class="cbox'+(p.therapistApproved?' on':'')+'">'+( p.therapistApproved?'✓':'')+'</div>'
+      +'<span style="font-size:11px;color:var(--tx3)">'+(p.therapistApproved?'<span style="color:var(--green);font-weight:700">Approved</span>':'Pending')+'</span></div>';
+    var eBtn=p.endorsed?'<button class="endorse-btn done">✓ '+esc(p.endorsedBy)+'</button>'
+      :'<button class="endorse-btn pend" onclick="endorsePass(\''+p._key+'\')">Endorse</button>';
     return'<tr>'
-      +'<td style="font-weight:600">'+fmtD(p.date||'')+'</td>'
-      +'<td>'+fmt12(p.departTime||'')+'</td>'
-      +'<td>'+fmt12(p.returnTime||'')+'</td>'
-      +'<td style="max-width:180px">'+esc(p.destination||'')+'</td>'
-      +'<td>'+copyHtml+'</td>'
-      +'<td style="max-width:140px;color:var(--tx3);font-size:11px">'+esc(p.notes||'')+'</td>'
+      +'<td style="font-weight:600;white-space:nowrap">'+fmtD(p.date||'')+'</td>'
+      +'<td style="white-space:nowrap">'+fmt12(p.departTime||'')+'</td>'
+      +'<td style="white-space:nowrap">'+fmt12(p.returnTime||'')+'</td>'
+      +'<td>'+esc(p.destination||'')+'</td>'
+      +'<td style="font-size:11px;color:var(--teal);font-weight:600">'+esc(p.therapist||'—')+'</td>'
+      +'<td>'+approvedHtml+'</td>'
+      +'<td style="font-size:11px;color:var(--tx3);max-width:140px">'+esc(p.notes||'')+'</td>'
       +'<td>'+eBtn+'</td>'
+      +'<td><button class="print-btn" onclick="printPass(\''+p._key+'\')">&#128438; Print</button></td>'
       +'<td><button class="del-btn" onclick="deletePass(\''+p._key+'\')">✕</button></td>'
       +'</tr>';
   }).join('');
@@ -389,189 +413,228 @@ function openPassModal(){
   if(!selectedClient)return;
   document.getElementById('pass-sub').textContent=selectedClient.name;
   document.getElementById('p-date').value=TODAY;
-  document.getElementById('p-depart').value='';
-  document.getElementById('p-return').value='';
-  document.getElementById('p-dest').value='';
-  document.getElementById('p-copy').checked=false;
-  document.getElementById('p-notes').value='';
+  ['p-depart','p-return','p-dest','p-therapist','p-bt','p-notes'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('pass-overlay').classList.add('open');
   setTimeout(function(){document.getElementById('p-dest').focus();},60);
 }
 function closePassModal(){document.getElementById('pass-overlay').classList.remove('open');}
-
 function savePass(){
-  var date=document.getElementById('p-date').value;
   var dest=(document.getElementById('p-dest').value||'').trim();
-  if(!date){alert('Date required.');return;}
-  if(!dest){alert('Destination required.');return;}
-  PASSES_REF.child(selectedClient.id).child('passes').push({
-    date:date,
-    departTime:document.getElementById('p-depart').value||'',
-    returnTime:document.getElementById('p-return').value||'',
-    destination:dest,
-    hasCopy:document.getElementById('p-copy').checked,
+  var date=document.getElementById('p-date').value;
+  if(!date||!dest){alert('Date and destination required.');return;}
+  PR.child(selectedClient.id).child('passes').push({
+    date:date,departTime:document.getElementById('p-depart').value||'',
+    returnTime:document.getElementById('p-return').value||'',destination:dest,
+    therapist:(document.getElementById('p-therapist').value||'').trim(),
+    btAssigned:(document.getElementById('p-bt').value||'').trim(),
     notes:(document.getElementById('p-notes').value||'').trim(),
-    endorsed:false,endorsedBy:'',endorsedAt:'',
+    therapistApproved:false,endorsed:false,endorsedBy:'',endorsedAt:'',
     addedAt:new Date().toISOString()
   });
   closePassModal();
 }
-
-function toggleCopy(key){
-  var cur=!!(((clientData.passes||{})[key]||{}).hasCopy);
-  PASSES_REF.child(selectedClient.id).child('passes').child(key).update({hasCopy:!cur});
+function toggleApproved(key){
+  var cur=!!((clientData.passes||{})[key]||{}).therapistApproved;
+  PR.child(selectedClient.id).child('passes').child(key).update({therapistApproved:!cur});
 }
 function endorsePass(key){
-  var name=(prompt('Enter your name to endorse:')||'').trim();
-  if(!name)return;
-  PASSES_REF.child(selectedClient.id).child('passes').child(key).update({
-    endorsed:true,endorsedBy:name,endorsedAt:new Date().toISOString()});
+  var n=(prompt('Enter your name to endorse:')||'').trim();if(!n)return;
+  PR.child(selectedClient.id).child('passes').child(key).update({endorsed:true,endorsedBy:n,endorsedAt:new Date().toISOString()});
 }
-function deletePass(key){
-  if(!confirm('Delete this pass?'))return;
-  PASSES_REF.child(selectedClient.id).child('passes').child(key).remove();
+function deletePass(key){if(!confirm('Delete this pass?'))return;PR.child(selectedClient.id).child('passes').child(key).remove();}
+function printPass(key){
+  var p=Object.assign({},((clientData.passes||{})[key]||{}));
+  var c=selectedClient;
+  var w=window.open('','_blank','width=700,height=500');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Off-Site Pass</title>'
+    +'<style>body{font-family:Arial,sans-serif;padding:40px;max-width:600px;margin:auto}'
+    +'.hdr{text-align:center;border-bottom:2px solid #1B2A4A;padding-bottom:16px;margin-bottom:20px}'
+    +'.hdr h1{color:#1B2A4A;font-size:22px;margin-bottom:4px}'
+    +'.hdr p{font-size:12px;color:#666}'
+    +'.field{display:flex;margin-bottom:12px;border-bottom:1px solid #eee;padding-bottom:10px}'
+    +'.field-label{width:180px;font-size:11px;font-weight:700;color:#888;text-transform:uppercase;flex-shrink:0}'
+    +'.field-val{font-size:14px;font-weight:600;color:#1A1A1A}'
+    +'.sig{margin-top:30px;display:flex;gap:40px}'
+    +'.sig-box{flex:1;border-top:1px solid #555;padding-top:8px;font-size:11px;color:#666}'
+    +'@media print{body{padding:20px}}'
+    +'</style></head><body>'
+    +'<div class="hdr"><h1>Off-Site Pass</h1><p>Lifeskills Behavioral Health</p></div>'
+    +'<div class="field"><div class="field-label">Client</div><div class="field-val">'+esc(c.name)+'</div></div>'
+    +'<div class="field"><div class="field-label">Program</div><div class="field-val">'+esc(c.program||'')+'</div></div>'
+    +'<div class="field"><div class="field-label">Date</div><div class="field-val">'+fmtD(p.date||'')+'</div></div>'
+    +'<div class="field"><div class="field-label">Departure Time</div><div class="field-val">'+fmt12(p.departTime||'')+'</div></div>'
+    +'<div class="field"><div class="field-label">Expected Return</div><div class="field-val">'+fmt12(p.returnTime||'')+'</div></div>'
+    +'<div class="field"><div class="field-label">Destination</div><div class="field-val">'+esc(p.destination||'')+'</div></div>'
+    +'<div class="field"><div class="field-label">Primary Therapist</div><div class="field-val">'+esc(p.therapist||'')+'</div></div>'
+    +'<div class="field"><div class="field-label">BT Assigned</div><div class="field-val">'+esc(p.btAssigned||'')+'</div></div>'
+    +(p.notes?'<div class="field"><div class="field-label">Conditions</div><div class="field-val" style="font-size:12px">'+esc(p.notes)+'</div></div>':'')
+    +'<div class="sig">'
+    +'<div class="sig-box">Primary Therapist Signature</div>'
+    +'<div class="sig-box">Clinical Director / Approval</div>'
+    +'<div class="sig-box">Date / Time</div>'
+    +'</div>'
+    +'</body></html>');
+  w.document.close();
+  setTimeout(function(){w.print();},400);
 }
 
-// ── TECHNOLOGY SCHEDULE ────────────────────────────────────────────────────
-function buildTechGrid(){
-  var grid=document.getElementById('tech-grid');
-  grid.innerHTML=DAYS.map(function(day,i){
-    var id='tech-'+i;
-    return'<div class="day-card">'
-      +'<div class="day-card-hdr">'+day.slice(0,3)+'</div>'
-      +'<div class="day-card-body">'
-        +'<label class="day-toggle">'
-          +'<input type="checkbox" id="'+id+'-on"> <span>Allowed</span>'
-        +'</label>'
-        +'<input type="time" class="time-input" id="'+id+'-start" placeholder="Start" style="margin-bottom:4px">'
-        +'<input type="time" class="time-input" id="'+id+'-end" placeholder="End">'
+// ── TECH TAB ──────────────────────────────────────────────────────────────────
+function showTechTab(tab){
+  document.getElementById('tech-routine').style.display=tab==='routine'?'':'none';
+  document.getElementById('tech-onetime').style.display=tab==='onetime'?'':'none';
+  document.getElementById('ttab-routine').className='tech-tab'+(tab==='routine'?' active':'');
+  document.getElementById('ttab-onetime').className='tech-tab'+(tab==='onetime'?' active':'');
+}
+
+// ── ROUTINE SCHEDULE ─────────────────────────────────────────────────────────
+function buildDayGrid(){
+  document.getElementById('day-grid').innerHTML=DAYS.map(function(day,i){
+    return'<div class="day-card"><div class="day-hdr">'+day.slice(0,3)+'</div>'
+      +'<div class="day-body"><label class="day-toggle">'
+        +'<input type="checkbox" id="d'+i+'-on"> <span style="font-size:11px">Allowed</span></label>'
+      +'<input type="time" class="ti" id="d'+i+'-s" placeholder="Start">'
+      +'<input type="time" class="ti" id="d'+i+'-e" placeholder="End">'
       +'</div></div>';
   }).join('');
 }
-
-function loadTechSchedule(){
-  var ts=clientData.techSchedule||{};
+function loadRoutine(){
+  var r=clientData.routine||{};
   DAYS.forEach(function(day,i){
-    var id='tech-'+i;
-    var rec=ts[day]||{};
-    var onEl=document.getElementById(id+'-on');
-    var sEl=document.getElementById(id+'-start');
-    var eEl=document.getElementById(id+'-end');
-    if(onEl)onEl.checked=!!rec.allowed;
-    if(sEl)sEl.value=rec.startTime||'';
-    if(eEl)eEl.value=rec.endTime||'';
+    var rec=r[day]||{};
+    var el=document.getElementById('d'+i+'-on');if(el)el.checked=!!rec.allowed;
+    var s=document.getElementById('d'+i+'-s');if(s)s.value=rec.startTime||'';
+    var e=document.getElementById('d'+i+'-e');if(e)e.value=rec.endTime||'';
   });
-  document.getElementById('tech-notes').value=(clientData.techSchedule||{}).notes||'';
+  document.getElementById('routine-clinician').value=r.clinician||'';
+  document.getElementById('routine-notes').value=r.notes||'';
 }
-
-function saveTechSchedule(){
-  var sched={notes:(document.getElementById('tech-notes').value||'').trim()};
+function saveRoutine(){
+  var sched={clinician:(document.getElementById('routine-clinician').value||'').trim(),
+    notes:(document.getElementById('routine-notes').value||'').trim(),
+    savedAt:new Date().toISOString()};
   DAYS.forEach(function(day,i){
-    var id='tech-'+i;
-    var onEl=document.getElementById(id+'-on');
-    var sEl=document.getElementById(id+'-start');
-    var eEl=document.getElementById(id+'-end');
-    sched[day]={
-      allowed:onEl?onEl.checked:false,
-      startTime:sEl?sEl.value:'',
-      endTime:eEl?eEl.value:''
-    };
+    sched[day]={allowed:!!document.getElementById('d'+i+'-on').checked,
+      startTime:document.getElementById('d'+i+'-s').value||'',
+      endTime:document.getElementById('d'+i+'-e').value||''};
   });
-  PASSES_REF.child(selectedClient.id).child('techSchedule').set(sched).then(function(){
-    var badge=document.getElementById('tech-saved');
-    badge.style.display='inline';
-    setTimeout(function(){badge.style.display='none';},2500);
+  PR.child(selectedClient.id).child('routine').set(sched).then(function(){
+    var m=document.getElementById('routine-saved');m.style.display='inline';
+    setTimeout(function(){m.style.display='none';},2500);
   });
 }
 
-// ── WEEKEND OUTINGS ────────────────────────────────────────────────────────
-function renderOutings(){
-  var outings=clientData.outings||{};
-  var list=Object.entries(outings)
-    .map(function(kv){return Object.assign({_key:kv[0]},kv[1]);})
+// ── ONE-TIME TECH ─────────────────────────────────────────────────────────────
+function renderTechOne(){
+  var list=Object.entries(clientData.techOne||{}).map(function(kv){return Object.assign({_key:kv[0]},kv[1]);})
     .sort(function(a,b){return(b.date||'')>(a.date||'')?1:-1;});
-  var tbody=document.getElementById('outing-tbody');
-  if(!list.length){tbody.innerHTML='<tr class="empty-row"><td colspan="9">No weekend outings logged yet.</td></tr>';return;}
-  tbody.innerHTML=list.map(function(o){
-    var techTag=o.techAllowed==='yes'?'<span class="tech-tag tech-yes">✓ Allowed</span>'
-      :o.techAllowed==='limited'?'<span class="tech-tag" style="background:#FEF9EC;color:#B87A00">⚠ Limited</span>'
-      :'<span class="tech-tag tech-no">✕ None</span>';
-    var eBtn=o.endorsed
-      ?'<button class="endorse-btn done">✓ '+esc(o.endorsedBy||'Staff')+'</button>'
-      :'<button class="endorse-btn pending" onclick="endorseOuting(\''+o._key+'\')">Endorse</button>';
-    return'<tr>'
-      +'<td style="font-weight:600;white-space:nowrap">'+fmtD(o.date||'')+'</td>'
-      +'<td>'+esc(o.destination||'')+'</td>'
-      +'<td style="white-space:nowrap;font-size:11px">'+fmtDT(o.departTime||'')+'</td>'
-      +'<td style="white-space:nowrap;font-size:11px">'+fmtDT(o.returnTime||'')+'</td>'
-      +'<td>'+techTag+'</td>'
-      +'<td style="font-size:11px;color:var(--tx2);max-width:140px">'+esc(o.techNotes||'')+'</td>'
-      +'<td style="font-size:11px;color:var(--tx3);max-width:140px">'+esc(o.notes||'')+'</td>'
+  var tb=document.getElementById('techone-tbody');
+  if(!list.length){tb.innerHTML='<tr class="empty-row"><td colspan="6">No one-time approvals. Use this for special occasions requiring individual clinician sign-off.</td></tr>';return;}
+  tb.innerHTML=list.map(function(t){
+    var eBtn=t.endorsed?'<button class="endorse-btn done">✓ '+esc(t.endorsedBy)+'</button>'
+      :'<button class="endorse-btn pend" onclick="endorseTechOne(\''+t._key+'\')">Endorse</button>';
+    return'<tr><td style="font-weight:600">'+fmtD(t.date||'')+'</td>'
+      +'<td style="white-space:nowrap">'+fmt12(t.startTime||'')+' – '+fmt12(t.endTime||'')+'</td>'
+      +'<td style="color:var(--teal);font-weight:600;font-size:11px">'+esc(t.clinician||'')+'</td>'
+      +'<td style="font-size:11px;color:var(--tx3);max-width:160px">'+esc(t.notes||'')+'</td>'
       +'<td>'+eBtn+'</td>'
-      +'<td><button class="del-btn" onclick="deleteOuting(\''+o._key+'\')">✕</button></td>'
-      +'</tr>';
+      +'<td><button class="del-btn" onclick="deleteTechOne(\''+t._key+'\')">✕</button></td></tr>';
   }).join('');
 }
+function openTechModal(){
+  if(!selectedClient)return;
+  document.getElementById('tech-sub').textContent=selectedClient.name;
+  document.getElementById('t-date').value=TODAY;
+  ['t-clinician','t-start','t-end','t-notes'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('tech-overlay').classList.add('open');
+  showTechTab('onetime');
+  setTimeout(function(){document.getElementById('t-clinician').focus();},60);
+}
+function closeTechModal(){document.getElementById('tech-overlay').classList.remove('open');}
+function saveTechOne(){
+  var date=document.getElementById('t-date').value;
+  var clin=(document.getElementById('t-clinician').value||'').trim();
+  if(!date||!clin){alert('Date and approving clinician required.');return;}
+  PR.child(selectedClient.id).child('techOne').push({
+    date:date,clinician:clin,
+    startTime:document.getElementById('t-start').value||'',
+    endTime:document.getElementById('t-end').value||'',
+    notes:(document.getElementById('t-notes').value||'').trim(),
+    endorsed:false,endorsedBy:'',endorsedAt:'',addedAt:new Date().toISOString()
+  });
+  closeTechModal();
+}
+function endorseTechOne(key){
+  var n=(prompt('Enter your name to endorse:')||'').trim();if(!n)return;
+  PR.child(selectedClient.id).child('techOne').child(key).update({endorsed:true,endorsedBy:n,endorsedAt:new Date().toISOString()});
+}
+function deleteTechOne(key){if(!confirm('Delete?'))return;PR.child(selectedClient.id).child('techOne').child(key).remove();}
 
+// ── WEEKEND OUTINGS ──────────────────────────────────────────────────────────
+function renderOutings(){
+  var list=Object.entries(clientData.outings||{}).map(function(kv){return Object.assign({_key:kv[0]},kv[1]);})
+    .sort(function(a,b){return(b.date||'')>(a.date||'')?1:-1;});
+  var tb=document.getElementById('outing-tbody');
+  if(!list.length){tb.innerHTML='<tr class="empty-row"><td colspan="9">No weekend outings yet.</td></tr>';return;}
+  tb.innerHTML=list.map(function(o){
+    var techStyle=o.techAllowed==='Allowed'?'color:var(--green);font-weight:600'
+      :o.techAllowed==='Limited'?'color:var(--amber);font-weight:600':'color:var(--tx3)';
+    var eBtn=o.endorsed?'<button class="endorse-btn done">✓ '+esc(o.endorsedBy)+'</button>'
+      :'<button class="endorse-btn pend" onclick="endorseOuting(\''+o._key+'\')">Endorse</button>';
+    return'<tr><td style="font-weight:600;white-space:nowrap">'+fmtD(o.date||'')+'</td>'
+      +'<td>'+esc(o.destination||'')+'</td>'
+      +'<td style="font-size:11px;white-space:nowrap">'+fmtDT(o.departTime||'')+'</td>'
+      +'<td style="font-size:11px;white-space:nowrap">'+fmtDT(o.returnTime||'')+'</td>'
+      +'<td style="font-size:12px;font-weight:600;color:var(--teal)">'+esc(o.btAssigned||'—')+'</td>'
+      +'<td><span style="font-size:11px;font-weight:600;'+techStyle+'">'+esc(o.techAllowed||'None')+'</span>'
+        +(o.techDetail?'<br><span style="font-size:10px;color:var(--tx3)">'+esc(o.techDetail)+'</span>':'')+'</td>'
+      +'<td style="font-size:11px;color:var(--tx3);max-width:140px">'+esc(o.notes||'')+'</td>'
+      +'<td>'+eBtn+'</td>'
+      +'<td><button class="del-btn" onclick="deleteOuting(\''+o._key+'\')">✕</button></td></tr>';
+  }).join('');
+}
 function openOutingModal(){
   if(!selectedClient)return;
   document.getElementById('outing-sub').textContent=selectedClient.name;
-  document.getElementById('o-date').value='';
-  document.getElementById('o-dest').value='';
-  document.getElementById('o-depart').value='';
-  document.getElementById('o-return').value='';
-  document.getElementById('o-tech-no').checked=true;
-  document.getElementById('o-tech-notes').value='';
-  document.getElementById('o-notes').value='';
+  ['o-date','o-dest','o-bt','o-tech-detail','o-notes'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('o-depart').value='';document.getElementById('o-return').value='';
+  var none=document.querySelector('input[name="o-tech"][value="None"]');if(none)none.checked=true;
   document.getElementById('outing-overlay').classList.add('open');
   setTimeout(function(){document.getElementById('o-dest').focus();},60);
 }
 function closeOutingModal(){document.getElementById('outing-overlay').classList.remove('open');}
-
 function saveOuting(){
   var date=document.getElementById('o-date').value;
   var dest=(document.getElementById('o-dest').value||'').trim();
-  if(!date){alert('Weekend date required.');return;}
-  if(!dest){alert('Destination required.');return;}
+  if(!date||!dest){alert('Date and destination required.');return;}
   var tech=document.querySelector('input[name="o-tech"]:checked');
-  PASSES_REF.child(selectedClient.id).child('outings').push({
-    date:date,
-    destination:dest,
+  PR.child(selectedClient.id).child('outings').push({
+    date:date,destination:dest,
     departTime:document.getElementById('o-depart').value||'',
     returnTime:document.getElementById('o-return').value||'',
-    techAllowed:tech?tech.value:'no',
-    techNotes:(document.getElementById('o-tech-notes').value||'').trim(),
+    btAssigned:(document.getElementById('o-bt').value||'').trim(),
+    techAllowed:tech?tech.value:'None',
+    techDetail:(document.getElementById('o-tech-detail').value||'').trim(),
     notes:(document.getElementById('o-notes').value||'').trim(),
-    endorsed:false,endorsedBy:'',endorsedAt:'',
-    addedAt:new Date().toISOString()
+    endorsed:false,endorsedBy:'',endorsedAt:'',addedAt:new Date().toISOString()
   });
   closeOutingModal();
 }
-
 function endorseOuting(key){
-  var name=(prompt('Enter your name to endorse:')||'').trim();
-  if(!name)return;
-  PASSES_REF.child(selectedClient.id).child('outings').child(key).update({
-    endorsed:true,endorsedBy:name,endorsedAt:new Date().toISOString()});
+  var n=(prompt('Enter your name to endorse:')||'').trim();if(!n)return;
+  PR.child(selectedClient.id).child('outings').child(key).update({endorsed:true,endorsedBy:n,endorsedAt:new Date().toISOString()});
 }
-function deleteOuting(key){
-  if(!confirm('Delete this weekend outing?'))return;
-  PASSES_REF.child(selectedClient.id).child('outings').child(key).remove();
-}
+function deleteOuting(key){if(!confirm('Delete?'))return;PR.child(selectedClient.id).child('outings').child(key).remove();}
 
-// ── Utilities ──────────────────────────────────────────────────────────────
+// ── Utilities ─────────────────────────────────────────────────────────────────
 function esc(s){var d=document.createElement('div');d.textContent=s||'';return d.innerHTML;}
-function fmtD(iso){if(!iso)return'—';var d=new Date(iso+'T12:00:00');
-  return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
-function fmt12(t){if(!t)return'—';var p=t.split(':');var h=+p[0];var m=p[1];
-  return(h%12||12)+':'+m+(h<12?'am':'pm');}
-function fmtDT(iso){if(!iso)return'—';var d=new Date(iso);
-  return d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' '+
-    d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});}
+function fmtD(iso){if(!iso)return'—';var d=new Date(iso+'T12:00:00');return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
+function fmt12(t){if(!t)return'—';var p=t.split(':');var h=+p[0];var m=p[1];return(h%12||12)+':'+m+(h<12?'am':'pm');}
+function fmtDT(iso){if(!iso)return'—';var d=new Date(iso);return d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' '+d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});}
 
-document.getElementById('pass-overlay').addEventListener('click',function(e){if(e.target===this)closePassModal();});
-document.getElementById('outing-overlay').addEventListener('click',function(e){if(e.target===this)closeOutingModal();});
-document.addEventListener('keydown',function(e){if(e.key==='Escape'){closePassModal();closeOutingModal();}});
+['pass-overlay','tech-overlay','outing-overlay'].forEach(function(id){
+  document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});
+});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')document.querySelectorAll('.overlay.open').forEach(function(o){o.classList.remove('open');});});
 </script>
 </body>
 </html>
