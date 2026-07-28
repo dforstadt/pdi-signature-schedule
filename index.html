@@ -362,7 +362,7 @@ function saveAll(skipUndo){
   try{localStorage.setItem(LS_KEY,blob);}catch(e){}
   showSaveStatus();
   var ts=Date.now();_lastSaveTs=ts;
-  try{FB.set({blob:blob,ts:ts}).catch(function(){});}catch(e){}
+  try{FB.update({blob:blob,ts:ts}).catch(function(){});}catch(e){}
 }
 function showSaveStatus(){
   var el=document.getElementById('save-status');if(!el)return;
