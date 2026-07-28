@@ -825,6 +825,8 @@ function handleSlotClick(cell){
     ' <button id="add-svc-btn" style="padding:8px 18px;border-radius:var(--r);border:none;background:#6b5c45;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--f)">Add service</button></div>'
   );
   setTimeout(function(){
+    // Check for technology time conflict
+    checkTechConflict(mCtx.cid, S.selectedDate);
     var btn=document.getElementById('add-svc-btn');
     if(btn)btn.addEventListener('click',function(){
       var svc=document.getElementById('ms')&&document.getElementById('ms').value.trim();
@@ -1988,6 +1990,61 @@ function saveStipendType(){
   }
   saveAll();buildProvModal();
 }
+
+// ── Technology Time Conflict Alert ──────────────────────────────────────────
+function checkTechConflict(cid, dateISO){
+  var banner=document.getElementById('tech-alert-banner');
+  if(!banner)return;
+  banner.innerHTML='<div style="font-size:11px;color:#6B5C45;padding:6px 10px;margin-bottom:10px">Checking technology schedule…</div>';
+
+  var DAYS_MAP=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var dayName=DAYS_MAP[new Date(dateISO+'T12:00:00').getDay()];
+
+  firebase.database().ref('schedule_v3/client_passes/'+cid).once('value',function(snap){
+    var data=snap.val()||{};
+    var routine=data.routine||{};
+    var techOne=data.techOne||{};
+    var alerts=[];
+
+    // Check routine schedule for this day
+    var dayRec=routine[dayName]||{};
+    if(dayRec.allowed&&(dayRec.startTime||dayRec.endTime)){
+      var ts=dayRec.startTime?fmt12Cal(dayRec.startTime):'';
+      var te=dayRec.endTime?fmt12Cal(dayRec.endTime):'';
+      alerts.push('Routine tech window on '+dayName+(ts||te?' ('+ts+(te?' – '+te:'')+')')+'.');
+    }
+
+    // Check one-time approvals for this specific date
+    Object.values(techOne).forEach(function(t){
+      if(t.date===dateISO&&(t.startTime||t.endTime)){
+        var ts=t.startTime?fmt12Cal(t.startTime):'';
+        var te=t.endTime?fmt12Cal(t.endTime):'';
+        alerts.push('One-time tech approval today'+(ts||te?' ('+ts+(te?' – '+te:'')+')')+(t.clinician?' — '+t.clinician:'')+'.');
+      }
+    });
+
+    if(!alerts.length){
+      banner.innerHTML='';
+      return;
+    }
+
+    banner.innerHTML=
+      '<div style="background:#FEF9EC;border:1px solid #B87A0044;border-radius:6px;padding:10px 12px;margin-bottom:12px;display:flex;gap:8px;align-items:flex-start">'+
+      '<span style="font-size:16px;flex-shrink:0">⚠️</span>'+
+      '<div>'+
+        '<div style="font-size:12px;font-weight:700;color:#B87A00;margin-bottom:3px">Technology Time Conflict</div>'+
+        alerts.map(function(a){return'<div style="font-size:11px;color:#7A5000">'+a+'</div>';}).join('')+
+        '<div style="font-size:10px;color:#aaa;margin-top:4px">Verify this session does not overlap with the client\'s approved technology window.</div>'+
+      '</div></div>';
+  });
+}
+
+function fmt12Cal(t){
+  if(!t)return'';
+  var p=t.split(':');var h=+p[0];var m=p[1];
+  return(h%12||12)+':'+(m||'00')+(h<12?'am':'pm');
+}
+
 </script>
 </body>
 </html>
