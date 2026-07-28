@@ -2012,7 +2012,7 @@ function checkTechConflict(cid, dateISO){
     if(dayRec.allowed&&(dayRec.startTime||dayRec.endTime)){
       var ts=dayRec.startTime?fmt12Cal(dayRec.startTime):'';
       var te=dayRec.endTime?fmt12Cal(dayRec.endTime):'';
-      alerts.push('Routine tech window on '+dayName+(ts||te?' ('+ts+(te?' – '+te:'')+')')+'.');
+      alerts.push('Routine tech window on '+dayName+(ts||te?' ('+ts+(te?'-'+te:'')+')'   :''  )+'.');
     }
 
     // Check one-time approvals for this specific date
@@ -2020,7 +2020,7 @@ function checkTechConflict(cid, dateISO){
       if(t.date===dateISO&&(t.startTime||t.endTime)){
         var ts=t.startTime?fmt12Cal(t.startTime):'';
         var te=t.endTime?fmt12Cal(t.endTime):'';
-        alerts.push('One-time tech approval today'+(ts||te?' ('+ts+(te?' – '+te:'')+')')+(t.clinician?' — '+t.clinician:'')+'.');
+        alerts.push('One-time tech approval today'+(ts||te?' ('+ts+(te?'-'+te:'')+')'   :''  )+(t.clinician?' - '+t.clinician:'')+' (one-time).');
       }
     });
 
