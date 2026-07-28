@@ -838,10 +838,10 @@ function computeStipends(){
 var approvals={};// key: 'staff::weekStart' -> true/false
 
 function saveApprovals(){
-  try{firebase.database().ref('schedule_v3/stipend_approvals').set(approvals);}catch(e){}
+  try{firebase.database().ref('lifeskills_clinical/stipend_approvals').set(approvals);}catch(e){}
 }
 function loadApprovals(cb){
-  try{firebase.database().ref('schedule_v3/stipend_approvals').once('value',function(s){
+  try{firebase.database().ref('lifeskills_clinical/stipend_approvals').once('value',function(s){
     approvals=s.val()||{};cb();
   });}catch(e){cb();}
 }
@@ -1551,7 +1551,7 @@ function exportByClientExcel(){
 
 
 // ── Manual Adjustments — real-time, persists through re-renders ────────────
-var MANUAL_REF = firebase.database().ref('schedule_v3/manual_stipends');
+var MANUAL_REF = firebase.database().ref('lifeskills_clinical/manual_stipends');
 var manualEntries = [];
 var _manModalStaff = null, _manModalWk = null;
 var _manRealtimeStarted = false;
