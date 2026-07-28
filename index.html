@@ -638,7 +638,7 @@ function renderWeekGrid(){
         slotWrap.appendChild(cell);
       });
       dayEvs.forEach(function(ev){
-        var ecol=pc(ev.provider);var isC=cf.has(ev.id);
+        var ecol=ev._isOuting?'#1D9E75':pc(ev.provider);var isC=cf.has(ev.id)&&!ev._isOuting;
         var es=SLOTS[ev.slotIndex+ev.duration],tr=es?(SLOTS[ev.slotIndex].label+'\u2013'+es.label):'';
         var card=document.createElement('div');card.className='ecard';card.dataset.eid=ev.id;card.draggable=true;
         card.style.cssText='top:'+(ev.slotIndex*SH+2)+'px;left:3px;right:3px;height:'+(ev.duration*SH-4)+'px;background:'+ecol+';'+(isC?'outline:2.5px solid #E24B4A;outline-offset:1px;':'')+(ev.flagged?'outline:2.5px solid #D85A30;outline-offset:1px;':'');
