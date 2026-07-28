@@ -528,7 +528,7 @@ function renderDayTabs(){
 function renderCBar(){
   var bar=document.getElementById('cbar');if(!bar)return;
   var de=S.events.filter(function(e){return e.date===S.selectedDate;})
-    .concat(getOutingEventsForDate(S.selectedDate)),cf=conflicts(de);
+    .concat(window.getOutingEventsForDate?window.getOutingEventsForDate(S.selectedDate):[]),cf=conflicts(de);
   if(!cf.size){bar.style.display='none';return;}
   var pm={};
   de.filter(function(e){return cf.has(e.id);}).forEach(function(e){if(!pm[e.provider])pm[e.provider]=[];pm[e.provider].push(e);});
@@ -2057,11 +2057,12 @@ firebase.database().ref('schedule_v3/client_passes').on('value', function(snap) 
     var outings = Object.values(data[cid].outings || {});
     if (outings.length) window._outingData[cid] = outings;
   });
-  renderAll(); // refresh calendar with outing cards
+  // Only refresh if the main calendar data is already loaded
+  if (window._calLoaded && typeof renderAll === 'function') renderAll();
 });
 
 // Returns synthetic outing events that fall on a given ISO date
-function getOutingEventsForDate(dateISO) {
+window.getOutingEventsForDate = function(dateISO) {
   var evts = [];
   Object.keys(window._outingData || {}).forEach(function(cid) {
     (window._outingData[cid] || []).forEach(function(o) {
