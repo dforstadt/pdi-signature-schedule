@@ -325,8 +325,8 @@ firebase.initializeApp({
   databaseURL:'https://pdi-signature-schedule-default-rtdb.firebaseio.com',
   projectId:'pdi-signature-schedule'
 });
-var DB=firebase.database(), CLOG=DB.ref('schedule_v3/comm_log');
-var NO_REF=DB.ref('schedule_v3/comm_no_referent'); // clientId → true
+var DB=firebase.database(), CLOG=DB.ref('lifeskills_clinical/comm_log');
+var NO_REF=DB.ref('lifeskills_clinical/comm_no_referent'); // clientId → true
 var noReferentClients={};
 NO_REF.on('value',function(s){noReferentClients=s.val()||{};updateNAToggle();if(document.getElementById('view-facesheet').style.display!=='none')renderFacesheet();});
 var allClients=[], commEntries={}, selectedClient=null, statusFilter='active';
