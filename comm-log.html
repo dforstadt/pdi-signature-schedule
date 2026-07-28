@@ -155,6 +155,9 @@ select:focus,input:focus{outline:none;border-color:var(--purple)}
 .btn-cancel{padding:8px 18px;border:1px solid var(--bd);background:transparent;border-radius:6px;font-size:13px;cursor:pointer;color:var(--tx2)}
 .btn-save{padding:8px 22px;background:var(--purple);color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer}
 .btn-save:hover{background:#6D28D9}
+.na-toggle{padding:4px 12px;border-radius:12px;border:1.5px solid #ccc;background:transparent;color:var(--tx3);font-size:11px;font-weight:600;cursor:pointer;font-family:Arial,sans-serif}
+.na-toggle.active{border-color:var(--amber);background:#FEF9EC;color:var(--amber)}
+.fs-na{color:var(--tx3);font-size:11px;font-weight:600}
 @media print{.hdr,.view-tabs,.selector-bar,.add-btn,.print-btn{display:none!important}.page{padding:0}}
 </style>
 </head>
@@ -198,7 +201,10 @@ select:focus,input:focus{outline:none;border-color:var(--purple)}
       <div class="cb-name" id="cb-name"></div>
       <div class="cb-meta" id="cb-meta"></div>
     </div>
-    <div id="cb-count" style="font-size:12px;color:var(--tx3)"></div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+      <div id="cb-count" style="font-size:12px;color:var(--tx3)"></div>
+      <button class="na-toggle" id="na-toggle" onclick="toggleNoReferent()" title="Mark this client as having no referent">Referent: N/A</button>
+    </div>
   </div>
 
   <div class="compliance-bar" id="compliance-bar" style="display:none">
@@ -256,6 +262,7 @@ select:focus,input:focus{outline:none;border-color:var(--purple)}
       <div><label>Contact Role</label>
         <select id="f-role">
           <option value="Referent">Referent</option>
+          <option value="No Referent">No Referent (N/A)</option>
           <option value="Family">Family Member</option>
           <option value="Insurance">Insurance / Payer</option>
           <option value="Attorney">Attorney / Legal</option>
@@ -319,6 +326,9 @@ firebase.initializeApp({
   projectId:'pdi-signature-schedule'
 });
 var DB=firebase.database(), CLOG=DB.ref('schedule_v3/comm_log');
+var NO_REF=DB.ref('schedule_v3/comm_no_referent'); // clientId → true
+var noReferentClients={};
+NO_REF.on('value',function(s){noReferentClients=s.val()||{};updateNAToggle();if(document.getElementById('view-facesheet').style.display!=='none')renderFacesheet();});
 var allClients=[], commEntries={}, selectedClient=null, statusFilter='active';
 var selMethod='Call', selNature='', providerList=[], TODAY=new Date().toISOString().slice(0,10);
 
@@ -425,6 +435,7 @@ function renderBanner(){
   var cnt=Object.values(commEntries).filter(function(e){return e.clientId===c.id&&!e.isAuto;}).length;
   document.getElementById('cb-count').textContent=cnt+' entr'+(cnt===1?'y':'ies');
   document.getElementById('client-banner').style.display='flex';
+  updateNAToggle();
 }
 
 // ── Render timeline ───────────────────────────────────────────────────────────
@@ -482,6 +493,11 @@ function renderCompliance(){
   var admit=(c.program==='PDI'?c.pdiAdmit:c.sigAdmit||c.pdiAdmit)||null;
   var disch=(c.program==='PDI'?c.pdiDischarge||c.pdiDisch:c.sigDischarge||c.sigDisch||c.endDate)||null;
   if(!admit){document.getElementById('compliance-bar').style.display='none';return;}
+  // If client has no referent, hide compliance strip
+  if(noReferentClients[c.id]){
+    document.getElementById('compliance-bar').style.display='none';
+    return;
+  }
   document.getElementById('compliance-bar').style.display='block';
   var contactedDays=new Set();
   Object.values(commEntries).forEach(function(e){
@@ -576,15 +592,17 @@ function renderFacesheet(){
   var tbody=active.map(function(c){
     var admit=(c.program==='PDI'?c.pdiAdmit:c.sigAdmit||c.pdiAdmit)||'';
     var contacted=contactedDaysByClient[c.id]||new Set();
+    var isClientNA=!!noReferentClients[c.id];
     var cells=dateCols.map(function(d){
       var iso=d.toISOString().slice(0,10);
       var isToday=iso===TODAY;
       var isWknd=d.getDay()===0||d.getDay()===6;
       if(isWknd)return'<td style="background:#F7F5F2;color:#ccc;font-size:10px">—</td>';
       if(admit>iso)return'<td style="background:#F7F5F2"></td>';
+      // N/A client — show neutral grey, no red flagging
+      if(isClientNA)return'<td style="background:#F7F5F2;color:#aaa"><span class="fs-na">N/A</span></td>';
       var isOk=contacted.has(iso);
       var isPast=iso<TODAY;
-      // Only flag red on past weekdays — never today, future, or weekends
       var cellBg=isOk?'#EAF5EE':(isPast?'#FDECEA':'#F7F5F2');
       return'<td style="background:'+cellBg+';">'+(isOk?'<span class="fs-check">✓</span>':(isPast?'<span style="color:#991F10;font-size:18px;font-weight:900">✕</span>':'<span class="fs-miss">·</span>'))+'</td>';
     }).join('');
@@ -635,6 +653,20 @@ function saveEntry(){
     nature:selNature,outcome:outcome,contactedBy:provider,
     endorsed:false,endorsedBy:'',endorsedAt:'',addedAt:new Date().toISOString()});
   closeModal();
+}
+function toggleNoReferent(){
+  if(!selectedClient)return;
+  var id=selectedClient.id;
+  var isNA=!!noReferentClients[id];
+  if(isNA)NO_REF.child(id).remove();
+  else NO_REF.child(id).set(true);
+  // listener will update UI automatically
+}
+function updateNAToggle(){
+  var btn=document.getElementById('na-toggle');if(!btn)return;
+  var isNA=selectedClient&&!!noReferentClients[selectedClient.id];
+  btn.className='na-toggle'+(isNA?' active':'');
+  btn.title=isNA?'Click to re-enable referent tracking':'Mark this client as having no referent (N/A)';
 }
 function endorse(key){
   var name=(prompt('Enter your name to endorse:')||'').trim();
