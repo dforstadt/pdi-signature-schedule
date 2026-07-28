@@ -501,6 +501,7 @@ function renderCompliance(){
     var dd=d.getDate();
     var isWknd=d.getDay()===0||d.getDay()===6;
     var isFuture=iso>TODAY, isToday=iso===TODAY, isOk=contactedDays.has(iso);
+    // Weekends never flagged red — only weekdays can be 'miss'
     var cls='day-dot'+(isWknd?' wknd':isFuture?' future':(isToday?' today-dot'+(isOk?' ok':''):(isOk?' ok':' miss')));
     var onclick=(isWknd||isFuture)?'':'onclick="quickLog(\''+iso+'\')"';
     return '<div class="'+cls+'" '+onclick+' title="'+iso+'"><span class="dn">'+dw+'</span><span>'+dd+'</span></div>';
@@ -572,10 +573,13 @@ function renderFacesheet(){
     var cells=dateCols.map(function(d){
       var iso=d.toISOString().slice(0,10);
       var isToday=iso===TODAY;
+      var isWknd=d.getDay()===0||d.getDay()===6;
+      if(isWknd)return'<td style="background:#F7F5F2;color:#ccc;font-size:10px">—</td>';
       if(admit>iso)return'<td style="background:#F7F5F2"></td>';
       var isOk=contacted.has(iso);
       var isPast=iso<TODAY;
-      var cellBg=isOk?'#EAF5EE':(isPast?'#FDECEA':(isToday?'#FEF2F2':'#F7F5F2'));
+      // Only flag red on past weekdays — never today, future, or weekends
+      var cellBg=isOk?'#EAF5EE':(isPast?'#FDECEA':'#F7F5F2');
       return'<td style="background:'+cellBg+';">'+(isOk?'<span class="fs-check">✓</span>':(isPast?'<span style="color:#991F10;font-size:11px;font-weight:700">✕</span>':'<span class="fs-miss">·</span>'))+'</td>';
     }).join('');
     var prog=c.program||'';
