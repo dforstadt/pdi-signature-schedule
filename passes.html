@@ -118,7 +118,25 @@ tr:hover td{background:#FAFAF8}
 .radio-row input[type=radio]{accent-color:var(--purple)}
 .info-note{font-size:11px;color:var(--tx3);font-style:italic;margin-top:4px}
 
-@media print{.hdr,.selector,.add-btn,.print-btn,.del-btn,.endorse-btn.pend,.save-schedule-btn,.tech-tabs{display:none!important}.section{break-inside:avoid;box-shadow:none}}
+.vtab{padding:11px 20px;font-size:13px;font-weight:600;color:var(--tx3);cursor:pointer;background:transparent;border:none;border-bottom:2.5px solid transparent;font-family:Arial,sans-serif}
+.vtab.active{color:var(--navy);border-bottom-color:var(--navy)}
+.vtab:hover{color:var(--navy)}
+.master-card{background:var(--white);border:1px solid var(--bd);border-radius:var(--r);margin-bottom:16px;overflow:hidden}
+.mc-hdr{padding:12px 16px;background:#F7F5F2;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
+.mc-name{font-size:14px;font-weight:700;color:var(--navy)}
+.mc-meta{font-size:11px;color:var(--tx3);margin-top:1px}
+.mc-body{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0}
+.mc-section{padding:12px 16px;border-right:1px solid var(--bd)}
+.mc-section:last-child{border-right:none}
+.mc-section-title{font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}
+.mc-item{font-size:11px;color:var(--tx2);padding:4px 0;border-bottom:.5px solid #F0EDE8;display:flex;align-items:baseline;gap:6px}
+.mc-item:last-child{border-bottom:none}
+.mc-item-date{font-size:10px;font-weight:700;color:var(--navy);white-space:nowrap;min-width:55px}
+.mc-empty{font-size:11px;color:var(--tx3);font-style:italic;padding:4px 0}
+.mc-tech-row{font-size:11px;padding:3px 0;display:flex;align-items:center;gap:6px}
+.mc-tech-day{font-size:10px;font-weight:700;width:28px;color:var(--navy)}
+.mc-tech-time{color:var(--purple);font-weight:600;font-size:11px}
+@media print{.hdr,.vtab,.selector,.add-btn,.print-btn,.del-btn,.endorse-btn.pend,.save-schedule-btn,.tech-tabs{display:none!important}.section,.master-card{break-inside:avoid;box-shadow:none}}
 </style>
 </head>
 <body>
@@ -635,6 +653,85 @@ function fmtDT(iso){if(!iso)return'—';var d=new Date(iso);return d.toLocaleDat
   document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});
 });
 document.addEventListener('keydown',function(e){if(e.key==='Escape')document.querySelectorAll('.overlay.open').forEach(function(o){o.classList.remove('open');});});
+
+function populateProviderLists(d){
+  var provs=Object.keys(d.providers||{}).sort();
+  var html=provs.map(function(p){return'<option value="'+p+'">';}).join('');
+  ['clin-list','bt-list'].forEach(function(id){var el=document.getElementById(id);if(el)el.innerHTML=html;});
+}
+
+function showPTab(tab){
+  var cv=document.getElementById('view-client');
+  var mv=document.getElementById('view-master');
+  if(cv)cv.style.display=tab==='client'?'':'none';
+  if(mv)mv.style.display=tab==='master'?'':'none';
+  ['client','master'].forEach(function(t){
+    var el=document.getElementById('vtab-'+t);
+    if(el)el.className='vtab'+(t===tab?' active':'');
+  });
+  if(tab==='master')renderMaster();
+}
+
+var allPassesData={};
+firebase.database().ref('schedule_v3/client_passes').on('value',function(snap){
+  allPassesData=snap.val()||{};
+  var mv=document.getElementById('view-master');
+  if(mv&&mv.style.display!=='none')renderMaster();
+});
+
+function renderMaster(){
+  var wrap=document.getElementById('master-content');if(!wrap)return;
+  if(!allClients.length){wrap.innerHTML='<div style="text-align:center;padding:40px;color:var(--tx3)">No active clients found.</div>';return;}
+  var T2=(function(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})();
+  var DFULL=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  wrap.innerHTML=allClients.map(function(c){
+    var cd=allPassesData[c.id]||{};
+    var admit=(c.program==='PDI'?c.pdiAdmit:c.sigAdmit||c.pdiAdmit)||'';
+    var passes=Object.values(cd.passes||{}).filter(function(p){return(p.date||'')>=T2;}).sort(function(a,b){return(a.date||'')>(b.date||'')?1:-1;}).slice(0,4);
+    var outings=Object.values(cd.outings||{}).filter(function(o){return(o.date||'')>=T2;}).sort(function(a,b){return(a.date||'')>(b.date||'')?1:-1;}).slice(0,3);
+    var routine=cd.routine||{};
+    var techDays=DFULL.filter(function(d){return(routine[d]||{}).allowed;});
+    var passHtml=passes.length?passes.map(function(p){
+      var st=p.therapistApproved?'<span style="color:var(--green);font-size:9px;font-weight:700">&#10003; Appr</span>':'<span style="color:var(--amber);font-size:9px;font-weight:700">Pending</span>';
+      return'<div class="mc-item"><span class="mc-item-date">'+fmtDS(p.date)+'</span><span style="flex:1">'+esc(p.destination||'')+'</span>'+st+'</div>';
+    }).join(''):'<div class="mc-empty">No upcoming passes</div>';
+    var outingHtml=outings.length?outings.map(function(o){
+      var bt=o.btAssigned?'<span style="color:var(--teal);font-size:10px;font-weight:600">'+esc(o.btAssigned)+'</span>':'';
+      return'<div class="mc-item"><span class="mc-item-date">'+fmtDS(o.date)+'</span><span style="flex:1">'+esc(o.destination||'')+'</span>'+bt+'</div>';
+    }).join(''):'<div class="mc-empty">No upcoming outings</div>';
+    var techHtml=techDays.length?techDays.map(function(day){
+      var rec=routine[day]||{};
+      var ts=rec.startTime?f12(rec.startTime):'';var te=rec.endTime?f12(rec.endTime):'';
+      return'<div class="mc-tech-row"><span class="mc-tech-day">'+day.slice(0,3)+'</span>'+(ts||te?'<span class="mc-tech-time">'+ts+(te?' – '+te:'')+'</span>':'<span style="color:var(--tx3);font-size:10px">Allowed</span>')+'</div>';
+    }).join(''):'<div class="mc-empty">No routine tech schedule set</div>';
+    if(routine.clinician)techHtml+='<div style="font-size:10px;color:var(--tx3);margin-top:5px;font-style:italic">Approved by: '+esc(routine.clinician)+'</div>';
+    var cc=c.program==='Both'?'#1D9E75':c.program==='PDI'?'#4A6C8A':'#6B5C45';
+    return'<div class="master-card">'
+      +'<div class="mc-hdr"><div><div class="mc-name">'+esc(c.name)+'</div>'
+        +'<div class="mc-meta"><span style="font-size:10px;font-weight:700;color:'+cc+'">'+c.program+'</span>'+(admit?' &middot; Admitted: '+fmtDS(admit):'')+'</div></div></div>'
+      +'<div class="mc-body">'
+        +'<div class="mc-section"><div class="mc-section-title">&#x1F697; Upcoming Passes</div>'+passHtml+'</div>'
+        +'<div class="mc-section"><div class="mc-section-title">&#x1F3D5; Upcoming Outings</div>'+outingHtml+'</div>'
+        +'<div class="mc-section"><div class="mc-section-title">&#x1F4BB; Technology Schedule</div>'+techHtml+'</div>'
+      +'</div></div>';
+  }).join('');
+}
+function fmtDS(iso){if(!iso)return'—';var d=new Date(iso+'T12:00:00');return d.toLocaleDateString('en-US',{month:'short',day:'numeric'});}
+function f12(t){if(!t)return'';var p=t.split(':');var h=+p[0];var m=p[1];return(h%12||12)+':'+(m||'00')+(h<12?'am':'pm');}
+
 </script>
+
+
+<!-- MASTER FACESHEET VIEW -->
+<div id="view-master" style="display:none;max-width:1200px;margin:0 auto;padding:24px 20px 60px">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+    <div>
+      <div style="font-size:16px;font-weight:700;color:var(--navy)">Master Passes &amp; Privileges Facesheet</div>
+      <div style="font-size:11px;color:var(--tx3);margin-top:2px">Active clients only &middot; Upcoming passes, outings and technology schedule at a glance</div>
+    </div>
+    <button onclick="window.print()" style="padding:7px 16px;border:1px solid var(--bd);background:var(--white);border-radius:6px;font-size:12px;cursor:pointer;color:var(--tx2)">&#128438; Print</button>
+  </div>
+  <div id="master-content"></div>
+</div>
 </body>
 </html>
