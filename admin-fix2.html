@@ -1,92 +1,77 @@
 <!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>Comm Log Diagnostic</title>
+<html><head><meta charset="UTF-8"><title>Data Migration & Protection</title>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 <style>
-body{font-family:Arial,sans-serif;padding:24px;background:#f7f5f2;max-width:1100px;margin:0 auto}
+*{box-sizing:border-box}body{font-family:Arial,sans-serif;padding:24px;background:#f7f5f2;max-width:700px;margin:0 auto}
 h2{color:#1B2A4A;margin-bottom:4px}.sub{color:#888;font-size:13px;margin-bottom:20px}
-table{width:100%;border-collapse:collapse;background:#fff;font-size:12px;margin-top:16px}
-th{background:#1B2A4A;color:#fff;padding:8px 10px;text-align:left;font-size:11px}
-td{padding:8px 10px;border-bottom:.5px solid #e0ddd8;vertical-align:top}
-tr:nth-child(even) td{background:#fafaf8}
-.ok{color:#157A52;font-weight:700}.bad{color:#991F10;font-weight:700}.amb{color:#B87A00;font-weight:700}
-.log{background:#1B2A4A;color:#90EE90;padding:14px;border-radius:6px;font-family:monospace;font-size:11px;min-height:60px;white-space:pre-wrap;margin-top:16px}
-button{background:#1B2A4A;color:white;padding:8px 20px;border:none;border-radius:6px;font-size:12px;cursor:pointer;margin-right:8px}
+.card{background:white;border-radius:8px;padding:20px;margin-bottom:16px;border:1px solid #e0ddd8}
+.warn{background:#FEF6EC;border-left:4px solid #B87A00;padding:12px 16px;border-radius:6px;font-size:13px;color:#7A4A00;margin-bottom:16px}
+button{background:#1B2A4A;color:white;padding:10px 24px;border:none;border-radius:6px;font-size:13px;cursor:pointer;width:100%;margin-top:10px;font-weight:600}
+button:disabled{background:#aaa}
+.log{background:#1B2A4A;color:#90EE90;padding:14px;border-radius:6px;font-family:monospace;font-size:12px;min-height:100px;white-space:pre-wrap;margin-top:16px}
+.step{padding:8px 0;border-bottom:1px solid #f0ede8;font-size:13px}
+.step b{color:#1B2A4A}
 </style></head>
 <body>
-<h2>Comm Log Diagnostic</h2>
-<p class="sub">Shows exactly what is stored in Firebase — clientId, clientName, date, contactRole — so we can see why checkmarks are not appearing.</p>
-<button onclick="load()">Load Comm Log Data</button>
-<button onclick="loadClients()">Load Calendar Clients</button>
-<div class="log" id="log">Click Load to begin.</div>
-<div id="table-wrap"></div>
+<h2>Clinical Data Protection — Permanent Fix</h2>
+<p class="sub">Moves comm_log, client_passes, manual_stipends, and stipend_approvals to a protected path that the calendar can never touch.</p>
+
+<div class="warn">⚠ <b>Why data keeps disappearing:</b> All clinical data sits under <code>schedule_v3/</code>. Any call to <code>firebase.set()</code> on that node (from any page or cached version) replaces the entire node. This migration moves clinical data to <code>lifeskills_clinical/</code> — a completely separate root node the calendar never writes to.</div>
+
+<div class="card">
+  <div class="step"><b>Step 1:</b> Read existing data from schedule_v3</div>
+  <div class="step"><b>Step 2:</b> Write to lifeskills_clinical/ (new protected path)</div>
+  <div class="step"><b>Step 3:</b> Verify data at new path</div>
+  <div class="step"><b>Step 4:</b> Pages will be updated to read/write from new path</div>
+  <button id="btn" onclick="migrate()">Run Migration</button>
+</div>
+<div class="log" id="log">Ready. Click Run Migration to begin.</div>
 
 <script>
 firebase.initializeApp({apiKey:"AIzaSyCERxntgytkfCHWN7EoAVYVmLBcfWyYZ5A",
   databaseURL:"https://pdi-signature-schedule-default-rtdb.firebaseio.com",
   projectId:"pdi-signature-schedule"});
 var DB=firebase.database();
+var OLD=DB.ref("schedule_v3");
+var NEW_PATH=DB.ref("lifeskills_clinical");
 
-function log(m){var el=document.getElementById("log");el.textContent+=(el.textContent.trim()?"\n":"")+m;}
+function log(m){var el=document.getElementById("log");el.textContent+=(el.textContent.trim()?"\n":"")+new Date().toISOString().slice(11,19)+" "+m;}
 
-function load(){
-  document.getElementById("log").textContent="Loading comm_log...";
-  DB.ref("schedule_v3/comm_log").once("value",function(snap){
-    var d=snap.val();
-    if(!d){log("COMM LOG IS EMPTY — no entries in Firebase.");return;}
-    var entries=Object.entries(d).map(function(kv){return Object.assign({_key:kv[0]},kv[1]);});
-    log("Total entries: "+entries.length);
+function migrate(){
+  var btn=document.getElementById("btn");btn.disabled=true;btn.textContent="Migrating...";
+  log("Reading schedule_v3...");
+  OLD.once("value",function(snap){
+    var d=snap.val()||{};
+    var nodes=["comm_log","client_passes","manual_stipends","stipend_approvals","comm_no_referent"];
+    var toMigrate={};
+    nodes.forEach(function(n){if(d[n]){toMigrate[n]=d[n];log("Found "+n+": "+(Object.keys(d[n]||{}).length)+" entries");}
+      else{log("No data at "+n+" (already empty or never created)");}});
     
-    // Analyse
-    var noId=entries.filter(function(e){return !e.clientId;});
-    var noRole=entries.filter(function(e){return !e.contactRole;});
-    var referents=entries.filter(function(e){return (e.contactRole||"").toLowerCase()==="referent"&&!e.isAuto;});
-    var autos=entries.filter(function(e){return e.isAuto;});
-    log("Auto (system) entries: "+autos.length);
-    log("Manual entries: "+(entries.length-autos.length));
-    log("Referent entries: "+referents.length);
-    log("Entries with NO clientId: "+noId.length);
-    log("Entries with NO contactRole: "+noRole.length);
-    if(noId.length>0){log("WARNING: "+noId.length+" entries have no clientId — these will NOT match any client in facesheet!");}
+    if(Object.keys(toMigrate).length===0){
+      log("Nothing to migrate — all nodes are empty.");
+      log("Pages will still be updated to write to the new path.");
+      btn.textContent="No data to migrate — done";
+      return;
+    }
     
-    // Show non-auto entries
-    var manual=entries.filter(function(e){return !e.isAuto;});
-    var html='<table><thead><tr>'
-      +'<th>Key</th><th>clientId</th><th>clientName</th><th>date</th>'
-      +'<th>contactRole</th><th>method</th><th>isAuto</th><th>Issue</th></tr></thead><tbody>';
-    manual.forEach(function(e){
-      var issues=[];
-      if(!e.clientId)issues.push("No clientId");
-      if(!e.contactRole)issues.push("No contactRole");
-      if(e.contactRole&&e.contactRole.toLowerCase()!=="referent")issues.push("Role="+e.contactRole+" (not Referent)");
-      if(!e.date)issues.push("No date");
-      var ic=issues.length?"bad":"ok";
-      html+="<tr>"
-        +"<td style='font-size:10px;color:#888'>"+e._key.slice(-8)+"</td>"
-        +"<td class='"+(e.clientId?"ok":"bad")+"'>"+(e.clientId||"MISSING")+"</td>"
-        +"<td>"+(e.clientName||"")+"</td>"
-        +"<td>"+(e.date||"MISSING")+"</td>"
-        +"<td class='"+(e.contactRole&&e.contactRole.toLowerCase()==="referent"?"ok":"amb")+"'>"+(e.contactRole||"MISSING")+"</td>"
-        +"<td>"+(e.method||"")+"</td>"
-        +"<td>"+(e.isAuto?"yes":"no")+"</td>"
-        +"<td class='"+ic+"'>"+(issues.join("; ")||"✓ OK")+"</td>"
-        +"</tr>";
+    log("Writing to lifeskills_clinical/...");
+    NEW_PATH.update(toMigrate,function(err){
+      if(err){log("ERROR writing: "+err);btn.disabled=false;btn.textContent="Retry";return;}
+      log("SUCCESS — data written to lifeskills_clinical/");
+      
+      // Verify
+      NEW_PATH.once("value",function(s){
+        var v=s.val()||{};
+        nodes.forEach(function(n){
+          var cnt=v[n]?Object.keys(v[n]).length:0;
+          var orig=toMigrate[n]?Object.keys(toMigrate[n]).length:0;
+          log("Verified "+n+": "+cnt+" entries (expected "+orig+")");
+        });
+        log("\nMigration complete. Pages are being updated to use lifeskills_clinical/");
+        btn.textContent="Done ✓";
+      });
     });
-    html+="</tbody></table>";
-    document.getElementById("table-wrap").innerHTML=html;
-  });
-}
-
-function loadClients(){
-  log("Loading calendar clients...");
-  DB.ref("schedule_v3/blob").once("value",function(snap){
-    var v=snap.val();if(!v){log("No blob.");return;}
-    try{
-      var d=JSON.parse(v);
-      var clients=(d.clients||[]).slice(0,30);
-      log("First 30 clients:");
-      clients.forEach(function(c){log("  id="+JSON.stringify(c.id)+" name="+c.name+" type="+(typeof c.id));});
-    }catch(e){log("Parse error: "+e);}
   });
 }
 </script></body></html>
