@@ -1,104 +1,92 @@
 <!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><title>Admin — Client Record Fix</title>
+<html><head><meta charset="UTF-8"><title>Comm Log Diagnostic</title>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 <style>
-*{box-sizing:border-box}body{font-family:Arial,sans-serif;max-width:700px;margin:40px auto;padding:24px;background:#f7f5f2}
-h2{color:#1B2A4A;margin:0 0 4px}.sub{color:#888;font-size:13px;margin:0 0 20px}
-.card{background:white;border-radius:8px;padding:20px;margin-bottom:16px;border:1px solid #e0ddd8}
-label{display:block;font-size:11px;font-weight:600;color:#888;text-transform:uppercase;margin-bottom:4px;margin-top:12px}
-input,select{width:100%;padding:8px 12px;border:1px solid #ccc;border-radius:6px;font-size:13px}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-button.primary{background:#1B2A4A;color:white;padding:10px 24px;border:none;border-radius:6px;font-size:13px;cursor:pointer;width:100%;margin-top:14px;font-weight:600}
-button.primary:disabled{background:#aaa}
-.log{background:#1B2A4A;color:#90EE90;padding:14px;border-radius:6px;font-family:monospace;font-size:12px;min-height:80px;white-space:pre-wrap;margin-top:16px}
-.warn{background:#FEF6EC;border-left:4px solid #B87A00;padding:12px;border-radius:6px;font-size:12px;color:#7A4A00;margin-bottom:16px}
+body{font-family:Arial,sans-serif;padding:24px;background:#f7f5f2;max-width:1100px;margin:0 auto}
+h2{color:#1B2A4A;margin-bottom:4px}.sub{color:#888;font-size:13px;margin-bottom:20px}
+table{width:100%;border-collapse:collapse;background:#fff;font-size:12px;margin-top:16px}
+th{background:#1B2A4A;color:#fff;padding:8px 10px;text-align:left;font-size:11px}
+td{padding:8px 10px;border-bottom:.5px solid #e0ddd8;vertical-align:top}
+tr:nth-child(even) td{background:#fafaf8}
+.ok{color:#157A52;font-weight:700}.bad{color:#991F10;font-weight:700}.amb{color:#B87A00;font-weight:700}
+.log{background:#1B2A4A;color:#90EE90;padding:14px;border-radius:6px;font-family:monospace;font-size:11px;min-height:60px;white-space:pre-wrap;margin-top:16px}
+button{background:#1B2A4A;color:white;padding:8px 20px;border:none;border-radius:6px;font-size:12px;cursor:pointer;margin-right:8px}
 </style></head>
 <body>
-<h2>Admin — Client Record Audit & Fix</h2>
-<p class="sub">Search and fix client records in Firebase. Uses update() — never overwrites comm_log, stipend approvals, or manual entries.</p>
-<div class="warn">⚠ This tool uses <strong>update()</strong> on the blob field only — comm_log, manual_stipends, and stipend_approvals are fully preserved.</div>
-
-<div class="card">
-  <label>Search client name (partial match)</label>
-  <div style="display:flex;gap:8px">
-    <input id="search" placeholder="e.g. Allison" style="flex:1">
-    <button class="primary" style="width:auto;padding:8px 20px;margin:0" onclick="find()">Find</button>
-  </div>
-</div>
-<div id="results"></div>
-<div class="log" id="log">Ready. Search for a client above.</div>
+<h2>Comm Log Diagnostic</h2>
+<p class="sub">Shows exactly what is stored in Firebase — clientId, clientName, date, contactRole — so we can see why checkmarks are not appearing.</p>
+<button onclick="load()">Load Comm Log Data</button>
+<button onclick="loadClients()">Load Calendar Clients</button>
+<div class="log" id="log">Click Load to begin.</div>
+<div id="table-wrap"></div>
 
 <script>
 firebase.initializeApp({apiKey:"AIzaSyCERxntgytkfCHWN7EoAVYVmLBcfWyYZ5A",
   databaseURL:"https://pdi-signature-schedule-default-rtdb.firebaseio.com",
   projectId:"pdi-signature-schedule"});
-var FB=firebase.database().ref("schedule_v3");
-var allClients=[];
+var DB=firebase.database();
 
-function log(m){var el=document.getElementById("log");el.textContent+=(el.textContent?"\n":"")+new Date().toISOString().slice(11,19)+" "+m;}
+function log(m){var el=document.getElementById("log");el.textContent+=(el.textContent.trim()?"\n":"")+m;}
 
-FB.once("value",function(s){
-  var raw=s.val();if(!raw||!raw.blob){log("ERROR: cannot read blob");return;}
-  try{
-    var d=JSON.parse(raw.blob);
-    allClients=d.clients||[];
-    log("Loaded "+allClients.length+" clients from Firebase.");
-  }catch(e){log("Parse error: "+e);}
-});
-
-function find(){
-  var q=(document.getElementById("search").value||"").trim().toLowerCase();
-  if(!q){log("Enter a name to search.");return;}
-  var found=allClients.filter(function(c){return (c.name||"").toLowerCase().indexOf(q)>=0;});
-  log("Search '"+q+"': "+found.length+" client(s) found.");
-  var wrap=document.getElementById("results");
-  if(!found.length){wrap.innerHTML='<div class="card" style="color:#c00">No clients found matching "'+q+'".</div>';return;}
-  wrap.innerHTML=found.map(function(c){
-    var issues=[];
-    if(!c.program)issues.push("program is empty");
-    if(!c.sigAdmit&&!c.pdiAdmit)issues.push("no admit date");
-    return '<div class="card"><b style="font-size:15px;color:#1B2A4A">'+esc(c.name)+'</b>'
-      +(issues.length?'<div style="color:#c04;font-size:11px;margin:4px 0">Issues: '+issues.join(", ")+'</div>':'<div style="color:#157A52;font-size:11px;margin:4px 0">✓ Record looks complete</div>')
-      +'<pre style="background:#f0ede8;padding:10px;border-radius:6px;font-size:10px;margin:8px 0;max-height:120px;overflow:auto">'+JSON.stringify(c,null,2)+'</pre>'
-      +'<div style="font-size:11px;font-weight:600;color:#888;margin-top:8px">EDIT FIELDS</div>'
-      +'<div class="row2"><div><label>program</label>'
-        +'<select id="e-prog-'+c.id+'"><option '+(c.program==="Signature"?"selected":"")+'>Signature</option><option '+(c.program==="PDI"?"selected":"")+'>PDI</option><option '+(c.program==="Both"?"selected":"")+'>Both</option></select></div>'
-        +'<div><label>sigAdmit</label><input type="date" id="e-sig-'+c.id+'" value="'+(c.sigAdmit||"")+'"></div></div>'
-      +'<div class="row2"><div><label>sigDischarge</label><input type="date" id="e-sd-'+c.id+'" value="'+(c.sigDischarge||c.sigDisch||"")+'"></div>'
-        +'<div><label>pdiAdmit</label><input type="date" id="e-pdi-'+c.id+'" value="'+(c.pdiAdmit||"")+'"></div></div>'
-      +'<button class="primary" onclick="fix(''+c.id+'')">Save Changes (update only)</button></div>';
-  }).join("");
-}
-
-function fix(id){
-  var prog=document.getElementById("e-prog-"+id).value;
-  var sigA=document.getElementById("e-sig-"+id).value||null;
-  var sigD=document.getElementById("e-sd-"+id).value||null;
-  var pdiA=document.getElementById("e-pdi-"+id).value||null;
-  log("Fixing client id="+id+"...");
-
-  // IMPORTANT: use update() on the blob field only — does NOT touch comm_log, stipend_approvals, etc.
-  FB.once("value",function(s){
-    var raw=s.val();if(!raw||!raw.blob){log("ERROR: no blob");return;}
-    var blob;try{blob=JSON.parse(raw.blob);}catch(e){log("Parse error: "+e);return;}
-    var clients=blob.clients||[];
-    var idx=clients.findIndex(function(c){return c.id===id;});
-    if(idx<0){log("Client not found in blob.");return;}
-    clients[idx].program=prog;
-    if(sigA)clients[idx].sigAdmit=sigA;
-    if(sigD)clients[idx].sigDischarge=sigD;
-    if(pdiA)clients[idx].pdiAdmit=pdiA;
-    if(!clients[idx].startDate)clients[idx].startDate=pdiA||sigA;
-    blob.clients=clients;
-    // update() only updates specified keys — preserves comm_log, manual_stipends, stipend_approvals
-    FB.update({blob:JSON.stringify(blob),ts:Date.now()}).then(function(){
-      log("SUCCESS — update() complete. comm_log and other data fully preserved.");
-      allClients=clients;
-    }).catch(function(e){log("ERROR: "+e);});
+function load(){
+  document.getElementById("log").textContent="Loading comm_log...";
+  DB.ref("schedule_v3/comm_log").once("value",function(snap){
+    var d=snap.val();
+    if(!d){log("COMM LOG IS EMPTY — no entries in Firebase.");return;}
+    var entries=Object.entries(d).map(function(kv){return Object.assign({_key:kv[0]},kv[1]);});
+    log("Total entries: "+entries.length);
+    
+    // Analyse
+    var noId=entries.filter(function(e){return !e.clientId;});
+    var noRole=entries.filter(function(e){return !e.contactRole;});
+    var referents=entries.filter(function(e){return (e.contactRole||"").toLowerCase()==="referent"&&!e.isAuto;});
+    var autos=entries.filter(function(e){return e.isAuto;});
+    log("Auto (system) entries: "+autos.length);
+    log("Manual entries: "+(entries.length-autos.length));
+    log("Referent entries: "+referents.length);
+    log("Entries with NO clientId: "+noId.length);
+    log("Entries with NO contactRole: "+noRole.length);
+    if(noId.length>0){log("WARNING: "+noId.length+" entries have no clientId — these will NOT match any client in facesheet!");}
+    
+    // Show non-auto entries
+    var manual=entries.filter(function(e){return !e.isAuto;});
+    var html='<table><thead><tr>'
+      +'<th>Key</th><th>clientId</th><th>clientName</th><th>date</th>'
+      +'<th>contactRole</th><th>method</th><th>isAuto</th><th>Issue</th></tr></thead><tbody>';
+    manual.forEach(function(e){
+      var issues=[];
+      if(!e.clientId)issues.push("No clientId");
+      if(!e.contactRole)issues.push("No contactRole");
+      if(e.contactRole&&e.contactRole.toLowerCase()!=="referent")issues.push("Role="+e.contactRole+" (not Referent)");
+      if(!e.date)issues.push("No date");
+      var ic=issues.length?"bad":"ok";
+      html+="<tr>"
+        +"<td style='font-size:10px;color:#888'>"+e._key.slice(-8)+"</td>"
+        +"<td class='"+(e.clientId?"ok":"bad")+"'>"+(e.clientId||"MISSING")+"</td>"
+        +"<td>"+(e.clientName||"")+"</td>"
+        +"<td>"+(e.date||"MISSING")+"</td>"
+        +"<td class='"+(e.contactRole&&e.contactRole.toLowerCase()==="referent"?"ok":"amb")+"'>"+(e.contactRole||"MISSING")+"</td>"
+        +"<td>"+(e.method||"")+"</td>"
+        +"<td>"+(e.isAuto?"yes":"no")+"</td>"
+        +"<td class='"+ic+"'>"+(issues.join("; ")||"✓ OK")+"</td>"
+        +"</tr>";
+    });
+    html+="</tbody></table>";
+    document.getElementById("table-wrap").innerHTML=html;
   });
 }
 
-function esc(s){var d=document.createElement("div");d.textContent=s;return d.innerHTML;}
+function loadClients(){
+  log("Loading calendar clients...");
+  DB.ref("schedule_v3/blob").once("value",function(snap){
+    var v=snap.val();if(!v){log("No blob.");return;}
+    try{
+      var d=JSON.parse(v);
+      var clients=(d.clients||[]).slice(0,30);
+      log("First 30 clients:");
+      clients.forEach(function(c){log("  id="+JSON.stringify(c.id)+" name="+c.name+" type="+(typeof c.id));});
+    }catch(e){log("Parse error: "+e);}
+  });
+}
 </script></body></html>
