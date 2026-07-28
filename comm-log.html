@@ -230,7 +230,7 @@ select:focus,input:focus{outline:none;border-color:var(--purple)}
     <div>
       <div style="font-size:16px;font-weight:700;color:var(--navy)">Master Communication Facesheet</div>
       <div style="font-size:11px;color:var(--tx3);margin-top:2px">
-        ✓ = referent, family, or other external contact logged that day &nbsp;·&nbsp; Active clients only
+        <span style="color:var(--green);font-weight:700">✓</span> Contact logged &nbsp;·&nbsp; <span style="color:var(--red);font-weight:700">✕</span> No contact (past day) &nbsp;·&nbsp; <span style="color:#ccc">·</span> Future / today &nbsp;·&nbsp; Active clients only
       </div>
     </div>
     <div style="display:flex;gap:8px">
@@ -574,7 +574,9 @@ function renderFacesheet(){
       var isToday=iso===TODAY;
       if(admit>iso)return'<td style="background:#F7F5F2"></td>';
       var isOk=contacted.has(iso);
-      return'<td style="'+(isToday?'background:#F5F0FF;':'')+'">'+(isOk?'<span class="fs-check">✓</span>':'<span class="fs-miss">·</span>')+'</td>';
+      var isPast=iso<TODAY;
+      var cellBg=isOk?'#EAF5EE':(isPast?'#FDECEA':(isToday?'#FEF2F2':'#F7F5F2'));
+      return'<td style="background:'+cellBg+';">'+(isOk?'<span class="fs-check">✓</span>':(isPast?'<span style="color:#991F10;font-size:11px;font-weight:700">✕</span>':'<span class="fs-miss">·</span>'))+'</td>';
     }).join('');
     var prog=c.program||'';
     var chipColor=prog==='Both'?'#1D9E75':prog==='PDI'?'#4A6C8A':'#6B5C45';
