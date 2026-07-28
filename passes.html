@@ -349,7 +349,7 @@ tr:hover td{background:#FAFAF8}
 firebase.initializeApp({apiKey:'AIzaSyCERxntgytkfCHWN7EoAVYVmLBcfWyYZ5A',
   databaseURL:'https://pdi-signature-schedule-default-rtdb.firebaseio.com',
   projectId:'pdi-signature-schedule'});
-var DB=firebase.database(), PR=DB.ref('schedule_v3/client_passes');
+var DB=firebase.database(), PR=DB.ref('lifeskills_clinical/client_passes');
 var allClients=[], selectedClient=null, clientData={};
 var DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 var TODAY=(function(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})();
@@ -677,7 +677,7 @@ function showPTab(tab){
 }
 
 var allPassesData={};
-firebase.database().ref('schedule_v3/client_passes').on('value',function(snap){
+firebase.database().ref('lifeskills_clinical/client_passes').on('value',function(snap){
   allPassesData=snap.val()||{};
   var mv=document.getElementById('view-master');
   if(mv&&mv.style.display!=='none')renderMaster();
