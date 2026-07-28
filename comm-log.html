@@ -171,12 +171,12 @@ select:focus,input:focus{outline:none;border-color:var(--purple)}
 </div>
 
 <div class="view-tabs">
-  <button class="vtab active" onclick="showView('log')">Client Log</button>
-  <button class="vtab" onclick="showView('facesheet')">Master Facesheet</button>
+  <button class="vtab active" onclick="showView('facesheet')">Master Facesheet</button>
+  <button class="vtab" onclick="showView('log')">Client Log</button>
 </div>
 
 <!-- ═══ CLIENT LOG VIEW ═══════════════════════════════════════════════ -->
-<div id="view-log">
+<div id="view-log" style="display:none">
 <div class="page">
   <div class="selector-bar">
     <div class="sel-group">
@@ -230,7 +230,7 @@ select:focus,input:focus{outline:none;border-color:var(--purple)}
 </div>
 
 <!-- ═══ MASTER FACESHEET VIEW ═══════════════════════════════════════ -->
-<div id="view-facesheet" style="display:none">
+<div id="view-facesheet">
 <div style="max-width:1400px;margin:0 auto;padding:24px 20px 60px">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
     <div>
@@ -330,7 +330,7 @@ var NO_REF=DB.ref('schedule_v3/comm_no_referent'); // clientId → true
 var noReferentClients={};
 NO_REF.on('value',function(s){noReferentClients=s.val()||{};updateNAToggle();if(document.getElementById('view-facesheet').style.display!=='none')renderFacesheet();});
 var allClients=[], commEntries={}, selectedClient=null, statusFilter='active';
-var selMethod='Call', selNature='', providerList=[], TODAY=new Date().toISOString().slice(0,10);
+var selMethod='Call', selNature='', providerList=[], TODAY=(function(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}());
 
 // ── Firebase ────────────────────────────────────────────────────────────────
 DB.ref('schedule_v3').on('value',function(snap){
@@ -360,7 +360,7 @@ CLOG.on('value',function(snap){
   commEntries=snap.val()||{};
   buildDropdown();
   if(selectedClient){renderLog();renderCompliance();}
-  if(document.getElementById('view-facesheet').style.display!=='none')renderFacesheet();
+  renderFacesheet();
 });
 
 // ── Views ────────────────────────────────────────────────────────────────────
@@ -368,7 +368,7 @@ function showView(v){
   document.getElementById('view-log').style.display=v==='log'?'':'none';
   document.getElementById('view-facesheet').style.display=v==='facesheet'?'':'none';
   document.querySelectorAll('.vtab').forEach(function(t,i){
-    t.classList.toggle('active',(v==='log'&&i===0)||(v==='facesheet'&&i===1));});
+    t.classList.toggle('active',(v==='facesheet'&&i===0)||(v==='log'&&i===1));});
   if(v==='facesheet')renderFacesheet();
 }
 
