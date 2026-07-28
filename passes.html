@@ -148,7 +148,11 @@ tr:hover td{background:#FAFAF8}
   <div class="live"><div class="ldot" id="ldot"></div><span id="llbl">Connecting…</span></div>
 </div>
 
-<div class="page">
+<div style="background:var(--white);border-bottom:1px solid var(--bd);padding:0 24px;display:flex">
+  <button class="vtab active" id="vtab-client" onclick="showPTab('client')">Client View</button>
+  <button class="vtab" id="vtab-master" onclick="showPTab('master')">Master Facesheet</button>
+</div>
+<div class="page" id="view-client">
   <div class="selector">
     <div class="sel-group">
       <label>Active Client</label>
