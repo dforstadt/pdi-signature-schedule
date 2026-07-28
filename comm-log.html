@@ -8,13 +8,10 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --navy:#1B2A4A;--bg:#F7F5F2;--white:#fff;--tx:#1A1A1A;--tx2:#555544;--tx3:#888877;
+:root{--navy:#1B2A4A;--bg:#F7F5F2;--white:#fff;--tx:#1A1A1A;--tx2:#555544;--tx3:#888877;
   --bd:#E0DDD8;--purple:#7C3AED;--green:#157A52;--amber:#B87A00;--red:#991F10;
-  --sig:#6B5C45;--pdi:#4A6C8A;--r:8px;
-}
+  --sig:#6B5C45;--pdi:#4A6C8A;--r:8px;}
 body{font-family:Arial,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
-
 .hdr{background:var(--navy);padding:0 24px;height:50px;display:flex;align-items:center;gap:12px}
 .hdr-title{color:rgba(255,252,245,.9);font-size:15px;font-weight:700}
 .nav-link{color:rgba(255,252,245,.65);text-decoration:none;font-size:12px;padding:4px 10px;
@@ -24,133 +21,141 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--tx);min-heigh
 .ldot.on{background:#44CC77}
 .live{margin-left:auto;display:flex;align-items:center;gap:5px;font-size:11px;color:rgba(255,252,245,.5)}
 
-.page{max-width:860px;margin:0 auto;padding:28px 20px 60px}
+/* View tabs */
+.view-tabs{background:var(--white);border-bottom:1px solid var(--bd);padding:0 24px;
+  display:flex;gap:0}
+.vtab{padding:12px 20px;font-size:13px;font-weight:600;color:var(--tx3);cursor:pointer;
+  border-bottom:2.5px solid transparent;background:none;border-top:none;border-left:none;
+  border-right:none;font-family:Arial,sans-serif;transition:all .15s}
+.vtab:hover{color:var(--navy)}
+.vtab.active{color:var(--navy);border-bottom-color:var(--purple)}
 
-/* Client selector bar */
+.page{max-width:920px;margin:0 auto;padding:24px 20px 60px}
+
+/* Selector bar */
 .selector-bar{background:var(--white);border:1px solid var(--bd);border-radius:var(--r);
-  padding:16px 20px;margin-bottom:24px;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
+  padding:14px 18px;margin-bottom:18px;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
 .sel-group{display:flex;flex-direction:column;gap:4px}
 .sel-group label{font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px}
 select,input[type=text]{padding:8px 12px;border:1px solid var(--bd);border-radius:6px;
   font-size:13px;font-family:Arial,sans-serif;color:var(--tx);background:var(--white)}
 select:focus,input:focus{outline:none;border-color:var(--purple)}
 #client-select{min-width:220px}
-.status-toggle{display:flex;gap:0;border:1px solid var(--bd);border-radius:6px;overflow:hidden}
-.st-btn{padding:8px 16px;border:none;background:var(--white);cursor:pointer;font-size:12px;
-  font-weight:600;color:var(--tx3);font-family:Arial,sans-serif;transition:all .1s}
+.status-toggle{display:flex;border:1px solid var(--bd);border-radius:6px;overflow:hidden}
+.st-btn{padding:7px 14px;border:none;background:var(--white);cursor:pointer;font-size:12px;
+  font-weight:600;color:var(--tx3);font-family:Arial,sans-serif}
 .st-btn.active-tab{background:var(--navy);color:#fff}
 .add-btn{margin-left:auto;padding:9px 20px;background:var(--purple);color:#fff;border:none;
-  border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+  border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
 .add-btn:hover{background:#6D28D9}
 .add-btn:disabled{background:#ccc;cursor:default}
 
-/* Client info banner */
+/* Client banner */
 .client-banner{background:var(--white);border:1px solid var(--bd);border-radius:var(--r);
-  padding:14px 20px;margin-bottom:20px;display:flex;gap:16px;align-items:center}
+  padding:12px 18px;margin-bottom:16px;display:flex;gap:16px;align-items:center}
 .cb-name{font-size:16px;font-weight:700;color:var(--navy)}
 .cb-meta{font-size:11px;color:var(--tx3);margin-top:2px}
 .prog-chip{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-right:4px}
 .chip-sig{background:#6B5C4518;color:var(--sig)}.chip-pdi{background:#4A6C8A18;color:var(--pdi)}
 .chip-both{background:#1D9E7518;color:#1D9E75}
 .status-chip{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px}
-.chip-active{background:#EAF5EE;color:var(--green)}
-.chip-disch{background:#F0EDE8;color:var(--tx3)}
-
-/* Timeline */
-.date-block{margin-bottom:24px}
-.date-hdr{display:flex;align-items:center;gap:10px;padding:0 0 8px;
-  border-bottom:1px solid var(--bd);margin-bottom:12px}
-.date-hdr span{font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px}
-.today-tag{font-size:9px;font-weight:700;background:var(--navy);color:rgba(255,252,245,.8);
-  padding:1px 7px;border-radius:10px}
-.system-tag{font-size:9px;font-weight:700;background:#E8EDF5;color:var(--pdi);
-  padding:1px 7px;border-radius:10px}
-
-.entry{background:var(--white);border:1px solid var(--bd);border-radius:var(--r);
-  padding:14px 16px;margin-bottom:8px}
-.entry.sys{border-left:3px solid var(--pdi);background:#F7F9FC}
-.entry.endorsed{border-left:3px solid var(--green)}
-
-.entry-row1{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:6px}
-.contact-name{font-size:13px;font-weight:700;color:var(--tx)}
-.contact-role{font-size:10px;color:var(--tx3);margin-top:1px}
-.method-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:12px;
-  font-size:11px;font-weight:700;flex-shrink:0}
-.m-call{background:#EAF5EE;color:#157A52}.m-email{background:#E8F0F8;color:#2A6099}
-.m-text{background:#F0EBF9;color:#7C3AED}.m-msg{background:#FEF9EC;color:#B87A00}
-.m-portal{background:#F0EDE8;color:#6B5C45}.m-other{background:#F7F5F2;color:#888877}
-
-.entry-notes{font-size:12px;color:var(--tx2);line-height:1.55}
-.entry-notes strong{color:var(--tx)}
-.entry-footer{display:flex;align-items:center;justify-content:space-between;
-  padding-top:8px;margin-top:8px;border-top:.5px solid var(--bd)}
-.e-meta{font-size:10px;color:var(--tx3)}
-.e-actions{display:flex;gap:8px;align-items:center}
-.endorse-btn{font-size:11px;font-weight:700;padding:3px 12px;border-radius:12px;cursor:pointer;border:1.5px solid}
-.endorse-btn.pending{border-color:#ccc;background:transparent;color:var(--tx3)}
-.endorse-btn.pending:hover{border-color:var(--green);color:var(--green)}
-.endorse-btn.done{border-color:var(--green);background:var(--green);color:#fff;cursor:default}
-.del-btn{font-size:10px;color:var(--red);background:none;border:none;cursor:pointer;padding:2px 6px;
-  border-radius:4px;opacity:.4}.del-btn:hover{opacity:1;background:#FDECEA}
-
-.empty-log{text-align:center;padding:48px 20px;color:var(--tx3);font-size:13px}
-.empty-log h3{font-size:14px;color:var(--tx2);margin-bottom:6px}
-
-/* Modal */
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:999;
-  align-items:center;justify-content:center}
-.overlay.open{display:flex}
-.modal{background:var(--white);border-radius:12px;padding:24px;width:480px;max-width:95vw;
-  max-height:90vh;overflow-y:auto;box-shadow:0 8px 48px rgba(0,0,0,.22)}
-.modal h3{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:2px}
-.modal-sub{font-size:11px;color:var(--tx3);margin-bottom:18px}
-.fg{margin-bottom:12px}
-.fg label{display:block;font-size:10px;font-weight:700;color:var(--tx3);
-  text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
-.fg input,.fg select,.fg textarea{width:100%;padding:8px 11px;border:1px solid var(--bd);
-  border-radius:6px;font-size:13px;font-family:Arial,sans-serif;resize:vertical}
-.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--purple)}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.method-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-.mb{padding:8px 4px;border:1.5px solid var(--bd);border-radius:6px;cursor:pointer;
-  font-size:11px;font-weight:700;text-align:center;background:transparent;color:var(--tx3);
-  font-family:Arial,sans-serif;transition:all .1s}
-.mb:hover,.mb.sel{border-color:var(--purple);background:#F0EBF9;color:var(--purple)}
-.modal-footer{display:flex;gap:10px;justify-content:flex-end;padding-top:16px;
-  border-top:.5px solid var(--bd);margin-top:4px}
-.btn-cancel{padding:8px 18px;border:1px solid var(--bd);background:transparent;
-  border-radius:6px;font-size:13px;cursor:pointer;color:var(--tx2)}
-.btn-save{padding:8px 22px;background:var(--purple);color:#fff;border:none;
-  border-radius:6px;font-size:13px;font-weight:700;cursor:pointer}
-.btn-save:hover{background:#6D28D9}
+.chip-active{background:#EAF5EE;color:var(--green)}.chip-disch{background:#F0EDE8;color:var(--tx3)}
 
 /* Compliance strip */
 .compliance-bar{background:var(--white);border:1px solid var(--bd);border-radius:var(--r);
-  padding:14px 20px;margin-bottom:16px}
-.compliance-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.compliance-hdr h4{font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px}
-.compliance-stats{font-size:11px;color:var(--tx3)}
-.compliance-stats .pct{font-size:13px;font-weight:700;color:var(--navy)}
+  padding:14px 18px;margin-bottom:16px}
+.comp-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.comp-hdr h4{font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px}
+.comp-stat .pct{font-size:13px;font-weight:700;color:var(--navy)}
+.comp-stat{font-size:11px;color:var(--tx3)}
 .day-grid{display:flex;flex-wrap:wrap;gap:4px}
 .day-dot{width:32px;height:32px;border-radius:6px;border:1px solid;cursor:pointer;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   font-size:9px;font-weight:700;line-height:1.2;transition:transform .1s;position:relative}
-.day-dot:hover{transform:scale(1.1);z-index:2}
+.day-dot:hover:not(.wknd):not(.future){transform:scale(1.08);z-index:2}
 .day-dot .dn{font-size:8px;opacity:.7}
 .day-dot.ok{background:#EAF5EE;border-color:#157A5244;color:var(--green)}
 .day-dot.ok::after{content:'✓';position:absolute;top:-4px;right:-4px;font-size:8px;
   background:var(--green);color:#fff;border-radius:50%;width:12px;height:12px;
-  display:flex;align-items:center;justify-content:center}
+  display:flex;align-items:center;justify-content:center;line-height:12px}
 .day-dot.miss{background:#FDECEA;border-color:#99000033;color:var(--red)}
 .day-dot.today-dot{background:#F0EBF9;border-color:var(--purple);color:var(--purple)}
-.day-dot.today-dot.ok{background:#EAF5EE;border-color:#157A52}
-.day-dot.wknd{background:#F7F5F2;border-color:#E0DDD8;color:var(--tx3);cursor:default}
-.day-dot.wknd:hover{transform:none}
+.day-dot.today-dot.ok{background:#EAF5EE;border-color:var(--green)}
+.day-dot.wknd{background:#F7F5F2;border-color:#E0DDD8;color:#ccc;cursor:default}
 .day-dot.future{background:#F7F5F2;border-color:#E0DDD8;color:#ccc;cursor:default}
-.day-dot.future:hover{transform:none}
 .strip-legend{display:flex;gap:12px;margin-top:8px;font-size:10px;color:var(--tx3)}
 .leg{display:flex;align-items:center;gap:4px}
 .leg-dot{width:10px;height:10px;border-radius:3px;border:1px solid}
+
+/* Timeline */
+.date-block{margin-bottom:20px}
+.date-hdr{display:flex;align-items:center;gap:10px;padding:0 0 7px;
+  border-bottom:1px solid var(--bd);margin-bottom:10px}
+.date-hdr span{font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px}
+.auto-tag{font-size:9px;font-weight:700;background:#E8EDF5;color:var(--pdi);padding:1px 7px;border-radius:10px}
+.today-tag{font-size:9px;font-weight:700;background:var(--navy);color:rgba(255,252,245,.8);padding:1px 7px;border-radius:10px}
+.entry{background:var(--white);border:1px solid var(--bd);border-radius:var(--r);padding:12px 15px;margin-bottom:7px}
+.entry.sys{border-left:3px solid var(--pdi);background:#F7F9FC}
+.entry.endorsed{border-left:3px solid var(--green)}
+.entry-row1{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px}
+.contact-name{font-size:13px;font-weight:700;color:var(--tx)}
+.contact-role{font-size:10px;color:var(--tx3);margin-top:1px}
+.contact-by{font-size:10px;color:var(--purple);margin-top:1px;font-weight:600}
+.method-pill{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:700;flex-shrink:0}
+.m-call{background:#EAF5EE;color:#157A52}.m-email{background:#E8F0F8;color:#2A6099}
+.m-text{background:#F0EBF9;color:#7C3AED}.m-msg{background:#FEF9EC;color:#B87A00}
+.m-portal{background:#F0EDE8;color:#6B5C45}.m-other{background:#F7F5F2;color:#888877}
+.nature-tag{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;
+  background:#F0EDE8;color:var(--sig);margin-bottom:5px}
+.entry-notes{font-size:12px;color:var(--tx2);line-height:1.55}
+.entry-notes strong{color:var(--tx)}
+.entry-footer{display:flex;align-items:center;justify-content:space-between;padding-top:7px;margin-top:7px;border-top:.5px solid var(--bd)}
+.e-meta{font-size:10px;color:var(--tx3)}
+.endorse-btn{font-size:11px;font-weight:700;padding:3px 12px;border-radius:12px;cursor:pointer;border:1.5px solid}
+.endorse-btn.pending{border-color:#ccc;background:transparent;color:var(--tx3)}
+.endorse-btn.pending:hover{border-color:var(--green);color:var(--green)}
+.endorse-btn.done{border-color:var(--green);background:var(--green);color:#fff;cursor:default}
+.del-btn{font-size:10px;color:var(--red);background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:4px;opacity:.4}
+.del-btn:hover{opacity:1;background:#FDECEA}
+.empty-log{text-align:center;padding:48px 20px;color:var(--tx3);font-size:13px}
+.empty-log h3{font-size:14px;color:var(--tx2);margin-bottom:6px}
+
+/* Master facesheet */
+.facesheet-table{width:100%;border-collapse:collapse;background:var(--white);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden}
+.facesheet-table th{background:var(--navy);color:#fff;font-size:10px;padding:7px 6px;text-align:center;font-weight:700;white-space:nowrap;border-right:.5px solid rgba(255,255,255,.15)}
+.facesheet-table th.client-col{text-align:left;padding:7px 12px;min-width:160px}
+.facesheet-table td{padding:5px 6px;text-align:center;border-bottom:.5px solid var(--bd);border-right:.5px solid #F0EDE8;font-size:11px}
+.facesheet-table td.client-cell{text-align:left;padding:6px 12px;font-weight:600;font-size:12px;color:var(--navy);white-space:nowrap}
+.facesheet-table tr:last-child td{border-bottom:none}
+.facesheet-table tr:nth-child(even) td{background:#FAFAF8}
+.fs-check{color:var(--green);font-size:14px;font-weight:700}
+.fs-miss{color:#E0DDD8;font-size:12px}
+.fs-wknd{color:#E0DDD8;font-size:10px;background:#F7F5F2}
+.fs-future{background:#F7F5F2}
+.print-btn{padding:7px 16px;border:1px solid var(--bd);background:var(--white);border-radius:6px;font-size:12px;cursor:pointer;color:var(--tx2);font-family:Arial,sans-serif}
+.print-btn:hover{background:#F0EDE8}
+
+/* Modal */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:999;align-items:center;justify-content:center}
+.overlay.open{display:flex}
+.modal{background:var(--white);border-radius:12px;padding:24px;width:500px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 8px 48px rgba(0,0,0,.22)}
+.modal h3{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:2px}
+.modal-sub{font-size:11px;color:var(--tx3);margin-bottom:16px}
+.fg{margin-bottom:11px}
+.fg label{display:block;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.fg input,.fg select,.fg textarea{width:100%;padding:8px 11px;border:1px solid var(--bd);border-radius:6px;font-size:13px;font-family:Arial,sans-serif;resize:vertical}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--purple)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.mb{padding:8px 4px;border:1.5px solid var(--bd);border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;text-align:center;background:transparent;color:var(--tx3);font-family:Arial,sans-serif;transition:all .1s}
+.mb:hover,.mb.sel{border-color:var(--purple);background:#F0EBF9;color:var(--purple)}
+.nb{padding:7px 8px;border:1.5px solid var(--bd);border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;text-align:left;background:transparent;color:var(--tx2);font-family:Arial,sans-serif;transition:all .1s;line-height:1.3}
+.nb:hover,.nb.sel{border-color:var(--amber);background:#FEF9EC;color:var(--amber)}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;padding-top:14px;border-top:.5px solid var(--bd);margin-top:4px}
+.btn-cancel{padding:8px 18px;border:1px solid var(--bd);background:transparent;border-radius:6px;font-size:13px;cursor:pointer;color:var(--tx2)}
+.btn-save{padding:8px 22px;background:var(--purple);color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer}
+.btn-save:hover{background:#6D28D9}
+@media print{.hdr,.view-tabs,.selector-bar,.add-btn,.print-btn{display:none!important}.page{padding:0}}
 </style>
 </head>
 <body>
@@ -162,9 +167,14 @@ select:focus,input:focus{outline:none;border-color:var(--purple)}
   <div class="live"><div class="ldot" id="ldot"></div><span id="llbl">Connecting…</span></div>
 </div>
 
-<div class="page">
+<div class="view-tabs">
+  <button class="vtab active" onclick="showView('log')">Client Log</button>
+  <button class="vtab" onclick="showView('facesheet')">Master Facesheet</button>
+</div>
 
-  <!-- Selector bar -->
+<!-- ═══ CLIENT LOG VIEW ═══════════════════════════════════════════════ -->
+<div id="view-log">
+<div class="page">
   <div class="selector-bar">
     <div class="sel-group">
       <label>Status</label>
@@ -174,7 +184,7 @@ select:focus,input:focus{outline:none;border-color:var(--purple)}
         <button class="st-btn" id="btn-all" onclick="setStatus('all')">All</button>
       </div>
     </div>
-    <div class="sel-group" style="flex:1;min-width:200px">
+    <div class="sel-group" style="flex:1;min-width:180px">
       <label>Client</label>
       <select id="client-select" onchange="selectClient(this.value)">
         <option value="">— Select a client —</option>
@@ -183,7 +193,6 @@ select:focus,input:focus{outline:none;border-color:var(--purple)}
     <button class="add-btn" id="add-btn" onclick="openModal()" disabled>&#43; Add Entry</button>
   </div>
 
-  <!-- Client banner (hidden until selected) -->
   <div class="client-banner" id="client-banner" style="display:none">
     <div style="flex:1">
       <div class="cb-name" id="cb-name"></div>
@@ -192,15 +201,11 @@ select:focus,input:focus{outline:none;border-color:var(--purple)}
     <div id="cb-count" style="font-size:12px;color:var(--tx3)"></div>
   </div>
 
-  <!-- Compliance strip -->
   <div class="compliance-bar" id="compliance-bar" style="display:none">
-    <div class="compliance-hdr">
-      <h4>Daily Referent Contact — Compliance Tracker</h4>
-      <div class="compliance-stats">
-        <span class="pct" id="comp-pct">—</span>
-        <span id="comp-stat"> days contacted</span>
-        <span style="margin-left:12px;font-size:10px;color:var(--tx3)">Tap a day to log quick contact</span>
-      </div>
+    <div class="comp-hdr">
+      <h4>Referent / Family Contact — Daily Compliance</h4>
+      <div class="comp-stat"><span class="pct" id="comp-pct">—</span> <span id="comp-txt"></span>
+        <span style="margin-left:10px;font-size:10px">Tap a day to log</span></div>
     </div>
     <div class="day-grid" id="day-grid"></div>
     <div class="strip-legend">
@@ -211,17 +216,37 @@ select:focus,input:focus{outline:none;border-color:var(--purple)}
     </div>
   </div>
 
-  <!-- Log timeline -->
   <div id="log-area">
-    <div class="empty-log">
-      <h3>Select a client above to view their communication log</h3>
-      <p>Active clients are shown by default. Switch to Discharged or All to find past clients.</p>
-    </div>
+    <div class="empty-log"><h3>Select a client above to view their communication log</h3>
+      <p>Active clients shown by default. Switch to Discharged or All to find past clients.</p></div>
   </div>
-
+</div>
 </div>
 
-<!-- Add Entry Modal -->
+<!-- ═══ MASTER FACESHEET VIEW ═══════════════════════════════════════ -->
+<div id="view-facesheet" style="display:none">
+<div class="page">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div>
+      <div style="font-size:16px;font-weight:700;color:var(--navy)">Master Communication Facesheet</div>
+      <div style="font-size:11px;color:var(--tx3);margin-top:2px">
+        ✓ = referent, family, or other external contact logged that day &nbsp;·&nbsp; Active clients only
+      </div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <select id="fs-days" onchange="renderFacesheet()" style="font-size:12px;padding:6px 10px">
+        <option value="14">Last 14 days</option>
+        <option value="21" selected>Last 21 days</option>
+        <option value="30">Last 30 days</option>
+      </select>
+      <button class="print-btn" onclick="window.print()">&#128438; Print</button>
+    </div>
+  </div>
+  <div id="facesheet-wrap"></div>
+</div>
+</div>
+
+<!-- ═══ ADD ENTRY MODAL ══════════════════════════════════════════════ -->
 <div class="overlay" id="overlay">
   <div class="modal">
     <h3>Add Communication Entry</h3>
@@ -241,13 +266,20 @@ select:focus,input:focus{outline:none;border-color:var(--purple)}
         </select>
       </div>
     </div>
-    <div class="fg"><label>Contact Name</label>
-      <input type="text" id="f-contact" placeholder="e.g. Dr. Smith / Jane Smith (sister)">
+    <div class="row2 fg">
+      <div><label>Contact Name</label>
+        <input type="text" id="f-contact" placeholder="e.g. Dr. Smith / Jane Smith (sister)">
+      </div>
+      <div><label>Contacted By (Provider)</label>
+        <select id="f-provider">
+          <option value="">— Select provider —</option>
+        </select>
+      </div>
     </div>
     <div class="fg"><label>Method of Communication</label>
-      <div class="method-grid">
+      <div class="row3">
         <button class="mb sel" data-m="Call" onclick="selM(this)">&#128222; Phone Call</button>
-        <button class="mb" data-m="Email" onclick="selM(this)">&#9993;&#65039; Email</button>
+        <button class="mb" data-m="Email" onclick="selM(this)">&#9993; Email</button>
         <button class="mb" data-m="Text" onclick="selM(this)">&#128172; Text</button>
         <button class="mb" data-m="Left Message" onclick="selM(this)">&#128232; Left Message</button>
         <button class="mb" data-m="Portal" onclick="selM(this)">&#128274; Portal</button>
@@ -255,10 +287,23 @@ select:focus,input:focus{outline:none;border-color:var(--purple)}
       </div>
     </div>
     <div class="fg"><label>Nature / Purpose of Contact</label>
-      <textarea id="f-nature" rows="2" placeholder="Brief reason for contact…"></textarea>
+      <div class="row3" id="nature-grid">
+        <button class="nb" data-n="Treatment Update" onclick="selN(this)">Treatment Update</button>
+        <button class="nb" data-n="Discharge Planning" onclick="selN(this)">Discharge Planning</button>
+        <button class="nb" data-n="Clinical Concern" onclick="selN(this)">Clinical Concern</button>
+        <button class="nb" data-n="Insurance / Auth" onclick="selN(this)">Insurance / Auth</button>
+        <button class="nb" data-n="Family Support" onclick="selN(this)">Family Support</button>
+        <button class="nb" data-n="Intake / Admission" onclick="selN(this)">Intake / Admission</button>
+        <button class="nb" data-n="Safety Update" onclick="selN(this)">Safety Update</button>
+        <button class="nb" data-n="Medication Update" onclick="selN(this)">Medication Update</button>
+        <button class="nb" data-n="Legal / Court" onclick="selN(this)">Legal / Court</button>
+        <button class="nb" data-n="Aftercare Planning" onclick="selN(this)">Aftercare Planning</button>
+        <button class="nb" data-n="Referent Request" onclick="selN(this)">Referent Request</button>
+        <button class="nb" data-n="Other" onclick="selN(this)">Other</button>
+      </div>
     </div>
     <div class="fg"><label>Outcome / Resolution</label>
-      <textarea id="f-outcome" rows="2" placeholder="What was communicated, decided, or next steps…"></textarea>
+      <textarea id="f-outcome" rows="3" placeholder="What was communicated, decided, agreed upon, or next steps…"></textarea>
     </div>
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeModal()">Cancel</button>
@@ -273,27 +318,27 @@ firebase.initializeApp({
   databaseURL:'https://pdi-signature-schedule-default-rtdb.firebaseio.com',
   projectId:'pdi-signature-schedule'
 });
-var DB=firebase.database();
-var CLOG=DB.ref('schedule_v3/comm_log');
+var DB=firebase.database(), CLOG=DB.ref('schedule_v3/comm_log');
+var allClients=[], commEntries={}, selectedClient=null, statusFilter='active';
+var selMethod='Call', selNature='', providerList=[], TODAY=new Date().toISOString().slice(0,10);
 
-var allClients=[], commEntries={}, selectedClient=null, statusFilter='active', selMethod='Call';
-
-// ── Firebase load ──────────────────────────────────────────────────────────
+// ── Firebase ────────────────────────────────────────────────────────────────
 DB.ref('schedule_v3').on('value',function(snap){
   document.getElementById('ldot').className='ldot on';
   document.getElementById('llbl').textContent='Live';
-  var raw=snap.val();
-  if(!raw||!raw.blob) return;
+  var raw=snap.val(); if(!raw||!raw.blob)return;
   try{
     var d=JSON.parse(raw.blob);
     allClients=(d.clients||[]).map(function(c){
       if(!c.program){
-        if(c.sigAdmit&&c.pdiAdmit&&c.pdiAdmit!==c.sigAdmit) c.program='Both';
-        else if(c.sigAdmit) c.program='Signature';
-        else if(c.pdiAdmit) c.program='PDI';
-      }
-      return c;
-    }).sort(function(a,b){return (a.name||'').localeCompare(b.name||'');});
+        if(c.sigAdmit&&c.pdiAdmit&&c.pdiAdmit!==c.sigAdmit)c.program='Both';
+        else if(c.sigAdmit)c.program='Signature';
+        else if(c.pdiAdmit)c.program='PDI';
+      }return c;
+    }).sort(function(a,b){return(a.name||'').localeCompare(b.name||'');});
+    // Provider list from providers object
+    providerList=Object.keys(d.providers||{}).sort();
+    buildProviderSelect();
     buildDropdown();
   }catch(e){console.error(e);}
 },function(){
@@ -303,58 +348,67 @@ DB.ref('schedule_v3').on('value',function(snap){
 
 CLOG.on('value',function(snap){
   commEntries=snap.val()||{};
-  if(selectedClient){renderLog();renderCompliance();}
   buildDropdown();
+  if(selectedClient){renderLog();renderCompliance();}
+  if(document.getElementById('view-facesheet').style.display!=='none')renderFacesheet();
 });
 
-// ── Client dropdown ────────────────────────────────────────────────────────
-var TODAY=new Date().toISOString().slice(0,10);
-
-function isActive(c){
-  var disch=(c.program==='PDI'?c.pdiDischarge||c.pdiDisch:c.sigDischarge||c.sigDisch||c.endDate)||'';
-  return !disch||disch>=TODAY;
+// ── Views ────────────────────────────────────────────────────────────────────
+function showView(v){
+  document.getElementById('view-log').style.display=v==='log'?'':'none';
+  document.getElementById('view-facesheet').style.display=v==='facesheet'?'':'none';
+  document.querySelectorAll('.vtab').forEach(function(t,i){
+    t.classList.toggle('active',(v==='log'&&i===0)||(v==='facesheet'&&i===1));});
+  if(v==='facesheet')renderFacesheet();
 }
 
+// ── Client dropdown ──────────────────────────────────────────────────────────
+function isActive(c){
+  var d=(c.program==='PDI'?c.pdiDischarge||c.pdiDisch:c.sigDischarge||c.sigDisch||c.endDate)||'';
+  return !d||d>=TODAY;
+}
 function setStatus(s){
   statusFilter=s;
-  ['active','disch','all'].forEach(function(k){
-    document.getElementById('btn-'+k).className='st-btn'+(s===(k==='disch'?'discharged':k)?' active-tab':'');
-  });
+  document.getElementById('btn-active').className='st-btn'+(s==='active'?' active-tab':'');
+  document.getElementById('btn-disch').className='st-btn'+(s==='discharged'?' active-tab':'');
+  document.getElementById('btn-all').className='st-btn'+(s==='all'?' active-tab':'');
   buildDropdown();
 }
-
 function buildDropdown(){
   var list=allClients.filter(function(c){
-    if(statusFilter==='active') return isActive(c);
-    if(statusFilter==='discharged') return !isActive(c);
+    if(statusFilter==='active')return isActive(c);
+    if(statusFilter==='discharged')return !isActive(c);
     return true;
   });
   var prev=document.getElementById('client-select').value;
   var html='<option value="">— Select a client ('+list.length+') —</option>';
   html+=list.map(function(c){
-    var cnt=Object.values(commEntries).filter(function(e){return e.clientId===c.id;}).length;
+    var cnt=Object.values(commEntries).filter(function(e){return e.clientId===c.id&&!e.isAuto;}).length;
     return '<option value="'+c.id+'">'+esc(c.name)+' ['+c.program+']'+(cnt?' ('+cnt+')':'')+
-      (isActive(c)?'':' — Discharged')+'</option>';
+      (isActive(c)?'':' ✓ Discharged')+'</option>';
   }).join('');
   document.getElementById('client-select').innerHTML=html;
-  if(prev) document.getElementById('client-select').value=prev;
+  if(prev)document.getElementById('client-select').value=prev;
 }
-
+function buildProviderSelect(){
+  var sel=document.getElementById('f-provider');
+  sel.innerHTML='<option value="">— Select provider —</option>'+
+    providerList.map(function(p){return'<option>'+esc(p)+'</option>';}).join('');
+}
 function selectClient(id){
   selectedClient=allClients.find(function(c){return c.id===id;})||null;
   document.getElementById('add-btn').disabled=!selectedClient;
   if(!selectedClient){
     document.getElementById('client-banner').style.display='none';
+    document.getElementById('compliance-bar').style.display='none';
     document.getElementById('log-area').innerHTML='<div class="empty-log"><h3>Select a client above</h3></div>';
     return;
   }
-  // Auto-create admission/discharge anchors
   autoAnchor(selectedClient);
-  renderBanner();
-  renderLog();
-  renderCompliance();
+  renderBanner();renderLog();renderCompliance();
 }
 
+// ── Render banner ─────────────────────────────────────────────────────────────
 function renderBanner(){
   var c=selectedClient;
   var prog=c.program||'';
@@ -365,153 +419,61 @@ function renderBanner(){
   document.getElementById('cb-name').textContent=c.name;
   document.getElementById('cb-meta').innerHTML=
     '<span class="prog-chip '+chipClass+'">'+prog+'</span>'+
-    (admit?'Admit: '+fmtD(admit)+' &nbsp;':'')+
-    (disch?(active?'':'Discharged: '+fmtD(disch)):'')+
-    ' &nbsp;<span class="status-chip '+(active?'chip-active':'chip-disch')+'">'+(active?'Active':'Discharged')+'</span>';
+    (admit?'Admit: '+fmtD(admit)+'&nbsp;':'')+
+    (disch&&!active?'Discharged: '+fmtD(disch)+'&nbsp;':'')+
+    '<span class="status-chip '+(active?'chip-active':'chip-disch')+'">'+(active?'Active':'Discharged')+'</span>';
   var cnt=Object.values(commEntries).filter(function(e){return e.clientId===c.id&&!e.isAuto;}).length;
   document.getElementById('cb-count').textContent=cnt+' entr'+(cnt===1?'y':'ies');
   document.getElementById('client-banner').style.display='flex';
 }
 
-// ── Log render ─────────────────────────────────────────────────────────────
+// ── Render timeline ───────────────────────────────────────────────────────────
 function renderLog(){
   if(!selectedClient)return;
   var entries=Object.entries(commEntries)
     .map(function(kv){return Object.assign({_key:kv[0]},kv[1]);})
     .filter(function(e){return e.clientId===selectedClient.id;})
-    .sort(function(a,b){return (b.date||'')>(a.date||'')?1:-1;});
-
+    .sort(function(a,b){return(b.date||'')>(a.date||'')?1:-1;});
   if(!entries.length){
-    document.getElementById('log-area').innerHTML=
-      '<div class="empty-log"><h3>No entries yet</h3><p>Click <strong>+ Add Entry</strong> to log the first communication.</p></div>';
+    document.getElementById('log-area').innerHTML='<div class="empty-log"><h3>No entries yet</h3><p>Click <strong>+ Add Entry</strong> to log the first communication.</p></div>';
     return;
   }
-
   var byDate={};
   entries.forEach(function(e){var d=e.date||'0000';if(!byDate[d])byDate[d]=[];byDate[d].push(e);});
-
   document.getElementById('log-area').innerHTML=
     Object.keys(byDate).sort(function(a,b){return b>a?1:-1;}).map(function(dt){
-      var isToday=dt===TODAY;
-      var dateStr=dt==='0000'?'Unknown Date':fmtDFull(dt);
-      var dayEntries=byDate[dt];
-      var hasSys=dayEntries.some(function(e){return e.isAuto;});
-      return '<div class="date-block">'+
-        '<div class="date-hdr">'+
-          '<span>'+dateStr+'</span>'+
-          (isToday?'<span class="today-tag">TODAY</span>':'')+
-          (hasSys?'<span class="system-tag">PROGRAM EVENT</span>':'')+
-        '</div>'+
-        dayEntries.map(entryHTML).join('')+
-      '</div>';
+      var isToday=dt===TODAY, hasSys=byDate[dt].some(function(e){return e.isAuto;});
+      return '<div class="date-block"><div class="date-hdr"><span>'+fmtDFull(dt)+'</span>'+
+        (isToday?'<span class="today-tag">TODAY</span>':'')+
+        (hasSys?'<span class="auto-tag">PROGRAM EVENT</span>':'')+
+        '</div>'+byDate[dt].map(entryHTML).join('')+'</div>';
     }).join('');
-  renderBanner();
-}
-
-function methodPill(m){
-  var map={Call:'m-call &#128222; Call',Email:'m-email &#9993; Email',
-    Text:'m-text &#128172; Text','Left Message':'m-msg &#128232; Left Message',
-    Portal:'m-portal &#128274; Portal',Other:'m-other &#128203; Other'};
-  var s=map[m]||('m-other &#128203; '+m);
-  var cls=s.split(' ')[0]; var lbl=s.slice(cls.length+1);
-  return '<span class="method-pill '+cls+'">'+lbl+'</span>';
 }
 
 function entryHTML(e){
-  var isEnd=!!e.isAuto;
-  var isEd=!!e.endorsed;
-  var cls='entry'+(isEnd?' sys':'')+(isEd?' endorsed':'');
-  var eBtn=isEnd?'':(isEd
+  var isSys=!!e.isAuto, isEd=!!e.endorsed;
+  var cls='entry'+(isSys?' sys':'')+(isEd?' endorsed':'');
+  var eBtn=isSys?'':(isEd
     ?'<button class="endorse-btn done">&#10003; '+esc(e.endorsedBy||'Staff')+'</button>'
     :'<button class="endorse-btn pending" onclick="endorse(\''+e._key+'\')">Endorse</button>');
-  var dBtn=isEnd?'':'<button class="del-btn" onclick="delEntry(\''+e._key+'\')">&#215;</button>';
-  return '<div class="'+cls+'">'+
-    '<div class="entry-row1">'+
-      '<div><div class="contact-name">'+esc(e.contactName||'')+'</div>'+
-        '<div class="contact-role">'+esc(e.contactRole||'')+'</div></div>'+
-      methodPill(e.method||'Other')+
-    '</div>'+
-    (e.notes?'<div class="entry-notes" style="margin-bottom:4px"><strong>Nature:</strong> '+esc(e.notes)+'</div>':'')+
+  var dBtn=isSys?'':'<button class="del-btn" onclick="delEntry(\''+e._key+'\')">&#215;</button>';
+  var mmap={Call:'m-call &#128222; Call',Email:'m-email &#9993; Email',Text:'m-text &#128172; Text',
+    'Left Message':'m-msg &#128232; Left Message',Portal:'m-portal &#128274; Portal',Other:'m-other &#128203; Other'};
+  var ms=(mmap[e.method]||'m-other &#128203; Other').split(' ');
+  var mcls=ms[0],mlbl=ms.slice(1).join(' ');
+  return '<div class="'+cls+'"><div class="entry-row1"><div>'+
+    '<div class="contact-name">'+esc(e.contactName||'')+'</div>'+
+    '<div class="contact-role">'+esc(e.contactRole||'')+'</div>'+
+    (e.contactedBy?'<div class="contact-by">By: '+esc(e.contactedBy)+'</div>':'')+
+    '</div><span class="method-pill '+mcls+'">'+mlbl+'</span></div>'+
+    (e.nature?'<div><span class="nature-tag">'+esc(e.nature)+'</span></div>':'')+
     (e.outcome?'<div class="entry-notes"><strong>Outcome:</strong> '+esc(e.outcome)+'</div>':'')+
-    '<div class="entry-footer">'+
-      '<span class="e-meta">'+fmtTime(e.addedAt)+'</span>'+
-      '<div class="e-actions">'+eBtn+dBtn+'</div>'+
-    '</div>'+
-  '</div>';
+    '<div class="entry-footer"><span class="e-meta">'+fmtTime(e.addedAt)+'</span>'+
+    '<div style="display:flex;gap:8px;align-items:center">'+eBtn+dBtn+'</div></div></div>';
 }
 
-// ── Auto anchor entries ────────────────────────────────────────────────────
-function autoAnchor(c){
-  var existing=Object.values(commEntries).filter(function(e){return e.clientId===c.id&&e.isAuto;});
-  var hasAdmit=existing.some(function(e){return e.autoType==='Admission';});
-  var hasDisch=existing.some(function(e){return e.autoType==='Discharge';});
-  var admit=(c.program==='PDI'?c.pdiAdmit:c.sigAdmit||c.pdiAdmit)||null;
-  var disch=(c.program==='PDI'?c.pdiDischarge||c.pdiDisch:c.sigDischarge||c.sigDisch||c.endDate)||null;
-  if(admit&&!hasAdmit)
-    CLOG.push({clientId:c.id,clientName:c.name,date:admit,contactName:'Program Admission',
-      contactRole:'Internal',method:'Other',notes:c.name+' admitted to '+c.program+' program.',
-      outcome:'',isAuto:true,autoType:'Admission',addedAt:new Date().toISOString()});
-  if(disch&&!hasDisch)
-    CLOG.push({clientId:c.id,clientName:c.name,date:disch,contactName:'Program Discharge',
-      contactRole:'Internal',method:'Other',notes:c.name+' discharged from '+c.program+' program.',
-      outcome:'',isAuto:true,autoType:'Discharge',addedAt:new Date().toISOString()});
-}
-
-// ── Modal ──────────────────────────────────────────────────────────────────
-function openModal(){
-  if(!selectedClient)return;
-  document.getElementById('m-sub').textContent=selectedClient.name+' — '+selectedClient.program;
-  document.getElementById('f-date').value=TODAY;
-  document.getElementById('f-contact').value='';
-  document.getElementById('f-nature').value='';
-  document.getElementById('f-outcome').value='';
-  document.getElementById('f-role').value='Referent';
-  selMethod='Call';
-  document.querySelectorAll('.mb').forEach(function(b){b.classList.toggle('sel',b.dataset.m==='Call');});
-  document.getElementById('overlay').classList.add('open');
-  setTimeout(function(){document.getElementById('f-contact').focus();},60);
-}
-function closeModal(){document.getElementById('overlay').classList.remove('open');}
-function selM(btn){
-  selMethod=btn.dataset.m;
-  document.querySelectorAll('.mb').forEach(function(b){b.classList.remove('sel');});
-  btn.classList.add('sel');
-}
-function saveEntry(){
-  var date=document.getElementById('f-date').value;
-  var contact=(document.getElementById('f-contact').value||'').trim();
-  var role=document.getElementById('f-role').value;
-  var nature=(document.getElementById('f-nature').value||'').trim();
-  var outcome=(document.getElementById('f-outcome').value||'').trim();
-  if(!date){alert('Date required.');return;}
-  if(!contact){alert('Contact name required.');return;}
-  CLOG.push({clientId:selectedClient.id,clientName:selectedClient.name,
-    date:date,contactName:contact,contactRole:role,method:selMethod,
-    notes:nature,outcome:outcome,endorsed:false,endorsedBy:'',endorsedAt:'',
-    addedAt:new Date().toISOString()});
-  closeModal();
-}
-function endorse(key){
-  var name=(prompt('Enter your name to endorse:')||'').trim();
-  if(!name)return;
-  CLOG.child(key).update({endorsed:true,endorsedBy:name,endorsedAt:new Date().toISOString()});
-}
-function delEntry(key){
-  if(!confirm('Delete this entry?'))return;
-  CLOG.child(key).remove();
-}
-
-// ── Utilities ──────────────────────────────────────────────────────────────
-function esc(s){var d=document.createElement('div');d.textContent=s||'';return d.innerHTML;}
-function fmtD(iso){if(!iso)return'';var d=new Date(iso+'T12:00:00');
-  return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
-function fmtDFull(iso){if(!iso)return'';var d=new Date(iso+'T12:00:00');
-  return d.toLocaleDateString('en-US',{weekday:'short',month:'long',day:'numeric',year:'numeric'});}
-function fmtTime(iso){if(!iso)return'';var d=new Date(iso);
-  return d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+
-    ' '+d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});}
-
-// ── Compliance strip ──────────────────────────────────────────────────────
+// ── Compliance strip ──────────────────────────────────────────────────────────
+var EXTERNAL_ROLES=['Referent','Family','Insurance','Guardian','Facility','Physician','Attorney'];
 function renderCompliance(){
   var c=selectedClient;
   if(!c){document.getElementById('compliance-bar').style.display='none';return;}
@@ -519,65 +481,161 @@ function renderCompliance(){
   var disch=(c.program==='PDI'?c.pdiDischarge||c.pdiDisch:c.sigDischarge||c.sigDisch||c.endDate)||null;
   if(!admit){document.getElementById('compliance-bar').style.display='none';return;}
   document.getElementById('compliance-bar').style.display='block';
-
-  // Build set of days that have a referent-type entry
   var contactedDays=new Set();
   Object.values(commEntries).forEach(function(e){
-    if(e.clientId!==c.id||e.isAuto) return;
-    if(['Referent','Family','Insurance','Guardian','Facility','Physician'].indexOf(e.contactRole)>=0){
-      contactedDays.add(e.date);
-    }
+    if(e.clientId!==c.id||e.isAuto)return;
+    if(EXTERNAL_ROLES.indexOf(e.contactRole)>=0)contactedDays.add(e.date);
   });
-
-  // Build date range from admit to today (or disch if past)
-  var start=new Date(admit+'T12:00:00');
-  var endDate=disch&&disch<TODAY?new Date(disch+'T12:00:00'):new Date(TODAY+'T12:00:00');
+  var endISO=disch&&disch<TODAY?disch:TODAY;
+  var start=new Date(admit+'T12:00:00'), end=new Date(endISO+'T12:00:00');
   var days=[]; var cur=new Date(start);
-  while(cur<=endDate){days.push(new Date(cur));cur.setDate(cur.getDate()+1);}
-
-  // Count weekdays
+  while(cur<=end){days.push(new Date(cur));cur.setDate(cur.getDate()+1);}
   var wkdays=days.filter(function(d){return d.getDay()!==0&&d.getDay()!==6;});
   var contacted=wkdays.filter(function(d){return contactedDays.has(d.toISOString().slice(0,10));});
   var pct=wkdays.length?Math.round(contacted.length/wkdays.length*100):0;
-
   document.getElementById('comp-pct').textContent=pct+'%';
-  document.getElementById('comp-stat').textContent=
-    ' ('+contacted.length+'/'+wkdays.length+' weekdays)';
-
-  var html=days.map(function(d){
+  document.getElementById('comp-txt').textContent='('+contacted.length+'/'+wkdays.length+' weekdays)';
+  document.getElementById('day-grid').innerHTML=days.map(function(d){
     var iso=d.toISOString().slice(0,10);
-    var dd=d.getDate(); var dw=['Su','Mo','Tu','We','Th','Fr','Sa'][d.getDay()];
+    var dw=['Su','Mo','Tu','We','Th','Fr','Sa'][d.getDay()];
+    var dd=d.getDate();
     var isWknd=d.getDay()===0||d.getDay()===6;
-    var isFuture=iso>TODAY; var isToday=iso===TODAY;
-    var isOk=contactedDays.has(iso);
-    var cls='day-dot';
-    if(isWknd) cls+=' wknd';
-    else if(isFuture) cls+=' future';
-    else if(isToday) cls+=' today-dot'+(isOk?' ok':'');
-    else cls+=(isOk?' ok':' miss');
-    var click=(isWknd||isFuture)?'':'onclick="quickLog(''+iso+'')"';
-    return '<div class="'+cls+'" '+click+' title="'+iso+'">'
-      +'<span class="dn">'+dw+'</span><span>'+dd+'</span></div>';
+    var isFuture=iso>TODAY, isToday=iso===TODAY, isOk=contactedDays.has(iso);
+    var cls='day-dot'+(isWknd?' wknd':isFuture?' future':(isToday?' today-dot'+(isOk?' ok':''):(isOk?' ok':' miss')));
+    var onclick=(isWknd||isFuture)?'':'onclick="quickLog(\''+iso+'\')"';
+    return '<div class="'+cls+'" '+onclick+' title="'+iso+'"><span class="dn">'+dw+'</span><span>'+dd+'</span></div>';
   }).join('');
-  document.getElementById('day-grid').innerHTML=html;
 }
-
 function quickLog(iso){
-  // Quick-log: opens a minimal modal pre-filled for referent contact
-  selectedQuickDate=iso;
-  document.getElementById('m-sub').textContent=selectedClient.name+' — quick referent contact for '+fmtD(iso);
+  if(!selectedClient)return;
+  document.getElementById('m-sub').textContent=selectedClient.name+' — '+fmtD(iso);
   document.getElementById('f-date').value=iso;
   document.getElementById('f-contact').value='';
-  document.getElementById('f-nature').value='';
   document.getElementById('f-outcome').value='';
   document.getElementById('f-role').value='Referent';
-  selMethod='Call';
+  document.getElementById('f-provider').value='';
+  selMethod='Call'; selNature='';
   document.querySelectorAll('.mb').forEach(function(b){b.classList.toggle('sel',b.dataset.m==='Call');});
+  document.querySelectorAll('.nb').forEach(function(b){b.classList.remove('sel');});
   document.getElementById('overlay').classList.add('open');
   setTimeout(function(){document.getElementById('f-contact').focus();},60);
 }
-var selectedQuickDate=null;
 
+// ── Auto anchors ──────────────────────────────────────────────────────────────
+function autoAnchor(c){
+  var ex=Object.values(commEntries).filter(function(e){return e.clientId===c.id&&e.isAuto;});
+  var admit=(c.program==='PDI'?c.pdiAdmit:c.sigAdmit||c.pdiAdmit)||null;
+  var disch=(c.program==='PDI'?c.pdiDischarge||c.pdiDisch:c.sigDischarge||c.sigDisch||c.endDate)||null;
+  if(admit&&!ex.some(function(e){return e.autoType==='Admission';}))
+    CLOG.push({clientId:c.id,clientName:c.name,date:admit,contactName:'Program Admission',
+      contactRole:'Internal',method:'Other',nature:'',outcome:c.name+' admitted to '+c.program+' program.',
+      isAuto:true,autoType:'Admission',addedAt:new Date().toISOString()});
+  if(disch&&!ex.some(function(e){return e.autoType==='Discharge';}))
+    CLOG.push({clientId:c.id,clientName:c.name,date:disch,contactName:'Program Discharge',
+      contactRole:'Internal',method:'Other',nature:'',outcome:c.name+' discharged from '+c.program+' program.',
+      isAuto:true,autoType:'Discharge',addedAt:new Date().toISOString()});
+}
+
+// ── Master facesheet ──────────────────────────────────────────────────────────
+function renderFacesheet(){
+  var nDays=parseInt(document.getElementById('fs-days').value)||21;
+  var active=allClients.filter(function(c){return isActive(c)&&(c.sigAdmit||c.pdiAdmit);});
+  if(!active.length){document.getElementById('facesheet-wrap').innerHTML='<div class="empty-log"><h3>No active clients found</h3></div>';return;}
+
+  var contactedDaysByClient={};
+  Object.values(commEntries).forEach(function(e){
+    if(!e.isAuto&&EXTERNAL_ROLES.indexOf(e.contactRole)>=0){
+      if(!contactedDaysByClient[e.clientId])contactedDaysByClient[e.clientId]=new Set();
+      contactedDaysByClient[e.clientId].add(e.date);
+    }
+  });
+
+  // Build date columns (last nDays weekdays)
+  var dateCols=[];
+  var cur=new Date(TODAY+'T12:00:00');
+  while(dateCols.length<nDays){
+    if(cur.getDay()!==0&&cur.getDay()!==6)dateCols.unshift(new Date(cur));
+    cur.setDate(cur.getDate()-1);
+  }
+
+  var thead='<tr><th class="client-col">Client</th>'+
+    dateCols.map(function(d){
+      var iso=d.toISOString().slice(0,10);
+      var isToday=iso===TODAY;
+      var dw=['Su','Mo','Tu','We','Th','Fr','Sa'][d.getDay()];
+      return '<th style="'+(isToday?'background:#5A3ACD;':'')+'">'+dw+'<br>'+d.getDate()+'</th>';
+    }).join('')+'</tr>';
+
+  var tbody=active.map(function(c){
+    var admit=(c.program==='PDI'?c.pdiAdmit:c.sigAdmit||c.pdiAdmit)||'';
+    var contacted=contactedDaysByClient[c.id]||new Set();
+    var cells=dateCols.map(function(d){
+      var iso=d.toISOString().slice(0,10);
+      var isToday=iso===TODAY;
+      if(admit>iso)return'<td style="background:#F7F5F2"></td>';
+      var isOk=contacted.has(iso);
+      return'<td style="'+(isToday?'background:#F5F0FF;':'')+'">'+(isOk?'<span class="fs-check">✓</span>':'<span class="fs-miss">·</span>')+'</td>';
+    }).join('');
+    var prog=c.program||'';
+    var chipColor=prog==='Both'?'#1D9E75':prog==='PDI'?'#4A6C8A':'#6B5C45';
+    return'<tr><td class="client-cell">'+
+      '<span style="font-size:9px;font-weight:700;color:'+chipColor+';margin-right:5px">['+prog+']</span>'+
+      esc(c.name)+'</td>'+cells+'</tr>';
+  }).join('');
+
+  document.getElementById('facesheet-wrap').innerHTML=
+    '<table class="facesheet-table"><thead>'+thead+'</thead><tbody>'+tbody+'</tbody></table>';
+}
+
+// ── Modal ──────────────────────────────────────────────────────────────────────
+function openModal(){
+  if(!selectedClient)return;
+  document.getElementById('m-sub').textContent=selectedClient.name+' — '+selectedClient.program;
+  document.getElementById('f-date').value=TODAY;
+  document.getElementById('f-contact').value='';
+  document.getElementById('f-outcome').value='';
+  document.getElementById('f-role').value='Referent';
+  document.getElementById('f-provider').value='';
+  selMethod='Call'; selNature='';
+  document.querySelectorAll('.mb').forEach(function(b){b.classList.toggle('sel',b.dataset.m==='Call');});
+  document.querySelectorAll('.nb').forEach(function(b){b.classList.remove('sel');});
+  document.getElementById('overlay').classList.add('open');
+  setTimeout(function(){document.getElementById('f-contact').focus();},60);
+}
+function closeModal(){document.getElementById('overlay').classList.remove('open');}
+function selM(btn){selMethod=btn.dataset.m;document.querySelectorAll('.mb').forEach(function(b){b.classList.remove('sel');});btn.classList.add('sel');}
+function selN(btn){
+  var prev=selNature===btn.dataset.n;
+  selNature=prev?'':btn.dataset.n;
+  document.querySelectorAll('.nb').forEach(function(b){b.classList.remove('sel');});
+  if(!prev)btn.classList.add('sel');
+}
+function saveEntry(){
+  var date=document.getElementById('f-date').value;
+  var contact=(document.getElementById('f-contact').value||'').trim();
+  var role=document.getElementById('f-role').value;
+  var provider=(document.getElementById('f-provider').value||'').trim();
+  var outcome=(document.getElementById('f-outcome').value||'').trim();
+  if(!date){alert('Date required.');return;}
+  if(!contact){alert('Contact name required.');return;}
+  CLOG.push({clientId:selectedClient.id,clientName:selectedClient.name,
+    date:date,contactName:contact,contactRole:role,method:selMethod,
+    nature:selNature,outcome:outcome,contactedBy:provider,
+    endorsed:false,endorsedBy:'',endorsedAt:'',addedAt:new Date().toISOString()});
+  closeModal();
+}
+function endorse(key){
+  var name=(prompt('Enter your name to endorse:')||'').trim();
+  if(!name)return;
+  CLOG.child(key).update({endorsed:true,endorsedBy:name,endorsedAt:new Date().toISOString()});
+}
+function delEntry(key){if(!confirm('Delete this entry?'))return;CLOG.child(key).remove();}
+
+// ── Utilities ──────────────────────────────────────────────────────────────────
+function esc(s){var d=document.createElement('div');d.textContent=s||'';return d.innerHTML;}
+function fmtD(iso){if(!iso)return'';var d=new Date(iso+'T12:00:00');return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
+function fmtDFull(iso){if(!iso)return'';var d=new Date(iso+'T12:00:00');return d.toLocaleDateString('en-US',{weekday:'short',month:'long',day:'numeric',year:'numeric'});}
+function fmtTime(iso){if(!iso)return'';var d=new Date(iso);return d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' '+d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});}
 document.getElementById('overlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
 document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal();});
 </script>
