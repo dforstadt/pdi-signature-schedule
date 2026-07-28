@@ -527,7 +527,8 @@ function renderDayTabs(){
 }
 function renderCBar(){
   var bar=document.getElementById('cbar');if(!bar)return;
-  var de=S.events.filter(function(e){return e.date===S.selectedDate;}),cf=conflicts(de);
+  var de=S.events.filter(function(e){return e.date===S.selectedDate;})
+    .concat(getOutingEventsForDate(S.selectedDate)),cf=conflicts(de);
   if(!cf.size){bar.style.display='none';return;}
   var pm={};
   de.filter(function(e){return cf.has(e.id);}).forEach(function(e){if(!pm[e.provider])pm[e.provider]=[];pm[e.provider].push(e);});
@@ -2043,6 +2044,72 @@ function fmt12Cal(t){
   if(!t)return'';
   var p=t.split(':');var h=+p[0];var m=p[1];
   return(h%12||12)+':'+(m||'00')+(h<12?'am':'pm');
+}
+
+
+// ── Weekend Outings on Calendar ─────────────────────────────────────────────
+window._outingData = {};  // { clientId: [outing, ...] }
+
+firebase.database().ref('schedule_v3/client_passes').on('value', function(snap) {
+  var data = snap.val() || {};
+  window._outingData = {};
+  Object.keys(data).forEach(function(cid) {
+    var outings = Object.values(data[cid].outings || {});
+    if (outings.length) window._outingData[cid] = outings;
+  });
+  renderAll(); // refresh calendar with outing cards
+});
+
+// Returns synthetic outing events that fall on a given ISO date
+function getOutingEventsForDate(dateISO) {
+  var evts = [];
+  Object.keys(window._outingData || {}).forEach(function(cid) {
+    (window._outingData[cid] || []).forEach(function(o) {
+      if (!o.departTime && !o.returnTime) return;
+      // Parse departure and return as local dates
+      var depISO  = o.departTime  ? o.departTime.slice(0, 10)  : o.date || '';
+      var retISO  = o.returnTime  ? o.returnTime.slice(0, 10)  : depISO;
+      var depHour = o.departTime  ? parseInt(o.departTime.slice(11, 13), 10) : 8;
+      var retHour = o.returnTime  ? parseInt(o.returnTime.slice(11, 13), 10) : 20;
+      if (!depISO || dateISO < depISO || dateISO > retISO) return;
+
+      // Slot index: calendar starts at 8am, each slot = 1 hr
+      var startSlot, duration;
+      if (dateISO === depISO && dateISO === retISO) {
+        // Same-day outing
+        startSlot = Math.max(0, depHour - 8);
+        duration  = Math.max(1, retHour - depHour);
+      } else if (dateISO === depISO) {
+        // Departure day — show from departure until end of calendar (8pm = slot 12)
+        startSlot = Math.max(0, depHour - 8);
+        duration  = Math.max(1, 20 - depHour);
+      } else if (dateISO === retISO) {
+        // Return day — show from 8am until return
+        startSlot = 0;
+        duration  = Math.max(1, retHour - 8);
+      } else {
+        // Middle day — full day
+        startSlot = 0;
+        duration  = 12; // 8am-8pm
+      }
+
+      evts.push({
+        _isOuting: true,
+        id:        'outing_' + cid + '_' + depISO,
+        clientId:  cid,
+        date:      dateISO,
+        slotIndex: startSlot,
+        duration:  Math.min(duration, 12 - startSlot),
+        service:   '\uD83C\uDFD5\uFE0F Weekend Outing',
+        provider:  o.btAssigned ? 'BT: ' + o.btAssigned : (o.destination || ''),
+        destination: o.destination || '',
+        flagged:   false,
+        status:    'scheduled',
+        statusNote: ''
+      });
+    });
+  });
+  return evts;
 }
 
 </script>
