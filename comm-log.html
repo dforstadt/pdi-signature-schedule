@@ -122,14 +122,14 @@ select:focus,input:focus{outline:none;border-color:var(--purple)}
 
 /* Master facesheet */
 .facesheet-table{width:100%;border-collapse:collapse;background:var(--white);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden}
-.facesheet-table th{background:var(--navy);color:#fff;font-size:10px;padding:7px 6px;text-align:center;font-weight:700;white-space:nowrap;border-right:.5px solid rgba(255,255,255,.15)}
-.facesheet-table th.client-col{text-align:left;padding:7px 12px;min-width:160px}
-.facesheet-table td{padding:5px 6px;text-align:center;border-bottom:.5px solid var(--bd);border-right:.5px solid #F0EDE8;font-size:11px}
-.facesheet-table td.client-cell{text-align:left;padding:6px 12px;font-weight:600;font-size:12px;color:var(--navy);white-space:nowrap}
+.facesheet-table th{background:var(--navy);color:#fff;font-size:11px;padding:10px 4px;text-align:center;font-weight:700;white-space:nowrap;border-right:.5px solid rgba(255,255,255,.15);min-width:52px}
+.facesheet-table th.client-col{text-align:left;padding:10px 16px;min-width:200px;font-size:12px}
+.facesheet-table td{padding:10px 6px;text-align:center;border-bottom:.5px solid var(--bd);border-right:.5px solid #F0EDE8;font-size:14px;height:48px}
+.facesheet-table td.client-cell{text-align:left;padding:10px 16px;font-weight:700;font-size:13px;color:var(--navy);white-space:nowrap;min-width:200px}
 .facesheet-table tr:last-child td{border-bottom:none}
-.facesheet-table tr:nth-child(even) td{background:#FAFAF8}
-.fs-check{color:var(--green);font-size:14px;font-weight:700}
-.fs-miss{color:#E0DDD8;font-size:12px}
+.facesheet-table tr:hover td{filter:brightness(.97)}
+.fs-check{color:var(--green);font-size:20px;font-weight:900}
+.fs-miss{color:#D0CCC5;font-size:14px}
 .fs-wknd{color:#E0DDD8;font-size:10px;background:#F7F5F2}
 .fs-future{background:#F7F5F2}
 .print-btn{padding:7px 16px;border:1px solid var(--bd);background:var(--white);border-radius:6px;font-size:12px;cursor:pointer;color:var(--tx2);font-family:Arial,sans-serif}
@@ -225,7 +225,7 @@ select:focus,input:focus{outline:none;border-color:var(--purple)}
 
 <!-- ═══ MASTER FACESHEET VIEW ═══════════════════════════════════════ -->
 <div id="view-facesheet" style="display:none">
-<div class="page">
+<div style="max-width:1400px;margin:0 auto;padding:24px 20px 60px">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
     <div>
       <div style="font-size:16px;font-weight:700;color:var(--navy)">Master Communication Facesheet</div>
@@ -563,8 +563,9 @@ function renderFacesheet(){
     dateCols.map(function(d){
       var iso=d.toISOString().slice(0,10);
       var isToday=iso===TODAY;
-      var dw=['Su','Mo','Tu','We','Th','Fr','Sa'][d.getDay()];
-      return '<th style="'+(isToday?'background:#5A3ACD;':'')+'">'+dw+'<br>'+d.getDate()+'</th>';
+      var dw=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()];
+      var mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
+      return '<th style="'+(isToday?'background:#5A3ACD;min-width:60px;':'min-width:52px;')+'">'+dw+'<br><span style="font-size:14px;font-weight:900">'+d.getDate()+'</span>'+'<br><span style="font-size:9px;opacity:.6">'+mo+'</span></th>';
     }).join('')+'</tr>';
 
   var tbody=active.map(function(c){
@@ -580,7 +581,7 @@ function renderFacesheet(){
       var isPast=iso<TODAY;
       // Only flag red on past weekdays — never today, future, or weekends
       var cellBg=isOk?'#EAF5EE':(isPast?'#FDECEA':'#F7F5F2');
-      return'<td style="background:'+cellBg+';">'+(isOk?'<span class="fs-check">✓</span>':(isPast?'<span style="color:#991F10;font-size:11px;font-weight:700">✕</span>':'<span class="fs-miss">·</span>'))+'</td>';
+      return'<td style="background:'+cellBg+';">'+(isOk?'<span class="fs-check">✓</span>':(isPast?'<span style="color:#991F10;font-size:18px;font-weight:900">✕</span>':'<span class="fs-miss">·</span>'))+'</td>';
     }).join('');
     var prog=c.program||'';
     var chipColor=prog==='Both'?'#1D9E75':prog==='PDI'?'#4A6C8A':'#6B5C45';
