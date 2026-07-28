@@ -1,65 +1,104 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><meta charset="UTF-8"><title>Admin — Fix Nichole Bessent</title>
+<head><meta charset="UTF-8"><title>Admin — Client Record Fix</title>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 <style>
-body{font-family:Arial,sans-serif;max-width:640px;margin:60px auto;padding:24px;background:#f7f5f2}
+*{box-sizing:border-box}body{font-family:Arial,sans-serif;max-width:700px;margin:40px auto;padding:24px;background:#f7f5f2}
 h2{color:#1B2A4A;margin:0 0 4px}.sub{color:#888;font-size:13px;margin:0 0 20px}
 .card{background:white;border-radius:8px;padding:20px;margin-bottom:16px;border:1px solid #e0ddd8}
-button{background:#1B2A4A;color:white;padding:10px 24px;border:none;border-radius:6px;font-size:13px;cursor:pointer;width:100%;margin-top:10px}
-button:disabled{background:#aaa}
-.log{background:#1B2A4A;color:#90EE90;padding:14px;border-radius:6px;font-family:monospace;font-size:12px;min-height:100px;white-space:pre-wrap;margin-top:16px}
+label{display:block;font-size:11px;font-weight:600;color:#888;text-transform:uppercase;margin-bottom:4px;margin-top:12px}
+input,select{width:100%;padding:8px 12px;border:1px solid #ccc;border-radius:6px;font-size:13px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+button.primary{background:#1B2A4A;color:white;padding:10px 24px;border:none;border-radius:6px;font-size:13px;cursor:pointer;width:100%;margin-top:14px;font-weight:600}
+button.primary:disabled{background:#aaa}
+.log{background:#1B2A4A;color:#90EE90;padding:14px;border-radius:6px;font-family:monospace;font-size:12px;min-height:80px;white-space:pre-wrap;margin-top:16px}
+.warn{background:#FEF6EC;border-left:4px solid #B87A00;padding:12px;border-radius:6px;font-size:12px;color:#7A4A00;margin-bottom:16px}
 </style></head>
 <body>
-<h2>Admin — Fix Nichole Bessent Provider Record</h2>
-<p class="sub">Finds ALL provider entries in Firebase containing "nichole" or "bessent", sets noStipend=true and stipendType="none" on each, and shows the exact provider key so you can confirm the name.</p>
+<h2>Admin — Client Record Audit & Fix</h2>
+<p class="sub">Search and fix client records in Firebase. Uses update() — never overwrites comm_log, stipend approvals, or manual entries.</p>
+<div class="warn">⚠ This tool uses <strong>update()</strong> on the blob field only — comm_log, manual_stipends, and stipend_approvals are fully preserved.</div>
+
 <div class="card">
-  <p style="font-size:13px;margin:0 0 12px">This will scan the providers object in Firebase, find Nichole Bessent under whatever key she's stored, and mark her as not eligible for automated stipend calculation.</p>
-  <button id="btn" onclick="fix()">Scan & Fix</button>
+  <label>Search client name (partial match)</label>
+  <div style="display:flex;gap:8px">
+    <input id="search" placeholder="e.g. Allison" style="flex:1">
+    <button class="primary" style="width:auto;padding:8px 20px;margin:0" onclick="find()">Find</button>
+  </div>
 </div>
-<div class="log" id="log">Ready.</div>
+<div id="results"></div>
+<div class="log" id="log">Ready. Search for a client above.</div>
+
 <script>
 firebase.initializeApp({apiKey:"AIzaSyCERxntgytkfCHWN7EoAVYVmLBcfWyYZ5A",
   databaseURL:"https://pdi-signature-schedule-default-rtdb.firebaseio.com",
   projectId:"pdi-signature-schedule"});
 var FB=firebase.database().ref("schedule_v3");
+var allClients=[];
+
 function log(m){var el=document.getElementById("log");el.textContent+=(el.textContent?"\n":"")+new Date().toISOString().slice(11,19)+" "+m;}
-function fix(){
-  var btn=document.getElementById("btn");btn.disabled=true;btn.textContent="Scanning...";
-  FB.once("value",function(snap){
-    var raw=snap.val();
-    if(!raw||!raw.blob){log("ERROR: cannot read blob");btn.disabled=false;return;}
-    var blob;try{blob=JSON.parse(raw.blob);}catch(e){log("ERROR: "+e);btn.disabled=false;return;}
-    var providers=blob.providers||{};
-    log("Total providers in Firebase: "+Object.keys(providers).length);
-    log("All provider keys: "+Object.keys(providers).join(", "));
-    // Find Nichole variants
-    var found=[];
-    Object.keys(providers).forEach(function(k){
-      var kl=k.toLowerCase();
-      if(kl.indexOf("nichole")>=0||kl.indexOf("bessent")>=0){
-        found.push(k);
-        log("FOUND: \""+k+"\" — stipendType="+providers[k].stipendType+" noStipend="+providers[k].noStipend);
-        providers[k].stipendType="none";
-        providers[k].noStipend=true;
-        providers[k].type="none";
-      }
-    });
-    if(!found.length){
-      log("No provider found with 'nichole' or 'bessent' in key.");
-      log("Her sessions may be logged under a completely different name.");
-      log("Check the provider keys listed above to find her.");
-      btn.textContent="No match found";
-      return;
-    }
-    blob.providers=providers;
-    var b=JSON.stringify(blob);
-    log("Saving ("+Math.round(b.length/1024)+" KB)...");
-    FB.set({blob:b,ts:Date.now()}).then(function(){
-      log("SUCCESS — set noStipend=true on: "+found.join(", "));
-      btn.textContent="Done ✓";
-    }).catch(function(e){log("ERROR: "+e);btn.disabled=false;btn.textContent="Retry";});
+
+FB.once("value",function(s){
+  var raw=s.val();if(!raw||!raw.blob){log("ERROR: cannot read blob");return;}
+  try{
+    var d=JSON.parse(raw.blob);
+    allClients=d.clients||[];
+    log("Loaded "+allClients.length+" clients from Firebase.");
+  }catch(e){log("Parse error: "+e);}
+});
+
+function find(){
+  var q=(document.getElementById("search").value||"").trim().toLowerCase();
+  if(!q){log("Enter a name to search.");return;}
+  var found=allClients.filter(function(c){return (c.name||"").toLowerCase().indexOf(q)>=0;});
+  log("Search '"+q+"': "+found.length+" client(s) found.");
+  var wrap=document.getElementById("results");
+  if(!found.length){wrap.innerHTML='<div class="card" style="color:#c00">No clients found matching "'+q+'".</div>';return;}
+  wrap.innerHTML=found.map(function(c){
+    var issues=[];
+    if(!c.program)issues.push("program is empty");
+    if(!c.sigAdmit&&!c.pdiAdmit)issues.push("no admit date");
+    return '<div class="card"><b style="font-size:15px;color:#1B2A4A">'+esc(c.name)+'</b>'
+      +(issues.length?'<div style="color:#c04;font-size:11px;margin:4px 0">Issues: '+issues.join(", ")+'</div>':'<div style="color:#157A52;font-size:11px;margin:4px 0">✓ Record looks complete</div>')
+      +'<pre style="background:#f0ede8;padding:10px;border-radius:6px;font-size:10px;margin:8px 0;max-height:120px;overflow:auto">'+JSON.stringify(c,null,2)+'</pre>'
+      +'<div style="font-size:11px;font-weight:600;color:#888;margin-top:8px">EDIT FIELDS</div>'
+      +'<div class="row2"><div><label>program</label>'
+        +'<select id="e-prog-'+c.id+'"><option '+(c.program==="Signature"?"selected":"")+'>Signature</option><option '+(c.program==="PDI"?"selected":"")+'>PDI</option><option '+(c.program==="Both"?"selected":"")+'>Both</option></select></div>'
+        +'<div><label>sigAdmit</label><input type="date" id="e-sig-'+c.id+'" value="'+(c.sigAdmit||"")+'"></div></div>'
+      +'<div class="row2"><div><label>sigDischarge</label><input type="date" id="e-sd-'+c.id+'" value="'+(c.sigDischarge||c.sigDisch||"")+'"></div>'
+        +'<div><label>pdiAdmit</label><input type="date" id="e-pdi-'+c.id+'" value="'+(c.pdiAdmit||"")+'"></div></div>'
+      +'<button class="primary" onclick="fix(''+c.id+'')">Save Changes (update only)</button></div>';
+  }).join("");
+}
+
+function fix(id){
+  var prog=document.getElementById("e-prog-"+id).value;
+  var sigA=document.getElementById("e-sig-"+id).value||null;
+  var sigD=document.getElementById("e-sd-"+id).value||null;
+  var pdiA=document.getElementById("e-pdi-"+id).value||null;
+  log("Fixing client id="+id+"...");
+
+  // IMPORTANT: use update() on the blob field only — does NOT touch comm_log, stipend_approvals, etc.
+  FB.once("value",function(s){
+    var raw=s.val();if(!raw||!raw.blob){log("ERROR: no blob");return;}
+    var blob;try{blob=JSON.parse(raw.blob);}catch(e){log("Parse error: "+e);return;}
+    var clients=blob.clients||[];
+    var idx=clients.findIndex(function(c){return c.id===id;});
+    if(idx<0){log("Client not found in blob.");return;}
+    clients[idx].program=prog;
+    if(sigA)clients[idx].sigAdmit=sigA;
+    if(sigD)clients[idx].sigDischarge=sigD;
+    if(pdiA)clients[idx].pdiAdmit=pdiA;
+    if(!clients[idx].startDate)clients[idx].startDate=pdiA||sigA;
+    blob.clients=clients;
+    // update() only updates specified keys — preserves comm_log, manual_stipends, stipend_approvals
+    FB.update({blob:JSON.stringify(blob),ts:Date.now()}).then(function(){
+      log("SUCCESS — update() complete. comm_log and other data fully preserved.");
+      allClients=clients;
+    }).catch(function(e){log("ERROR: "+e);});
   });
 }
+
+function esc(s){var d=document.createElement("div");d.textContent=s;return d.innerHTML;}
 </script></body></html>
