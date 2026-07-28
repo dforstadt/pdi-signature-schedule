@@ -640,7 +640,7 @@ function renderWeekGrid(){
       dayEvs.forEach(function(ev){
         var ecol=ev._isOuting?'#1D9E75':pc(ev.provider);var isC=cf.has(ev.id)&&!ev._isOuting;
         var es=SLOTS[ev.slotIndex+ev.duration],tr=es?(SLOTS[ev.slotIndex].label+'\u2013'+es.label):'';
-        var card=document.createElement('div');card.className='ecard';card.dataset.eid=ev.id;card.draggable=true;
+        var card=document.createElement('div');card.className='ecard';card.dataset.eid=ev.id;card.draggable=!ev._isOuting;
         card.style.cssText='top:'+(ev.slotIndex*SH+2)+'px;left:3px;right:3px;height:'+(ev.duration*SH-4)+'px;background:'+ecol+';'+(isC?'outline:2.5px solid #E24B4A;outline-offset:1px;':'')+(ev.flagged?'outline:2.5px solid #D85A30;outline-offset:1px;':'');
         card.innerHTML='<div style="font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(ev.service)+'</div>'+
           (!isMeal(ev.service)?'<div style="font-size:10px;opacity:.85;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(ev.provider)+'</div>':'')+
