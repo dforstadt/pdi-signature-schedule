@@ -552,11 +552,14 @@ function renderFacesheet(){
   });
 
   // Build date columns (last nDays weekdays)
+  // Start from today, project forward nDays calendar days (weekdays only)
   var dateCols=[];
+  var fsEnd=new Date(TODAY+'T12:00:00');
+  fsEnd.setDate(fsEnd.getDate()+nDays);
   var cur=new Date(TODAY+'T12:00:00');
-  while(dateCols.length<nDays){
-    if(cur.getDay()!==0&&cur.getDay()!==6)dateCols.unshift(new Date(cur));
-    cur.setDate(cur.getDate()-1);
+  while(cur<=fsEnd){
+    if(cur.getDay()!==0&&cur.getDay()!==6)dateCols.push(new Date(cur));
+    cur.setDate(cur.getDate()+1);
   }
 
   var thead='<tr><th class="client-col">Client</th>'+
