@@ -279,7 +279,9 @@ var ALL_EPISODES=[
   {name:'Layla S',   pdiAdmit:'2026-05-18',pdiDisch:'2026-05-28',sigAdmit:'2026-05-29',sigDisch:null},
   {name:'Kevin C',   pdiAdmit:'2026-05-14',pdiDisch:'2026-05-26',sigAdmit:'2026-05-27',sigDisch:null},
   {name:'Blake P',   pdiAdmit:'2026-06-04',pdiDisch:'2026-06-12',sigAdmit:'2026-06-13',sigDisch:null},
-  {name:'Angela T',  pdiAdmit:null,pdiDisch:null,sigAdmit:'2026-06-25',sigDisch:null,note:'PDI dates need verification'},
+  // Angela T: Sig → PDI → Sig (reverse pathway — not a PDI→Sig conversion)
+  {name:'Angela T',  pdiAdmit:'2026-07-03',pdiDisch:null,sigAdmit:'2026-06-25',sigDisch:null,sigFirst:true,note:'Sig→PDI→Sig'},
+  {name:'Angela T',  pdiAdmit:null,pdiDisch:null,sigAdmit:null,sigDisch:null,note:'Return to Sig — dates TBD'},
   {name:'Tomas W',   pdiAdmit:null,sigAdmit:'2026-05-26',sigDisch:null},
   {name:'Jarrod W',  pdiAdmit:null,sigAdmit:'2026-05-29',sigDisch:null},
   {name:'Emma T',    pdiAdmit:null,sigAdmit:'2026-06-01',sigDisch:null},
@@ -373,7 +375,8 @@ function render(fbClients){
 
   var pdiEps=ALL_EPS_LIVE.filter(function(e){return e.pdiAdmit;}).sort(function(a,b){return a.pdiAdmit>b.pdiAdmit?1:-1;});
   var sigEps=ALL_EPS_LIVE.filter(function(e){return e.sigAdmit;}).sort(function(a,b){return a.sigAdmit>b.sigAdmit?1:-1;});
-  var convEps=pdiEps.filter(function(e){return e.sigAdmit;});
+  // convEps = true PDI→Sig conversions only; excludes sigFirst (Sig→PDI) clients
+  var convEps=pdiEps.filter(function(e){return e.sigAdmit&&!e.sigFirst;});
 
   // ── Dynamic subtitle counts ──────────────────────────────────────────────
   (function(){
@@ -412,7 +415,7 @@ function render(fbClients){
   // Eligible = PDI clients admitted after Signature launched (Apr 1 2026)
   // Pre-launch clients are shown separately — they predated the Sig pathway
   var SIG_LAUNCH='2026-04-01';
-  var convEligible=pdiEps.filter(function(e){return e.pdiAdmit>=SIG_LAUNCH||e.sigAdmit;});
+  var convEligible=pdiEps.filter(function(e){return (e.pdiAdmit>=SIG_LAUNCH||e.sigAdmit)&&!e.sigFirst;});
   var preEra=pdiEps.filter(function(e){return !e.sigAdmit&&e.pdiAdmit<SIG_LAUNCH;});
   var convRate=convEligible.length?Math.round(convEps.length/convEligible.length*100):0;
   document.getElementById('c-conv').textContent=convEps.length+' / '+convEligible.length;
@@ -462,7 +465,8 @@ function render(fbClients){
   // PDI LOS — include all episodes; actives use today as end date (shown in lighter blue)
   var pdiVals=pdiEps.filter(function(e){return e.pdiAdmit;}).map(function(e){
     var active=!e.pdiDisch;
-    return{name:e.name,d:los(e.pdiAdmit,e.pdiDisch),active:active};
+    var label=e.name+(e.sigFirst?' ↩':e.note&&e.note.indexOf('Readmit')>=0?' (R)':'');
+    return{name:label,d:los(e.pdiAdmit,e.pdiDisch),active:active};
   }).sort(function(a,b){return a.d-b.d;});
   mkChart('pdi-los-chart',{type:'bar',data:{
     labels:pdiVals.map(function(e){return e.name+(e.active?' ●':'');}),
