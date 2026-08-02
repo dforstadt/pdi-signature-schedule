@@ -103,12 +103,22 @@ function safeKey(name){return(name||"unnamed").replace(/[.#$/[\]]/g,"_");}
 
 var ADMIT_TYPES=["","Internal","External"];
 var PRIOR_LOC=["","None","Residential","Detox","PHP","IOP","OP","Step-Down","Hospital","Other"];
-// Lifeskills-internal step-downs
-var SD_INTERNAL=["Lifeskills PHP","Lifeskills IOP","Lifeskills OP","Lifeskills Residential","Lifeskills Step-Down","Signature (Lifeskills)","PDI (Lifeskills)"];
-// External step-downs
-var SD_EXTERNAL=["Private Practice","Discharged to Home","AMA","Transferred to Facility","Hospital","Deceased","Unknown"];
-var STEP_DOWN=[""].concat(SD_INTERNAL).concat(["---"]).concat(SD_EXTERNAL);
-var SD_TYPE=["","Lifeskills Internal","External"];
+// Step-down destinations — Lifeskills internal mirrored by external equivalents
+var STEP_DOWN=[
+  "",
+  // ── Lifeskills Internal ──
+  "Lifeskills PHP","Lifeskills IOP","Lifeskills OP",
+  "Lifeskills Residential","Lifeskills Step-Down",
+  "Lifeskills Outpatient","Signature (Lifeskills)","PDI (Lifeskills)",
+  // ── External ──
+  "PHP (External)","IOP (External)","OP (External)",
+  "Residential (External)","Step-Down (External)",
+  "Outpatient (External)","Private Practice",
+  "Discharged to Home","AMA","Transferred to Facility",
+  "Hospital","Deceased","Unknown"
+];
+// Infer type from name — "Lifeskills" = internal, else external
+function sdIsInternal(sd){ return sd && sd.indexOf("Lifeskills")>=0 || sd==="Signature (Lifeskills)" || sd==="PDI (Lifeskills)"; }
 var PROG_OPTS=["","PDI","Signature","Both"];
 
 function buildRows(){
@@ -148,7 +158,6 @@ function buildRows(){
       priorLOC:saved.priorLOC||"",
       priorLOClos:saved.priorLOClos||"",
       stepDown:saved.stepDown||"",
-      sdType:saved.sdType||"",
       stepDownDate:saved.stepDownDate||"",
       notes:saved.notes||""
     };
@@ -215,19 +224,7 @@ function makeInput(val,key,field,ph,w){
 }
 
 window.updateField=function(key,field,value){
-  // When step-down destination is chosen, auto-classify type if not already set
-  if(field==="stepDown"&&value){
-    var saved=savedEdits[key]||{};
-    if(!saved.sdType){
-      var isInternal=SD_INTERNAL.indexOf(value)>=0;
-      var autoType=isInternal?"Lifeskills Internal":value==="---"?"":SD_EXTERNAL.indexOf(value)>=0?"External":"";
-      if(autoType){
-        saveEdits(key,"sdType",autoType);
-        if(!savedEdits[key])savedEdits[key]={};
-        savedEdits[key].sdType=autoType;
-      }
-    }
-  }
+
   var row=rows.find(function(r){return r._key===key;});
   if(row)row[field]=value;
   saveEdits(key,field,value);
@@ -252,7 +249,7 @@ function renderTable(){
     +'<th class="fill">Immediate Prior LOC</th>'
     +'<th class="fill">Immed. Prior LOS (days)</th>'
     +'<th class="fill">Prior LOC History</th><th class="fill">Step-Down</th>'
-    +'<th class="fill">Step-Down Type</th>'+'<th class="fill">Step-Down Date</th>'
+    +'<th class="fill">Step-Down Date</th>'
     +'<th class="fill">Notes</th>'
     +'</tr></thead><tbody>';
 
@@ -285,7 +282,6 @@ function renderTable(){
     row+='<td class="fill-cell">'+makeInput(r.priorLOClos,r._key,"priorLOClos","days at immed. prior LOC",70)+'</td>';
     row+='<td class="fill-cell">'+makeInput(r.locHistory,r._key,"locHistory","e.g. Res 30d > PHP 14d > IOP 45d",200)+'</td>';
     row+='<td class="fill-cell">'+makeSelect(STEP_DOWN,r.stepDown,r._key,"stepDown")+'</td>';
-    row+='<td class="fill-cell">'+makeSelect(SD_TYPE,r.sdType,r._key,"sdType")+'</td>';
     row+='<td class="fill-cell">'+makeInput(r.stepDownDate,r._key,"stepDownDate","mm/dd/yyyy",90)+'</td>';
     row+='<td class="fill-cell">'+makeInput(r.notes,r._key,"notes","Notes",160)+'</td>';
     row+='</tr>';
@@ -321,7 +317,6 @@ function downloadExcel(){
     "Immediate Prior LOS (days)":r.priorLOClos,
     "Prior LOC History (full chain)":r.locHistory,
     "Discharge Step-Down":r.stepDown,
-    "Step-Down Type (Internal/External)":r.sdType,
     "Step-Down Date":r.stepDownDate,
     "Notes":r.notes
   };});
