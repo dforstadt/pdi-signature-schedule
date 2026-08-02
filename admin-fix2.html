@@ -139,6 +139,7 @@ function buildRows(){
       totalLOS:totalLOS===null?"":totalLOS,
       converted:converted,daysTillConv:daysTillConv===null?"":daysTillConv,
       admitType:saved.admitType||"",
+      locHistory:saved.locHistory||"",
       priorLOC:saved.priorLOC||"",
       priorLOClos:saved.priorLOClos||"",
       stepDown:saved.stepDown||"",
@@ -229,9 +230,9 @@ function renderTable(){
     +'<th>Sig Admit</th><th>Sig Disch</th><th>Sig LOS</th>'
     +'<th>Total LOS</th><th>Converted</th><th>PDI→Sig days</th>'
     +'<th class="fill">Admit Type</th>'
-    +'<th class="fill">Prior LOC</th>'
-    +'<th class="fill">Prior LOC LOS</th>'
-    +'<th class="fill">Step-Down</th>'
+    +'<th class="fill">Immediate Prior LOC</th>'
+    +'<th class="fill">Immed. Prior LOS (days)</th>'
+    +'<th class="fill">Prior LOC History</th><th class="fill">Step-Down</th>'
     +'<th class="fill">Step-Down Date</th>'
     +'<th class="fill">Notes</th>'
     +'</tr></thead><tbody>';
@@ -263,8 +264,9 @@ function renderTable(){
       +'<td style="color:#7A7060">'+r.daysTillConv+'</td>'
       +'<td class="fill-cell">'+makeSelect(ADMIT_TYPES,r.admitType,r._key,'admitType')+'</td>'
       +'<td class="fill-cell">'+makeSelect(PRIOR_LOC,r.priorLOC,r._key,'priorLOC')+'</td>'
-      +'<td class="fill-cell">'+makeInput(r.priorLOClos,r._key,'priorLOClos','days',50)+'</td>'
-      +'<td class="fill-cell">'+makeSelect(STEP_DOWN,r.stepDown,r._key,'stepDown')+'</td>'
+      +'<td class="fill-cell">'+makeInput(r.priorLOClos,r._key,'priorLOClos','days at immed. prior LOC',70)+'</td>'
+      +'<td class="fill-cell">'+makeInput(r.locHistory,r._key,'locHistory','e.g. Res 30d → PHP 14d → IOP 45d',200)+'</td>'+'
+      <td class="fill-cell">'+makeSelect(STEP_DOWN,r.stepDown,r._key,'stepDown')+'</td>'
       +'<td class="fill-cell">'+makeInput(r.stepDownDate,r._key,'stepDownDate','mm/dd/yyyy',90)+'</td>'
       +'<td class="fill-cell">'+makeInput(r.notes,r._key,'notes','Notes',160)+'</td>'
       +'</tr>';
@@ -295,8 +297,9 @@ function downloadExcel(){
     "Converted PDI→Sig":r.converted,
     "Days PDI Before Sig":r.daysTillConv===""?"":+r.daysTillConv||r.daysTillConv,
     "Admission Type":r.admitType,
-    "Prior LOC (if internal)":r.priorLOC,
-    "Prior LOC LOS (days)":r.priorLOClos,
+    "Immediate Prior LOC":r.priorLOC,
+    "Immediate Prior LOS (days)":r.priorLOClos,
+    "Prior LOC History (full chain)":r.locHistory,
     "Discharge Step-Down":r.stepDown,
     "Step-Down Date":r.stepDownDate,
     "Notes":r.notes
