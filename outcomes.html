@@ -508,7 +508,11 @@ function render(fbClients){
   // ── Tables ─────────────────────────────────────────────────────────────
   document.getElementById('pdi-body').innerHTML=pdiEps.map(function(e,i){
     var l=los(e.pdiAdmit,e.pdiDisch);
-    var conv=e.sigAdmit?'<span class="badge badge-both">→ Sig '+fd(e.sigAdmit)+'</span>':'<span class="tag-muted">PDI only</span>';
+    var conv=e.sigFirst
+      ?'<span class="tag-muted" style="color:var(--amber)">↩ Sig→PDI→Sig</span>'
+      :e.sigAdmit
+        ?'<span class="badge badge-both">→ Sig '+fd(e.sigAdmit)+'</span>'
+        :'<span class="tag-muted">PDI only</span>';
     return '<tr><td class="tag-muted">'+(i+1)+'</td><td><b>'+e.name+'</b></td><td>'+fd(e.pdiAdmit)+'</td><td>'+fd(e.pdiDisch)+'</td><td>'+(l?l+'d':'Active ●')+'</td><td>'+conv+'</td></tr>';
   }).join('');
 
