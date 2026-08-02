@@ -216,6 +216,16 @@ tbody tr:hover td{background:rgba(139,115,85,.05)}
       <div style="font-size:11px;color:var(--tx3);margin-top:4px">Records Completed</div>
       <div style="font-size:11px;color:var(--tx3)" id="fl-filled-pct">of all clients</div>
     </div>
+    <div class="card" style="text-align:center;padding:18px 12px">
+      <div style="font-size:26px;font-weight:700;color:var(--pdi)" id="fl-sd-int">—</div>
+      <div style="font-size:11px;color:var(--tx3);margin-top:4px">Lifeskills Step-Downs</div>
+      <div style="font-size:11px;color:var(--tx3)" id="fl-sd-int-pct"></div>
+    </div>
+    <div class="card" style="text-align:center;padding:18px 12px">
+      <div style="font-size:26px;font-weight:700;color:var(--green)" id="fl-sd-ext">—</div>
+      <div style="font-size:11px;color:var(--tx3);margin-top:4px">External Step-Downs</div>
+      <div style="font-size:11px;color:var(--tx3)" id="fl-sd-ext-pct"></div>
+    </div>
   </div>
 
   <!-- Flow charts row -->
@@ -237,7 +247,7 @@ tbody tr:hover td{background:rgba(139,115,85,.05)}
     <div class="card">
       <div class="chart-card-title">
         <span style="width:10px;height:10px;border-radius:50%;background:var(--green);display:inline-block"></span>
-        Step-Down Destination
+        Step-Down Destination <span style="font-size:9px;font-weight:400;color:var(--tx3)">■ Lifeskills Internal &nbsp; ■ External</span>
       </div>
       <div class="chart-wrap" style="height:220px"><canvas id="stepdown-chart"></canvas></div>
     </div>
@@ -248,9 +258,9 @@ tbody tr:hover td{background:rgba(139,115,85,.05)}
     <table>
       <thead><tr>
         <th>#</th><th>Client</th><th>Program</th>
-        <th>Admit Type</th><th>Prior LOC</th><th>Prior LOC LOS</th>
+        <th>Admit Type</th><th>Immed. Prior LOC</th><th>Prior LOS</th>
         <th>PDI LOS</th><th>Sig LOS</th><th>Total LOS</th>
-        <th>Step-Down</th><th>Step-Down Date</th>
+        <th>Step-Down</th><th>Step-Down Type</th><th>Step-Down Date</th>
       </tr></thead>
       <tbody id="flow-body"></tbody>
     </table>
@@ -563,7 +573,10 @@ function renderFlowSection(){
   var filled = edits.filter(function(e){ return e.admitType; });
   var internal = filled.filter(function(e){ return e.admitType === 'Internal'; });
   var external  = filled.filter(function(e){ return e.admitType === 'External'; });
-  var withSD   = filled.filter(function(e){ return e.stepDown && e.stepDown !== ''; });
+  var withSD    = edits.filter(function(e){ return e.stepDown && e.stepDown !== '' && e.stepDown !== '---'; });
+  var sdInternal = withSD.filter(function(e){ return e.sdType === 'Lifeskills Internal'; });
+  var sdExternal = withSD.filter(function(e){ return e.sdType === 'External'; });
+  var sdUnknown  = withSD.filter(function(e){ return !e.sdType; });
 
   var total = Object.keys(_flowEdits).length || 1;
   var filledN = filled.length;
@@ -575,9 +588,15 @@ function renderFlowSection(){
   setEl('fl-external', external.length);
   setEl('fl-external-pct', filledN ? Math.round(external.length/filledN*100)+'% of entered' : '');
   setEl('fl-stepdown', withSD.length);
-  setEl('fl-stepdown-pct', filledN ? Math.round(withSD.length/filledN*100)+'% discharged' : '');
+  setEl('fl-stepdown-pct', withSD.length ?
+    sdInternal.length+' Lifeskills · '+sdExternal.length+' External'+(sdUnknown.length?' · '+sdUnknown.length+' unclassified':'')
+    : '');
   setEl('fl-filled', filledN);
   setEl('fl-filled-pct', total + ' total clients');
+  setEl('fl-sd-int', sdInternal.length);
+  setEl('fl-sd-int-pct', withSD.length ? Math.round(sdInternal.length/withSD.length*100)+'% of discharges' : '');
+  setEl('fl-sd-ext', sdExternal.length);
+  setEl('fl-sd-ext-pct', withSD.length ? Math.round(sdExternal.length/withSD.length*100)+'% of discharges' : '');
 
   // ── Chart 1: Admission type doughnut ──────────────────────────────────────
   if(filledN > 0) {
@@ -632,35 +651,53 @@ function renderFlowSection(){
     });
   }
 
-  // ── Chart 3: Step-down destination bar ───────────────────────────────────
-  var sdCounts = {};
+  // ── Chart 3: Step-down destination — stacked internal vs external ────────
+  var sdInt={}, sdExt={};
   withSD.forEach(function(e){
-    var sd = e.stepDown || 'Unknown';
-    sdCounts[sd] = (sdCounts[sd]||0) + 1;
+    var sd=e.stepDown||'Unknown';
+    if(sd==='---')return;
+    if(e.sdType==='Lifeskills Internal'){ sdInt[sd]=(sdInt[sd]||0)+1; }
+    else if(e.sdType==='External'){       sdExt[sd]=(sdExt[sd]||0)+1; }
+    else{
+      // unclassified — put in external bucket for display
+      sdExt[sd]=(sdExt[sd]||0)+1;
+    }
   });
-  var sdLabels = Object.keys(sdCounts).sort(function(a,b){ return sdCounts[b]-sdCounts[a]; });
-  var sdData   = sdLabels.map(function(l){ return sdCounts[l]; });
-  if(sdLabels.length > 0) {
-    mkChart('stepdown-chart', {
-      type: 'bar',
-      data: {
-        labels: sdLabels,
-        datasets:[{ data: sdData,
-          backgroundColor:'rgba(29,158,117,.7)',
-          borderColor:'rgba(29,158,117,1)', borderWidth:1.5,
-          borderRadius:4 }]
+  var allSD=Array.from(new Set(Object.keys(sdInt).concat(Object.keys(sdExt))))
+    .sort(function(a,b){
+      var ta=(sdInt[a]||0)+(sdExt[a]||0);
+      var tb=(sdInt[b]||0)+(sdExt[b]||0);
+      return tb-ta;
+    });
+  if(allSD.length > 0){
+    mkChart('stepdown-chart',{
+      type:'bar',
+      data:{
+        labels: allSD,
+        datasets:[
+          { label:'Lifeskills Internal',
+            data: allSD.map(function(l){return sdInt[l]||0;}),
+            backgroundColor:'rgba(55,138,221,.75)',
+            borderColor:'rgba(55,138,221,1)', borderWidth:1.5, borderRadius:3 },
+          { label:'External',
+            data: allSD.map(function(l){return sdExt[l]||0;}),
+            backgroundColor:'rgba(29,158,117,.75)',
+            borderColor:'rgba(29,158,117,1)', borderWidth:1.5, borderRadius:3 }
+        ]
       },
       options:{
         indexAxis:'y',
         plugins:{
-          legend:{display:false},
+          legend:{ position:'bottom', labels:{ font:{size:10}, padding:10 }},
           tooltip:{ callbacks:{ label:function(ctx){
             var pct=withSD.length?Math.round(ctx.parsed.x/withSD.length*100):0;
-            return ctx.parsed.x+' clients ('+pct+'% of discharged)';
+            return ctx.dataset.label+': '+ctx.parsed.x+' ('+pct+'%)';
           }}}
         },
-        scales:{ x:{ beginAtZero:true, ticks:{stepSize:1,font:{size:9}}, grid:{display:false} },
-                 y:{ ticks:{font:{size:9}}, grid:{display:false} } }
+        scales:{
+          x:{ beginAtZero:true, stacked:true, ticks:{stepSize:1,font:{size:9}}, grid:{display:false} },
+          y:{ stacked:true, ticks:{font:{size:9}}, grid:{display:false} }
+        }
       }
     });
   }
@@ -688,6 +725,7 @@ function renderFlowSection(){
       +'<td>'+(e.priorLOClos||'—')+'</td>'
       +'<td>—</td><td>—</td><td>—</td>'
       +'<td style="'+sdStyle+'">'+(e.stepDown||'—')+'</td>'
+      +'<td style="font-size:10px;font-weight:600;color:'+(e.sdType==='Lifeskills Internal'?'var(--pdi)':e.sdType==='External'?'var(--green)':'var(--tx3)')+'">'+(e.sdType||'—')+'</td>'
       +'<td style="color:var(--tx3)">'+(e.stepDownDate||'—')+'</td>'
       +'</tr>';
   }).join('');
