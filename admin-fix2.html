@@ -259,37 +259,37 @@ function renderTable(){
   rows.forEach(function(r,i){
     var bc=r.program==="PDI"?"pdi":r.program==="Signature"?"sig":r.program==="Both"?"both":"unk";
     var sc=r.status==="Active"?"act":"dis";
-    var cv=r.converted==="Yes"?"<span class='yes'>✓ Yes</span>":"<span class='dash'>—</span>";
-    var hasSaved=r.admitType||r.priorLOC||r.priorLOClos||r.stepDown||r.stepDownDate||r.notes;
-    // Highlight mismatch between calendar field and resolved program
+    var cv=r.converted==="Yes"?"<span class='yes'>\u2713 Yes</span>":"<span class='dash'>\u2014</span>";
+    var hasSaved=r.admitType||r.priorLOC||r.priorLOClos||r.locHistory||r.stepDown||r.stepDownDate||r.notes;
+    var calProg=(savedEdits[r._key]&&savedEdits[r._key].programOverride)||r.calProgram||"";
     var mismatch=r.calProgram&&r.calProgram!==r.program&&!r.hasOverride;
     var calCell=mismatch
-      ?'<span class="badge warn" title="Resolved program differs from calendar field">'+esc(r.calProgram||"—")+'</span>'
-      :'<span style="color:#aaa;font-size:10px">'+esc(r.calProgram||"—")+'</span>';
-
-    h+='<tr'+(hasSaved?' class="saved-row"':'')+' id="row-'+r._key+'">'
-      +'<td style="color:#aaa;font-size:10px">'+(i+1)+'</td>'
-      +'<td style="font-weight:600;color:#3E342A;min-width:120px">'+esc(r.name)+'</td>'
-      +'<td><span class="badge '+bc+'">'+r.program+'</span>'+(r.hasOverride?' <span style="font-size:9px;color:#B87A00">✎</span>':'')+'</td>'
-      +'<td class="override-cell">'+makeSelect(PROG_OPTS,savedEdits[r._key]&&savedEdits[r._key].programOverride||"",r._key,'programOverride')+'</td>'
-      +'<td>'+calCell+'</td>'
-      +'<td class="'+sc+'">'+r.status+'</td>'
-      +'<td>'+r.pdiAdmit+'</td><td>'+r.pdiDisch+'</td>'
-      +'<td style="font-weight:600">'+r.pdiLOS+'</td>'
-      +'<td>'+r.sigAdmit+'</td><td>'+r.sigDisch+'</td>'
-      +'<td style="font-weight:600">'+r.sigLOS+'</td>'
-      +'<td style="font-weight:700;color:#3E342A">'+r.totalLOS+'</td>'
-      +'<td>'+cv+'</td>'
-      +'<td style="color:#7A7060">'+r.daysTillConv+'</td>'
-      +'<td class="fill-cell">'+makeSelect(ADMIT_TYPES,r.admitType,r._key,'admitType')+'</td>'
-      +'<td class="fill-cell">'+makeSelect(PRIOR_LOC,r.priorLOC,r._key,'priorLOC')+'</td>'
-      +'<td class="fill-cell">'+makeInput(r.priorLOClos,r._key,'priorLOClos','days at immed. prior LOC',70)+'</td>'
-      +'<td class="fill-cell">'+makeInput(r.locHistory,r._key,'locHistory','e.g. Res 30d > PHP 14d > IOP 45d',200)+'</td>'+'
-      <td class="fill-cell">'+makeSelect(STEP_DOWN,r.stepDown,r._key,'stepDown')+'</td>'
-      +'<td class="fill-cell">'+makeSelect(SD_TYPE,r.sdType,r._key,'sdType')+'</td>'+'
-      <td class="fill-cell">'+makeInput(r.stepDownDate,r._key,'stepDownDate','mm/dd/yyyy',90)+'</td>'
-      +'<td class="fill-cell">'+makeInput(r.notes,r._key,'notes','Notes',160)+'</td>'
-      +'</tr>';
+      ?'<span class="badge warn" title="Resolved program differs from calendar field">'+esc(r.calProgram||"\u2014")+'</span>'
+      :'<span style="color:#aaa;font-size:10px">'+esc(r.calProgram||"\u2014")+'</span>';
+    var row='<tr'+(hasSaved?' class="saved-row"':'')+' id="row-'+r._key+'">';
+    row+='<td style="color:#aaa;font-size:10px">'+(i+1)+'</td>';
+    row+='<td style="font-weight:600;color:#3E342A;min-width:120px">'+esc(r.name)+'</td>';
+    row+='<td><span class="badge '+bc+'">'+r.program+'</span>'+(r.hasOverride?' <span style="font-size:9px;color:#B87A00">&#9998;</span>':'')+'</td>';
+    row+='<td class="override-cell">'+makeSelect(PROG_OPTS,savedEdits[r._key]&&savedEdits[r._key].programOverride||"",r._key,"programOverride")+'</td>';
+    row+='<td>'+calCell+'</td>';
+    row+='<td class="'+sc+'">'+r.status+'</td>';
+    row+='<td>'+r.pdiAdmit+'</td><td>'+r.pdiDisch+'</td>';
+    row+='<td style="font-weight:600">'+r.pdiLOS+'</td>';
+    row+='<td>'+r.sigAdmit+'</td><td>'+r.sigDisch+'</td>';
+    row+='<td style="font-weight:600">'+r.sigLOS+'</td>';
+    row+='<td style="font-weight:700;color:#3E342A">'+r.totalLOS+'</td>';
+    row+='<td>'+cv+'</td>';
+    row+='<td style="color:#7A7060">'+r.daysTillConv+'</td>';
+    row+='<td class="fill-cell">'+makeSelect(ADMIT_TYPES,r.admitType,r._key,"admitType")+'</td>';
+    row+='<td class="fill-cell">'+makeSelect(PRIOR_LOC,r.priorLOC,r._key,"priorLOC")+'</td>';
+    row+='<td class="fill-cell">'+makeInput(r.priorLOClos,r._key,"priorLOClos","days at immed. prior LOC",70)+'</td>';
+    row+='<td class="fill-cell">'+makeInput(r.locHistory,r._key,"locHistory","e.g. Res 30d > PHP 14d > IOP 45d",200)+'</td>';
+    row+='<td class="fill-cell">'+makeSelect(STEP_DOWN,r.stepDown,r._key,"stepDown")+'</td>';
+    row+='<td class="fill-cell">'+makeSelect(SD_TYPE,r.sdType,r._key,"sdType")+'</td>';
+    row+='<td class="fill-cell">'+makeInput(r.stepDownDate,r._key,"stepDownDate","mm/dd/yyyy",90)+'</td>';
+    row+='<td class="fill-cell">'+makeInput(r.notes,r._key,"notes","Notes",160)+'</td>';
+    row+='</tr>';
+    h+=row;
   });
   h+='</tbody></table>';
   document.getElementById("tbl-wrap").innerHTML=h;
