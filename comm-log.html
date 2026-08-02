@@ -442,14 +442,42 @@ function renderBanner(){
 // ── Render timeline ───────────────────────────────────────────────────────────
 function renderLog(){
   if(!selectedClient)return;
+  var c=selectedClient;
+  // Episode anchor — earliest admit date for this client
+  var admitISO=(c.pdiAdmit&&(c.program==='PDI'||c.program==='Both'))
+    ?c.pdiAdmit:(c.sigAdmit||c.pdiAdmit)||null;
+  // Discharge date — entries after this belong to a future episode
+  var dischISO=(c.program==='PDI'?c.pdiDischarge||c.pdiDisch
+    :c.sigDischarge||c.sigDisch||c.endDate)||null;
+
   var entries=Object.entries(commEntries)
     .map(function(kv){return Object.assign({_key:kv[0]},kv[1]);})
     .filter(function(e){
-      return e.clientId===selectedClient.id
-        ||normName(e.clientName)===normName(selectedClient.name);})
+      var matches=e.clientId===c.id||normName(e.clientName)===normName(c.name);
+      if(!matches)return false;
+      // Anchor to episode: exclude non-system entries before admit date
+      if(admitISO&&(e.date||'')<admitISO&&!e.isAuto)return false;
+      // Exclude entries after discharge (future episode)
+      if(dischISO&&(e.date||'')>dischISO&&!e.isAuto)return false;
+      return true;
+    })
     .sort(function(a,b){return(b.date||'')>(a.date||'')?1:-1;});
+
+  // Admit date banner — shown at bottom of log as episode start marker
+  var prog=c.program==='Both'?'PDI & Signature':c.program||'Program';
+  var admitBanner=admitISO
+    ?'<div style="text-align:center;padding:12px 0;font-size:11px;color:var(--tx3);'
+     +'font-style:italic;border-top:1px solid var(--bd);margin-top:8px">'
+     +'Log begins &nbsp;\u2014\u2014 &nbsp;<strong style="color:var(--navy)">'+fmtDFull(admitISO)+'</strong>'
+     +' &nbsp;\u00b7&nbsp; '+esc(prog)+' admission'
+     +'</div>'
+    :'';
+
   if(!entries.length){
-    document.getElementById('log-area').innerHTML='<div class="empty-log"><h3>No entries yet</h3><p>Click <strong>+ Add Entry</strong> to log the first communication.</p></div>';
+    document.getElementById('log-area').innerHTML=
+      '<div class="empty-log"><h3>No entries yet for this episode</h3>'
+      +'<p>Click <strong>+ Add Entry</strong> to log the first communication.</p></div>'
+      +admitBanner;
     return;
   }
   var byDate={};
@@ -461,7 +489,8 @@ function renderLog(){
         (isToday?'<span class="today-tag">TODAY</span>':'')+
         (hasSys?'<span class="auto-tag">PROGRAM EVENT</span>':'')+
         '</div>'+byDate[dt].map(entryHTML).join('')+'</div>';
-    }).join('');
+    }).join('')
+    + admitBanner;
 }
 
 function entryHTML(e){
