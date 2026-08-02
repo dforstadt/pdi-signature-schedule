@@ -80,9 +80,27 @@ function fmtD(iso){
   catch(e){return iso;}
 }
 function getProgram(c){
-  if(c.program)return c.program;
-  var p=!!c.pdiAdmit,s=!!c.sigAdmit;
-  return p&&s?"Both":p?"PDI":s?"Signature":"Unknown";
+  // Program field is authoritative — mirrors outcomes.html Firebase parsing logic.
+  // Raw admit dates are unreliable: many Sig-only clients have pdiAdmit
+  // accidentally set in the calendar to the same date as sigAdmit.
+  var prog=(c.program||"").toLowerCase().trim();
+  var hasPDI, hasSig;
+  if(prog){
+    hasPDI = prog==="pdi" || prog==="both";
+    hasSig = prog==="signature" || prog==="both" || prog==="sig";
+  } else {
+    // No program field — fall back to admit dates
+    hasPDI = !!c.pdiAdmit;
+    hasSig = !!c.sigAdmit;
+    // Known calendar issue: Sig-only clients often have pdiAdmit === sigAdmit
+    if(hasPDI && hasSig && c.pdiAdmit === c.sigAdmit) hasPDI = false;
+  }
+  // Catch-all: if sigAdmit exists but nothing else determined, it's Signature
+  if(!hasSig && !hasPDI && c.sigAdmit) hasSig = true;
+  if(hasPDI && hasSig) return "Both";
+  if(hasPDI) return "PDI";
+  if(hasSig) return "Signature";
+  return "Unknown";
 }
 function safeKey(name){return(name||"unnamed").replace(/[.#$/[\]]/g,"_");}
 
@@ -93,8 +111,14 @@ var STEP_DOWN=["","Signature","PDI","PHP","IOP","OP","Step-Down","Residential","
 function buildRows(){
   return allClients.map(function(c,i){
     var prog=getProgram(c);
-    var pdiAdmit=c.pdiAdmit||"",pdiDisch=c.pdiDischarge||c.pdiDisch||"";
-    var sigAdmit=c.sigAdmit||"",sigDisch=c.sigDischarge||c.sigDisch||c.endDate||"";
+    // Gate date fields on actual program — prevents Sig-only clients from
+    // inheriting accidentally-set pdiAdmit values from the calendar
+    var hasPDI = prog==="PDI"||prog==="Both";
+    var hasSig = prog==="Signature"||prog==="Both";
+    var pdiAdmit=hasPDI?(c.pdiAdmit||""):"";
+    var pdiDisch=hasPDI?(c.pdiDischarge||c.pdiDisch||""):"";
+    var sigAdmit=hasSig?(c.sigAdmit||""):"";
+    var sigDisch=hasSig?(c.sigDischarge||c.sigDisch||c.endDate||""):"";
     var pdiLOS=pdiAdmit?daysBetween(pdiAdmit,pdiDisch||TODAY):null;
     var sigLOS=sigAdmit?daysBetween(sigAdmit,sigDisch||TODAY):null;
     var totalLOS=pdiLOS!==null&&sigLOS!==null?pdiLOS+sigLOS:pdiLOS!==null?pdiLOS:sigLOS;
