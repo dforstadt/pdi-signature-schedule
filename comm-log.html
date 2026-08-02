@@ -444,9 +444,10 @@ function renderBanner(){
 function renderLog(){
   if(!selectedClient)return;
   var c=selectedClient;
-  // Episode anchor — earliest admit date for this client
-  var admitISO=(c.pdiAdmit&&(c.program==='PDI'||c.program==='Both'))
-    ?c.pdiAdmit:(c.sigAdmit||c.pdiAdmit)||null;
+  // Episode anchor — always use the EARLIEST available admit date.
+  // Never gate on program field: Cassie-case — program may now be 'Signature'
+  // but she has PDI history that should remain visible.
+  var admitISO=(c.pdiAdmit||c.sigAdmit)||null;
   // Discharge date — entries after this belong to a future episode
   var dischISO=(c.program==='PDI'?c.pdiDischarge||c.pdiDisch
     :c.sigDischarge||c.sigDisch||c.endDate)||null;
@@ -523,7 +524,7 @@ var REFERENT_ROLE='Referent';
 function renderCompliance(){
   var c=selectedClient;
   if(!c){document.getElementById('compliance-bar').style.display='none';return;}
-  var admit=(c.pdiAdmit&&(c.program==='PDI'||c.program==='Both'))?c.pdiAdmit:(c.sigAdmit||c.pdiAdmit)||null;
+  var admit=(c.pdiAdmit||c.sigAdmit)||null;
   var disch=(c.program==='PDI'?c.pdiDischarge||c.pdiDisch:c.sigDischarge||c.sigDisch||c.endDate)||null;
   if(!admit){document.getElementById('compliance-bar').style.display='none';return;}
   // If client has no referent, hide compliance strip
@@ -632,7 +633,8 @@ function renderFacesheet(){
     }).join('')+'</tr>';
 
   var tbody=active.map(function(c){
-    var admit=(c.program==='PDI'?c.pdiAdmit:c.sigAdmit||c.pdiAdmit)||'';
+    // Use earliest admit so Monday pre-admission cells are blank not ✕
+    var admit=(c.pdiAdmit||c.sigAdmit)||'';
     // Check both id-keyed and name-keyed sets (handles both old and new entries)
     var _s1=contactedDaysByClient[c.id]||new Set();
     var _s2=contactedDaysByClient['name:'+c.name]||new Set();
