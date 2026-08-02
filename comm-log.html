@@ -329,6 +329,7 @@ var DB=firebase.database(), CLOG=DB.ref('lifeskills_clinical/comm_log');
 var NO_REF=DB.ref('lifeskills_clinical/comm_no_referent'); // clientId → true
 var noReferentClients={};
 NO_REF.on('value',function(s){noReferentClients=s.val()||{};updateNAToggle();if(document.getElementById('view-facesheet').style.display!=='none')renderFacesheet();});
+function normName(s){return(s||'').toLowerCase().trim();}
 var allClients=[], commEntries={}, selectedClient=null, statusFilter='active';
 var selMethod='Call', selNature='', providerList=[], TODAY=(function(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}());
 
