@@ -260,7 +260,7 @@ tbody tr:hover td{background:rgba(139,115,85,.05)}
         <th>#</th><th>Client</th><th>Program</th>
         <th>Admit Type</th><th>Immed. Prior LOC</th><th>Prior LOS</th>
         <th>PDI LOS</th><th>Sig LOS</th><th>Total LOS</th>
-        <th>Step-Down</th><th>Step-Down Type</th><th>Step-Down Date</th>
+        <th>Step-Down</th><th>Step-Down Date</th>
       </tr></thead>
       <tbody id="flow-body"></tbody>
     </table>
@@ -574,9 +574,10 @@ function renderFlowSection(){
   var internal = filled.filter(function(e){ return e.admitType === 'Internal'; });
   var external  = filled.filter(function(e){ return e.admitType === 'External'; });
   var withSD    = edits.filter(function(e){ return e.stepDown && e.stepDown !== '' && e.stepDown !== '---'; });
-  var sdInternal = withSD.filter(function(e){ return e.sdType === 'Lifeskills Internal'; });
-  var sdExternal = withSD.filter(function(e){ return e.sdType === 'External'; });
-  var sdUnknown  = withSD.filter(function(e){ return !e.sdType; });
+  // Infer type from name — 'Lifeskills' in name = internal
+  function sdIsInt(e){ var sd=e.stepDown||''; return sd.indexOf('Lifeskills')>=0||sd==='Signature (Lifeskills)'||sd==='PDI (Lifeskills)'; }
+  var sdInternal = withSD.filter(sdIsInt);
+  var sdExternal = withSD.filter(function(e){ return !sdIsInt(e); });
 
   var total = Object.keys(_flowEdits).length || 1;
   var filledN = filled.length;
@@ -589,7 +590,7 @@ function renderFlowSection(){
   setEl('fl-external-pct', filledN ? Math.round(external.length/filledN*100)+'% of entered' : '');
   setEl('fl-stepdown', withSD.length);
   setEl('fl-stepdown-pct', withSD.length ?
-    sdInternal.length+' Lifeskills · '+sdExternal.length+' External'+(sdUnknown.length?' · '+sdUnknown.length+' unclassified':'')
+    sdInternal.length+' Lifeskills · '+sdExternal.length+' External'
     : '');
   setEl('fl-filled', filledN);
   setEl('fl-filled-pct', total + ' total clients');
@@ -656,12 +657,8 @@ function renderFlowSection(){
   withSD.forEach(function(e){
     var sd=e.stepDown||'Unknown';
     if(sd==='---')return;
-    if(e.sdType==='Lifeskills Internal'){ sdInt[sd]=(sdInt[sd]||0)+1; }
-    else if(e.sdType==='External'){       sdExt[sd]=(sdExt[sd]||0)+1; }
-    else{
-      // unclassified — put in external bucket for display
-      sdExt[sd]=(sdExt[sd]||0)+1;
-    }
+    if(sdIsInt(e)){ sdInt[sd]=(sdInt[sd]||0)+1; }
+    else{           sdExt[sd]=(sdExt[sd]||0)+1; }
   });
   var allSD=Array.from(new Set(Object.keys(sdInt).concat(Object.keys(sdExt))))
     .sort(function(a,b){
@@ -725,7 +722,6 @@ function renderFlowSection(){
       +'<td>'+(e.priorLOClos||'—')+'</td>'
       +'<td>—</td><td>—</td><td>—</td>'
       +'<td style="'+sdStyle+'">'+(e.stepDown||'—')+'</td>'
-      +'<td style="font-size:10px;font-weight:600;color:'+(e.sdType==='Lifeskills Internal'?'var(--pdi)':e.sdType==='External'?'var(--green)':'var(--tx3)')+'">'+(e.sdType||'—')+'</td>'
       +'<td style="color:var(--tx3)">'+(e.stepDownDate||'—')+'</td>'
       +'</tr>';
   }).join('');
