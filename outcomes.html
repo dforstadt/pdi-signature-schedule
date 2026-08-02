@@ -518,7 +518,11 @@ function render(fbClients){
 
   document.getElementById('sig-body').innerHTML=sigEps.map(function(e,i){
     var l=los(e.sigAdmit,e.sigDisch);
-    var path=e.pdiAdmit?'<span class="badge badge-pdi">Via PDI</span>':'<span class="badge badge-sig">Direct</span>';
+    var path=e.sigFirst
+      ?'<span class="badge badge-sig" style="background:rgba(217,119,6,.15);color:var(--amber)">Sig→PDI→Sig</span>'
+      :e.pdiAdmit
+        ?'<span class="badge badge-pdi">Via PDI</span>'
+        :'<span class="badge badge-sig">Direct</span>';
     var note=e.note?' <span class="tag-muted">('+e.note+')</span>':'';
     return '<tr><td class="tag-muted">'+(i+1)+'</td><td><b>'+e.name+'</b>'+note+'</td><td>'+fd(e.sigAdmit)+'</td><td>'+fd(e.sigDisch)+'</td><td>'+(l?l+'d':'Active ●')+'</td><td>'+path+'</td></tr>';
   }).join('');
