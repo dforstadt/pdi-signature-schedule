@@ -184,6 +184,81 @@ tbody tr:hover td{background:rgba(139,115,85,.05)}
     <tbody id="conv-body"></tbody>
   </table></div>
 
+
+  <!-- ══ CLIENT FLOW & TRANSITIONS ══════════════════════════════════════════ -->
+  <div class="sec-head" id="flow-section">
+    <div class="sec-bar" style="background:var(--accent)"></div>
+    <div>
+      <div class="sec-title">Client Flow &amp; Transitions</div>
+      <div class="sec-sub" id="flow-sub">Admission source, prior level of care, and step-down destination — populated from saved flow data</div>
+    </div>
+  </div>
+
+  <!-- Stat pills row -->
+  <div class="card-row card-row-4" id="flow-pills" style="margin-bottom:14px">
+    <div class="card" style="text-align:center;padding:18px 12px">
+      <div style="font-size:26px;font-weight:700;color:var(--pdi)" id="fl-internal">—</div>
+      <div style="font-size:11px;color:var(--tx3);margin-top:4px">Internal Admits</div>
+      <div style="font-size:11px;color:var(--tx3)" id="fl-internal-pct"></div>
+    </div>
+    <div class="card" style="text-align:center;padding:18px 12px">
+      <div style="font-size:26px;font-weight:700;color:var(--sig)" id="fl-external">—</div>
+      <div style="font-size:11px;color:var(--tx3);margin-top:4px">External Admits</div>
+      <div style="font-size:11px;color:var(--tx3)" id="fl-external-pct"></div>
+    </div>
+    <div class="card" style="text-align:center;padding:18px 12px">
+      <div style="font-size:26px;font-weight:700;color:var(--green)" id="fl-stepdown">—</div>
+      <div style="font-size:11px;color:var(--tx3);margin-top:4px">Clients w/ Step-Down</div>
+      <div style="font-size:11px;color:var(--tx3)" id="fl-stepdown-pct"></div>
+    </div>
+    <div class="card" style="text-align:center;padding:18px 12px">
+      <div style="font-size:26px;font-weight:700;color:var(--amber)" id="fl-filled">—</div>
+      <div style="font-size:11px;color:var(--tx3);margin-top:4px">Records Completed</div>
+      <div style="font-size:11px;color:var(--tx3)" id="fl-filled-pct">of all clients</div>
+    </div>
+  </div>
+
+  <!-- Flow charts row -->
+  <div class="card-row" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:14px">
+    <div class="card">
+      <div class="chart-card-title">
+        <span style="width:10px;height:10px;border-radius:50%;background:var(--pdi);display:inline-block"></span>
+        Admission Source
+      </div>
+      <div class="chart-wrap" style="height:220px"><canvas id="admit-type-chart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="chart-card-title">
+        <span style="width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block"></span>
+        Prior Level of Care <span style="font-size:9px;font-weight:400;color:var(--tx3)">(internal admits)</span>
+      </div>
+      <div class="chart-wrap" style="height:220px"><canvas id="prior-loc-chart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="chart-card-title">
+        <span style="width:10px;height:10px;border-radius:50%;background:var(--green);display:inline-block"></span>
+        Step-Down Destination
+      </div>
+      <div class="chart-wrap" style="height:220px"><canvas id="stepdown-chart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Flow detail table -->
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th>#</th><th>Client</th><th>Program</th>
+        <th>Admit Type</th><th>Prior LOC</th><th>Prior LOC LOS</th>
+        <th>PDI LOS</th><th>Sig LOS</th><th>Total LOS</th>
+        <th>Step-Down</th><th>Step-Down Date</th>
+      </tr></thead>
+      <tbody id="flow-body"></tbody>
+    </table>
+  </div>
+  <div style="font-size:10px;color:var(--tx3);margin-top:6px;margin-bottom:24px;padding:0 4px">
+    ⓘ Flow data is entered in the Client Flow Mapping tool. Open <a href="admin-fix2.html" style="color:var(--accent)">admin-fix2.html</a> to add or edit admission source and step-down data.
+  </div>
+
 </div>
 </div>
 
@@ -416,6 +491,154 @@ firebase.initializeApp({
   databaseURL:'https://pdi-signature-schedule-default-rtdb.firebaseio.com',
   projectId:'pdi-signature-schedule'
 });
+
+// ── Client Flow Charts ──────────────────────────────────────────────────────
+var _flowEdits = {};
+
+firebase.database().ref('lifeskills_clinical/client_flow_edits').on('value', function(snap){
+  _flowEdits = snap.val() || {};
+  renderFlowSection();
+});
+
+function renderFlowSection(){
+  var edits = Object.values(_flowEdits);
+  var filled = edits.filter(function(e){ return e.admitType; });
+  var internal = filled.filter(function(e){ return e.admitType === 'Internal'; });
+  var external  = filled.filter(function(e){ return e.admitType === 'External'; });
+  var withSD   = filled.filter(function(e){ return e.stepDown && e.stepDown !== ''; });
+
+  var total = Object.keys(_flowEdits).length || 1;
+  var filledN = filled.length;
+
+  // Pills
+  function setEl(id, val){ var el=document.getElementById(id); if(el) el.textContent=val; }
+  setEl('fl-internal', internal.length);
+  setEl('fl-internal-pct', filledN ? Math.round(internal.length/filledN*100)+'% of entered' : '');
+  setEl('fl-external', external.length);
+  setEl('fl-external-pct', filledN ? Math.round(external.length/filledN*100)+'% of entered' : '');
+  setEl('fl-stepdown', withSD.length);
+  setEl('fl-stepdown-pct', filledN ? Math.round(withSD.length/filledN*100)+'% discharged' : '');
+  setEl('fl-filled', filledN);
+  setEl('fl-filled-pct', total + ' total clients');
+
+  // ── Chart 1: Admission type doughnut ──────────────────────────────────────
+  if(filledN > 0) {
+    mkChart('admit-type-chart', {
+      type: 'doughnut',
+      data: {
+        labels: ['Internal','External','Unknown'],
+        datasets:[{ data:[internal.length, external.length, filledN-internal.length-external.length],
+          backgroundColor:['rgba(55,138,221,.8)','rgba(127,119,221,.8)','rgba(180,170,155,.4)'],
+          borderColor:['#378ADD','#7F77DD','#B4AA9B'], borderWidth:1.5 }]
+      },
+      options:{ plugins:{
+        legend:{position:'bottom',labels:{font:{size:10},padding:12}},
+        tooltip:{ callbacks:{ label:function(ctx){
+          var pct=filledN?Math.round(ctx.parsed/filledN*100):0;
+          return ctx.label+': '+ctx.parsed+' ('+pct+'%)';
+        }}}
+      }, cutout:'58%' }
+    });
+  }
+
+  // ── Chart 2: Prior LOC horizontal bar (internal only) ────────────────────
+  var locCounts = {};
+  internal.forEach(function(e){
+    var loc = e.priorLOC || 'Not specified';
+    locCounts[loc] = (locCounts[loc]||0) + 1;
+  });
+  var locLabels = Object.keys(locCounts).sort(function(a,b){ return locCounts[b]-locCounts[a]; });
+  var locData   = locLabels.map(function(l){ return locCounts[l]; });
+  if(locLabels.length > 0) {
+    mkChart('prior-loc-chart', {
+      type: 'bar',
+      data: {
+        labels: locLabels,
+        datasets:[{ data: locData,
+          backgroundColor:'rgba(139,115,85,.75)',
+          borderColor:'rgba(139,115,85,1)', borderWidth:1.5,
+          borderRadius:4 }]
+      },
+      options:{
+        indexAxis:'y',
+        plugins:{
+          legend:{display:false},
+          tooltip:{ callbacks:{ label:function(ctx){
+            var pct=internal.length?Math.round(ctx.parsed.x/internal.length*100):0;
+            return ctx.parsed.x+' clients ('+pct+'% of internal)';
+          }}}
+        },
+        scales:{ x:{ beginAtZero:true, ticks:{stepSize:1,font:{size:9}}, grid:{display:false} },
+                 y:{ ticks:{font:{size:9}}, grid:{display:false} } }
+      }
+    });
+  }
+
+  // ── Chart 3: Step-down destination bar ───────────────────────────────────
+  var sdCounts = {};
+  withSD.forEach(function(e){
+    var sd = e.stepDown || 'Unknown';
+    sdCounts[sd] = (sdCounts[sd]||0) + 1;
+  });
+  var sdLabels = Object.keys(sdCounts).sort(function(a,b){ return sdCounts[b]-sdCounts[a]; });
+  var sdData   = sdLabels.map(function(l){ return sdCounts[l]; });
+  if(sdLabels.length > 0) {
+    mkChart('stepdown-chart', {
+      type: 'bar',
+      data: {
+        labels: sdLabels,
+        datasets:[{ data: sdData,
+          backgroundColor:'rgba(29,158,117,.7)',
+          borderColor:'rgba(29,158,117,1)', borderWidth:1.5,
+          borderRadius:4 }]
+      },
+      options:{
+        indexAxis:'y',
+        plugins:{
+          legend:{display:false},
+          tooltip:{ callbacks:{ label:function(ctx){
+            var pct=withSD.length?Math.round(ctx.parsed.x/withSD.length*100):0;
+            return ctx.parsed.x+' clients ('+pct+'% of discharged)';
+          }}}
+        },
+        scales:{ x:{ beginAtZero:true, ticks:{stepSize:1,font:{size:9}}, grid:{display:false} },
+                 y:{ ticks:{font:{size:9}}, grid:{display:false} } }
+      }
+    });
+  }
+
+  // ── Detail table ──────────────────────────────────────────────────────────
+  var tbody = document.getElementById('flow-body');
+  if(!tbody) return;
+  var allKeys = Object.keys(_flowEdits).sort();
+  if(!allKeys.length){
+    tbody.innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--tx3);padding:24px;font-style:italic">No flow data entered yet. Open the Client Flow Mapping tool to add admission and step-down information.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = allKeys.map(function(k, i){
+    var e = _flowEdits[k] || {};
+    var name = k.replace(/_/g,' ');
+    var atStyle = e.admitType==='Internal' ? 'color:var(--pdi);font-weight:600'
+                : e.admitType==='External' ? 'color:var(--sig);font-weight:600' : 'color:var(--tx3)';
+    var sdStyle = e.stepDown ? 'color:var(--green);font-weight:600' : 'color:var(--tx3)';
+    return '<tr>'
+      +'<td style="color:var(--tx3);font-size:10px">'+(i+1)+'</td>'
+      +'<td style="font-weight:600;color:var(--tx)">' + name + '</td>'
+      +'<td></td>'
+      +'<td style="'+atStyle+'">'+(e.admitType||'—')+'</td>'
+      +'<td>'+(e.priorLOC||'—')+'</td>'
+      +'<td>'+(e.priorLOClos||'—')+'</td>'
+      +'<td>—</td><td>—</td><td>—</td>'
+      +'<td style="'+sdStyle+'">'+(e.stepDown||'—')+'</td>'
+      +'<td style="color:var(--tx3)">'+(e.stepDownDate||'—')+'</td>'
+      +'</tr>';
+  }).join('');
+
+  // Update subtitle
+  var sub = document.getElementById('flow-sub');
+  if(sub) sub.textContent = filledN + ' of ' + Object.keys(_flowEdits).length + ' records with admission data  ·  ' + withSD.length + ' step-down destinations logged';
+}
+
 firebase.database().ref('schedule_v3').on('value',function(snap){
   document.getElementById('ldot').className='ldot on';
   document.getElementById('llbl').textContent='Live • Auto-updating';
