@@ -1,206 +1,300 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8">
-<title>Client Flow Export</title>
+<html lang="en"><head><meta charset="UTF-8"><title>Client Flow Export</title>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Arial,sans-serif;background:#FAF7F2;color:#1A1A1A;padding:32px;min-height:100vh}
-h2{color:#3E342A;font-size:20px;margin-bottom:6px}
-.sub{color:#7A7060;font-size:13px;margin-bottom:24px}
-.card{background:#fff;border:1px solid #E0DDD8;border-radius:8px;padding:24px;max-width:700px;margin-bottom:20px}
-.btn{background:#3E342A;color:#fff;border:none;padding:12px 28px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;font-family:Arial,sans-serif;margin-right:10px}
-.btn:hover{background:#5C4F43}.btn:disabled{background:#aaa;cursor:default}
+body{font-family:Arial,sans-serif;background:#FAF7F2;color:#1A1A1A;padding:24px}
+h2{color:#3E342A;font-size:18px;margin-bottom:4px}
+.sub{color:#7A7060;font-size:12px;margin-bottom:20px}
+.bar{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+.btn{background:#3E342A;color:#fff;border:none;padding:10px 22px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:Arial,sans-serif}
+.btn:hover{background:#5C4F43}.btn:disabled{background:#bbb;cursor:default}
 .btn-dl{background:#8C6A2F}.btn-dl:hover{background:#6B5020}
-.log{margin-top:16px;background:#FAF7F2;border:1px solid #E0DDD8;border-radius:6px;padding:14px;font-family:monospace;font-size:12px;min-height:80px;white-space:pre-wrap;color:#3E342A}
-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:16px}
-th{background:#3E342A;color:#fff;padding:8px 10px;text-align:left;font-size:11px}
-td{padding:7px 10px;border-bottom:1px solid #F0EDE8;vertical-align:top}
-tr:nth-child(even) td{background:#FAF7F2}
-.badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px}
+.stat{font-size:12px;color:#7A7060;padding:8px 14px;background:#fff;border:1px solid #E0DDD8;border-radius:6px}
+.stat b{color:#3E342A}
+.log{background:#fff;border:1px solid #E0DDD8;border-radius:6px;padding:12px;font-family:monospace;font-size:11px;color:#3E342A;max-height:80px;overflow-y:auto;margin-bottom:16px;white-space:pre}
+.tbl-wrap{overflow-x:auto;background:#fff;border:1px solid #E0DDD8;border-radius:8px}
+table{width:100%;border-collapse:collapse;font-size:11px;white-space:nowrap}
+th{background:#3E342A;color:#fff;padding:7px 10px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.03em;position:sticky;top:0}
+th.fill{background:#6B5020;cursor:help}
+td{padding:6px 10px;border-bottom:1px solid #F5F0EA;vertical-align:middle}
+tr:nth-child(even) td{background:#FAFAF7}
+tr:hover td{background:#F5F0EA}
+.badge{display:inline-block;font-size:9px;font-weight:700;padding:1px 7px;border-radius:8px}
 .pdi{background:#E8EDF5;color:#3E342A}.sig{background:#EFE9E0;color:#6B5C45}
-.both{background:#F5F0E8;color:#8C6A2F}
-</style>
-</head>
+.both{background:#F5F0E8;color:#8C6A2F}.unk{background:#F0EDE8;color:#999}
+.yes{color:#157A52;font-weight:700}.dash{color:#ccc}
+.act{color:#157A52;font-size:10px;font-weight:600}.dis{color:#888;font-size:10px}
+select,input[type=text]{font-size:11px;padding:3px 6px;border:1px solid #D0CCC5;border-radius:4px;font-family:Arial,sans-serif;width:100%;background:#fff}
+select:focus,input:focus{outline:none;border-color:#8C6A2F}
+.editable td{background:#FFFEF8}
+.fill-cell{background:#FFFBF0!important}
+.missing{color:#991F10;font-size:10px;font-weight:600}
+</style></head>
 <body>
-<h2>Client Flow Mapping — Export</h2>
-<p class="sub">Reads all clients from the platform and generates the Excel workbook with PDI/Signature tenure, conversions, and step-down tracking.</p>
+<h2>Client Flow Mapping</h2>
+<p class="sub">All clients · PDI & Signature LOS · Conversions · Admission type · Step-down destination</p>
 
-<div class="card">
-  <button class="btn" id="load-btn" onclick="loadClients()">Load Client Data</button>
+<div class="bar">
+  <button class="btn" id="load-btn" onclick="loadData()">Load All Clients</button>
   <button class="btn btn-dl" id="dl-btn" onclick="downloadExcel()" disabled>Download Excel</button>
-  <div class="log" id="log">Click Load Client Data to begin.</div>
+  <span class="stat" id="stats" style="display:none"></span>
 </div>
-<div id="preview"></div>
+<div class="log" id="log">Click Load All Clients to begin.</div>
+<div class="tbl-wrap" id="tbl-wrap"></div>
 
 <script>
 firebase.initializeApp({apiKey:"AIzaSyCERxntgytkfCHWN7EoAVYVmLBcfWyYZ5A",
   databaseURL:"https://pdi-signature-schedule-default-rtdb.firebaseio.com",
   projectId:"pdi-signature-schedule"});
 var DB=firebase.database();
-var allClients=[];
+var allClients=[], rows=[];
 
-function log(m){var el=document.getElementById("log");el.textContent+=("\n"+m).trimStart()+"\n";}
+function log(m){var el=document.getElementById("log");el.textContent+=m+"\n";el.scrollTop=el.scrollHeight;}
+
+var TODAY=(function(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");})();
 
 function daysBetween(a,b){
   if(!a||!b)return null;
   var d1=new Date(a+"T12:00:00"),d2=new Date(b+"T12:00:00");
-  return Math.round((d2-d1)/(1000*60*60*24));
+  var diff=Math.round((d2-d1)/(86400000));
+  return diff>=0?diff:null;
 }
-function today(){var d=new Date();return d.toISOString().slice(0,10);}
-function fmtDate(iso){if(!iso)return"";var d=new Date(iso+"T12:00:00");return d.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});}
+function fmtD(iso){if(!iso)return"";try{var d=new Date(iso+"T12:00:00");return(d.getMonth()+1)+"/"+d.getDate()+"/"+d.getFullYear();}catch(e){return iso;}}
+function numOrBlank(n){return n===null||n===undefined?"":n;}
 
-function loadClients(){
+function getProgram(c){
+  if(c.program)return c.program;
+  var hasPDI=!!(c.pdiAdmit);
+  var hasSig=!!(c.sigAdmit);
+  if(hasPDI&&hasSig)return"Both";
+  if(hasPDI)return"PDI";
+  if(hasSig)return"Signature";
+  return"Unknown";
+}
+
+function buildRow(c,i){
+  var prog=getProgram(c);
+  var pdiAdmit=c.pdiAdmit||"";
+  var pdiDisch=c.pdiDischarge||c.pdiDisch||"";
+  var sigAdmit=c.sigAdmit||"";
+  var sigDisch=c.sigDischarge||c.sigDisch||c.endDate||"";
+
+  var pdiLOS=(pdiAdmit)   ?daysBetween(pdiAdmit,   pdiDisch||TODAY):null;
+  var sigLOS=(sigAdmit)   ?daysBetween(sigAdmit,   sigDisch||TODAY):null;
+  var totalLOS=pdiLOS!==null&&sigLOS!==null?pdiLOS+sigLOS:pdiLOS!==null?pdiLOS:sigLOS;
+
+  var converted=(pdiAdmit&&sigAdmit)?"Yes":"No";
+  var daysTillConv=(pdiAdmit&&sigAdmit)?daysBetween(pdiAdmit,sigAdmit):null;
+
+  var isActive=!(pdiDisch&&sigDisch)&&!(pdiDisch&&prog==="PDI")&&!(sigDisch&&prog==="Signature");
+
+  return {
+    _idx:i,
+    name:c.name||"(unnamed)",
+    program:prog,
+    status:isActive?"Active":"Discharged",
+    pdiAdmit:fmtD(pdiAdmit),
+    pdiDisch:fmtD(pdiDisch),
+    pdiLOS:numOrBlank(pdiLOS),
+    sigAdmit:fmtD(sigAdmit),
+    sigDisch:fmtD(sigDisch),
+    sigLOS:numOrBlank(sigLOS),
+    totalLOS:numOrBlank(totalLOS),
+    converted:converted,
+    daysTillConv:numOrBlank(daysTillConv),
+    // fill-in
+    admitType:"",
+    priorLOC:"",
+    priorLOClos:"",
+    stepDown:"",
+    stepDownDate:"",
+    notes:""
+  };
+}
+
+function loadData(){
   document.getElementById("load-btn").disabled=true;
-  document.getElementById("log").textContent="Loading...";
+  document.getElementById("log").textContent="";
+  log("Connecting to Firebase...");
   DB.ref("schedule_v3/blob").once("value",function(snap){
     var blob=snap.val();
-    if(!blob){log("ERROR: No calendar data found.");return;}
+    if(!blob){log("ERROR: No data found in schedule_v3/blob.");document.getElementById("load-btn").disabled=false;return;}
     try{
       var d=JSON.parse(blob);
       allClients=d.clients||[];
-      log("Clients loaded: "+allClients.length);
+      log("Raw clients in blob: "+allClients.length);
 
-      var pdiOnly=allClients.filter(function(c){return c.program==="PDI"||(!c.program&&c.pdiAdmit&&!c.sigAdmit)});
-      var sigOnly=allClients.filter(function(c){return c.program==="Signature"||(!c.program&&c.sigAdmit&&!c.pdiAdmit)});
-      var both=allClients.filter(function(c){return c.program==="Both"||(c.pdiAdmit&&c.sigAdmit)});
-      log("PDI only: "+pdiOnly.length+" | Signature only: "+sigOnly.length+" | Both: "+both.length);
+      // Count field coverage
+      var withPDI=allClients.filter(function(c){return c.pdiAdmit;}).length;
+      var withSig=allClients.filter(function(c){return c.sigAdmit;}).length;
+      var withBoth=allClients.filter(function(c){return c.pdiAdmit&&c.sigAdmit;}).length;
+      var unnamed=allClients.filter(function(c){return !c.name;}).length;
+      log("PDI admit date: "+withPDI+" | Sig admit date: "+withSig+" | Both: "+withBoth+" | Unnamed: "+unnamed);
 
-      renderPreview();
+      rows=allClients.map(buildRow).sort(function(a,b){return a.name.localeCompare(b.name);});
+      log("Rows built: "+rows.length);
+
+      document.getElementById("stats").style.display="inline";
+      document.getElementById("stats").innerHTML=
+        "<b>"+rows.length+"</b> clients &nbsp;·&nbsp; <b>"+withPDI+"</b> PDI &nbsp;·&nbsp; <b>"+withSig+"</b> Sig &nbsp;·&nbsp; <b>"+withBoth+"</b> converted";
+
+      renderTable();
       document.getElementById("dl-btn").disabled=false;
-    }catch(e){log("Parse error: "+e.message);}
-  },function(e){log("Firebase error: "+e.message);});
+    }catch(e){log("Parse error: "+e.message);document.getElementById("load-btn").disabled=false;}
+  },function(e){log("Firebase error: "+e.message);document.getElementById("load-btn").disabled=false;});
 }
 
-function buildRows(){
-  var TODAY=today();
-  return allClients.map(function(c){
-    var prog=c.program||(c.pdiAdmit&&c.sigAdmit?"Both":c.pdiAdmit?"PDI":c.sigAdmit?"Signature":"Unknown");
+var ADMIT_TYPES=["","Internal","External"];
+var PRIOR_LOC=["","Residential","Detox","PHP","IOP","OP","Step-Down","Hospital","Other"];
+var STEP_DOWN=["","Signature","PDI","PHP","IOP","OP","Step-Down","Residential","Private Practice","Discharged to Home","AMA","Transferred","Deceased","Unknown"];
 
-    // PDI tenure
-    var pdiAdmit=c.pdiAdmit||"";
-    var pdiDisch=c.pdiDischarge||c.pdiDisch||"";
-    var pdiDischEff=pdiDisch||TODAY;
-    var pdiLOS=(pdiAdmit&&prog!=="Signature")?daysBetween(pdiAdmit,pdiDischEff):null;
+function renderTable(){
+  var h="<table><thead><tr>"
+    +"<th>#</th><th>Client</th><th>Program</th><th>Status</th>"
+    +"<th>PDI Admit</th><th>PDI Disch</th><th>PDI LOS</th>"
+    +"<th>Sig Admit</th><th>Sig Disch</th><th>Sig LOS</th>"
+    +"<th>Total LOS</th><th>Converted</th><th>Days PDI→Sig</th>"
+    +"<th class='fill' title='You fill this in'>Admit Type ▾</th>"
+    +"<th class='fill' title='You fill this in'>Prior LOC ▾</th>"
+    +"<th class='fill' title='You fill this in'>Prior LOC LOS</th>"
+    +"<th class='fill' title='You fill this in'>Step-Down ▾</th>"
+    +"<th class='fill' title='You fill this in'>Step-Down Date</th>"
+    +"<th class='fill' title='You fill this in'>Notes</th>"
+    +"</tr></thead><tbody>";
 
-    // Signature tenure
-    var sigAdmit=c.sigAdmit||"";
-    var sigDisch=c.sigDischarge||c.sigDisch||c.endDate||"";
-    var sigDischEff=sigDisch||TODAY;
-    var sigLOS=(sigAdmit&&prog!=="PDI")?daysBetween(sigAdmit,sigDischEff):null;
-
-    // Conversion: did PDI convert to Signature?
-    var converted=(pdiAdmit&&sigAdmit)?"Yes":"";
-    var convDate=converted?sigAdmit:"";
-    var daysTillConv=(converted&&pdiAdmit&&sigAdmit)?daysBetween(pdiAdmit,sigAdmit):null;
-
-    // Combined total LOS
-    var totalLOS=null;
-    if(pdiLOS!==null&&sigLOS!==null) totalLOS=pdiLOS+sigLOS;
-    else if(pdiLOS!==null) totalLOS=pdiLOS;
-    else if(sigLOS!==null) totalLOS=sigLOS;
-
-    // Status
-    var discharged=(prog==="PDI"?pdiDisch:prog==="Signature"?sigDisch:(pdiDisch&&sigDisch)?sigDisch:"");
-    var status=discharged?"Discharged":"Active";
-
-    return {
-      "Client Name":        c.name||"",
-      "Program":            prog,
-      "Status":             status,
-
-      // PDI
-      "PDI Admit":          fmtDate(pdiAdmit),
-      "PDI Discharge":      fmtDate(pdiDisch),
-      "PDI LOS (days)":     pdiLOS,
-
-      // Signature
-      "Sig Admit":          fmtDate(sigAdmit),
-      "Sig Discharge":      fmtDate(sigDisch),
-      "Sig LOS (days)":     sigLOS,
-
-      // Conversion
-      "Converted PDI→Sig":  converted,
-      "Conversion Date":    fmtDate(convDate),
-      "Days PDI Before Sig":daysTillConv,
-
-      // Combined
-      "Total LOS (days)":   totalLOS,
-
-      // To fill in
-      "Admission Type":     "",
-      "Prior LOC (if internal)":"",
-      "Prior LOC LOS (days)":"",
-      "Discharge Step-Down":"",
-      "Step-Down Date":     "",
-      "Notes":              ""
-    };
-  }).sort(function(a,b){return a["Client Name"].localeCompare(b["Client Name"])});
-}
-
-function renderPreview(){
-  var rows=buildRows().slice(0,8);
-  var cols=Object.keys(rows[0]);
-  var html="<div class=\"card\"><p style=\"font-size:12px;color:#7A7060;margin-bottom:8px\">Preview — first 8 clients</p><div style=\"overflow-x:auto\"><table><thead><tr>"+cols.map(function(c){return"<th>"+c+"</th>"}).join("")+"</tr></thead><tbody>";
-  rows.forEach(function(r){
-    html+="<tr>"+cols.map(function(c){
-      var v=r[c]||"";
-      if(c==="Program"){
-        var cls=v==="PDI"?"pdi":v==="Signature"?"sig":"both";
-        return"<td><span class=\"badge "+cls+"\">"+v+"</span></td>";
-      }
-      return"<td>"+v+"</td>";
-    }).join("")+"</tr>";
+  rows.forEach(function(r,i){
+    var bc=r.program==="PDI"?"pdi":r.program==="Signature"?"sig":r.program==="Both"?"both":"unk";
+    var sc=r.status==="Active"?"act":"dis";
+    var cv=r.converted==="Yes"?"<span class='yes'>✓ Yes</span>":"<span class='dash'>—</span>";
+    h+="<tr class='editable'>"
+      +"<td style='color:#aaa;font-size:10px'>"+(i+1)+"</td>"
+      +"<td style='font-weight:600;color:#3E342A;min-width:140px'>"+esc(r.name)+"</td>"
+      +"<td><span class='badge "+bc+"'>"+r.program+"</span></td>"
+      +"<td class='"+sc+"'>"+r.status+"</td>"
+      +"<td>"+r.pdiAdmit+"</td><td>"+r.pdiDisch+"</td>"
+      +"<td style='font-weight:600'>"+r.pdiLOS+"</td>"
+      +"<td>"+r.sigAdmit+"</td><td>"+r.sigDisch+"</td>"
+      +"<td style='font-weight:600'>"+r.sigLOS+"</td>"
+      +"<td style='font-weight:700;color:#3E342A'>"+r.totalLOS+"</td>"
+      +"<td>"+cv+"</td>"
+      +"<td style='color:#7A7060'>"+r.daysTillConv+"</td>"
+      // Fill-in cells
+      +"<td class='fill-cell'><select onchange=\"rows["+i+"].admitType=this.value\">"+ADMIT_TYPES.map(function(v){return"<option>"+v+"</option>";}).join("")+"</select></td>"
+      +"<td class='fill-cell'><select onchange=\"rows["+i+"].priorLOC=this.value\">"+PRIOR_LOC.map(function(v){return"<option>"+v+"</option>";}).join("")+"</select></td>"
+      +"<td class='fill-cell'><input type='text' placeholder='days' oninput=\"rows["+i+"].priorLOClos=this.value\" style='width:60px'></td>"
+      +"<td class='fill-cell'><select onchange=\"rows["+i+"].stepDown=this.value\">"+STEP_DOWN.map(function(v){return"<option>"+v+"</option>";}).join("")+"</select></td>"
+      +"<td class='fill-cell'><input type='text' placeholder='mm/dd/yyyy' oninput=\"rows["+i+"].stepDownDate=this.value\" style='width:90px'></td>"
+      +"<td class='fill-cell'><input type='text' placeholder='Notes' oninput=\"rows["+i+"].notes=this.value\" style='min-width:140px'></td>"
+      +"</tr>";
   });
-  html+="</tbody></table></div></div>";
-  document.getElementById("preview").innerHTML=html;
+  h+="</tbody></table>";
+  document.getElementById("tbl-wrap").innerHTML=h;
 }
+
+function esc(s){var d=document.createElement("div");d.textContent=s;return d.innerHTML;}
 
 function downloadExcel(){
-  var rows=buildRows();
-  var ws=XLSX.utils.json_to_sheet(rows);
+  // Build data array from current row state (captures any edits made in dropdowns)
+  var data=rows.map(function(r){return{
+    "Client Name":r.name,
+    "Program":r.program,
+    "Status":r.status,
+    "PDI Admit":r.pdiAdmit,
+    "PDI Discharge":r.pdiDisch,
+    "PDI LOS (days)":r.pdiLOS===""?"":Number(r.pdiLOS)||r.pdiLOS,
+    "Sig Admit":r.sigAdmit,
+    "Sig Discharge":r.sigDisch,
+    "Sig LOS (days)":r.sigLOS===""?"":Number(r.sigLOS)||r.sigLOS,
+    "Total LOS (days)":r.totalLOS===""?"":Number(r.totalLOS)||r.totalLOS,
+    "Converted PDI→Sig":r.converted,
+    "Days PDI Before Sig":r.daysTillConv===""?"":Number(r.daysTillConv)||r.daysTillConv,
+    "Admission Type":r.admitType,
+    "Prior LOC (if internal)":r.priorLOC,
+    "Prior LOC LOS (days)":r.priorLOClos,
+    "Discharge Step-Down":r.stepDown,
+    "Step-Down Date":r.stepDownDate,
+    "Notes":r.notes
+  };});
+
+  var ws=XLSX.utils.json_to_sheet(data);
 
   // Column widths
   ws["!cols"]=[
-    {wch:22},{wch:10},{wch:10},
-    {wch:12},{wch:12},{wch:12},
-    {wch:12},{wch:12},{wch:12},
-    {wch:16},{wch:14},{wch:18},
-    {wch:14},
-    {wch:16},{wch:20},{wch:18},
-    {wch:22},{wch:14},{wch:28}
+    {wch:24},{wch:11},{wch:11},
+    {wch:12},{wch:12},{wch:11},
+    {wch:12},{wch:12},{wch:11},
+    {wch:12},{wch:11},{wch:14},
+    {wch:16},{wch:20},{wch:16},
+    {wch:24},{wch:14},{wch:32}
   ];
 
-  // Freeze header + client name col
+  // Freeze top row and first column
   ws["!freeze"]={xSplit:1,ySplit:1};
+
+  // Data validation dropdowns — columns M(13), N(14), P(16)
+  var n=data.length+1;
+  ws["!dataValidation"]=[
+    {sqref:"M2:M"+n, type:"list", formulae:['"Internal,External"'], showDropDown:false,
+     showErrorMessage:true,errorTitle:"Invalid entry",error:"Select Internal or External"},
+    {sqref:"N2:N"+n, type:"list",
+     formulae:['"Residential,Detox,PHP,IOP,OP,Step-Down,Hospital,Other"'],
+     showDropDown:false},
+    {sqref:"P2:P"+n, type:"list",
+     formulae:['"Signature,PDI,PHP,IOP,OP,Step-Down,Residential,Private Practice,Discharged to Home,AMA,Transferred,Deceased,Unknown"'],
+     showDropDown:false}
+  ];
 
   var wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,"Client Flow");
 
-  // Instructions tab
-  var instr=[
-    ["COLUMN","PURPOSE","HOW TO FILL"],
-    ["Admission Type","Whether the client came from inside or outside Lifeskills","Enter: Internal or External"],
-    ["Prior LOC (if internal)","Level of care the client stepped down from if Internal","e.g. Residential, PHP, IOP, Detox"],
-    ["Prior LOC LOS (days)","How long client was at that prior level before PDI/Sig","Enter number of days"],
-    ["Discharge Step-Down","Where the client went after leaving PDI/Signature","e.g. IOP, PHP, Private Practice, Discharged to Home, AMA"],
-    ["Step-Down Date","Date the client transitioned to the step-down level","MM/DD/YYYY"],
-    ["Notes","Any relevant context about the client\'s flow","Free text"],
+  // Summary tab
+  var active=rows.filter(function(r){return r.status==="Active";}).length;
+  var disch=rows.filter(function(r){return r.status==="Discharged";}).length;
+  var conv=rows.filter(function(r){return r.converted==="Yes";}).length;
+  var pdiOnly=rows.filter(function(r){return r.program==="PDI";}).length;
+  var sigOnly=rows.filter(function(r){return r.program==="Signature";}).length;
+  var both=rows.filter(function(r){return r.program==="Both";}).length;
+
+  function avg(arr){var vals=arr.filter(function(v){return v!==""&&v!==null&&!isNaN(Number(v));});return vals.length?Math.round(vals.reduce(function(a,b){return a+Number(b);},0)/vals.length):"";}
+
+  var sumData=[
+    ["CLIENT FLOW SUMMARY","",""],
+    ["Generated",new Date().toLocaleDateString(),""],
     ["","",""],
-    ["PROGRAM NOTES","",""],
-    ["PDI","Premier Diagnostic Insights — intensive diagnostic program",""],
-    ["Signature","Signature residential program",""],
-    ["Both","Client completed PDI then transitioned into Signature","PDI→Sig conversion = Yes"],
-    ["Converted PDI→Sig","Marks clients who went from PDI directly into Signature",""],
-    ["Days PDI Before Sig","How many days the client spent in PDI before converting to Sig","Useful for measuring PDI conversion timeline"],
+    ["CENSUS","",""],
+    ["Total clients",rows.length,""],
+    ["Active",active,""],
+    ["Discharged",disch,""],
+    ["","",""],
+    ["PROGRAM BREAKDOWN","",""],
+    ["PDI only",pdiOnly,""],
+    ["Signature only",sigOnly,""],
+    ["Both (PDI → Sig conversion)",both,""],
+    ["Conversion rate (%)",rows.length?Math.round(both/rows.length*100)+"%":"",""],
+    ["","",""],
+    ["LENGTH OF STAY — AVERAGES","",""],
+    ["Avg PDI LOS (days)",avg(rows.map(function(r){return r.pdiLOS;})),""],
+    ["Avg Sig LOS (days)",avg(rows.map(function(r){return r.sigLOS;})),""],
+    ["Avg total LOS (days)",avg(rows.map(function(r){return r.totalLOS;})),""],
+    ["Avg days PDI → Sig conversion",avg(rows.map(function(r){return r.daysTillConv;})),""],
+    ["","",""],
+    ["INSTRUCTIONS — FILL-IN COLUMNS","",""],
+    ["Admission Type","Internal = came from another Lifeskills LOC","External = came from outside Lifeskills"],
+    ["Prior LOC (if internal)","Level of care before PDI/Signature","e.g. Residential, PHP, IOP, Detox"],
+    ["Prior LOC LOS (days)","How long at that prior level","Enter number"],
+    ["Discharge Step-Down","Where client went after leaving","e.g. IOP, PHP, Private Practice, AMA"],
+    ["Step-Down Date","Date of transition","mm/dd/yyyy"],
+    ["Notes","Any context about the client flow","Free text"],
   ];
-  var ws2=XLSX.utils.aoa_to_sheet(instr);
-  ws2["!cols"]=[{wch:24},{wch:52},{wch:44}];
-  XLSX.utils.book_append_sheet(wb,ws2,"Instructions");
+  var ws2=XLSX.utils.aoa_to_sheet(sumData);
+  ws2["!cols"]=[{wch:32},{wch:40},{wch:36}];
+  XLSX.utils.book_append_sheet(wb,ws2,"Summary");
 
   XLSX.writeFile(wb,"Client_Flow_Mapping.xlsx");
-  log("Downloaded: Client_Flow_Mapping.xlsx ("+rows.length+" clients)");
+  log("Downloaded: Client_Flow_Mapping.xlsx — "+rows.length+" clients, "+data.length+" rows");
 }
 </script>
 </body></html>
