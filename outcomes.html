@@ -272,14 +272,14 @@ var ALL_EPISODES=[
   {name:'Thomas W',  pdiAdmit:'2026-06-05',pdiDisch:'2026-06-16',sigAdmit:null,sigDisch:null},
   {name:'Norman P',  pdiAdmit:'2026-06-16',pdiDisch:'2026-06-25',sigAdmit:null,sigDisch:null},
   {name:'Carlos L',  pdiAdmit:'2026-03-23',pdiDisch:'2026-03-31',sigAdmit:'2026-04-01',sigDisch:'2026-04-01'},
-  {name:'Jessica C', pdiAdmit:'2026-04-04',pdiDisch:'2026-04-21',sigAdmit:'2026-04-14',sigDisch:'2026-04-21'},
+  {name:'Jessica C', pdiAdmit:'2026-04-04',pdiDisch:'2026-04-13',sigAdmit:'2026-04-14',sigDisch:'2026-04-21',note:'PDI disch adj to day before Sig admit — verify'},
   {name:'George W',  pdiAdmit:'2026-04-11',pdiDisch:'2026-04-22',sigAdmit:'2026-04-24',sigDisch:'2026-05-18'},
   {name:'Marc C',    pdiAdmit:'2026-04-17',pdiDisch:'2026-04-30',sigAdmit:'2026-05-01',sigDisch:null},
   {name:'Michael F', pdiAdmit:'2026-05-08',pdiDisch:'2026-05-18',sigAdmit:'2026-05-19',sigDisch:null},
   {name:'Layla S',   pdiAdmit:'2026-05-18',pdiDisch:'2026-05-28',sigAdmit:'2026-05-29',sigDisch:null},
   {name:'Kevin C',   pdiAdmit:'2026-05-14',pdiDisch:'2026-05-26',sigAdmit:'2026-05-27',sigDisch:null},
   {name:'Blake P',   pdiAdmit:'2026-06-04',pdiDisch:'2026-06-12',sigAdmit:'2026-06-13',sigDisch:null},
-  {name:'Angela T',  pdiAdmit:'2026-07-03',pdiDisch:null,sigAdmit:'2026-06-25',sigDisch:null},
+  {name:'Angela T',  pdiAdmit:null,pdiDisch:null,sigAdmit:'2026-06-25',sigDisch:null,note:'PDI dates need verification'},
   {name:'Tomas W',   pdiAdmit:null,sigAdmit:'2026-05-26',sigDisch:null},
   {name:'Jarrod W',  pdiAdmit:null,sigAdmit:'2026-05-29',sigDisch:null},
   {name:'Emma T',    pdiAdmit:null,sigAdmit:'2026-06-01',sigDisch:null},
@@ -358,14 +358,15 @@ function render(fbClients){
   Object.keys(fbMap).forEach(function(k){
     var fb=fbMap[k];
     if(namesInHardcoded[k]){
-      // Update the most-recent episode with any newer Firebase dates
+      // ALL_EPISODES is authoritative for program type and admit dates.
+      // Firebase only supplies updated DISCHARGE dates — never admit dates.
+      // This prevents false PDI flags on Signature-only clients whose
+      // calendar fields were accidentally populated with pdiAdmit.
       var ep=ALL_EPS_LIVE[latestByName[k]];
-      if(fb.pdiAdmit&&!ep.pdiAdmit)ep.pdiAdmit=fb.pdiAdmit;
-      if(fb.pdiDisch)ep.pdiDisch=fb.pdiDisch;
-      if(fb.sigAdmit&&(!ep.sigAdmit||fb.sigAdmit>ep.sigAdmit))ep.sigAdmit=fb.sigAdmit;
-      if(fb.sigDisch&&(!ep.sigDisch||fb.sigDisch>ep.sigAdmit))ep.sigDisch=fb.sigDisch;
+      if(fb.pdiDisch  && ep.pdiAdmit) ep.pdiDisch=fb.pdiDisch;   // only if client IS PDI
+      if(fb.sigDisch  && ep.sigAdmit) ep.sigDisch=fb.sigDisch;   // only if client IS Sig
     } else if(fb.pdiAdmit||fb.sigAdmit){
-      // Truly new client from Firebase not in hardcoded list — append
+      // Brand-new client from Firebase not in ALL_EPISODES — add them
       ALL_EPS_LIVE.push(fb);
     }
   });
