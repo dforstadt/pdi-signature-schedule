@@ -178,9 +178,9 @@ tbody tr:hover td{background:rgba(139,115,85,.05)}
   </table></div>
 
   <!-- Conversions -->
-  <div class="sec-head"><div class="sec-bar" style="background:var(--green)"></div><div><div class="sec-title">PDI → Signature Conversions</div><div class="sec-sub" id="conv-roster-sub">PDI clients who enrolled in Signature</div></div></div>
+  <div class="sec-head"><div class="sec-bar" style="background:var(--green)"></div><div><div class="sec-title">PDI → Signature Conversions <span style="font-size:13px;font-weight:400;color:var(--tx3)">— Direct pathway, no gap between programs</span></div><div class="sec-sub" id="conv-roster-sub">PDI clients who enrolled in Signature</div></div></div>
   <div class="tbl-wrap"><table>
-    <thead><tr><th>#</th><th>Client</th><th>PDI Admit</th><th>PDI Discharge</th><th>Sig Admit</th><th>Gap (days)</th></tr></thead>
+    <thead><tr><th>#</th><th>Client</th><th>PDI Admit</th><th>PDI Discharge</th><th>Sig Admit</th><th>Pathway</th><th>Sig Discharge</th><th>Sig LOS</th></tr></thead>
     <tbody id="conv-body"></tbody>
   </table></div>
 
@@ -408,11 +408,14 @@ function render(fbClients){
   document.getElementById('c-sig-sub').textContent=(sigEps.length-convEps.length)+' direct · '+convEps.length+' via PDI';
   // Conversion rate: only PDI clients admitted after Signature launched (Apr 1 2026)
   // OR who actually converted (Carlos L admitted Mar 23 but was first Sig client Apr 1)
+  // Eligible = PDI clients admitted after Signature launched (Apr 1 2026)
+  // Pre-launch clients are shown separately — they predated the Sig pathway
   var SIG_LAUNCH='2026-04-01';
   var convEligible=pdiEps.filter(function(e){return e.pdiAdmit>=SIG_LAUNCH||e.sigAdmit;});
+  var preEra=pdiEps.filter(function(e){return !e.sigAdmit&&e.pdiAdmit<SIG_LAUNCH;});
   var convRate=convEligible.length?Math.round(convEps.length/convEligible.length*100):0;
   document.getElementById('c-conv').textContent=convEps.length+' / '+convEligible.length;
-  document.getElementById('c-conv-sub').textContent=convRate+'% conversion rate';
+  document.getElementById('c-conv-sub').textContent=convRate+'% of eligible PDI clients converted ('+preEra.length+' pre-Sig era excluded)';
   document.getElementById('c-pdi-act').textContent=pdiActive.length;
   document.getElementById('c-pdi-act-sub').textContent=pdiActive.map(function(e){return e.name;}).join(', ')||'All discharged';
   document.getElementById('c-sig-act').textContent=sigActive.length;
@@ -435,7 +438,24 @@ function render(fbClients){
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:10}}}},scales:{x:{grid:{display:false},ticks:{font:{size:9}}},y:{beginAtZero:true,ticks:{stepSize:1,font:{size:9}}}}}});
 
   // Conversion funnel (doughnut)
-  mkChart('conv-chart',{type:'doughnut',data:{labels:['Eligible, not converted','Converted to Sig','Pre-Sig era (excl.)'],datasets:[{data:[convEligible.length-convEps.length,convEps.length,pdiEps.length-convEligible.length],backgroundColor:['rgba(55,138,221,.4)','rgba(29,158,117,.75)','rgba(180,180,180,.35)'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:8}}}}});
+  mkChart('conv-chart',{type:'doughnut',
+    data:{labels:['PDI only (no conversion)','Converted PDI → Signature','Pre-Signature era PDI'],
+      datasets:[{
+        data:[convEligible.length-convEps.length, convEps.length, pdiEps.length-convEligible.length],
+        backgroundColor:['rgba(55,138,221,.45)','rgba(29,158,117,.8)','rgba(180,170,155,.45)'],
+        borderColor:['rgba(55,138,221,.8)','rgba(29,158,117,1)','rgba(180,170,155,.8)'],
+        borderWidth:1.5
+      }]
+    },
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',
+      plugins:{
+        legend:{position:'bottom',labels:{font:{size:10},padding:10}},
+        tooltip:{callbacks:{label:function(ctx){
+          var pct=pdiEps.length?Math.round(ctx.parsed/pdiEps.length*100):0;
+          return ctx.label+': '+ctx.parsed+' ('+pct+'% of all PDI)';
+        }}}
+      }
+    }});
 
   // PDI LOS histogram
   // PDI LOS — include all episodes; actives use today as end date (shown in lighter blue)
@@ -495,8 +515,15 @@ function render(fbClients){
   }).join('');
 
   document.getElementById('conv-body').innerHTML=convEps.map(function(e,i){
-    var gap=los(e.pdiDisch,e.sigAdmit);
-    return '<tr><td class="tag-muted">'+(i+1)+'</td><td><b>'+e.name+'</b></td><td>'+fd(e.pdiAdmit)+'</td><td>'+fd(e.pdiDisch)+'</td><td class="tag-sig">'+fd(e.sigAdmit)+'</td><td>'+(gap!==null?gap+'d':'—')+'</td></tr>';
+    var sigLOS=los(e.sigAdmit,e.sigDisch);
+    var sigLOSStr=sigLOS!==null?sigLOS+'d'+(!e.sigDisch?' ●':''):'Active';
+    return '<tr><td class="tag-muted">'+(i+1)+'</td><td><b>'+e.name+'</b></td>'
+      +'<td>'+fd(e.pdiAdmit)+'</td><td>'+fd(e.pdiDisch)+'</td>'
+      +'<td class="tag-sig">'+fd(e.sigAdmit)+'</td>'
+      +'<td style="color:var(--green);font-weight:600;font-size:11px">Direct</td>'
+      +'<td>'+fd(e.sigDisch)+'</td>'
+      +'<td style="font-weight:600">'+sigLOSStr+'</td>'
+      +'</tr>';
   }).join('');
 
   document.getElementById('loading').style.display='none';
