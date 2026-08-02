@@ -5,44 +5,48 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Arial,sans-serif;background:#FAF7F2;color:#1A1A1A;padding:24px}
-h2{color:#3E342A;font-size:18px;margin-bottom:4px}
-.sub{color:#7A7060;font-size:12px;margin-bottom:20px}
-.bar{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
-.btn{background:#3E342A;color:#fff;border:none;padding:10px 22px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:Arial,sans-serif}
+body{font-family:Arial,sans-serif;background:#FAF7F2;color:#1A1A1A;padding:20px;font-size:13px}
+h2{color:#3E342A;font-size:17px;margin-bottom:3px}
+.sub{color:#7A7060;font-size:11px;margin-bottom:16px}
+.bar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.btn{background:#3E342A;color:#fff;border:none;padding:9px 20px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:Arial,sans-serif;white-space:nowrap}
 .btn:hover{background:#5C4F43}.btn:disabled{background:#bbb;cursor:default}
 .btn-dl{background:#8C6A2F}.btn-dl:hover{background:#6B5020}
-.stat{font-size:12px;color:#7A7060;padding:8px 14px;background:#fff;border:1px solid #E0DDD8;border-radius:6px}
+.btn-clr{background:#991F10;font-size:11px;padding:7px 14px}.btn-clr:hover{background:#7A1508}
+.stat{font-size:11px;color:#7A7060;padding:6px 12px;background:#fff;border:1px solid #E0DDD8;border-radius:6px;white-space:nowrap}
 .stat b{color:#3E342A}
-.log{background:#fff;border:1px solid #E0DDD8;border-radius:6px;padding:12px;font-family:monospace;font-size:11px;color:#3E342A;max-height:80px;overflow-y:auto;margin-bottom:16px;white-space:pre}
+.save-ind{font-size:11px;padding:6px 12px;border-radius:6px;background:#EAF5EE;color:#157A52;font-weight:600;display:none}
+.save-ind.saving{background:#FEF9EC;color:#B87A00}
+.log{background:#fff;border:1px solid #E0DDD8;border-radius:6px;padding:10px 14px;font-family:monospace;font-size:11px;color:#3E342A;max-height:60px;overflow-y:auto;margin-bottom:12px;white-space:pre}
 .tbl-wrap{overflow-x:auto;background:#fff;border:1px solid #E0DDD8;border-radius:8px}
 table{width:100%;border-collapse:collapse;font-size:11px;white-space:nowrap}
-th{background:#3E342A;color:#fff;padding:7px 10px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.03em;position:sticky;top:0}
-th.fill{background:#6B5020;cursor:help}
-td{padding:6px 10px;border-bottom:1px solid #F5F0EA;vertical-align:middle}
+th{background:#3E342A;color:#fff;padding:7px 10px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.03em;position:sticky;top:0;z-index:2}
+th.fill{background:#6B5020}
+td{padding:5px 8px;border-bottom:1px solid #F5F0EA;vertical-align:middle}
 tr:nth-child(even) td{background:#FAFAF7}
-tr:hover td{background:#F5F0EA}
+tr:hover td{background:#F0EDE8}
 .badge{display:inline-block;font-size:9px;font-weight:700;padding:1px 7px;border-radius:8px}
 .pdi{background:#E8EDF5;color:#3E342A}.sig{background:#EFE9E0;color:#6B5C45}
 .both{background:#F5F0E8;color:#8C6A2F}.unk{background:#F0EDE8;color:#999}
-.yes{color:#157A52;font-weight:700}.dash{color:#ccc}
+.yes{color:#157A52;font-weight:700}.dash{color:#ddd}
 .act{color:#157A52;font-size:10px;font-weight:600}.dis{color:#888;font-size:10px}
-select,input[type=text]{font-size:11px;padding:3px 6px;border:1px solid #D0CCC5;border-radius:4px;font-family:Arial,sans-serif;width:100%;background:#fff}
-select:focus,input:focus{outline:none;border-color:#8C6A2F}
-.editable td{background:#FFFEF8}
+select,input[type=text]{font-size:11px;padding:3px 6px;border:1px solid #D0CCC5;border-radius:4px;font-family:Arial,sans-serif;background:#fff;color:#1A1A1A}
+select:focus,input:focus{outline:none;border-color:#8C6A2F;background:#FFFBF5}
 .fill-cell{background:#FFFBF0!important}
-.missing{color:#991F10;font-size:10px;font-weight:600}
+.saved-row td.fill-cell{background:#F0FAF3!important}
 </style></head>
 <body>
 <h2>Client Flow Mapping</h2>
-<p class="sub">All clients · PDI & Signature LOS · Conversions · Admission type · Step-down destination</p>
+<p class="sub">All edits auto-save to Firebase instantly — refreshing the page will never lose your work.</p>
 
 <div class="bar">
   <button class="btn" id="load-btn" onclick="loadData()">Load All Clients</button>
   <button class="btn btn-dl" id="dl-btn" onclick="downloadExcel()" disabled>Download Excel</button>
+  <button class="btn btn-clr" onclick="clearSaved()" title="Erase all saved fill-in data and start fresh">Clear Saved Edits</button>
   <span class="stat" id="stats" style="display:none"></span>
+  <span class="save-ind" id="save-ind">✓ Saved</span>
 </div>
-<div class="log" id="log">Click Load All Clients to begin.</div>
+<div class="log" id="log">Click Load All Clients to begin. Any edits you make auto-save to Firebase.</div>
 <div class="tbl-wrap" id="tbl-wrap"></div>
 
 <script>
@@ -50,167 +54,205 @@ firebase.initializeApp({apiKey:"AIzaSyCERxntgytkfCHWN7EoAVYVmLBcfWyYZ5A",
   databaseURL:"https://pdi-signature-schedule-default-rtdb.firebaseio.com",
   projectId:"pdi-signature-schedule"});
 var DB=firebase.database();
-var allClients=[], rows=[];
+// Saved edits stored at a protected path, separate from calendar data
+var EDITS_REF=DB.ref("lifeskills_clinical/client_flow_edits");
+
+var allClients=[], rows=[], savedEdits={};
+var TODAY=(function(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");})();
+var saveTimer=null;
 
 function log(m){var el=document.getElementById("log");el.textContent+=m+"\n";el.scrollTop=el.scrollHeight;}
-
-var TODAY=(function(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");})();
+function showSave(saving){
+  var el=document.getElementById("save-ind");
+  el.style.display="inline";
+  el.className="save-ind"+(saving?" saving":"");
+  el.textContent=saving?"Saving…":"✓ Auto-saved";
+}
 
 function daysBetween(a,b){
   if(!a||!b)return null;
-  var d1=new Date(a+"T12:00:00"),d2=new Date(b+"T12:00:00");
-  var diff=Math.round((d2-d1)/(86400000));
+  var diff=Math.round((new Date(b+"T12:00:00")-new Date(a+"T12:00:00"))/86400000);
   return diff>=0?diff:null;
 }
-function fmtD(iso){if(!iso)return"";try{var d=new Date(iso+"T12:00:00");return(d.getMonth()+1)+"/"+d.getDate()+"/"+d.getFullYear();}catch(e){return iso;}}
-function numOrBlank(n){return n===null||n===undefined?"":n;}
-
+function fmtD(iso){
+  if(!iso)return"";
+  try{var d=new Date(iso+"T12:00:00");return(d.getMonth()+1)+"/"+d.getDate()+"/"+d.getFullYear();}
+  catch(e){return iso;}
+}
 function getProgram(c){
   if(c.program)return c.program;
-  var hasPDI=!!(c.pdiAdmit);
-  var hasSig=!!(c.sigAdmit);
-  if(hasPDI&&hasSig)return"Both";
-  if(hasPDI)return"PDI";
-  if(hasSig)return"Signature";
-  return"Unknown";
+  var p=!!c.pdiAdmit,s=!!c.sigAdmit;
+  return p&&s?"Both":p?"PDI":s?"Signature":"Unknown";
 }
-
-function buildRow(c,i){
-  var prog=getProgram(c);
-  var pdiAdmit=c.pdiAdmit||"";
-  var pdiDisch=c.pdiDischarge||c.pdiDisch||"";
-  var sigAdmit=c.sigAdmit||"";
-  var sigDisch=c.sigDischarge||c.sigDisch||c.endDate||"";
-
-  var pdiLOS=(pdiAdmit)   ?daysBetween(pdiAdmit,   pdiDisch||TODAY):null;
-  var sigLOS=(sigAdmit)   ?daysBetween(sigAdmit,   sigDisch||TODAY):null;
-  var totalLOS=pdiLOS!==null&&sigLOS!==null?pdiLOS+sigLOS:pdiLOS!==null?pdiLOS:sigLOS;
-
-  var converted=(pdiAdmit&&sigAdmit)?"Yes":"No";
-  var daysTillConv=(pdiAdmit&&sigAdmit)?daysBetween(pdiAdmit,sigAdmit):null;
-
-  var isActive=!(pdiDisch&&sigDisch)&&!(pdiDisch&&prog==="PDI")&&!(sigDisch&&prog==="Signature");
-
-  return {
-    _idx:i,
-    name:c.name||"(unnamed)",
-    program:prog,
-    status:isActive?"Active":"Discharged",
-    pdiAdmit:fmtD(pdiAdmit),
-    pdiDisch:fmtD(pdiDisch),
-    pdiLOS:numOrBlank(pdiLOS),
-    sigAdmit:fmtD(sigAdmit),
-    sigDisch:fmtD(sigDisch),
-    sigLOS:numOrBlank(sigLOS),
-    totalLOS:numOrBlank(totalLOS),
-    converted:converted,
-    daysTillConv:numOrBlank(daysTillConv),
-    // fill-in
-    admitType:"",
-    priorLOC:"",
-    priorLOClos:"",
-    stepDown:"",
-    stepDownDate:"",
-    notes:""
-  };
-}
-
-function loadData(){
-  document.getElementById("load-btn").disabled=true;
-  document.getElementById("log").textContent="";
-  log("Connecting to Firebase...");
-  DB.ref("schedule_v3/blob").once("value",function(snap){
-    var blob=snap.val();
-    if(!blob){log("ERROR: No data found in schedule_v3/blob.");document.getElementById("load-btn").disabled=false;return;}
-    try{
-      var d=JSON.parse(blob);
-      allClients=d.clients||[];
-      log("Raw clients in blob: "+allClients.length);
-
-      // Count field coverage
-      var withPDI=allClients.filter(function(c){return c.pdiAdmit;}).length;
-      var withSig=allClients.filter(function(c){return c.sigAdmit;}).length;
-      var withBoth=allClients.filter(function(c){return c.pdiAdmit&&c.sigAdmit;}).length;
-      var unnamed=allClients.filter(function(c){return !c.name;}).length;
-      log("PDI admit date: "+withPDI+" | Sig admit date: "+withSig+" | Both: "+withBoth+" | Unnamed: "+unnamed);
-
-      rows=allClients.map(buildRow).sort(function(a,b){return a.name.localeCompare(b.name);});
-      log("Rows built: "+rows.length);
-
-      document.getElementById("stats").style.display="inline";
-      document.getElementById("stats").innerHTML=
-        "<b>"+rows.length+"</b> clients &nbsp;·&nbsp; <b>"+withPDI+"</b> PDI &nbsp;·&nbsp; <b>"+withSig+"</b> Sig &nbsp;·&nbsp; <b>"+withBoth+"</b> converted";
-
-      renderTable();
-      document.getElementById("dl-btn").disabled=false;
-    }catch(e){log("Parse error: "+e.message);document.getElementById("load-btn").disabled=false;}
-  },function(e){log("Firebase error: "+e.message);document.getElementById("load-btn").disabled=false;});
-}
+function safeKey(name){return(name||"unnamed").replace(/[.#$/[\]]/g,"_");}
 
 var ADMIT_TYPES=["","Internal","External"];
 var PRIOR_LOC=["","None","Residential","Detox","PHP","IOP","OP","Step-Down","Hospital","Other"];
 var STEP_DOWN=["","Signature","PDI","PHP","IOP","OP","Step-Down","Residential","Private Practice","Discharged to Home","AMA","Transferred","Deceased","Unknown"];
 
+function buildRows(){
+  return allClients.map(function(c,i){
+    var prog=getProgram(c);
+    var pdiAdmit=c.pdiAdmit||"",pdiDisch=c.pdiDischarge||c.pdiDisch||"";
+    var sigAdmit=c.sigAdmit||"",sigDisch=c.sigDischarge||c.sigDisch||c.endDate||"";
+    var pdiLOS=pdiAdmit?daysBetween(pdiAdmit,pdiDisch||TODAY):null;
+    var sigLOS=sigAdmit?daysBetween(sigAdmit,sigDisch||TODAY):null;
+    var totalLOS=pdiLOS!==null&&sigLOS!==null?pdiLOS+sigLOS:pdiLOS!==null?pdiLOS:sigLOS;
+    var converted=pdiAdmit&&sigAdmit?"Yes":"No";
+    var daysTillConv=pdiAdmit&&sigAdmit?daysBetween(pdiAdmit,sigAdmit):null;
+    var discharged=(prog==="PDI"?pdiDisch:prog==="Signature"?sigDisch:(pdiDisch||sigDisch));
+    var key=safeKey(c.name);
+    var saved=savedEdits[key]||{};
+    return{
+      _key:key,_idx:i,
+      name:c.name||"(unnamed)",program:prog,
+      status:discharged?"Discharged":"Active",
+      pdiAdmit:fmtD(pdiAdmit),pdiDisch:fmtD(pdiDisch),pdiLOS:pdiLOS===null?"":pdiLOS,
+      sigAdmit:fmtD(sigAdmit),sigDisch:fmtD(sigDisch),sigLOS:sigLOS===null?"":sigLOS,
+      totalLOS:totalLOS===null?"":totalLOS,
+      converted:converted,daysTillConv:daysTillConv===null?"":daysTillConv,
+      // fill-in — loaded from Firebase if previously saved
+      admitType:saved.admitType||"",
+      priorLOC:saved.priorLOC||"",
+      priorLOClos:saved.priorLOClos||"",
+      stepDown:saved.stepDown||"",
+      stepDownDate:saved.stepDownDate||"",
+      notes:saved.notes||""
+    };
+  }).sort(function(a,b){return a.name.localeCompare(b.name);});
+}
+
+function saveEdits(key,field,value){
+  showSave(true);
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(function(){
+    EDITS_REF.child(key).update({[field]:value},function(err){
+      showSave(false);
+      if(err)log("Save error: "+err.message);
+    });
+  },400); // debounce 400ms
+}
+
+function loadData(){
+  document.getElementById("load-btn").disabled=true;
+  document.getElementById("log").textContent="";
+  log("Loading saved edits from Firebase...");
+
+  // Load saved edits first, then load clients
+  EDITS_REF.once("value",function(editSnap){
+    savedEdits=editSnap.val()||{};
+    var editCount=Object.keys(savedEdits).length;
+    log("Saved edits found: "+editCount+" clients");
+
+    log("Loading client roster...");
+    DB.ref("schedule_v3/blob").once("value",function(snap){
+      var blob=snap.val();
+      if(!blob){log("ERROR: No calendar data found.");document.getElementById("load-btn").disabled=false;return;}
+      try{
+        var d=JSON.parse(blob);
+        allClients=d.clients||[];
+        log("Clients loaded: "+allClients.length+" total");
+        var withPDI=allClients.filter(function(c){return c.pdiAdmit;}).length;
+        var withSig=allClients.filter(function(c){return c.sigAdmit;}).length;
+        var withBoth=allClients.filter(function(c){return c.pdiAdmit&&c.sigAdmit;}).length;
+        log("PDI: "+withPDI+" | Sig: "+withSig+" | Both: "+withBoth+" | Edits restored: "+editCount);
+
+        rows=buildRows();
+        document.getElementById("stats").style.display="inline";
+        document.getElementById("stats").innerHTML=
+          "<b>"+rows.length+"</b> clients &nbsp;·&nbsp; "
+          +"<b>"+rows.filter(function(r){return r.status==="Active";}).length+"</b> active &nbsp;·&nbsp; "
+          +"<b>"+rows.filter(function(r){return r.converted==="Yes";}).length+"</b> converted";
+        renderTable();
+        document.getElementById("dl-btn").disabled=false;
+      }catch(e){log("Parse error: "+e.message);document.getElementById("load-btn").disabled=false;}
+    },function(e){log("Firebase error: "+e.message);document.getElementById("load-btn").disabled=false;});
+  });
+}
+
+function esc(s){var d=document.createElement("div");d.textContent=s||"";return d.innerHTML;}
+
+function makeSelect(opts,val,key,field){
+  var s='<select onchange="updateField(\''+key+'\',\''+field+'\',this.value)">';
+  opts.forEach(function(o){s+='<option'+(o===val?' selected':'')+'>'+o+'</option>';});
+  return s+'</select>';
+}
+function makeInput(val,key,field,ph,w){
+  return'<input type="text" value="'+esc(val)+'" placeholder="'+ph+'" style="min-width:'+w+'px" oninput="updateField(\''+key+'\',\''+field+'\',this.value)">';
+}
+
+window.updateField=function(key,field,value){
+  // Update in-memory row
+  var row=rows.find(function(r){return r._key===key;});
+  if(row)row[field]=value;
+  // Auto-save to Firebase
+  saveEdits(key,field,value);
+};
+
 function renderTable(){
-  var h="<table><thead><tr>"
-    +"<th>#</th><th>Client</th><th>Program</th><th>Status</th>"
-    +"<th>PDI Admit</th><th>PDI Disch</th><th>PDI LOS</th>"
-    +"<th>Sig Admit</th><th>Sig Disch</th><th>Sig LOS</th>"
-    +"<th>Total LOS</th><th>Converted</th><th>Days PDI→Sig</th>"
-    +"<th class='fill' title='You fill this in'>Admit Type ▾</th>"
-    +"<th class='fill' title='You fill this in'>Prior LOC ▾</th>"
-    +"<th class='fill' title='You fill this in'>Prior LOC LOS</th>"
-    +"<th class='fill' title='You fill this in'>Step-Down ▾</th>"
-    +"<th class='fill' title='You fill this in'>Step-Down Date</th>"
-    +"<th class='fill' title='You fill this in'>Notes</th>"
-    +"</tr></thead><tbody>";
+  var h='<table><thead><tr>'
+    +'<th>#</th><th>Client</th><th>Program</th><th>Status</th>'
+    +'<th>PDI Admit</th><th>PDI Disch</th><th>PDI LOS</th>'
+    +'<th>Sig Admit</th><th>Sig Disch</th><th>Sig LOS</th>'
+    +'<th>Total LOS</th><th>Converted</th><th>PDI→Sig days</th>'
+    +'<th class="fill">Admit Type</th>'
+    +'<th class="fill">Prior LOC</th>'
+    +'<th class="fill">Prior LOC LOS</th>'
+    +'<th class="fill">Step-Down</th>'
+    +'<th class="fill">Step-Down Date</th>'
+    +'<th class="fill">Notes</th>'
+    +'</tr></thead><tbody>';
 
   rows.forEach(function(r,i){
     var bc=r.program==="PDI"?"pdi":r.program==="Signature"?"sig":r.program==="Both"?"both":"unk";
     var sc=r.status==="Active"?"act":"dis";
     var cv=r.converted==="Yes"?"<span class='yes'>✓ Yes</span>":"<span class='dash'>—</span>";
-    h+="<tr class='editable'>"
-      +"<td style='color:#aaa;font-size:10px'>"+(i+1)+"</td>"
-      +"<td style='font-weight:600;color:#3E342A;min-width:140px'>"+esc(r.name)+"</td>"
-      +"<td><span class='badge "+bc+"'>"+r.program+"</span></td>"
-      +"<td class='"+sc+"'>"+r.status+"</td>"
-      +"<td>"+r.pdiAdmit+"</td><td>"+r.pdiDisch+"</td>"
-      +"<td style='font-weight:600'>"+r.pdiLOS+"</td>"
-      +"<td>"+r.sigAdmit+"</td><td>"+r.sigDisch+"</td>"
-      +"<td style='font-weight:600'>"+r.sigLOS+"</td>"
-      +"<td style='font-weight:700;color:#3E342A'>"+r.totalLOS+"</td>"
-      +"<td>"+cv+"</td>"
-      +"<td style='color:#7A7060'>"+r.daysTillConv+"</td>"
-      // Fill-in cells
-      +"<td class='fill-cell'><select onchange=\"rows["+i+"].admitType=this.value\">"+ADMIT_TYPES.map(function(v){return"<option>"+v+"</option>";}).join("")+"</select></td>"
-      +"<td class='fill-cell'><select onchange=\"rows["+i+"].priorLOC=this.value\">"+PRIOR_LOC.map(function(v){return"<option>"+v+"</option>";}).join("")+"</select></td>"
-      +"<td class='fill-cell'><input type='text' placeholder='days' oninput=\"rows["+i+"].priorLOClos=this.value\" style='width:60px'></td>"
-      +"<td class='fill-cell'><select onchange=\"rows["+i+"].stepDown=this.value\">"+STEP_DOWN.map(function(v){return"<option>"+v+"</option>";}).join("")+"</select></td>"
-      +"<td class='fill-cell'><input type='text' placeholder='mm/dd/yyyy' oninput=\"rows["+i+"].stepDownDate=this.value\" style='width:90px'></td>"
-      +"<td class='fill-cell'><input type='text' placeholder='Notes' oninput=\"rows["+i+"].notes=this.value\" style='min-width:140px'></td>"
-      +"</tr>";
+    var hasSaved=r.admitType||r.priorLOC||r.priorLOClos||r.stepDown||r.stepDownDate||r.notes;
+    h+='<tr'+(hasSaved?' class="saved-row"':'')+' id="row-'+r._key+'">'
+      +'<td style="color:#aaa;font-size:10px">'+(i+1)+'</td>'
+      +'<td style="font-weight:600;color:#3E342A;min-width:130px">'+esc(r.name)+'</td>'
+      +'<td><span class="badge '+bc+'">'+r.program+'</span></td>'
+      +'<td class="'+sc+'">'+r.status+'</td>'
+      +'<td>'+r.pdiAdmit+'</td><td>'+r.pdiDisch+'</td>'
+      +'<td style="font-weight:600">'+r.pdiLOS+'</td>'
+      +'<td>'+r.sigAdmit+'</td><td>'+r.sigDisch+'</td>'
+      +'<td style="font-weight:600">'+r.sigLOS+'</td>'
+      +'<td style="font-weight:700;color:#3E342A">'+r.totalLOS+'</td>'
+      +'<td>'+cv+'</td>'
+      +'<td style="color:#7A7060">'+r.daysTillConv+'</td>'
+      +'<td class="fill-cell">'+makeSelect(ADMIT_TYPES,r.admitType,r._key,'admitType')+'</td>'
+      +'<td class="fill-cell">'+makeSelect(PRIOR_LOC,r.priorLOC,r._key,'priorLOC')+'</td>'
+      +'<td class="fill-cell">'+makeInput(r.priorLOClos,r._key,'priorLOClos','days',50)+'</td>'
+      +'<td class="fill-cell">'+makeSelect(STEP_DOWN,r.stepDown,r._key,'stepDown')+'</td>'
+      +'<td class="fill-cell">'+makeInput(r.stepDownDate,r._key,'stepDownDate','mm/dd/yyyy',90)+'</td>'
+      +'<td class="fill-cell">'+makeInput(r.notes,r._key,'notes','Notes',160)+'</td>'
+      +'</tr>';
   });
-  h+="</tbody></table>";
+  h+='</tbody></table>';
   document.getElementById("tbl-wrap").innerHTML=h;
 }
 
-function esc(s){var d=document.createElement("div");d.textContent=s;return d.innerHTML;}
+function clearSaved(){
+  if(!confirm("This will permanently erase all saved edits for all clients. Are you sure?"))return;
+  EDITS_REF.remove(function(err){
+    if(err){log("Error clearing: "+err.message);return;}
+    savedEdits={};
+    rows=buildRows();
+    renderTable();
+    log("All saved edits cleared.");
+  });
+}
 
 function downloadExcel(){
-  // Build data array from current row state (captures any edits made in dropdowns)
   var data=rows.map(function(r){return{
-    "Client Name":r.name,
-    "Program":r.program,
-    "Status":r.status,
-    "PDI Admit":r.pdiAdmit,
-    "PDI Discharge":r.pdiDisch,
-    "PDI LOS (days)":r.pdiLOS===""?"":Number(r.pdiLOS)||r.pdiLOS,
-    "Sig Admit":r.sigAdmit,
-    "Sig Discharge":r.sigDisch,
-    "Sig LOS (days)":r.sigLOS===""?"":Number(r.sigLOS)||r.sigLOS,
-    "Total LOS (days)":r.totalLOS===""?"":Number(r.totalLOS)||r.totalLOS,
+    "Client Name":r.name,"Program":r.program,"Status":r.status,
+    "PDI Admit":r.pdiAdmit,"PDI Discharge":r.pdiDisch,
+    "PDI LOS (days)":r.pdiLOS===""?"":+r.pdiLOS||r.pdiLOS,
+    "Sig Admit":r.sigAdmit,"Sig Discharge":r.sigDisch,
+    "Sig LOS (days)":r.sigLOS===""?"":+r.sigLOS||r.sigLOS,
+    "Total LOS (days)":r.totalLOS===""?"":+r.totalLOS||r.totalLOS,
     "Converted PDI→Sig":r.converted,
-    "Days PDI Before Sig":r.daysTillConv===""?"":Number(r.daysTillConv)||r.daysTillConv,
+    "Days PDI Before Sig":r.daysTillConv===""?"":+r.daysTillConv||r.daysTillConv,
     "Admission Type":r.admitType,
     "Prior LOC (if internal)":r.priorLOC,
     "Prior LOC LOS (days)":r.priorLOClos,
@@ -220,81 +262,36 @@ function downloadExcel(){
   };});
 
   var ws=XLSX.utils.json_to_sheet(data);
-
-  // Column widths
-  ws["!cols"]=[
-    {wch:24},{wch:11},{wch:11},
-    {wch:12},{wch:12},{wch:11},
-    {wch:12},{wch:12},{wch:11},
-    {wch:12},{wch:11},{wch:14},
-    {wch:16},{wch:20},{wch:16},
-    {wch:24},{wch:14},{wch:32}
-  ];
-
-  // Freeze top row and first column
+  ws["!cols"]=[{wch:22},{wch:10},{wch:10},{wch:12},{wch:12},{wch:10},{wch:12},{wch:12},{wch:10},{wch:10},{wch:10},{wch:13},{wch:15},{wch:20},{wch:14},{wch:24},{wch:13},{wch:30}];
   ws["!freeze"]={xSplit:1,ySplit:1};
-
-  // Data validation dropdowns — columns M(13), N(14), P(16)
-  var n=data.length+1;
   ws["!dataValidation"]=[
-    {sqref:"M2:M"+n, type:"list", formulae:['"Internal,External"'], showDropDown:false,
-     showErrorMessage:true,errorTitle:"Invalid entry",error:"Select Internal or External"},
-    {sqref:"N2:N"+n, type:"list",
-     formulae:['"None,Residential,Detox,PHP,IOP,OP,Step-Down,Hospital,Other"'],
-     showDropDown:false},
-    {sqref:"P2:P"+n, type:"list",
-     formulae:['"Signature,PDI,PHP,IOP,OP,Step-Down,Residential,Private Practice,Discharged to Home,AMA,Transferred,Deceased,Unknown"'],
-     showDropDown:false}
+    {sqref:"M2:M"+(data.length+1),type:"list",formulae:['"Internal,External"'],showDropDown:false},
+    {sqref:"N2:N"+(data.length+1),type:"list",formulae:['"None,Residential,Detox,PHP,IOP,OP,Step-Down,Hospital,Other"'],showDropDown:false},
+    {sqref:"P2:P"+(data.length+1),type:"list",formulae:['"Signature,PDI,PHP,IOP,OP,Step-Down,Residential,Private Practice,Discharged to Home,AMA,Transferred,Deceased,Unknown"'],showDropDown:false}
   ];
 
   var wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,"Client Flow");
 
-  // Summary tab
+  function avg(vals){var v=vals.filter(function(x){return x!==""&&!isNaN(+x);});return v.length?Math.round(v.reduce(function(a,b){return+a+ +b;},0)/v.length):"";}
   var active=rows.filter(function(r){return r.status==="Active";}).length;
-  var disch=rows.filter(function(r){return r.status==="Discharged";}).length;
   var conv=rows.filter(function(r){return r.converted==="Yes";}).length;
-  var pdiOnly=rows.filter(function(r){return r.program==="PDI";}).length;
-  var sigOnly=rows.filter(function(r){return r.program==="Signature";}).length;
-  var both=rows.filter(function(r){return r.program==="Both";}).length;
-
-  function avg(arr){var vals=arr.filter(function(v){return v!==""&&v!==null&&!isNaN(Number(v));});return vals.length?Math.round(vals.reduce(function(a,b){return a+Number(b);},0)/vals.length):"";}
-
-  var sumData=[
-    ["CLIENT FLOW SUMMARY","",""],
-    ["Generated",new Date().toLocaleDateString(),""],
-    ["","",""],
-    ["CENSUS","",""],
-    ["Total clients",rows.length,""],
-    ["Active",active,""],
-    ["Discharged",disch,""],
-    ["","",""],
-    ["PROGRAM BREAKDOWN","",""],
-    ["PDI only",pdiOnly,""],
-    ["Signature only",sigOnly,""],
-    ["Both (PDI → Sig conversion)",both,""],
-    ["Conversion rate (%)",rows.length?Math.round(both/rows.length*100)+"%":"",""],
-    ["","",""],
-    ["LENGTH OF STAY — AVERAGES","",""],
-    ["Avg PDI LOS (days)",avg(rows.map(function(r){return r.pdiLOS;})),""],
-    ["Avg Sig LOS (days)",avg(rows.map(function(r){return r.sigLOS;})),""],
-    ["Avg total LOS (days)",avg(rows.map(function(r){return r.totalLOS;})),""],
-    ["Avg days PDI → Sig conversion",avg(rows.map(function(r){return r.daysTillConv;})),""],
-    ["","",""],
-    ["INSTRUCTIONS — FILL-IN COLUMNS","",""],
-    ["Admission Type","Internal = came from another Lifeskills LOC","External = came from outside Lifeskills"],
-    ["Prior LOC (if internal)","Level of care before PDI/Signature","None = external admit. Otherwise: Residential, PHP, IOP, Detox, etc."],
-    ["Prior LOC LOS (days)","How long at that prior level","Enter number"],
-    ["Discharge Step-Down","Where client went after leaving","e.g. IOP, PHP, Private Practice, AMA"],
-    ["Step-Down Date","Date of transition","mm/dd/yyyy"],
-    ["Notes","Any context about the client flow","Free text"],
-  ];
-  var ws2=XLSX.utils.aoa_to_sheet(sumData);
-  ws2["!cols"]=[{wch:32},{wch:40},{wch:36}];
+  var ws2=XLSX.utils.aoa_to_sheet([
+    ["CLIENT FLOW SUMMARY"],["Generated",new Date().toLocaleDateString()],[""],
+    ["Total clients",rows.length],["Active",active],["Discharged",rows.length-active],[""],
+    ["PDI only",rows.filter(function(r){return r.program==="PDI";}).length],
+    ["Signature only",rows.filter(function(r){return r.program==="Signature";}).length],
+    ["Both (conversions)",conv],
+    ["Conversion rate",rows.length?Math.round(conv/rows.length*100)+"%":""],[""],
+    ["Avg PDI LOS (days)",avg(rows.map(function(r){return r.pdiLOS;}))],
+    ["Avg Sig LOS (days)",avg(rows.map(function(r){return r.sigLOS;}))],
+    ["Avg total LOS (days)",avg(rows.map(function(r){return r.totalLOS;}))],
+    ["Avg days PDI→Sig",avg(rows.map(function(r){return r.daysTillConv;}))],
+  ]);
+  ws2["!cols"]=[{wch:28},{wch:20}];
   XLSX.utils.book_append_sheet(wb,ws2,"Summary");
-
   XLSX.writeFile(wb,"Client_Flow_Mapping.xlsx");
-  log("Downloaded: Client_Flow_Mapping.xlsx — "+rows.length+" clients, "+data.length+" rows");
+  log("Downloaded: "+rows.length+" clients");
 }
 </script>
 </body></html>
