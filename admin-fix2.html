@@ -100,7 +100,7 @@ function buildRows(){
     var totalLOS=pdiLOS!==null&&sigLOS!==null?pdiLOS+sigLOS:pdiLOS!==null?pdiLOS:sigLOS;
     var converted=pdiAdmit&&sigAdmit?"Yes":"No";
     var daysTillConv=pdiAdmit&&sigAdmit?daysBetween(pdiAdmit,sigAdmit):null;
-    var discharged=(prog==="PDI"?pdiDisch:prog==="Signature"?sigDisch:(pdiDisch||sigDisch));
+    var discharged=prog==="PDI"?pdiDisch:prog==="Signature"?sigDisch:prog==="Both"?sigDisch:(pdiDisch||sigDisch);
     var key=safeKey(c.name);
     var saved=savedEdits[key]||{};
     return{
@@ -160,8 +160,8 @@ function loadData(){
         rows=buildRows();
         document.getElementById("stats").style.display="inline";
         document.getElementById("stats").innerHTML=
-          "<b>"+rows.length+"</b> clients &nbsp;·&nbsp; "
-          +"<b>"+rows.filter(function(r){return r.status==="Active";}).length+"</b> active &nbsp;·&nbsp; "
+          var conv=rows.filter(function(r){return r.converted==="Yes";}).length;
+        "<b>"+rows.length+"</b> clients &nbsp;|&nbsp; "+"PDI admits: <b>"+rows.filter(function(r){return r.program==="PDI"||r.program==="Both";}).length+"</b>"+" &nbsp;|&nbsp; Sig admits: <b>"+rows.filter(function(r){return r.program==="Signature"||r.program==="Both";}).length+"</b>"+" &nbsp;|&nbsp; Conversions: <b>"+conv+"</b>"+" &nbsp;|&nbsp; Active: <b>"+rows.filter(function(r){return r.status==="Active";}).length+"</b>";}).length+"</b> active &nbsp;·&nbsp; "
           +"<b>"+rows.filter(function(r){return r.converted==="Yes";}).length+"</b> converted";
         renderTable();
         document.getElementById("dl-btn").disabled=false;
@@ -279,10 +279,20 @@ function downloadExcel(){
   var ws2=XLSX.utils.aoa_to_sheet([
     ["CLIENT FLOW SUMMARY"],["Generated",new Date().toLocaleDateString()],[""],
     ["Total clients",rows.length],["Active",active],["Discharged",rows.length-active],[""],
-    ["PDI only",rows.filter(function(r){return r.program==="PDI";}).length],
-    ["Signature only",rows.filter(function(r){return r.program==="Signature";}).length],
-    ["Both (conversions)",conv],
-    ["Conversion rate",rows.length?Math.round(conv/rows.length*100)+"%":""],[""],
+    [""],
+    ["ADMISSIONS"],
+    ["Total PDI admissions",rows.filter(function(r){return r.program==="PDI"||r.program==="Both";}).length,"all clients who entered PDI"],
+    ["Total Signature admissions",rows.filter(function(r){return r.program==="Signature"||r.program==="Both";}).length,"all clients who entered Signature"],
+    ["PDI only (no conversion)",rows.filter(function(r){return r.program==="PDI";}).length,""],
+    ["Signature only (direct admit)",rows.filter(function(r){return r.program==="Signature";}).length,""],
+    ["Converted PDI to Signature",conv,""],
+    ["Conversion rate",rows.filter(function(r){return r.program==="PDI"||r.program==="Both";}).length?Math.round(conv/rows.filter(function(r){return r.program==="PDI"||r.program==="Both";}).length*100)+"%":"","% of PDI admits that converted to Sig"],
+    [""],
+    ["CURRENT CENSUS"],
+    ["Active PDI",rows.filter(function(r){return r.status==="Active"&&r.program==="PDI";}).length,""],
+    ["Active Signature",rows.filter(function(r){return r.status==="Active"&&(r.program==="Signature"||r.program==="Both");}).length,"includes converted PDI clients"],
+    ["Total active",active,""],["Total discharged",rows.length-active,""],
+    [""],
     ["Avg PDI LOS (days)",avg(rows.map(function(r){return r.pdiLOS;}))],
     ["Avg Sig LOS (days)",avg(rows.map(function(r){return r.sigLOS;}))],
     ["Avg total LOS (days)",avg(rows.map(function(r){return r.totalLOS;}))],
