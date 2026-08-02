@@ -128,7 +128,7 @@ function buildRows(){
     var prog=resolveProgram(c, saved);
     var hasPDI=prog==="PDI"||prog==="Both";
     var hasSig=prog==="Signature"||prog==="Both";
-    // Gate date fields strictly on resolved program
+    // Gate date fields on actual program to prevent false PDI on Sig-only clients
     var pdiAdmit=hasPDI?(c.pdiAdmit||""):"";
     var pdiDisch=hasPDI?(c.pdiDischarge||c.pdiDisch||""):"";
     var sigAdmit=hasSig?(c.sigAdmit||""):"";
@@ -138,27 +138,30 @@ function buildRows(){
     var totalLOS=pdiLOS!==null&&sigLOS!==null?pdiLOS+sigLOS:pdiLOS!==null?pdiLOS:sigLOS;
     var converted=pdiAdmit&&sigAdmit?"Yes":"No";
     var daysTillConv=pdiAdmit&&sigAdmit?daysBetween(pdiAdmit,sigAdmit):null;
-    var discharged=prog==="PDI"?pdiDisch:prog==="Signature"?sigDisch:prog==="Both"?sigDisch:(pdiDisch||sigDisch);
-    // Detect if calendar program field is potentially wrong
+    // Discharge date for this client (most recent program)
+    var dischDate=prog==="PDI"?pdiDisch:prog==="Signature"?sigDisch:prog==="Both"?sigDisch:(pdiDisch||sigDisch);
+    var isActive=!dischDate;
+    // Step-down date defaults to discharge date if not manually overridden
+    var sdDate=saved.stepDownDate||(dischDate?fmtD(dischDate):"");
     var calProg=(c.program||"").trim();
     var hasOverride=!!(saved.programOverride);
     return{
       _key:key,_idx:i,
       name:c.name||"(unnamed)",
-      program:prog,
-      calProgram:calProg,  // what the calendar actually says
-      hasOverride:hasOverride,
-      status:discharged?"Discharged":"Active",
+      program:prog,calProgram:calProg,hasOverride:hasOverride,
+      status:isActive?"Active":"Discharged",
+      isActive:isActive,
+      dischDate:fmtD(dischDate),   // raw discharge date for display
       pdiAdmit:fmtD(pdiAdmit),pdiDisch:fmtD(pdiDisch),pdiLOS:pdiLOS===null?"":pdiLOS,
       sigAdmit:fmtD(sigAdmit),sigDisch:fmtD(sigDisch),sigLOS:sigLOS===null?"":sigLOS,
       totalLOS:totalLOS===null?"":totalLOS,
       converted:converted,daysTillConv:daysTillConv===null?"":daysTillConv,
       admitType:saved.admitType||"",
-      locHistory:saved.locHistory||"",
       priorLOC:saved.priorLOC||"",
       priorLOClos:saved.priorLOClos||"",
-      stepDown:saved.stepDown||"",
-      stepDownDate:saved.stepDownDate||"",
+      locHistory:saved.locHistory||"",
+      stepDown:isActive?"":saved.stepDown||"",          // blank for active clients
+      stepDownDate:isActive?"N/A":sdDate,               // N/A for active, discharge date for discharged
       notes:saved.notes||""
     };
   }).sort(function(a,b){return a.name.localeCompare(b.name);});
@@ -257,12 +260,18 @@ function renderTable(){
     var bc=r.program==="PDI"?"pdi":r.program==="Signature"?"sig":r.program==="Both"?"both":"unk";
     var sc=r.status==="Active"?"act":"dis";
     var cv=r.converted==="Yes"?"<span class='yes'>\u2713 Yes</span>":"<span class='dash'>\u2014</span>";
-    var hasSaved=r.admitType||r.priorLOC||r.priorLOClos||r.locHistory||r.stepDown||r.stepDownDate||r.notes;
-    var calProg=(savedEdits[r._key]&&savedEdits[r._key].programOverride)||r.calProgram||"";
+    var hasSaved=r.admitType||r.priorLOC||r.priorLOClos||r.locHistory||r.stepDown||r.notes;
     var mismatch=r.calProgram&&r.calProgram!==r.program&&!r.hasOverride;
     var calCell=mismatch
       ?'<span class="badge warn" title="Resolved program differs from calendar field">'+esc(r.calProgram||"\u2014")+'</span>'
       :'<span style="color:#aaa;font-size:10px">'+esc(r.calProgram||"\u2014")+'</span>';
+
+    // Active clients: step-down fields are N/A and disabled
+    var sdCell=r.isActive
+      ?'<td class="fill-cell" style="background:#F5F5F5;color:#aaa;font-style:italic;font-size:10px" colspan="2">Active \u2014 N/A</td>'
+      :'<td class="fill-cell">'+makeSelect(STEP_DOWN,r.stepDown,r._key,"stepDown")+'</td>'
+       +'<td class="fill-cell">'+makeInput(r.stepDownDate,r._key,"stepDownDate","discharge date",90)+'</td>';
+
     var row='<tr'+(hasSaved?' class="saved-row"':'')+' id="row-'+r._key+'">';
     row+='<td style="color:#aaa;font-size:10px">'+(i+1)+'</td>';
     row+='<td style="font-weight:600;color:#3E342A;min-width:120px">'+esc(r.name)+'</td>';
@@ -281,8 +290,7 @@ function renderTable(){
     row+='<td class="fill-cell">'+makeSelect(PRIOR_LOC,r.priorLOC,r._key,"priorLOC")+'</td>';
     row+='<td class="fill-cell">'+makeInput(r.priorLOClos,r._key,"priorLOClos","days at immed. prior LOC",70)+'</td>';
     row+='<td class="fill-cell">'+makeInput(r.locHistory,r._key,"locHistory","e.g. Res 30d > PHP 14d > IOP 45d",200)+'</td>';
-    row+='<td class="fill-cell">'+makeSelect(STEP_DOWN,r.stepDown,r._key,"stepDown")+'</td>';
-    row+='<td class="fill-cell">'+makeInput(r.stepDownDate,r._key,"stepDownDate","mm/dd/yyyy",90)+'</td>';
+    row+=sdCell;
     row+='<td class="fill-cell">'+makeInput(r.notes,r._key,"notes","Notes",160)+'</td>';
     row+='</tr>';
     h+=row;
@@ -316,8 +324,8 @@ function downloadExcel(){
     "Immediate Prior LOC":r.priorLOC,
     "Immediate Prior LOS (days)":r.priorLOClos,
     "Prior LOC History (full chain)":r.locHistory,
-    "Discharge Step-Down":r.stepDown,
-    "Step-Down Date":r.stepDownDate,
+    "Discharge Step-Down":r.isActive?"Active - N/A":r.stepDown,
+    "Step-Down Date (= Discharge Date)":r.isActive?"N/A":r.stepDownDate,
     "Notes":r.notes
   };});
   var ws=XLSX.utils.json_to_sheet(data);
