@@ -28,25 +28,27 @@ tr:hover td{background:#F0EDE8}
 .badge{display:inline-block;font-size:9px;font-weight:700;padding:1px 7px;border-radius:8px}
 .pdi{background:#E8EDF5;color:#3E342A}.sig{background:#EFE9E0;color:#6B5C45}
 .both{background:#F5F0E8;color:#8C6A2F}.unk{background:#F0EDE8;color:#999}
+.warn{background:#FDECEA;color:#991F10;font-weight:700}
 .yes{color:#157A52;font-weight:700}.dash{color:#ddd}
 .act{color:#157A52;font-size:10px;font-weight:600}.dis{color:#888;font-size:10px}
 select,input[type=text]{font-size:11px;padding:3px 6px;border:1px solid #D0CCC5;border-radius:4px;font-family:Arial,sans-serif;background:#fff;color:#1A1A1A}
 select:focus,input:focus{outline:none;border-color:#8C6A2F;background:#FFFBF5}
 .fill-cell{background:#FFFBF0!important}
 .saved-row td.fill-cell{background:#F0FAF3!important}
+.override-cell{background:#FFF5E0!important}
 </style></head>
 <body>
 <h2>Client Flow Mapping</h2>
-<p class="sub">All edits auto-save to Firebase instantly — refreshing the page will never lose your work.</p>
+<p class="sub">All edits auto-save · Program overrides fix incorrect calendar program fields · Amber = fill in · Orange = program override</p>
 
 <div class="bar">
   <button class="btn" id="load-btn" onclick="loadData()">Load All Clients</button>
   <button class="btn btn-dl" id="dl-btn" onclick="downloadExcel()" disabled>Download Excel</button>
-  <button class="btn btn-clr" onclick="clearSaved()" title="Erase all saved fill-in data and start fresh">Clear Saved Edits</button>
+  <button class="btn btn-clr" onclick="clearSaved()">Clear Saved Edits</button>
   <span class="stat" id="stats" style="display:none"></span>
-  <span class="save-ind" id="save-ind">✓ Saved</span>
+  <span class="save-ind" id="save-ind">✓ Auto-saved</span>
 </div>
-<div class="log" id="log">Click Load All Clients to begin. Any edits you make auto-save to Firebase.</div>
+<div class="log" id="log">Click Load All Clients to begin.</div>
 <div class="tbl-wrap" id="tbl-wrap"></div>
 
 <script>
@@ -54,20 +56,13 @@ firebase.initializeApp({apiKey:"AIzaSyCERxntgytkfCHWN7EoAVYVmLBcfWyYZ5A",
   databaseURL:"https://pdi-signature-schedule-default-rtdb.firebaseio.com",
   projectId:"pdi-signature-schedule"});
 var DB=firebase.database();
-// Saved edits stored at a protected path, separate from calendar data
 var EDITS_REF=DB.ref("lifeskills_clinical/client_flow_edits");
-
 var allClients=[], rows=[], savedEdits={};
 var TODAY=(function(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");})();
 var saveTimer=null;
 
 function log(m){var el=document.getElementById("log");el.textContent+=m+"\n";el.scrollTop=el.scrollHeight;}
-function showSave(saving){
-  var el=document.getElementById("save-ind");
-  el.style.display="inline";
-  el.className="save-ind"+(saving?" saving":"");
-  el.textContent=saving?"Saving…":"✓ Auto-saved";
-}
+function showSave(saving){var el=document.getElementById("save-ind");el.style.display="inline";el.className="save-ind"+(saving?" saving":"");el.textContent=saving?"Saving…":"✓ Auto-saved";}
 
 function daysBetween(a,b){
   if(!a||!b)return null;
@@ -79,42 +74,46 @@ function fmtD(iso){
   try{var d=new Date(iso+"T12:00:00");return(d.getMonth()+1)+"/"+d.getDate()+"/"+d.getFullYear();}
   catch(e){return iso;}
 }
-function getProgram(c){
-  // Program field is authoritative — mirrors outcomes.html Firebase parsing logic.
-  // Raw admit dates are unreliable: many Sig-only clients have pdiAdmit
-  // accidentally set in the calendar to the same date as sigAdmit.
+
+// ── Program resolution — program field is authoritative ──────────────────────
+// If saved override exists, use that. Otherwise use calendar program field.
+// Falls back to admit dates only when program field is completely absent.
+function resolveProgram(c, saved){
+  // Saved override always wins
+  if(saved && saved.programOverride) return saved.programOverride;
+  
   var prog=(c.program||"").toLowerCase().trim();
   var hasPDI, hasSig;
   if(prog){
-    hasPDI = prog==="pdi" || prog==="both";
-    hasSig = prog==="signature" || prog==="both" || prog==="sig";
+    hasPDI = prog==="pdi"||prog==="both";
+    hasSig = prog==="signature"||prog==="both"||prog==="sig";
   } else {
-    // No program field — fall back to admit dates
     hasPDI = !!c.pdiAdmit;
     hasSig = !!c.sigAdmit;
-    // Known calendar issue: Sig-only clients often have pdiAdmit === sigAdmit
-    if(hasPDI && hasSig && c.pdiAdmit === c.sigAdmit) hasPDI = false;
+    if(hasPDI&&hasSig&&c.pdiAdmit===c.sigAdmit) hasPDI=false;
   }
-  // Catch-all: if sigAdmit exists but nothing else determined, it's Signature
-  if(!hasSig && !hasPDI && c.sigAdmit) hasSig = true;
-  if(hasPDI && hasSig) return "Both";
+  if(!hasSig&&!hasPDI&&c.sigAdmit) hasSig=true;
+  if(hasPDI&&hasSig) return "Both";
   if(hasPDI) return "PDI";
   if(hasSig) return "Signature";
   return "Unknown";
 }
+
 function safeKey(name){return(name||"unnamed").replace(/[.#$/[\]]/g,"_");}
 
 var ADMIT_TYPES=["","Internal","External"];
 var PRIOR_LOC=["","None","Residential","Detox","PHP","IOP","OP","Step-Down","Hospital","Other"];
 var STEP_DOWN=["","Signature","PDI","PHP","IOP","OP","Step-Down","Residential","Private Practice","Discharged to Home","AMA","Transferred","Deceased","Unknown"];
+var PROG_OPTS=["","PDI","Signature","Both"];
 
 function buildRows(){
   return allClients.map(function(c,i){
-    var prog=getProgram(c);
-    // Gate date fields on actual program — prevents Sig-only clients from
-    // inheriting accidentally-set pdiAdmit values from the calendar
-    var hasPDI = prog==="PDI"||prog==="Both";
-    var hasSig = prog==="Signature"||prog==="Both";
+    var key=safeKey(c.name);
+    var saved=savedEdits[key]||{};
+    var prog=resolveProgram(c, saved);
+    var hasPDI=prog==="PDI"||prog==="Both";
+    var hasSig=prog==="Signature"||prog==="Both";
+    // Gate date fields strictly on resolved program
     var pdiAdmit=hasPDI?(c.pdiAdmit||""):"";
     var pdiDisch=hasPDI?(c.pdiDischarge||c.pdiDisch||""):"";
     var sigAdmit=hasSig?(c.sigAdmit||""):"";
@@ -125,17 +124,20 @@ function buildRows(){
     var converted=pdiAdmit&&sigAdmit?"Yes":"No";
     var daysTillConv=pdiAdmit&&sigAdmit?daysBetween(pdiAdmit,sigAdmit):null;
     var discharged=prog==="PDI"?pdiDisch:prog==="Signature"?sigDisch:prog==="Both"?sigDisch:(pdiDisch||sigDisch);
-    var key=safeKey(c.name);
-    var saved=savedEdits[key]||{};
+    // Detect if calendar program field is potentially wrong
+    var calProg=(c.program||"").trim();
+    var hasOverride=!!(saved.programOverride);
     return{
       _key:key,_idx:i,
-      name:c.name||"(unnamed)",program:prog,
+      name:c.name||"(unnamed)",
+      program:prog,
+      calProgram:calProg,  // what the calendar actually says
+      hasOverride:hasOverride,
       status:discharged?"Discharged":"Active",
       pdiAdmit:fmtD(pdiAdmit),pdiDisch:fmtD(pdiDisch),pdiLOS:pdiLOS===null?"":pdiLOS,
       sigAdmit:fmtD(sigAdmit),sigDisch:fmtD(sigDisch),sigLOS:sigLOS===null?"":sigLOS,
       totalLOS:totalLOS===null?"":totalLOS,
       converted:converted,daysTillConv:daysTillConv===null?"":daysTillConv,
-      // fill-in — loaded from Firebase if previously saved
       admitType:saved.admitType||"",
       priorLOC:saved.priorLOC||"",
       priorLOClos:saved.priorLOClos||"",
@@ -146,6 +148,44 @@ function buildRows(){
   }).sort(function(a,b){return a.name.localeCompare(b.name);});
 }
 
+function loadData(){
+  document.getElementById("load-btn").disabled=true;
+  document.getElementById("load-btn").textContent="Live — auto-updating";
+  document.getElementById("load-btn").style.background="#157A52";
+  document.getElementById("log").textContent="";
+  log("Connecting to Firebase (real-time)...");
+
+  EDITS_REF.on("value",function(snap){
+    savedEdits=snap.val()||{};
+    log("Edits synced: "+Object.keys(savedEdits).length+" records.");
+    if(allClients.length){rows=buildRows();renderTable();}
+  },function(err){log("Edits error: "+err.message);});
+
+  DB.ref("schedule_v3/blob").on("value",function(snap){
+    var blob=snap.val();
+    if(!blob){log("ERROR: No calendar data.");return;}
+    try{
+      var d=JSON.parse(blob);
+      allClients=d.clients||[];
+      var p=allClients.filter(function(c){return(c.program||"").toLowerCase().match(/pdi|both/);}).length;
+      var s=allClients.filter(function(c){return(c.program||"").toLowerCase().match(/sig|both/);}).length;
+      log("Roster: "+allClients.length+" clients | Calendar PDI: "+p+" | Calendar Sig: "+s);
+      rows=buildRows();
+      var conv=rows.filter(function(r){return r.converted==="Yes";}).length;
+      document.getElementById("stats").style.display="inline";
+      document.getElementById("stats").innerHTML=
+        "<b>"+rows.length+"</b> total &nbsp;|&nbsp;"
+        +" PDI: <b>"+rows.filter(function(r){return r.program==="PDI"||r.program==="Both";}).length+"</b>"
+        +" &nbsp;|&nbsp; Sig: <b>"+rows.filter(function(r){return r.program==="Signature"||r.program==="Both";}).length+"</b>"
+        +" &nbsp;|&nbsp; Conv: <b>"+conv+"</b>"
+        +" &nbsp;|&nbsp; Active: <b>"+rows.filter(function(r){return r.status==="Active";}).length+"</b>"
+        +" &nbsp;|&nbsp; <span style='color:#B87A00;font-weight:600'>Overrides: "+rows.filter(function(r){return r.hasOverride;}).length+"</span>";
+      renderTable();
+      document.getElementById("dl-btn").disabled=false;
+    }catch(e){log("Parse error: "+e.message);}
+  },function(err){log("ERROR: "+err.message);});
+}
+
 function saveEdits(key,field,value){
   showSave(true);
   clearTimeout(saveTimer);
@@ -154,64 +194,12 @@ function saveEdits(key,field,value){
       showSave(false);
       if(err)log("Save error: "+err.message);
     });
-  },400); // debounce 400ms
-}
-
-function loadData(){
-  document.getElementById("load-btn").disabled=true;
-  document.getElementById("load-btn").textContent="Live — auto-updating";
-  document.getElementById("load-btn").style.background="#157A52";
-  document.getElementById("log").textContent="";
-  log("Connecting to Firebase (real-time mode)...");
-
-  // ── Real-time listener: flow edits ────────────────────────────────────────
-  EDITS_REF.on("value", function(snap){
-    savedEdits = snap.val() || {};
-    log("Edits synced: "+Object.keys(savedEdits).length+" records.");
-    if(allClients.length) { rows=buildRows(); renderTable(); }
-  }, function(err){
-    log("Edits listener error: "+err.message+" — continuing without saved data.");
-  });
-
-  // ── Real-time listener: calendar client roster ────────────────────────────
-  DB.ref("schedule_v3/blob").on("value", function(snap){
-    var blob = snap.val();
-    if(!blob){ log("ERROR: No calendar data."); document.getElementById("load-btn").disabled=false; return; }
-    try{
-      var d = JSON.parse(blob);
-      var newClients = d.clients || [];
-      var changed = newClients.length !== allClients.length;
-      allClients = newClients;
-
-      var p = allClients.filter(function(c){return c.pdiAdmit;}).length;
-      var s = allClients.filter(function(c){return c.sigAdmit;}).length;
-      var both = allClients.filter(function(c){return c.pdiAdmit&&c.sigAdmit;}).length;
-      log("Roster update: "+allClients.length+" clients | PDI: "+p+" | Sig: "+s+" | Both: "+both+(changed?" (new client detected)":""));
-
-      rows = buildRows();
-      var conv = rows.filter(function(r){return r.converted==="Yes";}).length;
-      document.getElementById("stats").style.display="inline";
-      document.getElementById("stats").innerHTML=
-        "<b>"+rows.length+"</b> clients &nbsp;|&nbsp;"
-        +" PDI: <b>"+rows.filter(function(r){return r.program==="PDI"||r.program==="Both";}).length+"</b>"
-        +" &nbsp;|&nbsp; Sig: <b>"+rows.filter(function(r){return r.program==="Signature"||r.program==="Both";}).length+"</b>"
-        +" &nbsp;|&nbsp; Conv: <b>"+conv+"</b>"
-        +" &nbsp;|&nbsp; Active: <b>"+rows.filter(function(r){return r.status==="Active";}).length+"</b>";
-      renderTable();
-      document.getElementById("dl-btn").disabled=false;
-    }catch(e){
-      log("Parse error: "+e.message);
-    }
-  }, function(err){
-    log("ERROR loading clients: "+err.message);
-    document.getElementById("load-btn").disabled=false;
-  });
+  },400);
 }
 
 function esc(s){var d=document.createElement("div");d.textContent=s||"";return d.innerHTML;}
-
-function makeSelect(opts,val,key,field){
-  var s='<select onchange="updateField(\''+key+'\',\''+field+'\',this.value)">';
+function makeSelect(opts,val,key,field,cls){
+  var s='<select class="'+(cls||"")+'" onchange="updateField(\''+key+'\',\''+field+'\',this.value)">';
   opts.forEach(function(o){s+='<option'+(o===val?' selected':'')+'>'+o+'</option>';});
   return s+'</select>';
 }
@@ -220,16 +208,23 @@ function makeInput(val,key,field,ph,w){
 }
 
 window.updateField=function(key,field,value){
-  // Update in-memory row
   var row=rows.find(function(r){return r._key===key;});
   if(row)row[field]=value;
-  // Auto-save to Firebase
   saveEdits(key,field,value);
+  // If program override changed, rebuild rows and re-render immediately
+  if(field==="programOverride"){
+    rows=buildRows();
+    renderTable();
+  }
 };
 
 function renderTable(){
   var h='<table><thead><tr>'
-    +'<th>#</th><th>Client</th><th>Program</th><th>Status</th>'
+    +'<th>#</th><th>Client</th>'
+    +'<th>Program<br><span style="font-weight:400;font-size:9px;color:#aaa">(resolved)</span></th>'
+    +'<th class="override-cell" style="background:#6B5020">Program Override<br><span style="font-weight:400;font-size:9px">Fix incorrect calendar value</span></th>'
+    +'<th>Cal. Field<br><span style="font-weight:400;font-size:9px;color:#aaa">(raw)</span></th>'
+    +'<th>Status</th>'
     +'<th>PDI Admit</th><th>PDI Disch</th><th>PDI LOS</th>'
     +'<th>Sig Admit</th><th>Sig Disch</th><th>Sig LOS</th>'
     +'<th>Total LOS</th><th>Converted</th><th>PDI→Sig days</th>'
@@ -246,10 +241,18 @@ function renderTable(){
     var sc=r.status==="Active"?"act":"dis";
     var cv=r.converted==="Yes"?"<span class='yes'>✓ Yes</span>":"<span class='dash'>—</span>";
     var hasSaved=r.admitType||r.priorLOC||r.priorLOClos||r.stepDown||r.stepDownDate||r.notes;
+    // Highlight mismatch between calendar field and resolved program
+    var mismatch=r.calProgram&&r.calProgram!==r.program&&!r.hasOverride;
+    var calCell=mismatch
+      ?'<span class="badge warn" title="Resolved program differs from calendar field">'+esc(r.calProgram||"—")+'</span>'
+      :'<span style="color:#aaa;font-size:10px">'+esc(r.calProgram||"—")+'</span>';
+
     h+='<tr'+(hasSaved?' class="saved-row"':'')+' id="row-'+r._key+'">'
       +'<td style="color:#aaa;font-size:10px">'+(i+1)+'</td>'
-      +'<td style="font-weight:600;color:#3E342A;min-width:130px">'+esc(r.name)+'</td>'
-      +'<td><span class="badge '+bc+'">'+r.program+'</span></td>'
+      +'<td style="font-weight:600;color:#3E342A;min-width:120px">'+esc(r.name)+'</td>'
+      +'<td><span class="badge '+bc+'">'+r.program+'</span>'+(r.hasOverride?' <span style="font-size:9px;color:#B87A00">✎</span>':'')+'</td>'
+      +'<td class="override-cell">'+makeSelect(PROG_OPTS,savedEdits[r._key]&&savedEdits[r._key].programOverride||"",r._key,'programOverride')+'</td>'
+      +'<td>'+calCell+'</td>'
       +'<td class="'+sc+'">'+r.status+'</td>'
       +'<td>'+r.pdiAdmit+'</td><td>'+r.pdiDisch+'</td>'
       +'<td style="font-weight:600">'+r.pdiLOS+'</td>'
@@ -271,19 +274,19 @@ function renderTable(){
 }
 
 function clearSaved(){
-  if(!confirm("This will permanently erase all saved edits for all clients. Are you sure?"))return;
+  if(!confirm("Erase all saved edits (including program overrides) for all clients?"))return;
   EDITS_REF.remove(function(err){
-    if(err){log("Error clearing: "+err.message);return;}
-    savedEdits={};
-    rows=buildRows();
-    renderTable();
-    log("All saved edits cleared.");
+    if(err){log("Error: "+err.message);return;}
+    savedEdits={};rows=buildRows();renderTable();
+    log("Cleared.");
   });
 }
 
 function downloadExcel(){
   var data=rows.map(function(r){return{
     "Client Name":r.name,"Program":r.program,"Status":r.status,
+    "Cal. Program Field":r.calProgram,
+    "Program Override":savedEdits[r._key]&&savedEdits[r._key].programOverride||"",
     "PDI Admit":r.pdiAdmit,"PDI Discharge":r.pdiDisch,
     "PDI LOS (days)":r.pdiLOS===""?"":+r.pdiLOS||r.pdiLOS,
     "Sig Admit":r.sigAdmit,"Sig Discharge":r.sigDisch,
@@ -298,46 +301,16 @@ function downloadExcel(){
     "Step-Down Date":r.stepDownDate,
     "Notes":r.notes
   };});
-
   var ws=XLSX.utils.json_to_sheet(data);
-  ws["!cols"]=[{wch:22},{wch:10},{wch:10},{wch:12},{wch:12},{wch:10},{wch:12},{wch:12},{wch:10},{wch:10},{wch:10},{wch:13},{wch:15},{wch:20},{wch:14},{wch:24},{wch:13},{wch:30}];
+  ws["!cols"]=[{wch:22},{wch:11},{wch:11},{wch:16},{wch:14},{wch:12},{wch:12},{wch:10},{wch:12},{wch:12},{wch:10},{wch:10},{wch:10},{wch:13},{wch:16},{wch:20},{wch:14},{wch:24},{wch:13},{wch:30}];
   ws["!freeze"]={xSplit:1,ySplit:1};
   ws["!dataValidation"]=[
-    {sqref:"M2:M"+(data.length+1),type:"list",formulae:['"Internal,External"'],showDropDown:false},
-    {sqref:"N2:N"+(data.length+1),type:"list",formulae:['"None,Residential,Detox,PHP,IOP,OP,Step-Down,Hospital,Other"'],showDropDown:false},
-    {sqref:"P2:P"+(data.length+1),type:"list",formulae:['"Signature,PDI,PHP,IOP,OP,Step-Down,Residential,Private Practice,Discharged to Home,AMA,Transferred,Deceased,Unknown"'],showDropDown:false}
+    {sqref:"O2:O"+(data.length+1),type:"list",formulae:['"Internal,External"'],showDropDown:false},
+    {sqref:"P2:P"+(data.length+1),type:"list",formulae:['"None,Residential,Detox,PHP,IOP,OP,Step-Down,Hospital,Other"'],showDropDown:false},
+    {sqref:"R2:R"+(data.length+1),type:"list",formulae:['"Signature,PDI,PHP,IOP,OP,Step-Down,Residential,Private Practice,Discharged to Home,AMA,Transferred,Deceased,Unknown"'],showDropDown:false}
   ];
-
   var wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,"Client Flow");
-
-  function avg(vals){var v=vals.filter(function(x){return x!==""&&!isNaN(+x);});return v.length?Math.round(v.reduce(function(a,b){return+a+ +b;},0)/v.length):"";}
-  var active=rows.filter(function(r){return r.status==="Active";}).length;
-  var conv=rows.filter(function(r){return r.converted==="Yes";}).length;
-  var ws2=XLSX.utils.aoa_to_sheet([
-    ["CLIENT FLOW SUMMARY"],["Generated",new Date().toLocaleDateString()],[""],
-    ["Total clients",rows.length],["Active",active],["Discharged",rows.length-active],[""],
-    [""],
-    ["ADMISSIONS"],
-    ["Total PDI admissions",rows.filter(function(r){return r.program==="PDI"||r.program==="Both";}).length,"all clients who entered PDI"],
-    ["Total Signature admissions",rows.filter(function(r){return r.program==="Signature"||r.program==="Both";}).length,"all clients who entered Signature"],
-    ["PDI only (no conversion)",rows.filter(function(r){return r.program==="PDI";}).length,""],
-    ["Signature only (direct admit)",rows.filter(function(r){return r.program==="Signature";}).length,""],
-    ["Converted PDI to Signature",conv,""],
-    ["Conversion rate",rows.filter(function(r){return r.program==="PDI"||r.program==="Both";}).length?Math.round(conv/rows.filter(function(r){return r.program==="PDI"||r.program==="Both";}).length*100)+"%":"","% of PDI admits that converted to Sig"],
-    [""],
-    ["CURRENT CENSUS"],
-    ["Active PDI",rows.filter(function(r){return r.status==="Active"&&r.program==="PDI";}).length,""],
-    ["Active Signature",rows.filter(function(r){return r.status==="Active"&&(r.program==="Signature"||r.program==="Both");}).length,"includes converted PDI clients"],
-    ["Total active",active,""],["Total discharged",rows.length-active,""],
-    [""],
-    ["Avg PDI LOS (days)",avg(rows.map(function(r){return r.pdiLOS;}))],
-    ["Avg Sig LOS (days)",avg(rows.map(function(r){return r.sigLOS;}))],
-    ["Avg total LOS (days)",avg(rows.map(function(r){return r.totalLOS;}))],
-    ["Avg days PDI→Sig",avg(rows.map(function(r){return r.daysTillConv;}))],
-  ]);
-  ws2["!cols"]=[{wch:28},{wch:20}];
-  XLSX.utils.book_append_sheet(wb,ws2,"Summary");
   XLSX.writeFile(wb,"Client_Flow_Mapping.xlsx");
   log("Downloaded: "+rows.length+" clients");
 }
