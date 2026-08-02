@@ -136,37 +136,60 @@ function saveEdits(key,field,value){
 function loadData(){
   document.getElementById("load-btn").disabled=true;
   document.getElementById("log").textContent="";
-  log("Loading saved edits from Firebase...");
+  log("Connecting to Firebase...");
 
-  // Load saved edits first, then load clients
-  EDITS_REF.once("value",function(editSnap){
-    savedEdits=editSnap.val()||{};
-    var editCount=Object.keys(savedEdits).length;
-    log("Saved edits found: "+editCount+" clients");
+  var clientsReady=false, editsReady=false;
+  savedEdits={};
 
-    log("Loading client roster...");
-    DB.ref("schedule_v3/blob").once("value",function(snap){
-      var blob=snap.val();
-      if(!blob){log("ERROR: No calendar data found.");document.getElementById("load-btn").disabled=false;return;}
-      try{
-        var d=JSON.parse(blob);
-        allClients=d.clients||[];
-        log("Clients loaded: "+allClients.length+" total");
-        var withPDI=allClients.filter(function(c){return c.pdiAdmit;}).length;
-        var withSig=allClients.filter(function(c){return c.sigAdmit;}).length;
-        var withBoth=allClients.filter(function(c){return c.pdiAdmit&&c.sigAdmit;}).length;
-        log("PDI: "+withPDI+" | Sig: "+withSig+" | Both: "+withBoth+" | Edits restored: "+editCount);
+  function tryRender(){
+    if(!clientsReady||!editsReady)return;
+    try{
+      rows=buildRows();
+      var conv=rows.filter(function(r){return r.converted==="Yes";}).length;
+      document.getElementById("stats").style.display="inline";
+      document.getElementById("stats").innerHTML=
+        "<b>"+rows.length+"</b> clients &nbsp;|&nbsp; "
+        +"PDI: <b>"+rows.filter(function(r){return r.program==="PDI"||r.program==="Both";}).length+"</b>"
+        +" &nbsp;|&nbsp; Sig: <b>"+rows.filter(function(r){return r.program==="Signature"||r.program==="Both";}).length+"</b>"
+        +" &nbsp;|&nbsp; Conv: <b>"+conv+"</b>"
+        +" &nbsp;|&nbsp; Active: <b>"+rows.filter(function(r){return r.status==="Active";}).length+"</b>";
+      renderTable();
+      document.getElementById("dl-btn").disabled=false;
+      log("Ready — amber columns auto-save as you type.");
+    }catch(e){
+      log("Render error: "+e.message);
+      document.getElementById("load-btn").disabled=false;
+    }
+  }
 
-        rows=buildRows();
-        document.getElementById("stats").style.display="inline";
-        document.getElementById("stats").innerHTML=
-          var conv=rows.filter(function(r){return r.converted==="Yes";}).length;
-        "<b>"+rows.length+"</b> clients &nbsp;|&nbsp; "+"PDI admits: <b>"+rows.filter(function(r){return r.program==="PDI"||r.program==="Both";}).length+"</b>"+" &nbsp;|&nbsp; Sig admits: <b>"+rows.filter(function(r){return r.program==="Signature"||r.program==="Both";}).length+"</b>"+" &nbsp;|&nbsp; Conversions: <b>"+conv+"</b>"+" &nbsp;|&nbsp; Active: <b>"+rows.filter(function(r){return r.status==="Active";}).length+"</b>";}).length+"</b> active &nbsp;·&nbsp; "
-          +"<b>"+rows.filter(function(r){return r.converted==="Yes";}).length+"</b> converted";
-        renderTable();
-        document.getElementById("dl-btn").disabled=false;
-      }catch(e){log("Parse error: "+e.message);document.getElementById("load-btn").disabled=false;}
-    },function(e){log("Firebase error: "+e.message);document.getElementById("load-btn").disabled=false;});
+  // Load saved edits (error-safe)
+  EDITS_REF.once("value",function(snap){
+    savedEdits=snap.val()||{};
+    log("Saved edits: "+Object.keys(savedEdits).length+" records restored.");
+    editsReady=true; tryRender();
+  },function(err){
+    log("Edits unavailable ("+err.message+") — continuing without saved data.");
+    editsReady=true; tryRender();
+  });
+
+  // Load client roster (independent of edits)
+  DB.ref("schedule_v3/blob").once("value",function(snap){
+    var blob=snap.val();
+    if(!blob){log("ERROR: No calendar data found.");document.getElementById("load-btn").disabled=false;return;}
+    try{
+      var d=JSON.parse(blob);
+      allClients=d.clients||[];
+      var p=allClients.filter(function(c){return c.pdiAdmit;}).length;
+      var s=allClients.filter(function(c){return c.sigAdmit;}).length;
+      log("Clients loaded: "+allClients.length+" total | PDI: "+p+" | Sig: "+s);
+      clientsReady=true; tryRender();
+    }catch(e){
+      log("Parse error: "+e.message);
+      document.getElementById("load-btn").disabled=false;
+    }
+  },function(err){
+    log("ERROR loading clients: "+err.message);
+    document.getElementById("load-btn").disabled=false;
   });
 }
 
