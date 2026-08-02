@@ -164,21 +164,21 @@ tbody tr:hover td{background:rgba(139,115,85,.05)}
   </div>
 
   <!-- PDI Roster -->
-  <div class="sec-head"><div class="sec-bar" style="background:var(--pdi)"></div><div><div class="sec-title">All-Time PDI Roster</div><div class="sec-sub">All 16 PDI episodes — includes clients who subsequently enrolled in Signature</div></div></div>
+  <div class="sec-head"><div class="sec-bar" style="background:var(--pdi)"></div><div><div class="sec-title">All-Time PDI Roster</div><div class="sec-sub" id="pdi-roster-sub">All-time PDI episodes — includes clients who subsequently enrolled in Signature</div></div></div>
   <div class="tbl-wrap"><table>
     <thead><tr><th>#</th><th>Client</th><th>PDI Admit</th><th>PDI Discharge</th><th>LOS</th><th>→ Signature</th></tr></thead>
     <tbody id="pdi-body"></tbody>
   </table></div>
 
   <!-- Signature Roster -->
-  <div class="sec-head"><div class="sec-bar" style="background:var(--sig)"></div><div><div class="sec-title">All-Time Signature Roster</div><div class="sec-sub">All 23 Signature episodes — 9 via PDI pathway, 14 direct admissions (includes Layla S readmission)</div></div></div>
+  <div class="sec-head"><div class="sec-bar" style="background:var(--sig)"></div><div><div class="sec-title">All-Time Signature Roster</div><div class="sec-sub" id="sig-roster-sub">All-time Signature episodes — includes direct admissions, PDI conversions, and readmissions</div></div></div>
   <div class="tbl-wrap"><table>
     <thead><tr><th>#</th><th>Client</th><th>Sig Admit</th><th>Sig Discharge</th><th>LOS</th><th>Pathway</th></tr></thead>
     <tbody id="sig-body"></tbody>
   </table></div>
 
   <!-- Conversions -->
-  <div class="sec-head"><div class="sec-bar" style="background:var(--green)"></div><div><div class="sec-title">PDI → Signature Conversions</div><div class="sec-sub">9 of 12 eligible PDI clients enrolled in Signature — excludes 4 pre-Signature-era PDI clients (Matthew H, Leslie K, Abbegail M, Alex R) who had no opportunity to convert</div></div></div>
+  <div class="sec-head"><div class="sec-bar" style="background:var(--green)"></div><div><div class="sec-title">PDI → Signature Conversions</div><div class="sec-sub" id="conv-roster-sub">PDI clients who enrolled in Signature</div></div></div>
   <div class="tbl-wrap"><table>
     <thead><tr><th>#</th><th>Client</th><th>PDI Admit</th><th>PDI Discharge</th><th>Sig Admit</th><th>Gap (days)</th></tr></thead>
     <tbody id="conv-body"></tbody>
@@ -308,63 +308,67 @@ function render(fbClients){
   var today=new Date().toISOString().slice(0,10);
 
   // ── Build episodes fresh from Firebase on every render ─────────────────
-  // Firebase is authoritative. ALL_EPISODES provides fallback for clients
-  // not yet in Firebase (early 2025 clients). Merge: Firebase wins on
-  // dates; ALL_EPISODES wins on clients not in Firebase.
+  // KEY FIX: ALL_EPISODES is kept as an ordered array — not collapsed into
+  // a map — so clients with multiple episodes (e.g. Layla S readmission)
+  // are never overwritten. The map is only used as a lookup for Firebase
+  // date updates, pointed at the FIRST episode for each name.
+
+  // 1. Build Firebase client map (name → canonical episode from Firebase)
   var fbMap={};
   (fbClients||[]).forEach(function(c){
     if(!c.name) return;
     var k=c.name.toLowerCase().trim();
-    // Build a canonical episode from this Firebase client record
-    var prog=c.program||'';
-    // Drive PDI/Sig purely from the program field.
-    // Many Sig-only clients have pdiAdmit erroneously set = sigAdmit in Firebase.
-    // Never use pdiAdmit to infer PDI status for a Signature-only client.
-    var progL = prog.toLowerCase();
-    var hasPdi = progL==='pdi' || progL==='both';
-    var hasSig = progL==='signature' || progL==='both' || progL==='sig';
-    // If program field is missing, infer from admit dates
+    var prog=(c.program||'').toLowerCase();
+    var hasPdi=prog==='pdi'||prog==='both';
+    var hasSig=prog==='signature'||prog==='both'||prog==='sig';
     if(!prog){
-      hasPdi = !!c.pdiAdmit;
-      hasSig = !!c.sigAdmit;
-      if(hasPdi && hasSig && c.pdiAdmit === c.sigAdmit) hasPdi = false;
+      hasPdi=!!c.pdiAdmit;
+      hasSig=!!c.sigAdmit;
+      // Many Sig-only clients have pdiAdmit accidentally = sigAdmit
+      if(hasPdi&&hasSig&&c.pdiAdmit===c.sigAdmit)hasPdi=false;
     }
-    // Also catch clients with sigAdmit but no program — common when
-    // calendar schedules sessions before program field is confirmed
-    if(!hasSig && !hasPdi && c.sigAdmit) hasSig = true;
+    if(!hasSig&&!hasPdi&&c.sigAdmit)hasSig=true;
     fbMap[k]={
       name:c.name,
-      pdiAdmit: hasPdi?(c.pdiAdmit||null):null,
-      pdiDisch:  hasPdi?(c.pdiDischarge||c.pdiDisch||null):null,
-      sigAdmit: hasSig?(c.sigAdmit||null):null,
-      sigDisch:  hasSig?(c.sigDischarge||c.sigDisch||(hasSig&&!hasPdi?c.endDate:null)||null):null,
+      pdiAdmit:hasPdi?(c.pdiAdmit||null):null,
+      pdiDisch: hasPdi?(c.pdiDischarge||c.pdiDisch||null):null,
+      sigAdmit:hasSig?(c.sigAdmit||null):null,
+      sigDisch: hasSig?(c.sigDischarge||c.sigDisch||(hasSig&&!hasPdi?c.endDate:null)||null):null,
       _fromFB:true
     };
   });
 
-  // Start from ALL_EPISODES (covers pre-Firebase clients like Matthew H, Leslie K)
-  // then overlay/add any Firebase clients
-  var epMap={};
-  ALL_EPISODES.forEach(function(ep){
-    epMap[ep.name.toLowerCase().trim()]=Object.assign({},ep);
+  // 2. Start from ALL_EPISODES array — preserving ALL entries including
+  //    readmissions (same name, different dates). Build a lookup pointing
+  //    at the MOST RECENT episode per name for Firebase date updates.
+  var ALL_EPS_LIVE=ALL_EPISODES.map(function(ep){return Object.assign({},ep);});
+  var latestByName={};  // name → index of most recent episode in ALL_EPS_LIVE
+  ALL_EPS_LIVE.forEach(function(ep,i){
+    var k=ep.name.toLowerCase().trim();
+    var epDate=ep.pdiAdmit||ep.sigAdmit||'';
+    var prevDate=(latestByName[k]!==undefined)?(ALL_EPS_LIVE[latestByName[k]].pdiAdmit||ALL_EPS_LIVE[latestByName[k]].sigAdmit||''):'';
+    if(epDate>=prevDate)latestByName[k]=i;
   });
-  // Overlay Firebase data — Firebase always wins on dates
+
+  // 3. Overlay Firebase dates onto the most recent episode per client.
+  //    Add brand-new Firebase clients not in ALL_EPISODES at all.
+  var namesInHardcoded={};
+  ALL_EPS_LIVE.forEach(function(ep){namesInHardcoded[ep.name.toLowerCase().trim()]=true;});
+
   Object.keys(fbMap).forEach(function(k){
     var fb=fbMap[k];
-    if(epMap[k]){
-      // Update existing entry with Firebase data
-      var ep=epMap[k];
-      if(fb.pdiAdmit) ep.pdiAdmit=fb.pdiAdmit;
-      if(fb.pdiDisch) ep.pdiDisch=fb.pdiDisch;
-      if(fb.sigAdmit) ep.sigAdmit=fb.sigAdmit;
-      if(fb.sigDisch && fb.sigDisch>ep.sigAdmit) ep.sigDisch=fb.sigDisch;
+    if(namesInHardcoded[k]){
+      // Update the most-recent episode with any newer Firebase dates
+      var ep=ALL_EPS_LIVE[latestByName[k]];
+      if(fb.pdiAdmit&&!ep.pdiAdmit)ep.pdiAdmit=fb.pdiAdmit;
+      if(fb.pdiDisch)ep.pdiDisch=fb.pdiDisch;
+      if(fb.sigAdmit&&(!ep.sigAdmit||fb.sigAdmit>ep.sigAdmit))ep.sigAdmit=fb.sigAdmit;
+      if(fb.sigDisch&&(!ep.sigDisch||fb.sigDisch>ep.sigAdmit))ep.sigDisch=fb.sigDisch;
     } else if(fb.pdiAdmit||fb.sigAdmit){
-      // New client from Firebase not in hardcoded list — add them
-      epMap[k]=fb;
+      // Truly new client from Firebase not in hardcoded list — append
+      ALL_EPS_LIVE.push(fb);
     }
   });
-  // Convert map back to array for processing
-  var ALL_EPS_LIVE=Object.values(epMap);
 
   var pdiEps=ALL_EPS_LIVE.filter(function(e){return e.pdiAdmit;}).sort(function(a,b){return a.pdiAdmit>b.pdiAdmit?1:-1;});
   var sigEps=ALL_EPS_LIVE.filter(function(e){return e.sigAdmit;}).sort(function(a,b){return a.sigAdmit>b.sigAdmit?1:-1;});
