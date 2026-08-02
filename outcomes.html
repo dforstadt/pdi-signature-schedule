@@ -373,6 +373,20 @@ function render(fbClients){
   var pdiEps=ALL_EPS_LIVE.filter(function(e){return e.pdiAdmit;}).sort(function(a,b){return a.pdiAdmit>b.pdiAdmit?1:-1;});
   var sigEps=ALL_EPS_LIVE.filter(function(e){return e.sigAdmit;}).sort(function(a,b){return a.sigAdmit>b.sigAdmit?1:-1;});
   var convEps=pdiEps.filter(function(e){return e.sigAdmit;});
+
+  // ── Dynamic subtitle counts ──────────────────────────────────────────────
+  (function(){
+    var el;
+    var pdiOnly=pdiEps.filter(function(e){return !e.sigAdmit;});
+    var sigDirect=sigEps.filter(function(e){return !e.pdiAdmit;});
+    var readmissions=sigEps.filter(function(e){return e.note&&e.note.toLowerCase().indexOf('readmit')>=0;});
+    el=document.getElementById('pdi-roster-sub');
+    if(el)el.textContent=pdiEps.length+' PDI episodes — '+convEps.length+' converted to Signature, '+(pdiEps.length-convEps.length)+' PDI only';
+    el=document.getElementById('sig-roster-sub');
+    if(el)el.textContent=sigEps.length+' Signature episodes — '+convEps.length+' via PDI pathway, '+sigDirect.length+' direct admits'+(readmissions.length?' (incl. '+readmissions.length+' readmission'+(readmissions.length>1?'s':'')+')'  :'');
+    el=document.getElementById('conv-roster-sub');
+    if(el)el.textContent=convEps.length+' of '+pdiEps.length+' PDI clients enrolled in Signature ('+Math.round(convEps.length/Math.max(pdiEps.length,1)*100)+'% conversion rate)';
+  })();
   var pdiOnly=pdiEps.filter(function(e){return !e.sigAdmit;});
   var pdiActive=pdiEps.filter(function(e){return !e.pdiDisch||e.pdiDisch>=today;});
   var sigActive=sigEps.filter(function(e){return !e.sigDisch||e.sigDisch>=today;});
