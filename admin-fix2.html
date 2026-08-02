@@ -148,7 +148,7 @@ function loadData(){
 }
 
 var ADMIT_TYPES=["","Internal","External"];
-var PRIOR_LOC=["","Residential","Detox","PHP","IOP","OP","Step-Down","Hospital","Other"];
+var PRIOR_LOC=["","None","Residential","Detox","PHP","IOP","OP","Step-Down","Hospital","Other"];
 var STEP_DOWN=["","Signature","PDI","PHP","IOP","OP","Step-Down","Residential","Private Practice","Discharged to Home","AMA","Transferred","Deceased","Unknown"];
 
 function renderTable(){
@@ -240,7 +240,7 @@ function downloadExcel(){
     {sqref:"M2:M"+n, type:"list", formulae:['"Internal,External"'], showDropDown:false,
      showErrorMessage:true,errorTitle:"Invalid entry",error:"Select Internal or External"},
     {sqref:"N2:N"+n, type:"list",
-     formulae:['"Residential,Detox,PHP,IOP,OP,Step-Down,Hospital,Other"'],
+     formulae:['"None,Residential,Detox,PHP,IOP,OP,Step-Down,Hospital,Other"'],
      showDropDown:false},
     {sqref:"P2:P"+n, type:"list",
      formulae:['"Signature,PDI,PHP,IOP,OP,Step-Down,Residential,Private Practice,Discharged to Home,AMA,Transferred,Deceased,Unknown"'],
@@ -283,7 +283,7 @@ function downloadExcel(){
     ["","",""],
     ["INSTRUCTIONS — FILL-IN COLUMNS","",""],
     ["Admission Type","Internal = came from another Lifeskills LOC","External = came from outside Lifeskills"],
-    ["Prior LOC (if internal)","Level of care before PDI/Signature","e.g. Residential, PHP, IOP, Detox"],
+    ["Prior LOC (if internal)","Level of care before PDI/Signature","None = external admit. Otherwise: Residential, PHP, IOP, Detox, etc."],
     ["Prior LOC LOS (days)","How long at that prior level","Enter number"],
     ["Discharge Step-Down","Where client went after leaving","e.g. IOP, PHP, Private Practice, AMA"],
     ["Step-Down Date","Date of transition","mm/dd/yyyy"],
