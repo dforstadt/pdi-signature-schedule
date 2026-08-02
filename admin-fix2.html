@@ -135,59 +135,50 @@ function saveEdits(key,field,value){
 
 function loadData(){
   document.getElementById("load-btn").disabled=true;
+  document.getElementById("load-btn").textContent="Live — auto-updating";
+  document.getElementById("load-btn").style.background="#157A52";
   document.getElementById("log").textContent="";
-  log("Connecting to Firebase...");
+  log("Connecting to Firebase (real-time mode)...");
 
-  var clientsReady=false, editsReady=false;
-  savedEdits={};
+  // ── Real-time listener: flow edits ────────────────────────────────────────
+  EDITS_REF.on("value", function(snap){
+    savedEdits = snap.val() || {};
+    log("Edits synced: "+Object.keys(savedEdits).length+" records.");
+    if(allClients.length) { rows=buildRows(); renderTable(); }
+  }, function(err){
+    log("Edits listener error: "+err.message+" — continuing without saved data.");
+  });
 
-  function tryRender(){
-    if(!clientsReady||!editsReady)return;
+  // ── Real-time listener: calendar client roster ────────────────────────────
+  DB.ref("schedule_v3/blob").on("value", function(snap){
+    var blob = snap.val();
+    if(!blob){ log("ERROR: No calendar data."); document.getElementById("load-btn").disabled=false; return; }
     try{
-      rows=buildRows();
-      var conv=rows.filter(function(r){return r.converted==="Yes";}).length;
+      var d = JSON.parse(blob);
+      var newClients = d.clients || [];
+      var changed = newClients.length !== allClients.length;
+      allClients = newClients;
+
+      var p = allClients.filter(function(c){return c.pdiAdmit;}).length;
+      var s = allClients.filter(function(c){return c.sigAdmit;}).length;
+      var both = allClients.filter(function(c){return c.pdiAdmit&&c.sigAdmit;}).length;
+      log("Roster update: "+allClients.length+" clients | PDI: "+p+" | Sig: "+s+" | Both: "+both+(changed?" (new client detected)":""));
+
+      rows = buildRows();
+      var conv = rows.filter(function(r){return r.converted==="Yes";}).length;
       document.getElementById("stats").style.display="inline";
       document.getElementById("stats").innerHTML=
-        "<b>"+rows.length+"</b> clients &nbsp;|&nbsp; "
-        +"PDI: <b>"+rows.filter(function(r){return r.program==="PDI"||r.program==="Both";}).length+"</b>"
+        "<b>"+rows.length+"</b> clients &nbsp;|&nbsp;"
+        +" PDI: <b>"+rows.filter(function(r){return r.program==="PDI"||r.program==="Both";}).length+"</b>"
         +" &nbsp;|&nbsp; Sig: <b>"+rows.filter(function(r){return r.program==="Signature"||r.program==="Both";}).length+"</b>"
         +" &nbsp;|&nbsp; Conv: <b>"+conv+"</b>"
         +" &nbsp;|&nbsp; Active: <b>"+rows.filter(function(r){return r.status==="Active";}).length+"</b>";
       renderTable();
       document.getElementById("dl-btn").disabled=false;
-      log("Ready — amber columns auto-save as you type.");
-    }catch(e){
-      log("Render error: "+e.message);
-      document.getElementById("load-btn").disabled=false;
-    }
-  }
-
-  // Load saved edits (error-safe)
-  EDITS_REF.once("value",function(snap){
-    savedEdits=snap.val()||{};
-    log("Saved edits: "+Object.keys(savedEdits).length+" records restored.");
-    editsReady=true; tryRender();
-  },function(err){
-    log("Edits unavailable ("+err.message+") — continuing without saved data.");
-    editsReady=true; tryRender();
-  });
-
-  // Load client roster (independent of edits)
-  DB.ref("schedule_v3/blob").once("value",function(snap){
-    var blob=snap.val();
-    if(!blob){log("ERROR: No calendar data found.");document.getElementById("load-btn").disabled=false;return;}
-    try{
-      var d=JSON.parse(blob);
-      allClients=d.clients||[];
-      var p=allClients.filter(function(c){return c.pdiAdmit;}).length;
-      var s=allClients.filter(function(c){return c.sigAdmit;}).length;
-      log("Clients loaded: "+allClients.length+" total | PDI: "+p+" | Sig: "+s);
-      clientsReady=true; tryRender();
     }catch(e){
       log("Parse error: "+e.message);
-      document.getElementById("load-btn").disabled=false;
     }
-  },function(err){
+  }, function(err){
     log("ERROR loading clients: "+err.message);
     document.getElementById("load-btn").disabled=false;
   });
