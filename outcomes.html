@@ -690,33 +690,55 @@ function renderFlowSection(){
     return;
   }
 
+  // ── PDI admissions: all clients who entered PDI (PDI-only + Both) ──────────
   var pdiEdits = edits.filter(function(e){ return e._prog==='PDI'||e._prog==='Both'; });
+
+  // ── Signature admissions: Sig-only + Both ───────────────────────────────
+  // IMPORTANT: Both (PDI→Sig) clients always count as INTERNAL for Signature
+  // because they transferred from PDI within Lifeskills — not from outside.
+  // Their flow edit admitType reflects their ORIGINAL PDI admission, not Sig.
   var sigEdits = edits.filter(function(e){ return e._prog==='Signature'||e._prog==='Both'; });
 
-  // Admission source splits
+  // Total program enrollment from ALL_EPISODES (authoritative counts)
+  var totalPDIEnroll  = ALL_EPS_LIVE.filter(function(e){ return e.pdiAdmit; }).length;
+  var totalSigEnroll  = ALL_EPS_LIVE.filter(function(e){ return e.sigAdmit; }).length;
+
+  // PDI source split — use admitType directly (it reflects original PDI admission)
   var pdiWithType = pdiEdits.filter(function(e){ return e.admitType; });
-  var sigWithType = sigEdits.filter(function(e){ return e.admitType; });
   var pdiExt = pdiWithType.filter(function(e){ return e.admitType==='External'; });
   var pdiInt = pdiWithType.filter(function(e){ return e.admitType==='Internal'; });
-  var sigExt = sigWithType.filter(function(e){ return e.admitType==='External'; });
-  var sigInt = sigWithType.filter(function(e){ return e.admitType==='Internal'; });
-  var pdiN = pdiWithType.length||1, sigN = sigWithType.length||1;
+
+  // Signature source split — Both clients are always Internal (from PDI)
+  var sigWithType = sigEdits.filter(function(e){ return e.admitType||e._prog==='Both'; });
+  var sigExt = sigEdits.filter(function(e){ return e._prog==='Signature'&&e.admitType==='External'; });
+  var sigInt = sigEdits.filter(function(e){
+    return e._prog==='Both'  // PDI→Sig always internal
+      ||(e._prog==='Signature'&&e.admitType==='Internal');
+  });
+
+  var pdiN = pdiWithType.length||1;
+  var sigN = sigWithType.length||1;
 
   // Subtitle
   var sub=document.getElementById('flow-sub');
-  if(sub) sub.textContent=edits.length+' client records with flow data  ·  '
-    +pdiEdits.length+' PDI admits  ·  '+sigEdits.length+' Signature admits';
+  if(sub) sub.textContent=
+    edits.length+' records with flow data entered  ·  '
+    +pdiEdits.length+' of '+totalPDIEnroll+' PDI clients  ·  '
+    +sigEdits.length+' of '+totalSigEnroll+' Signature clients  ·  '
+    +'complete more records in the Flow Mapping tool for fuller coverage';
 
   var PDI_C='#4A6C8A', SIG_C='#6B5C45', EXT_C='#1D9E75', INT_C='#3786DD', AMBER='#B87A00';
 
   // ── A: Demand pills & doughnuts ───────────────────────────────────────────
-  function renderDemand(editsArr, withType, ext, int, total, pillId, chartId, insightId, prog, color){
+  function renderDemand(editsArr, withType, ext, int, total, totalEnroll, pillId, chartId, insightId, prog, color){
     var extPct = total>1?Math.round(ext.length/total*100)+'%':'—';
     var intPct = total>1?Math.round(int.length/total*100)+'%':'—';
+    var coverage = totalEnroll?Math.round(editsArr.length/totalEnroll*100)+'% of '+prog+' clients have data':'';
     var el=document.getElementById(pillId);
     if(el) el.innerHTML=
-      demandPill('External referrals', ext.length, extPct+' of '+prog+' admits', EXT_C)
-      +demandPill('Internal transfers', int.length, intPct+' of '+prog+' admits', INT_C);
+      demandPill('External referrals', ext.length, extPct+' of clients with data', EXT_C)
+      +demandPill('Internal transfers', int.length, intPct+' of clients with data', INT_C)
+      +(coverage?'<div style="font-size:9px;color:#aaa;align-self:center;padding-left:4px">'+editsArr.length+' of '+totalEnroll+' total '+prog+' admits have data entered</div>':'');
 
     if(withType.length){
       mkChart(chartId,{type:'doughnut',
@@ -736,16 +758,18 @@ function renderFlowSection(){
     var insight=document.getElementById(insightId);
     if(insight&&withType.length>0){
       var lines=[];
+      var typed=ext.length+int.length;
       if(ext.length>int.length) lines.push('<strong>External demand is the primary driver</strong> for '+prog+' — '
-        +ext.length+' of '+withType.length+' admitted clients ('+extPct+') came directly from outside Lifeskills.');
+        +ext.length+' of '+typed+' clients with data ('+extPct+') came directly from outside Lifeskills.');
       else if(int.length>ext.length) lines.push('<strong>Internal transitions are the primary source</strong> for '+prog+' — '
-        +int.length+' of '+withType.length+' clients ('+intPct+') transferred from within the Lifeskills system.');
-      else lines.push('External and internal admissions are evenly split for '+prog+'.');
-      insight.innerHTML=lines.join(' ');
+        +int.length+' of '+typed+' clients with data ('+intPct+') transferred from within the Lifeskills system.');
+      else if(typed>0) lines.push('External and internal admissions are evenly split for '+prog+' ('+typed+' clients with data).');
+      if(prog==='Signature') lines.push('Note: PDI→Sig conversions are classified as Internal — they transferred from PDI within Lifeskills.');
+      if(insight) insight.innerHTML=lines.join(' ');
     }
   }
-  renderDemand(pdiEdits,pdiWithType,pdiExt,pdiInt,pdiN,'pdi-demand-pills','pdi-source-chart','pdi-demand-insight','PDI',PDI_C);
-  renderDemand(sigEdits,sigWithType,sigExt,sigInt,sigN,'sig-demand-pills','sig-source-chart','sig-demand-insight','Signature',SIG_C);
+  renderDemand(pdiEdits,pdiWithType,pdiExt,pdiInt,pdiN,totalPDIEnroll,'pdi-demand-pills','pdi-source-chart','pdi-demand-insight','PDI',PDI_C);
+  renderDemand(sigEdits,sigWithType,sigExt,sigInt,sigN,totalSigEnroll,'sig-demand-pills','sig-source-chart','sig-demand-insight','Signature',SIG_C);
 
   // ── B: Prior LOS charts ───────────────────────────────────────────────────
   function renderLOSChart(intEdits, chartId, statsId, color){
