@@ -328,6 +328,7 @@ function loadData(){
       if(cmb)cmb.style.display="inline-block";
       if(Object.keys(savedEdits).length)migrateLegacyEdits();
       rows=buildRows();
+      showHistPanel();
       var conv=rows.filter(function(r){return r.converted==="Yes";}).length;
       document.getElementById("stats").style.display="inline";
       document.getElementById("stats").innerHTML=
