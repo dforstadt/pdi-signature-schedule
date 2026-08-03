@@ -688,9 +688,25 @@ function renderFlowSection(){
   var pdiTyped=pdiEdits.filter(function(e){return e.admitType;});
   var pdiExt=pdiTyped.filter(function(e){return e.admitType==='External';});
   var pdiInt=pdiTyped.filter(function(e){return e.admitType==='Internal';});
-  var sigTyped=sigEdits.filter(function(e){return e.admitType;});
-  var sigExt=sigTyped.filter(function(e){return e.admitType==='External';});
-  var sigInt=sigTyped.filter(function(e){return e.admitType==='Internal';});
+  // Signature source split:
+  // PDI→Sig conversions are ALWAYS Internal — they transferred from PDI within Lifeskills,
+  // regardless of how they originally entered PDI (External or Internal).
+  // Only Sig-only admits use their actual admitType for External/Internal classification.
+  var sigExt=sigEdits.filter(function(e){
+    var k=normFlowName(e._name||'');
+    var isConversion=pdiSeen.has(k)&&sigSeen.has(k); // in both PDI and Sig
+    return!isConversion&&e.admitType==='External';
+  });
+  var sigInt=sigEdits.filter(function(e){
+    var k=normFlowName(e._name||'');
+    var isConversion=pdiSeen.has(k)&&sigSeen.has(k);
+    return isConversion||(e.admitType==='Internal'); // conversions always Internal
+  });
+  var sigTyped=sigEdits.filter(function(e){
+    var k=normFlowName(e._name||'');
+    var isConversion=pdiSeen.has(k)&&sigSeen.has(k);
+    return isConversion||!!e.admitType; // conversions always count as typed
+  });
   function renderSourceChart(chartId,ext,int,srcEdits,enroll,detailId,covId,prog,missList){
     var typed=ext.length+int.length;
     var noType=srcEdits.filter(function(e){return!e.admitType;}).map(function(e){return e._name;});
