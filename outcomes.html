@@ -645,23 +645,33 @@ function renderFlowSection(){
   var clients=(_fbClients&&_fbClients.length)?_fbClients:[];
   // Use unique client name count (not episode count) so Layla's readmission
   // doesn't inflate the denominator beyond what sigEdits can match (1 record per name).
-  var _pdiNames=new Set(), _sigNames=new Set();
+  // _epSigNames / _epPdiNames: from episodeSource ONLY (not clients)
+  // Used to identify which Firebase clients are NEW (not in ALL_EPISODES)
+  var _epPdiNames=new Set(), _epSigNames=new Set();
   episodeSource.forEach(function(ep){
     var k=normFlowName(ep.name||'');
-    if(ep.pdiAdmit)_pdiNames.add(k);
-    if(ep.sigAdmit)_sigNames.add(k);
+    if(ep.pdiAdmit)_epPdiNames.add(k);
+    if(ep.sigAdmit)_epSigNames.add(k);
   });
-  clients.forEach(function(c){
-    var k=normFlowName(c.name||'');
-    if(c.pdiAdmit&&c.pdiAdmit!==c.sigAdmit)_pdiNames.add(k);
-    if(c.sigAdmit)_sigNames.add(k);
+  // totalSig = ALL_EPISODES Sig episode count + Firebase-only Sig clients (unique names)
+  // ALL_EPISODES Sig episodes = 23 (Layla counted twice)
+  // Firebase-only new Sig clients = those in _fbClients with sigAdmit not in _epSigNames
+  var _fbSigNew=clients.filter(function(c){
+    return c.sigAdmit&&!_epSigNames.has(normFlowName(c.name||''));
   });
-  // totalSig = episode count (Layla counted twice = 27)
-  // sigEdits also counts Layla twice so denominator and numerator match
-  var totalPDI=_pdiNames.size||episodeSource.filter(function(ep){return ep.pdiAdmit;}).length;
-  var totalSig=(episodeSource.filter(function(ep){return ep.sigAdmit;}).length
-    +clients.filter(function(c){return c.sigAdmit&&!_sigNames.has(normFlowName(c.name||''));}).length)
-    ||_sigNames.size;
+  var _fbPdiNew=clients.filter(function(c){
+    return c.pdiAdmit&&c.pdiAdmit!==c.sigAdmit&&!_epPdiNames.has(normFlowName(c.name||''));
+  });
+  var totalSig=episodeSource.filter(function(ep){return ep.sigAdmit;}).length
+    +_fbSigNew.length
+    ||episodeSource.filter(function(ep){return ep.sigAdmit;}).length;
+  var totalPDI=_epPdiNames.size+_fbPdiNew.length
+    ||episodeSource.filter(function(ep){return ep.pdiAdmit;}).length;
+  // _sigNames and _pdiNames for downstream use (conversion detection etc.)
+  var _sigNames=new Set([..._epSigNames]);
+  _fbSigNew.forEach(function(c){_sigNames.add(normFlowName(c.name||''));});
+  var _pdiNames=new Set([..._epPdiNames]);
+  _fbPdiNew.forEach(function(c){_pdiNames.add(normFlowName(c.name||''));});
   var totalActive=(_totalActive>0)?_totalActive:0;
   var clientById={},clientByName={};
   clients.forEach(function(c){if(c.id)clientById[c.id]=c;clientByName[normFlowName(c.name||'')]=c;});
