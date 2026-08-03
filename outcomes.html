@@ -735,10 +735,16 @@ function renderFlowSection(){
   var sigExt=sigEdits.filter(function(e){return e._prog==='Signature'&&e.admitType==='External';});
   var sigInt=sigEdits.filter(function(e){return e._prog==='Both'||(e._prog==='Signature'&&e.admitType==='Internal');});
 
-  function renderSourceChart(chartId,ext,int,enroll,detailId,covId,prog){
+  function renderSourceChart(chartId,ext,int,enroll,detailId,covId,prog,srcEdits){
     var typed=ext.length+int.length;
     var covEl=document.getElementById(covId);
-    if(covEl)covEl.textContent=typed+' of '+enroll+' '+prog+' clients have source data ('+(enroll?Math.round(typed/enroll*100):0)+'% coverage)';
+    if(covEl){
+      var missing=srcEdits.filter(function(e){return!e.admitType;}).map(function(e){return e._name;});
+      covEl.innerHTML=typed+' of '+enroll+' '+prog+' clients have source data ('+(enroll?Math.round(typed/enroll*100):0)+'% coverage)'
+        +(missing.length?'<br><span style="color:#B45309;font-size:10px">&#9888; Missing Admission Type: <strong>'
+          +missing.join(', ')+'</strong> &mdash; open the '
+          +'<a href="admin-fix2.html" style="color:var(--accent)">Flow Mapping tool</a> to complete</span>':'');
+    }
     var detEl=document.getElementById(detailId);
     if(!typed){if(detEl)detEl.innerHTML='<span style="color:var(--tx3);font-style:italic;font-size:10px">No source data yet</span>';return;}
     mkChart(chartId,{type:'doughnut',
@@ -771,8 +777,8 @@ function renderFlowSection(){
           +'PDI\u2192Sig clients counted as Internal (transferred from within Lifeskills)</div>':'');
     }
   }
-  renderSourceChart('pdi-source-chart',pdiExt,pdiInt,totalPDI,'pdi-source-detail','pdi-coverage-note','PDI');
-  renderSourceChart('sig-source-chart',sigExt,sigInt,totalSig,'sig-source-detail','sig-coverage-note','Signature');
+  renderSourceChart('pdi-source-chart',pdiExt,pdiInt,totalPDI,'pdi-source-detail','pdi-coverage-note','PDI',pdiEdits);
+  renderSourceChart('sig-source-chart',sigExt,sigInt,totalSig,'sig-source-detail','sig-coverage-note','Signature',sigEdits);
 
   var capEl=document.getElementById('flow-source-caption');
   if(capEl){
