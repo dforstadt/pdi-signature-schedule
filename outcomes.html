@@ -695,21 +695,33 @@ function renderFlowSection(){
     return!d||d>=TODAY;
   }).length||'—';
 
-  var pdiEdits=edits.filter(function(e){return e._prog==='PDI'||e._prog==='Both';});
-  var sigEdits=edits.filter(function(e){return e._prog==='Signature'||e._prog==='Both';});
+  // Deduplicate by _name — old name-based keys + new ID-based keys may both exist
+  // For each client name, keep the record with the most complete data
+  var dedupByName={};
+  edits.forEach(function(e){
+    var k=normFlowName(e._name||'');
+    if(!k) return;
+    var existing=dedupByName[k];
+    // Prefer records with more fields filled in
+    var score=function(r){return (r.admitType?2:0)+(r.priorLOC?1:0)+(r.stepDown?2:0)+(r._los?1:0);};
+    if(!existing||score(e)>score(existing)) dedupByName[k]=e;
+  });
+  var dedupedEdits=Object.values(dedupByName);
+
+  var pdiEdits=dedupedEdits.filter(function(e){return e._prog==='PDI'||e._prog==='Both';});
+  var sigEdits=dedupedEdits.filter(function(e){return e._prog==='Signature'||e._prog==='Both';});
   var pdiCov=totalPDI?Math.round(pdiEdits.length/totalPDI*100):0;
   var sigCov=totalSig?Math.round(sigEdits.length/totalSig*100):0;
 
   // Subtitle
   var sub=document.getElementById('flow-sub');
-  if(sub)sub.textContent=edits.length+' of '+(totalPDI+totalSig)+' total episodes have flow data  ·  '
+  if(sub)sub.textContent=dedupedEdits.length+' of '+(totalPDI+totalSig)+' total episodes have flow data  ·  '
     +pdiEdits.length+' of '+totalPDI+' PDI ('+pdiCov+'%)  ·  '
     +sigEdits.length+' of '+totalSig+' Signature ('+sigCov+'%)';
 
   // Coverage banner
   if(cb){cb.style.display='block';cb.style.background='#F0F7FF';cb.style.borderColor='#C0D8F0';
     cb.innerHTML='<strong>Data coverage:</strong> &nbsp;'
-      +'[diag: _totalPDI='+_totalPDI+' _totalSig='+_totalSig+' ALL_EPS_LIVE='+ALL_EPS_LIVE.length+' episodeSource='+episodeSource.length+' edits='+edits.length+'] &nbsp;'
       +'PDI '+pdiEdits.length+'/'+totalPDI+' ('+pdiCov+'%) &nbsp;|&nbsp; '
       +'Signature '+sigEdits.length+'/'+totalSig+' ('+sigCov+'%) &nbsp;|&nbsp; '
       +'<em>Percentages below are of clients with data entered. '
@@ -865,7 +877,7 @@ function renderFlowSection(){
   }
 
   // ── Step-down chart ───────────────────────────────────────────────────────
-  var withSD=edits.filter(function(e){return e.stepDown&&e.stepDown!=='---'&&e.stepDown!=='';});
+  var withSD=dedupedEdits.filter(function(e){return e.stepDown&&e.stepDown!=='---'&&e.stepDown!=='';});
   var sdInt={},sdExt={};
   withSD.forEach(function(e){var s=e.stepDown;sdIsInt(s)?sdInt[s]=(sdInt[s]||0)+1:sdExt[s]=(sdExt[s]||0)+1;});
   var allSD=Array.from(new Set(Object.keys(sdInt).concat(Object.keys(sdExt))))
@@ -896,7 +908,7 @@ function renderFlowSection(){
   // ── Detail table ─────────────────────────────────────────────────────────
   var tbody=document.getElementById('flow-body');
   if(tbody){
-    var sorted=edits.slice().sort(function(a,b){return(a._name||'').localeCompare(b._name||'');});
+    var sorted=dedupedEdits.slice().sort(function(a,b){return(a._name||'').localeCompare(b._name||'');});
     tbody.innerHTML=sorted.map(function(e,i){
       var prog=e._prog||'—';
       var bc=prog==='PDI'?'badge-pdi':prog==='Signature'?'badge-sig':prog==='Both'?'badge-both':'';
