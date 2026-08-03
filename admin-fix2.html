@@ -50,16 +50,26 @@ select:focus,input:focus{outline:none;border-color:#8C6A2F;background:#FFFBF5}
   <span class="save-ind" id="save-ind">✓ Auto-saved</span>
 </div>
 <div class="log" id="log">Click Load All Clients to begin.</div>
-<div id="hist-panel" style="background:#FFF9EC;border:1px solid #F59E0B;border-radius:8px;padding:14px 18px;margin-bottom:14px;display:none">
-  <div style="font-size:12px;font-weight:700;color:#92400E;margin-bottom:6px">&#9888; Discharged clients not in calendar &mdash; enter flow data below</div>
-  <div id="hist-missing-list" style="font-size:11px;color:#555;margin-bottom:10px"></div>
-  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-    <select id="hist-name-sel" style="font-family:inherit;font-size:12px;padding:6px 10px;border:1px solid #ddd;border-radius:6px"><option value="">Select client</option></select>
-    <select id="hist-admit-type" style="font-family:inherit;font-size:12px;padding:6px 10px;border:1px solid #ddd;border-radius:6px"><option value="">Admission Type</option><option>External</option><option>Internal</option></select>
-    <select id="hist-prior-loc" style="font-family:inherit;font-size:12px;padding:6px 10px;border:1px solid #ddd;border-radius:6px"><option value="">Prior LOC</option><option>Lifeskills Residential</option><option>Lifeskills PHP</option><option>Lifeskills IOP</option><option>RTC External</option><option>PHP External</option><option>IOP External</option><option>OP External</option><option>Hospital</option><option>None</option></select>
-    <input id="hist-prior-los" type="number" min="0" placeholder="Prior LOS days" style="font-family:inherit;font-size:12px;padding:6px 10px;border:1px solid #ddd;border-radius:6px;width:110px">
-    <button onclick="saveHistClient()" style="background:#F59E0B;color:#fff;border:none;padding:7px 16px;border-radius:6px;font-weight:600;font-size:12px;cursor:pointer">Save</button>
+<div id="hist-panel" style="background:#FFF9EC;border:1px solid #F59E0B;border-radius:8px;padding:16px 18px;margin-bottom:14px;display:none">
+  <div style="font-size:12px;font-weight:700;color:#92400E;margin-bottom:8px">&#9888; Discharged clients (not in calendar) &mdash; enter or update flow data</div>
+  <div id="hist-missing-list" style="font-size:11px;color:#555;margin-bottom:12px;line-height:2"></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:10px">
+    <div><label style="font-size:10px;font-weight:600;color:#666;display:block;margin-bottom:3px">Client</label>
+    <select id="hist-name-sel" onchange="histPopulate()" style="width:100%;font-family:inherit;font-size:12px;padding:6px 8px;border:1px solid #ddd;border-radius:6px"><option value="">Select client</option></select></div>
+    <div><label style="font-size:10px;font-weight:600;color:#666;display:block;margin-bottom:3px">Admission Type</label>
+    <select id="hist-admit-type" style="width:100%;font-family:inherit;font-size:12px;padding:6px 8px;border:1px solid #ddd;border-radius:6px"><option value="">—</option><option>External</option><option>Internal</option></select></div>
+    <div><label style="font-size:10px;font-weight:600;color:#666;display:block;margin-bottom:3px">Prior LOC</label>
+    <select id="hist-prior-loc" style="width:100%;font-family:inherit;font-size:12px;padding:6px 8px;border:1px solid #ddd;border-radius:6px"><option value="">—</option><option>Lifeskills Residential</option><option>Lifeskills PHP</option><option>Lifeskills IOP</option><option>RTC External</option><option>PHP External</option><option>IOP External</option><option>OP External</option><option>Hospital</option><option>None</option></select></div>
+    <div><label style="font-size:10px;font-weight:600;color:#666;display:block;margin-bottom:3px">Prior LOS (days)</label>
+    <input id="hist-prior-los" type="number" min="0" placeholder="days" style="width:100%;font-family:inherit;font-size:12px;padding:6px 8px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box"></div>
+    <div><label style="font-size:10px;font-weight:600;color:#666;display:block;margin-bottom:3px">Step-Down</label>
+    <select id="hist-stepdown" style="width:100%;font-family:inherit;font-size:12px;padding:6px 8px;border:1px solid #ddd;border-radius:6px"><option value="">—</option><option>Lifeskills PHP</option><option>Lifeskills IOP</option><option>Lifeskills OP</option><option>Lifeskills Residential</option><option>Lifeskills Step-Down</option><option>PHP External</option><option>IOP External</option><option>OP External</option><option>Residential External</option><option>Partial External</option><option>Home / AMA</option><option>Other</option></select></div>
+    <div><label style="font-size:10px;font-weight:600;color:#666;display:block;margin-bottom:3px">Step-Down Date</label>
+    <input id="hist-stepdown-date" type="date" style="width:100%;font-family:inherit;font-size:12px;padding:6px 8px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box"></div>
+    <div><label style="font-size:10px;font-weight:600;color:#666;display:block;margin-bottom:3px">Notes</label>
+    <input id="hist-notes" type="text" placeholder="optional" style="width:100%;font-family:inherit;font-size:12px;padding:6px 8px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box"></div>
   </div>
+  <button onclick="saveHistClient()" style="background:#F59E0B;color:#fff;border:none;padding:8px 20px;border-radius:6px;font-weight:600;font-size:12px;cursor:pointer">&#10003; Save Record</button>
 </div>
 <div class="tbl-wrap" id="tbl-wrap"></div>
 
@@ -228,26 +238,40 @@ function showHistPanel(){
   }
 }
 
+// Pre-populate form when a client is selected
+function histPopulate(){
+  var name=document.getElementById("hist-name-sel").value;
+  if(!name)return;
+  var key=name.replace(/\s+/g,"_");
+  var rec=savedEdits[key]||savedEdits[safeKey(name)]||{};
+  function setV(id,v){var e=document.getElementById(id);if(e)e.value=v||"";}
+  setV("hist-admit-type",rec.admitType);
+  setV("hist-prior-loc",rec.priorLOC);
+  setV("hist-prior-los",rec.priorLOClos);
+  setV("hist-stepdown",rec.stepDown);
+  setV("hist-stepdown-date",rec.stepDownDate);
+  setV("hist-notes",rec.notes);
+}
+
 function saveHistClient(){
   var name=document.getElementById("hist-name-sel").value;
   var admitType=document.getElementById("hist-admit-type").value;
   var priorLOC=document.getElementById("hist-prior-loc").value;
   var priorLOClos=document.getElementById("hist-prior-los").value||"";
+  var stepDown=document.getElementById("hist-stepdown").value||"";
+  var stepDownDate=document.getElementById("hist-stepdown-date").value||"";
+  var notes=document.getElementById("hist-notes").value||"";
   if(!name){alert("Select a client first.");return;}
   if(!admitType){alert("Select an Admission Type.");return;}
   var key=name.replace(/\s+/g,"_");
   showSave(true);
   var rec={_name:name,admitType:admitType,priorLOC:priorLOC,priorLOClos:priorLOClos,
-    locHistory:"",stepDown:"",stepDownDate:"",notes:""};
+    locHistory:"",stepDown:stepDown,stepDownDate:stepDownDate,notes:notes};
   EDITS_REF.child(key).set(rec,function(err){
     showSave(false);
     if(err){log("Error: "+err.message);return;}
     savedEdits[key]=rec;
-    log("Saved: "+name+" ("+admitType+")");
-    // Clear form
-    document.getElementById("hist-admit-type").value="";
-    document.getElementById("hist-prior-loc").value="";
-    document.getElementById("hist-prior-los").value="";
+    log("Saved: "+name+" ("+admitType+(stepDown?" → "+stepDown:"")+")  &#10003;");
     showHistPanel();
   });
 }
