@@ -185,105 +185,125 @@ tbody tr:hover td{background:rgba(139,115,85,.05)}
   </table></div>
 
 
-  <!-- ══ CLIENT FLOW & TRANSITIONS ══════════════════════════════════════════ -->
+  <!-- ══ CLIENT FLOW & DEMAND ANALYTICS ═════════════════════════════════════ -->
   <div class="sec-head" id="flow-section">
     <div class="sec-bar" style="background:var(--accent)"></div>
     <div>
-      <div class="sec-title">Clinical Flow &amp; Demand Analytics</div>
-      <div class="sec-sub" id="flow-sub">Admission source, prior level of care, RTC transition timing, and step-down destinations</div>
+      <div class="sec-title">Client Flow &amp; Demand Analytics</div>
+      <div class="sec-sub" id="flow-sub">Sourced from the Client Flow Mapping tool &mdash; complete more records for richer insights</div>
     </div>
   </div>
 
-  <!-- ── Demand source pills ── -->
-  <div class="card-row" style="grid-template-columns:repeat(6,1fr);margin-bottom:14px" id="flow-pills">
-    <div class="card" style="text-align:center;padding:16px 8px">
-      <div style="font-size:22px;font-weight:700;color:var(--pdi)" id="fl-pdi-ext">—</div>
-      <div style="font-size:10px;color:var(--tx3);margin-top:3px">PDI External</div>
-      <div style="font-size:10px;color:var(--tx3)" id="fl-pdi-ext-pct"></div>
+  <!-- ── SECTION A: Where are clients coming from? ────────────────────────── -->
+  <div id="flow-section-a" style="margin-bottom:20px">
+    <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+      color:var(--tx3);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--bd)">
+      A &nbsp;·&nbsp; Where are our clients coming from?
     </div>
-    <div class="card" style="text-align:center;padding:16px 8px">
-      <div style="font-size:22px;font-weight:700;color:var(--pdi)" id="fl-pdi-int">—</div>
-      <div style="font-size:10px;color:var(--tx3);margin-top:3px">PDI Internal</div>
-      <div style="font-size:10px;color:var(--tx3)" id="fl-pdi-int-pct"></div>
-    </div>
-    <div class="card" style="text-align:center;padding:16px 8px">
-      <div style="font-size:22px;font-weight:700;color:var(--sig)" id="fl-sig-ext">—</div>
-      <div style="font-size:10px;color:var(--tx3);margin-top:3px">Sig External</div>
-      <div style="font-size:10px;color:var(--tx3)" id="fl-sig-ext-pct"></div>
-    </div>
-    <div class="card" style="text-align:center;padding:16px 8px">
-      <div style="font-size:22px;font-weight:700;color:var(--sig)" id="fl-sig-int">—</div>
-      <div style="font-size:10px;color:var(--tx3);margin-top:3px">Sig Internal</div>
-      <div style="font-size:10px;color:var(--tx3)" id="fl-sig-int-pct"></div>
-    </div>
-    <div class="card" style="text-align:center;padding:16px 8px">
-      <div style="font-size:22px;font-weight:700;color:var(--green)" id="fl-int-avg-pdi">—</div>
-      <div style="font-size:10px;color:var(--tx3);margin-top:3px">Avg Prior LOS → PDI</div>
-      <div style="font-size:10px;color:var(--tx3)">days (internal)</div>
-    </div>
-    <div class="card" style="text-align:center;padding:16px 8px">
-      <div style="font-size:22px;font-weight:700;color:var(--green)" id="fl-int-avg-sig">—</div>
-      <div style="font-size:10px;color:var(--tx3);margin-top:3px">Avg Prior LOS → Sig</div>
-      <div style="font-size:10px;color:var(--tx3)">days (internal)</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <!-- PDI demand -->
+      <div class="card">
+        <div style="font-size:13px;font-weight:700;color:var(--pdi);margin-bottom:12px">
+          PDI &mdash; Premier Diagnostic Insights
+        </div>
+        <div style="display:flex;gap:20px;margin-bottom:14px" id="pdi-demand-pills"></div>
+        <div class="chart-wrap" style="height:160px"><canvas id="pdi-source-chart"></canvas></div>
+        <div id="pdi-demand-insight" style="margin-top:10px;font-size:10.5px;color:var(--tx3);
+          line-height:1.6;border-top:1px solid var(--bd);padding-top:8px"></div>
+      </div>
+      <!-- Sig demand -->
+      <div class="card">
+        <div style="font-size:13px;font-weight:700;color:var(--sig);margin-bottom:12px">
+          Signature &mdash; Concierge Residential
+        </div>
+        <div style="display:flex;gap:20px;margin-bottom:14px" id="sig-demand-pills"></div>
+        <div class="chart-wrap" style="height:160px"><canvas id="sig-source-chart"></canvas></div>
+        <div id="sig-demand-insight" style="margin-top:10px;font-size:10.5px;color:var(--tx3);
+          line-height:1.6;border-top:1px solid var(--bd);padding-top:8px"></div>
+      </div>
     </div>
   </div>
 
-  <!-- ── Source doughnuts + prior LOC bar ── -->
-  <div class="card-row" style="grid-template-columns:1fr 1fr 2fr;margin-bottom:14px">
-    <div class="card">
-      <div class="chart-card-title">PDI — Admission Source</div>
-      <div class="chart-wrap" style="height:200px"><canvas id="pdi-source-chart"></canvas></div>
+  <!-- ── SECTION B: How long were clients in treatment before us? ──────────── -->
+  <div id="flow-section-b" style="margin-bottom:20px">
+    <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+      color:var(--tx3);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--bd)">
+      B &nbsp;·&nbsp; How long were clients in treatment before joining PDI or Signature?
     </div>
-    <div class="card">
-      <div class="chart-card-title">Signature — Admission Source</div>
-      <div class="chart-wrap" style="height:200px"><canvas id="sig-source-chart"></canvas></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+      <div class="card">
+        <div style="font-size:12px;font-weight:700;color:var(--pdi);margin-bottom:4px">Before PDI</div>
+        <div style="font-size:10px;color:var(--tx3);margin-bottom:12px">
+          Internal transfers only &mdash; days spent at prior level of care before entering PDI
+        </div>
+        <div id="pdi-los-stats" style="display:flex;gap:16px;margin-bottom:14px;flex-wrap:wrap"></div>
+        <div class="chart-wrap" style="height:150px"><canvas id="prior-los-pdi-chart"></canvas></div>
+      </div>
+      <div class="card">
+        <div style="font-size:12px;font-weight:700;color:var(--sig);margin-bottom:4px">Before Signature</div>
+        <div style="font-size:10px;color:var(--tx3);margin-bottom:12px">
+          Internal transfers only &mdash; days spent at prior level of care before entering Signature
+        </div>
+        <div id="sig-los-stats" style="display:flex;gap:16px;margin-bottom:14px;flex-wrap:wrap"></div>
+        <div class="chart-wrap" style="height:150px"><canvas id="prior-los-sig-chart"></canvas></div>
+      </div>
     </div>
-    <div class="card">
-      <div class="chart-card-title">Prior Level of Care Distribution <span style="font-size:9px;font-weight:400;color:var(--tx3)">(internal admits, all programs)</span></div>
-      <div class="chart-wrap" style="height:200px"><canvas id="prior-loc-dist-chart"></canvas></div>
+    <div id="flow-rtc-insight" style="display:none;padding:10px 16px;border-left:3px solid var(--amber);
+      background:#FFFDF5;font-size:10.5px;color:#555;line-height:1.7;margin-bottom:4px"></div>
+  </div>
+
+  <!-- ── SECTION C: Flow map ───────────────────────────────────────────────── -->
+  <div id="flow-section-c" style="margin-bottom:20px">
+    <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+      color:var(--tx3);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--bd)">
+      C &nbsp;·&nbsp; How are clients moving through our programs?
+    </div>
+    <div class="card" style="overflow-x:auto">
+      <div id="flow-map-visual" style="min-width:600px;padding:8px 0"></div>
     </div>
   </div>
 
-  <!-- ── RTC timing benchmarks ── -->
-  <div class="card-row" style="grid-template-columns:1fr 1fr;margin-bottom:14px">
-    <div class="card">
-      <div class="chart-card-title">Prior LOS Before PDI <span style="font-size:9px;font-weight:400;color:var(--tx3)">(internal admits — avg days at each prior LOC)</span></div>
-      <div class="chart-wrap" style="height:180px"><canvas id="prior-los-pdi-chart"></canvas></div>
-      <div id="pdi-los-stats" style="display:flex;gap:16px;padding:8px 4px 0;flex-wrap:wrap"></div>
+  <!-- ── SECTION D: Where do clients go after? ────────────────────────────── -->
+  <div id="flow-section-d" style="margin-bottom:20px">
+    <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+      color:var(--tx3);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--bd)">
+      D &nbsp;·&nbsp; Where do clients go when they leave?
     </div>
-    <div class="card">
-      <div class="chart-card-title">Prior LOS Before Signature <span style="font-size:9px;font-weight:400;color:var(--tx3)">(internal admits — avg days at each prior LOC)</span></div>
-      <div class="chart-wrap" style="height:180px"><canvas id="prior-los-sig-chart"></canvas></div>
-      <div id="sig-los-stats" style="display:flex;gap:16px;padding:8px 4px 0;flex-wrap:wrap"></div>
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:14px">
+      <div class="card">
+        <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px">Step-Down Destinations</div>
+        <div style="font-size:10px;color:var(--tx3);margin-bottom:10px">
+          Blue = stays within Lifeskills &nbsp;·&nbsp; Green = external step-down
+        </div>
+        <div class="chart-wrap" style="height:200px"><canvas id="stepdown-chart"></canvas></div>
+      </div>
+      <div class="card" style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:12px;font-weight:700;color:var(--navy)">Step-Down Summary</div>
+        <div id="stepdown-summary" style="font-size:10.5px;line-height:1.9;color:var(--tx3)"></div>
+      </div>
     </div>
   </div>
 
-  <!-- ── Clinical pathway map ── -->
-  <div class="card" style="margin-bottom:14px">
-    <div class="chart-card-title">Clinical Pathway Map <span style="font-size:9px;font-weight:400;color:var(--tx3)">— how clients enter and exit PDI &amp; Signature programming</span></div>
-    <div id="flow-pathway-map" style="padding:12px 4px"></div>
-  </div>
-
-  <!-- ── Step-down by program ── -->
-  <div class="card" style="margin-bottom:14px">
-    <div class="chart-card-title">Step-Down Destinations by Program <span style="font-size:9px;font-weight:400;color:var(--tx3)">■ Lifeskills Internal &nbsp; ■ External</span></div>
-    <div class="chart-wrap" style="height:220px"><canvas id="stepdown-chart"></canvas></div>
-  </div>
-
-  <!-- ── Detail table ── -->
-  <div class="tbl-wrap">
-    <table>
-      <thead><tr>
-        <th>#</th><th>Client</th><th>Program</th>
-        <th>Admit Type</th><th>Immed. Prior LOC</th><th>Prior LOS</th>
-        <th>PDI LOS</th><th>Sig LOS</th><th>Total LOS</th>
-        <th>Step-Down</th><th>Step-Down Date</th>
-      </tr></thead>
-      <tbody id="flow-body"></tbody>
-    </table>
-  </div>
-  <div style="font-size:10px;color:var(--tx3);margin-top:6px;margin-bottom:24px;padding:0 4px">
-    &#9432; Flow data is entered in the <a href="admin-fix2.html" style="color:var(--accent)">Client Flow Mapping tool</a>. Charts and statistics update in real time as records are completed.
+  <!-- ── Detail table ─────────────────────────────────────────────────────── -->
+  <details style="margin-bottom:24px">
+    <summary style="font-size:11px;font-weight:600;color:var(--tx3);cursor:pointer;
+      padding:8px 4px;border-top:1px solid var(--bd)">
+      Show client-level detail table
+    </summary>
+    <div class="tbl-wrap" style="margin-top:8px">
+      <table>
+        <thead><tr>
+          <th>#</th><th>Client</th><th>Program</th>
+          <th>Admit Type</th><th>Prior LOC</th><th>Prior LOS (days)</th>
+          <th>Step-Down</th><th>Step-Down Date</th>
+        </tr></thead>
+        <tbody id="flow-body"></tbody>
+      </table>
+    </div>
+  </details>
+  <div style="font-size:10px;color:var(--tx3);margin-bottom:24px;padding:0 2px">
+    &#9432; Data entered in the <a href="admin-fix2.html" style="color:var(--accent)">Client Flow Mapping tool</a>.
+    Charts update in real time. Records without flow data do not appear above.
   </div>
 </div>
 </div>
