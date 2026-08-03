@@ -576,7 +576,7 @@ firebase.initializeApp({
   projectId:'pdi-signature-schedule'
 });
 
-// ── Client Flow Charts ──────────────────────────────────────────────────────
+// ── Client Flow Analytics ───────────────────────────────────────────────────
 var _flowEdits = {};
 
 firebase.database().ref('lifeskills_clinical/client_flow_edits').on('value', function(snap){
@@ -584,168 +584,362 @@ firebase.database().ref('lifeskills_clinical/client_flow_edits').on('value', fun
   renderFlowSection();
 });
 
+function normFlowName(s){ return (s||'').toLowerCase().trim().replace(/\s+/g,' '); }
+
+function losStats(arr){
+  var v=arr.filter(function(x){return x!==null&&!isNaN(x)&&x>0;});
+  if(!v.length)return null;
+  v.sort(function(a,b){return a-b;});
+  return{n:v.length,avg:Math.round(v.reduce(function(a,b){return a+b;},0)/v.length),
+    min:v[0],max:v[v.length-1],
+    med:v[Math.floor(v.length/2)]};
+}
+
+function sdIsInt(sd){ return (sd||'').indexOf('Lifeskills')>=0; }
+
 function renderFlowSection(){
-  var edits = Object.values(_flowEdits);
-  var filled = edits.filter(function(e){ return e.admitType; });
-  var internal = filled.filter(function(e){ return e.admitType === 'Internal'; });
-  var external  = filled.filter(function(e){ return e.admitType === 'External'; });
-  var withSD    = edits.filter(function(e){ return e.stepDown && e.stepDown !== '' && e.stepDown !== '---'; });
-  // Infer type from name — 'Lifeskills' in name = internal
-  function sdIsInt(e){ var sd=e.stepDown||''; return sd.indexOf('Lifeskills')>=0||sd==='Signature (Lifeskills)'||sd==='PDI (Lifeskills)'; }
-  var sdInternal = withSD.filter(sdIsInt);
-  var sdExternal = withSD.filter(function(e){ return !sdIsInt(e); });
+  // Build name→program lookup from live episode data
+  var epByName={};
+  (typeof ALL_EPS_LIVE!=='undefined'?ALL_EPS_LIVE:[]).forEach(function(ep){
+    var k=normFlowName(ep.name);
+    if(!epByName[k])epByName[k]=[];
+    epByName[k].push(ep);
+  });
 
-  var total = Object.keys(_flowEdits).length || 1;
-  var filledN = filled.length;
+  function getProgForEdit(e){
+    var name=normFlowName(e._name||'');
+    var eps=epByName[name]||[];
+    if(!eps.length)return'Unknown';
+    // Use most recent episode
+    eps.sort(function(a,b){return(b.pdiAdmit||b.sigAdmit||'')>(a.pdiAdmit||a.sigAdmit||'')?1:-1;});
+    var ep=eps[0];
+    if(ep.pdiAdmit&&ep.sigAdmit)return'Both';
+    if(ep.pdiAdmit)return'PDI';
+    if(ep.sigAdmit)return'Signature';
+    return'Unknown';
+  }
 
-  // Pills
-  function setEl(id, val){ var el=document.getElementById(id); if(el) el.textContent=val; }
-  setEl('fl-internal', internal.length);
-  setEl('fl-internal-pct', filledN ? Math.round(internal.length/filledN*100)+'% of entered' : '');
-  setEl('fl-external', external.length);
-  setEl('fl-external-pct', filledN ? Math.round(external.length/filledN*100)+'% of entered' : '');
-  setEl('fl-stepdown', withSD.length);
-  setEl('fl-stepdown-pct', withSD.length ?
-    sdInternal.length+' Lifeskills · '+sdExternal.length+' External'
-    : '');
-  setEl('fl-filled', filledN);
-  setEl('fl-filled-pct', total + ' total clients');
-  setEl('fl-sd-int', sdInternal.length);
-  setEl('fl-sd-int-pct', withSD.length ? Math.round(sdInternal.length/withSD.length*100)+'% of discharges' : '');
-  setEl('fl-sd-ext', sdExternal.length);
-  setEl('fl-sd-ext-pct', withSD.length ? Math.round(sdExternal.length/withSD.length*100)+'% of discharges' : '');
+  // Enrich edits with program
+  var edits=Object.values(_flowEdits).map(function(e){
+    return Object.assign({},e,{
+      _prog:getProgForEdit(e),
+      _los:parseInt(e.priorLOClos)||null
+    });
+  }).filter(function(e){return e._name;});
 
-  // ── Chart 1: Admission type doughnut ──────────────────────────────────────
-  if(filledN > 0) {
-    mkChart('admit-type-chart', {
-      type: 'doughnut',
-      data: {
-        labels: ['Internal','External','Unknown'],
-        datasets:[{ data:[internal.length, external.length, filledN-internal.length-external.length],
-          backgroundColor:['rgba(55,138,221,.8)','rgba(127,119,221,.8)','rgba(180,170,155,.4)'],
-          borderColor:['#378ADD','#7F77DD','#B4AA9B'], borderWidth:1.5 }]
-      },
-      options:{ plugins:{
-        legend:{position:'bottom',labels:{font:{size:10},padding:12}},
-        tooltip:{ callbacks:{ label:function(ctx){
-          var pct=filledN?Math.round(ctx.parsed/filledN*100):0;
+  var pdiEdits=edits.filter(function(e){return e._prog==='PDI'||e._prog==='Both';});
+  var sigEdits=edits.filter(function(e){return e._prog==='Signature'||e._prog==='Both';});
+
+  // Admission source splits
+  var pdiExt=pdiEdits.filter(function(e){return e.admitType==='External';});
+  var pdiInt=pdiEdits.filter(function(e){return e.admitType==='Internal';});
+  var sigExt=sigEdits.filter(function(e){return e.admitType==='External';});
+  var sigInt=sigEdits.filter(function(e){return e.admitType==='Internal';});
+  var pdiTotal=pdiEdits.filter(function(e){return e.admitType;}).length||1;
+  var sigTotal=sigEdits.filter(function(e){return e.admitType;}).length||1;
+
+  // Prior LOS stats
+  var pdiIntLOS=losStats(pdiInt.map(function(e){return e._los;}));
+  var sigIntLOS=losStats(sigInt.map(function(e){return e._los;}));
+
+  // Update pills
+  function el(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
+  el('fl-pdi-ext',pdiExt.length);
+  el('fl-pdi-ext-pct',pdiEdits.filter(function(e){return e.admitType;}).length?Math.round(pdiExt.length/pdiTotal*100)+'% of PDI':'');
+  el('fl-pdi-int',pdiInt.length);
+  el('fl-pdi-int-pct',Math.round(pdiInt.length/pdiTotal*100)+'% of PDI');
+  el('fl-sig-ext',sigExt.length);
+  el('fl-sig-ext-pct',sigEdits.filter(function(e){return e.admitType;}).length?Math.round(sigExt.length/sigTotal*100)+'% of Sig':'');
+  el('fl-sig-int',sigInt.length);
+  el('fl-sig-int-pct',Math.round(sigInt.length/sigTotal*100)+'% of Sig');
+  el('fl-int-avg-pdi',pdiIntLOS?pdiIntLOS.avg+'d':'—');
+  el('fl-int-avg-sig',sigIntLOS?sigIntLOS.avg+'d':'—');
+
+  // Update subtitle
+  var sub=document.getElementById('flow-sub');
+  if(sub)sub.textContent=edits.length+' records with flow data  ·  '+
+    pdiExt.length+' PDI external / '+pdiInt.length+' PDI internal  ·  '+
+    sigExt.length+' Sig external / '+sigInt.length+' Sig internal';
+
+  var COLORS={
+    pdi:'rgba(74,108,138,.8)',sig:'rgba(107,92,69,.8)',
+    ext:'rgba(29,158,117,.8)',int:'rgba(55,138,221,.8)',
+    loc:['rgba(139,106,47,.75)','rgba(74,108,138,.75)','rgba(107,92,69,.75)',
+         'rgba(29,158,117,.75)','rgba(180,120,80,.75)','rgba(120,80,160,.75)',
+         'rgba(200,160,60,.75)','rgba(80,160,140,.75)']
+  };
+
+  // ── PDI source doughnut ───────────────────────────────────────────────────
+  if(pdiEdits.filter(function(e){return e.admitType;}).length){
+    mkChart('pdi-source-chart',{type:'doughnut',
+      data:{labels:['External','Internal'],
+        datasets:[{data:[pdiExt.length,pdiInt.length],
+          backgroundColor:[COLORS.ext,COLORS.int],borderWidth:1.5}]},
+      options:{cutout:'60%',plugins:{
+        legend:{position:'bottom',labels:{font:{size:9},padding:8}},
+        tooltip:{callbacks:{label:function(ctx){
+          var pct=Math.round(ctx.parsed/pdiTotal*100);
           return ctx.label+': '+ctx.parsed+' ('+pct+'%)';
         }}}
-      }, cutout:'58%' }
+      }}
     });
   }
 
-  // ── Chart 2: Prior LOC horizontal bar (internal only) ────────────────────
-  var locCounts = {};
-  internal.forEach(function(e){
-    var loc = e.priorLOC || 'Not specified';
-    locCounts[loc] = (locCounts[loc]||0) + 1;
-  });
-  var locLabels = Object.keys(locCounts).sort(function(a,b){ return locCounts[b]-locCounts[a]; });
-  var locData   = locLabels.map(function(l){ return locCounts[l]; });
-  if(locLabels.length > 0) {
-    mkChart('prior-loc-chart', {
-      type: 'bar',
-      data: {
-        labels: locLabels,
-        datasets:[{ data: locData,
-          backgroundColor:'rgba(139,115,85,.75)',
-          borderColor:'rgba(139,115,85,1)', borderWidth:1.5,
-          borderRadius:4 }]
-      },
-      options:{
-        indexAxis:'y',
-        plugins:{
-          legend:{display:false},
-          tooltip:{ callbacks:{ label:function(ctx){
-            var pct=internal.length?Math.round(ctx.parsed.x/internal.length*100):0;
-            return ctx.parsed.x+' clients ('+pct+'% of internal)';
-          }}}
-        },
-        scales:{ x:{ beginAtZero:true, ticks:{stepSize:1,font:{size:9}}, grid:{display:false} },
-                 y:{ ticks:{font:{size:9}}, grid:{display:false} } }
+  // ── Sig source doughnut ───────────────────────────────────────────────────
+  if(sigEdits.filter(function(e){return e.admitType;}).length){
+    mkChart('sig-source-chart',{type:'doughnut',
+      data:{labels:['External','Internal'],
+        datasets:[{data:[sigExt.length,sigInt.length],
+          backgroundColor:[COLORS.ext,COLORS.int],borderWidth:1.5}]},
+      options:{cutout:'60%',plugins:{
+        legend:{position:'bottom',labels:{font:{size:9},padding:8}},
+        tooltip:{callbacks:{label:function(ctx){
+          var pct=Math.round(ctx.parsed/sigTotal*100);
+          return ctx.label+': '+ctx.parsed+' ('+pct+'%)';
+        }}}
+      }}
+    });
+  }
+
+  // ── Prior LOC distribution (all internal) ────────────────────────────────
+  var allInt=edits.filter(function(e){return e.admitType==='Internal'&&e.priorLOC&&e.priorLOC!=='None';});
+  var locCounts={};
+  allInt.forEach(function(e){locCounts[e.priorLOC]=(locCounts[e.priorLOC]||0)+1;});
+  var locKeys=Object.keys(locCounts).sort(function(a,b){return locCounts[b]-locCounts[a];});
+  if(locKeys.length){
+    mkChart('prior-loc-dist-chart',{type:'bar',
+      data:{labels:locKeys,
+        datasets:[{data:locKeys.map(function(k){return locCounts[k];}),
+          backgroundColor:COLORS.loc.slice(0,locKeys.length),borderWidth:1.5,borderRadius:4}]},
+      options:{indexAxis:'y',plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:function(ctx){
+          var pct=allInt.length?Math.round(ctx.parsed.x/allInt.length*100):0;
+          return ctx.parsed.x+' clients ('+pct+'%)';
+        }}}},
+        scales:{x:{beginAtZero:true,ticks:{stepSize:1,font:{size:9}},grid:{display:false}},
+          y:{ticks:{font:{size:9}},grid:{display:false}}}
       }
     });
   }
 
-  // ── Chart 3: Step-down destination — stacked internal vs external ────────
-  var sdInt={}, sdExt={};
+  // ── Prior LOS by LOC type — PDI internal ─────────────────────────────────
+  function losChartByLOC(edits,chartId,statsId){
+    var byLOC={};
+    edits.filter(function(e){return e.admitType==='Internal'&&e.priorLOC&&e.priorLOC!=='None'&&e._los;})
+      .forEach(function(e){if(!byLOC[e.priorLOC])byLOC[e.priorLOC]=[];byLOC[e.priorLOC].push(e._los);});
+    var locs=Object.keys(byLOC).sort(function(a,b){
+      var aa=byLOC[a].reduce(function(x,y){return x+y;},0)/byLOC[a].length;
+      var bb=byLOC[b].reduce(function(x,y){return x+y;},0)/byLOC[b].length;
+      return bb-aa;
+    });
+    if(!locs.length){document.getElementById(statsId).innerHTML='<span style="font-size:10px;color:var(--tx3);font-style:italic">No internal admits with prior LOS data yet.</span>';return;}
+    var avgs=locs.map(function(l){return Math.round(byLOC[l].reduce(function(a,b){return a+b;},0)/byLOC[l].length);});
+    var mins=locs.map(function(l){return Math.min.apply(null,byLOC[l]);});
+    var maxs=locs.map(function(l){return Math.max.apply(null,byLOC[l]);});
+    mkChart(chartId,{type:'bar',
+      data:{labels:locs,
+        datasets:[{label:'Avg LOS (days)',data:avgs,
+          backgroundColor:'rgba(139,106,47,.7)',borderColor:'rgba(139,106,47,1)',
+          borderWidth:1.5,borderRadius:4},
+          {label:'Min',data:mins,backgroundColor:'rgba(29,158,117,.45)',borderWidth:1,borderRadius:3},
+          {label:'Max',data:maxs,backgroundColor:'rgba(199,80,60,.45)',borderWidth:1,borderRadius:3}
+        ]},
+      options:{indexAxis:'y',plugins:{
+        legend:{position:'bottom',labels:{font:{size:9},padding:6}},
+        tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+ctx.parsed.x+'d';}}}},
+        scales:{x:{beginAtZero:true,ticks:{font:{size:9}},grid:{display:false}},
+          y:{ticks:{font:{size:9}},grid:{display:false}}}
+      }
+    });
+    // Stat pills below chart
+    var all=locs.reduce(function(a,l){return a.concat(byLOC[l]);},[]); 
+    var s=losStats(all);
+    var statsEl=document.getElementById(statsId);
+    if(statsEl&&s){
+      statsEl.innerHTML=[
+        ['Avg',s.avg+'d'],['Min',s.min+'d'],['Max',s.max+'d'],['n',s.n+' clients']
+      ].map(function(kv){
+        return'<div style="text-align:center"><div style="font-size:14px;font-weight:700;color:var(--navy)">'+kv[1]+'</div>'
+          +'<div style="font-size:9px;color:var(--tx3)">'+kv[0]+'</div></div>';
+      }).join('');
+    }
+  }
+  losChartByLOC(pdiEdits,'prior-los-pdi-chart','pdi-los-stats');
+  losChartByLOC(sigEdits,'prior-los-sig-chart','sig-los-stats');
+
+  // ── Clinical pathway map ─────────────────────────────────────────────────
+  renderPathwayMap(edits,pdiEdits,sigEdits,pdiInt,pdiExt,sigInt,sigExt);
+
+  // ── Step-down stacked chart ───────────────────────────────────────────────
+  var withSD=edits.filter(function(e){return e.stepDown&&e.stepDown!=='---'&&e.stepDown!=='';});
+  var sdInt={},sdExt={};
   withSD.forEach(function(e){
-    var sd=e.stepDown||'Unknown';
-    if(sd==='---')return;
-    if(sdIsInt(e)){ sdInt[sd]=(sdInt[sd]||0)+1; }
-    else{           sdExt[sd]=(sdExt[sd]||0)+1; }
+    var sd=e.stepDown;
+    if(sdIsInt(e.stepDown)){sdInt[sd]=(sdInt[sd]||0)+1;}
+    else{sdExt[sd]=(sdExt[sd]||0)+1;}
   });
   var allSD=Array.from(new Set(Object.keys(sdInt).concat(Object.keys(sdExt))))
-    .sort(function(a,b){
-      var ta=(sdInt[a]||0)+(sdExt[a]||0);
-      var tb=(sdInt[b]||0)+(sdExt[b]||0);
-      return tb-ta;
-    });
-  if(allSD.length > 0){
-    mkChart('stepdown-chart',{
-      type:'bar',
-      data:{
-        labels: allSD,
+    .sort(function(a,b){return((sdInt[b]||0)+(sdExt[b]||0))-((sdInt[a]||0)+(sdExt[a]||0));});
+  if(allSD.length){
+    mkChart('stepdown-chart',{type:'bar',
+      data:{labels:allSD,
         datasets:[
-          { label:'Lifeskills Internal',
-            data: allSD.map(function(l){return sdInt[l]||0;}),
-            backgroundColor:'rgba(55,138,221,.75)',
-            borderColor:'rgba(55,138,221,1)', borderWidth:1.5, borderRadius:3 },
-          { label:'External',
-            data: allSD.map(function(l){return sdExt[l]||0;}),
-            backgroundColor:'rgba(29,158,117,.75)',
-            borderColor:'rgba(29,158,117,1)', borderWidth:1.5, borderRadius:3 }
-        ]
-      },
-      options:{
-        indexAxis:'y',
-        plugins:{
-          legend:{ position:'bottom', labels:{ font:{size:10}, padding:10 }},
-          tooltip:{ callbacks:{ label:function(ctx){
+          {label:'Lifeskills Internal',data:allSD.map(function(l){return sdInt[l]||0;}),
+            backgroundColor:'rgba(55,138,221,.75)',borderColor:'rgba(55,138,221,1)',borderWidth:1.5,borderRadius:3},
+          {label:'External',data:allSD.map(function(l){return sdExt[l]||0;}),
+            backgroundColor:'rgba(29,158,117,.75)',borderColor:'rgba(29,158,117,1)',borderWidth:1.5,borderRadius:3}
+        ]},
+      options:{indexAxis:'y',
+        plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:10}},
+          tooltip:{callbacks:{label:function(ctx){
             var pct=withSD.length?Math.round(ctx.parsed.x/withSD.length*100):0;
             return ctx.dataset.label+': '+ctx.parsed.x+' ('+pct+'%)';
-          }}}
-        },
-        scales:{
-          x:{ beginAtZero:true, stacked:true, ticks:{stepSize:1,font:{size:9}}, grid:{display:false} },
-          y:{ stacked:true, ticks:{font:{size:9}}, grid:{display:false} }
-        }
+          }}}},
+        scales:{x:{beginAtZero:true,stacked:true,ticks:{stepSize:1,font:{size:9}},grid:{display:false}},
+          y:{stacked:true,ticks:{font:{size:9}},grid:{display:false}}}
       }
     });
   }
 
-  // ── Detail table ──────────────────────────────────────────────────────────
-  var tbody = document.getElementById('flow-body');
-  if(!tbody) return;
-  var allKeys = Object.keys(_flowEdits).sort();
-  if(!allKeys.length){
-    tbody.innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--tx3);padding:24px;font-style:italic">No flow data entered yet. Open the Client Flow Mapping tool to add admission and step-down information.</td></tr>';
+  // ── Detail table ─────────────────────────────────────────────────────────
+  var tbody=document.getElementById('flow-body');
+  if(!tbody)return;
+  if(!edits.length){
+    tbody.innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--tx3);padding:24px;font-style:italic">No flow data entered yet.</td></tr>';
     return;
   }
-  tbody.innerHTML = allKeys.map(function(k, i){
-    var e = _flowEdits[k] || {};
-    var name = k.replace(/_/g,' ');
-    var atStyle = e.admitType==='Internal' ? 'color:var(--pdi);font-weight:600'
-                : e.admitType==='External' ? 'color:var(--sig);font-weight:600' : 'color:var(--tx3)';
-    var sdStyle = e.stepDown ? 'color:var(--green);font-weight:600' : 'color:var(--tx3)';
-    return '<tr>'
+  var sorted=edits.slice().sort(function(a,b){return(a._name||'').localeCompare(b._name||'');});
+  tbody.innerHTML=sorted.map(function(e,i){
+    var prog=e._prog||'—';
+    var bc=prog==='PDI'?'badge-pdi':prog==='Signature'?'badge-sig':prog==='Both'?'badge-both':'';
+    var atStyle=e.admitType==='Internal'?'color:var(--pdi);font-weight:600':e.admitType==='External'?'color:var(--green);font-weight:600':'color:var(--tx3)';
+    var sdStyle=sdIsInt(e.stepDown)?'color:var(--pdi);font-weight:600':e.stepDown?'color:var(--green);font-weight:600':'color:var(--tx3)';
+    return'<tr>'
       +'<td style="color:var(--tx3);font-size:10px">'+(i+1)+'</td>'
-      +'<td style="font-weight:600;color:var(--tx)">' + name + '</td>'
-      +'<td></td>'
+      +'<td style="font-weight:600;color:var(--tx)">'+(e._name||'—')+'</td>'
+      +'<td><span class="badge '+bc+'">'+prog+'</span></td>'
       +'<td style="'+atStyle+'">'+(e.admitType||'—')+'</td>'
       +'<td>'+(e.priorLOC||'—')+'</td>'
-      +'<td>'+(e.priorLOClos||'—')+'</td>'
+      +'<td style="font-weight:600">'+(e.priorLOClos?e.priorLOClos+'d':'—')+'</td>'
       +'<td>—</td><td>—</td><td>—</td>'
       +'<td style="'+sdStyle+'">'+(e.stepDown||'—')+'</td>'
       +'<td style="color:var(--tx3)">'+(e.stepDownDate||'—')+'</td>'
       +'</tr>';
   }).join('');
-
-  // Update subtitle
-  var sub = document.getElementById('flow-sub');
-  if(sub) sub.textContent = filledN + ' of ' + Object.keys(_flowEdits).length + ' records with admission data  ·  ' + withSD.length + ' step-down destinations logged';
 }
+
+// ── Clinical Pathway Map ─────────────────────────────────────────────────────
+function renderPathwayMap(edits,pdiEdits,sigEdits,pdiInt,pdiExt,sigInt,sigExt){
+  var el=document.getElementById('flow-pathway-map');
+  if(!el)return;
+
+  // Build pathway buckets
+  function pathGroup(items,locFilter){
+    var group=locFilter?items.filter(function(e){return(e.priorLOC||'').indexOf(locFilter)>=0;}):items;
+    var s=losStats(group.map(function(e){return e._los;}));
+    return{n:group.length,avg:s?s.avg:null,min:s?s.min:null,max:s?s.max:null};
+  }
+
+  var NAVY='#3E342A',PDI='#4A6C8A',SIG='#6B5C45',GREEN='#1D9E75',AMBER='#B87A00';
+
+  function nodeBox(label,n,color,sub){
+    return '<div style="background:'+color+';color:#fff;border-radius:8px;padding:10px 16px;'
+      +'min-width:120px;text-align:center;flex-shrink:0">'
+      +'<div style="font-size:11px;font-weight:700">'+label+'</div>'
+      +(n!==null?'<div style="font-size:20px;font-weight:700;margin:2px 0">'+n+'</div>':'')
+      +(sub?'<div style="font-size:9px;opacity:.8">'+sub+'</div>':'')
+      +'</div>';
+  }
+  function arrow(color){
+    return '<div style="display:flex;align-items:center;color:'+color+';font-size:16px;padding:0 4px">\u2192</div>';
+  }
+  function stat(label,val,color){
+    if(val===null)return'';
+    return'<div style="font-size:9px;color:'+color+'">'+label+': <strong>'+val+'d</strong></div>';
+  }
+
+  // Sources into PDI
+  var pdiRTC   =pathGroup(pdiInt,'Residential');
+  var pdiPHP   =pathGroup(pdiInt,'PHP');
+  var pdiIOP   =pathGroup(pdiInt,'IOP');
+  var pdiOther =pathGroup(pdiInt.filter(function(e){
+    return!['Residential','PHP','IOP'].some(function(k){return(e.priorLOC||'').indexOf(k)>=0;});}));
+
+  // Sources into Sig
+  var sigRTC   =pathGroup(sigInt,'Residential');
+  var sigPHP   =pathGroup(sigInt,'PHP');
+  var sigIOP   =pathGroup(sigInt,'IOP');
+  var sigOther =pathGroup(sigInt.filter(function(e){
+    return!['Residential','PHP','IOP'].some(function(k){return(e.priorLOC||'').indexOf(k)>=0;});}));
+
+  // Step-down totals
+  var pdiSD=pdiEdits.filter(function(e){return e.stepDown&&e.stepDown!=='---';});
+  var sigSD=sigEdits.filter(function(e){return e.stepDown&&e.stepDown!=='---';});
+  var pdiSDInt=pdiSD.filter(function(e){return sdIsInt(e.stepDown);}).length;
+  var sigSDInt=sigSD.filter(function(e){return sdIsInt(e.stepDown);}).length;
+
+  function pathRow(label,g,color){
+    if(!g.n)return'';
+    return'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
+      +nodeBox(label,g.n,color,'clients')
+      +arrow(color)
+      +'<div style="font-size:10px;line-height:1.6">'
+      +stat('Avg prior LOS',g.avg,'#555')
+      +stat('Min',g.min,'#1D9E75')
+      +stat('Max',g.max,'#C05020')
+      +'</div></div>';
+  }
+
+  var html='<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">';
+
+  // PDI column
+  html+='<div>'
+    +'<div style="font-size:11px;font-weight:700;color:'+PDI+';border-bottom:2px solid '+PDI+';padding-bottom:4px;margin-bottom:10px">PDI Program &mdash; '+pdiEdits.length+' admits</div>'
+    +'<div style="font-size:10px;font-weight:600;color:#888;margin-bottom:6px">INTERNAL SOURCES</div>'
+    +pathRow('RTC',pdiRTC,PDI)
+    +pathRow('PHP',pdiPHP,'#5A7CA0')
+    +pathRow('IOP',pdiIOP,'#6A8CB0')
+    +(pdiOther.n?pathRow('Other',pdiOther,'#7A9CC0'):'')
+    +'<div style="font-size:10px;font-weight:600;color:#888;margin:8px 0 6px">EXTERNAL DEMAND</div>'
+    +'<div style="display:flex;align-items:center;gap:8px">'
+    +nodeBox('External',pdiExt.length,GREEN,'direct referrals')
+    +'</div>'
+    +(pdiSD.length?'<div style="margin-top:12px;font-size:10px;font-weight:600;color:#888">STEP-DOWN</div>'
+      +'<div style="font-size:10px;margin-top:4px">'+pdiSDInt+' Lifeskills &nbsp;·&nbsp; '+(pdiSD.length-pdiSDInt)+' External</div>':'')
+    +'</div>';
+
+  // Sig column
+  html+='<div>'
+    +'<div style="font-size:11px;font-weight:700;color:'+SIG+';border-bottom:2px solid '+SIG+';padding-bottom:4px;margin-bottom:10px">Signature Program &mdash; '+sigEdits.length+' admits</div>'
+    +'<div style="font-size:10px;font-weight:600;color:#888;margin-bottom:6px">INTERNAL SOURCES</div>'
+    +pathRow('RTC',sigRTC,SIG)
+    +pathRow('PHP',sigPHP,'#7B6C59')
+    +pathRow('IOP',sigIOP,'#8B7C69')
+    +(sigOther.n?pathRow('Other',sigOther,'#9B8C79'):'')
+    +'<div style="font-size:10px;font-weight:600;color:#888;margin:8px 0 6px">EXTERNAL DEMAND</div>'
+    +'<div style="display:flex;align-items:center;gap:8px">'
+    +nodeBox('External',sigExt.length,GREEN,'direct referrals')
+    +'</div>'
+    +(sigSD.length?'<div style="margin-top:12px;font-size:10px;font-weight:600;color:#888">STEP-DOWN</div>'
+      +'<div style="font-size:10px;margin-top:4px">'+sigSDInt+' Lifeskills &nbsp;·&nbsp; '+(sigSD.length-sigSDInt)+' External</div>':'')
+    +'</div>';
+
+  html+='</div>';
+
+  // Optimization callout
+  var optLines=[];
+  if(pdiRTC.avg)optLines.push('<strong>Avg RTC tenure before PDI: '+pdiRTC.avg+'d</strong> (range '+pdiRTC.min+'–'+pdiRTC.max+'d) — benchmark for referral timing from Residential.');
+  if(sigRTC.avg)optLines.push('<strong>Avg RTC tenure before Signature: '+sigRTC.avg+'d</strong> (range '+sigRTC.min+'–'+sigRTC.max+'d) — review whether earlier transition preserves clinical necessity.');
+  if(optLines.length){
+    html+='<div style="margin-top:14px;border-left:3px solid '+AMBER+';padding:8px 12px;'
+      +'font-size:10px;color:#555;line-height:1.7;background:#FFFDF5">'
+      +'<strong style="color:'+AMBER+'">Leadership Insight</strong><br>'
+      +optLines.join('<br>')+'</div>';
+  }
+
+  el.innerHTML=html;
+}
+
 
 firebase.database().ref('schedule_v3').on('value',function(snap){
   document.getElementById('ldot').className='ldot on';
