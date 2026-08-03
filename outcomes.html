@@ -195,7 +195,6 @@ tbody tr:hover td{background:rgba(139,115,85,.05)}
   </div>
 
   <!-- Data completeness banner -->
-  <div id="flow-debug"></div>
   <div id="flow-coverage-bar" style="display:none;background:#F0F7FF;border:1px solid #C0D8F0;
     border-radius:6px;padding:10px 16px;margin-bottom:16px;font-size:11px;color:#3A5A80;line-height:1.7">
   </div>
@@ -625,22 +624,6 @@ function renderFlowSection(){
     return;
   }
 
-  // ── Debug: show raw _name values ──────────────────────────────────────
-  var _debugEl=document.getElementById('flow-debug');
-  if(_debugEl){
-    var rawNames=Object.entries(_flowEdits).map(function(kv){
-      var k=kv[0],v=kv[1];
-      return{key:k.slice(0,16),name:v._name||'(no _name)',admit:v.admitType||'—'};
-    }).sort(function(a,b){return a.name.localeCompare(b.name);});
-    _debugEl.innerHTML='<details open style="font-size:10px;margin-bottom:10px"><summary style="cursor:pointer;font-weight:600;color:var(--tx3)">Debug: '+rawNames.length+' raw flow edit records — _name and admitType</summary>'
-      +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-top:6px;font-size:10px">'
-      +rawNames.map(function(r){
-        return'<div style="background:#f5f5f5;padding:4px 6px;border-radius:3px">'
-          +'<strong>'+r.name+'</strong><br><span style="color:#888">'+r.admit+'</span></div>';
-      }).join('')
-      +'</div></details>';
-  }
-
   var episodeSource=(ALL_EPS_LIVE&&ALL_EPS_LIVE.length)?ALL_EPS_LIVE:ALL_EPISODES;
   var clients=(_fbClients&&_fbClients.length)?_fbClients:[];
   // Use unique client name count (not episode count) so Layla's readmission
@@ -668,9 +651,9 @@ function renderFlowSection(){
   var totalPDI=_epPdiNames.size+_fbPdiNew.length
     ||episodeSource.filter(function(ep){return ep.pdiAdmit;}).length;
   // _sigNames and _pdiNames for downstream use (conversion detection etc.)
-  var _sigNames=new Set([..._epSigNames]);
+  var _sigNames=new Set(); _epSigNames.forEach(function(k){_sigNames.add(k);});
   _fbSigNew.forEach(function(c){_sigNames.add(normFlowName(c.name||''));});
-  var _pdiNames=new Set([..._epPdiNames]);
+  var _pdiNames=new Set(); _epPdiNames.forEach(function(k){_pdiNames.add(k);});
   _fbPdiNew.forEach(function(c){_pdiNames.add(normFlowName(c.name||''));});
   var totalActive=(_totalActive>0)?_totalActive:0;
   var clientById={},clientByName={};
