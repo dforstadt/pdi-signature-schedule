@@ -623,252 +623,108 @@ function renderFlowSection(){
         +'<a href="admin-fix2.html" style="color:var(--accent)">Client Flow Mapping tool</a> to begin.';}
     return;
   }
-
   var episodeSource=(ALL_EPS_LIVE&&ALL_EPS_LIVE.length)?ALL_EPS_LIVE:ALL_EPISODES;
   var clients=(_fbClients&&_fbClients.length)?_fbClients:[];
   var totalPDI=(_totalPDI>0)?_totalPDI:episodeSource.filter(function(ep){return ep.pdiAdmit;}).length;
   var totalSig=(_totalSig>0)?_totalSig:episodeSource.filter(function(ep){return ep.sigAdmit;}).length;
   var totalActive=(_totalActive>0)?_totalActive:0;
-
-  // ── Step 1: flatten all flow edits, recover _name ──────────────────────────
-  var clientById={}, clientByName={};
-  clients.forEach(function(c){
-    if(c.id)clientById[c.id]=c;
-    clientByName[normFlowName(c.name||'')]=c;
-  });
-
+  var clientById={},clientByName={};
+  clients.forEach(function(c){if(c.id)clientById[c.id]=c;clientByName[normFlowName(c.name||'')]=c;});
   var rawEdits=Object.entries(_flowEdits).map(function(kv){
-    var key=kv[0], e=kv[1];
-    var name=e._name||'';
-    if(!name&&clientById[key]) name=clientById[key].name||'';
-    if(!name){
-      var dec=key.replace(/_/g,' ').trim();
-      var mc=clientByName[normFlowName(dec)];
-      name=mc?mc.name:dec;
-    }
+    var key=kv[0],e=kv[1],name=e._name||'';
+    if(!name&&clientById[key])name=clientById[key].name||'';
+    if(!name){var dec=key.replace(/_/g,' ').trim();var mc=clientByName[normFlowName(dec)];name=mc?mc.name:dec;}
     return Object.assign({},e,{_name:name,_los:parseInt(e.priorLOClos)||null});
   }).filter(function(e){return e._name&&e._name.length>1;});
-
-  // ── Step 2: deduplicate by name, keep most complete record ─────────────────
   var byName={};
   rawEdits.forEach(function(e){
-    var k=normFlowName(e._name||'');
-    if(!k)return;
+    var k=normFlowName(e._name||'');if(!k)return;
     var score=function(r){return(r.admitType?2:0)+(r.priorLOC?1:0)+(r.stepDown?2:0)+(r._los?1:0);};
     if(!byName[k]||score(e)>score(byName[k]))byName[k]=e;
   });
-
-  // ── Step 3: build pdiEdits / sigEdits by cross-referencing ALL_EPISODES ────
-  // This is authoritative — we look at who is a PDI/Sig client from episodes,
-  // then find their flow edit by name. No guessing about program from edit keys.
-  var pdiEdits=[], sigEdits=[];
-  var pdiSeen=new Set(), sigSeen=new Set();
-
-  // Walk episodeSource (authoritative)
+  var pdiEdits=[],sigEdits=[],pdiSeen=new Set(),sigSeen=new Set();
   episodeSource.forEach(function(ep){
-    var k=normFlowName(ep.name||'');
-    var edit=byName[k];
-    if(!edit)return; // no flow data for this client
+    var k=normFlowName(ep.name||''),edit=byName[k];if(!edit)return;
     if(ep.pdiAdmit&&!pdiSeen.has(k)){pdiEdits.push(edit);pdiSeen.add(k);}
     if(ep.sigAdmit&&!sigSeen.has(k)){sigEdits.push(edit);sigSeen.add(k);}
   });
-  // Also check Firebase clients (covers new clients not yet in ALL_EPISODES)
   clients.forEach(function(c){
-    var k=normFlowName(c.name||'');
-    var edit=byName[k];
-    if(!edit)return;
-    var hasPDI=!!c.pdiAdmit&&c.pdiAdmit!==c.sigAdmit;
-    var hasSig=!!c.sigAdmit;
+    var k=normFlowName(c.name||''),edit=byName[k];if(!edit)return;
+    var hasPDI=!!c.pdiAdmit&&c.pdiAdmit!==c.sigAdmit,hasSig=!!c.sigAdmit;
     if(hasPDI&&!pdiSeen.has(k)){pdiEdits.push(edit);pdiSeen.add(k);}
     if(hasSig&&!sigSeen.has(k)){sigEdits.push(edit);sigSeen.add(k);}
   });
-
-  // ── Step 4: cross-ref missing (in episodeSource but no flow edit) ──────────
   var editNameSet=new Set(Object.keys(byName));
-  var missingPDI=episodeSource.filter(function(ep){
-    return ep.pdiAdmit&&!editNameSet.has(normFlowName(ep.name||''));
-  }).map(function(ep){return ep.name;});
-  var missingSig=episodeSource.filter(function(ep){
-    return ep.sigAdmit&&!editNameSet.has(normFlowName(ep.name||''));
-  }).map(function(ep){return ep.name;});
-
+  var missingPDI=episodeSource.filter(function(ep){return ep.pdiAdmit&&!editNameSet.has(normFlowName(ep.name||''));}).map(function(ep){return ep.name;});
+  var missingSig=episodeSource.filter(function(ep){return ep.sigAdmit&&!editNameSet.has(normFlowName(ep.name||''));}).map(function(ep){return ep.name;});
   var pdiCov=totalPDI?Math.round(pdiEdits.length/totalPDI*100):0;
   var sigCov=totalSig?Math.round(sigEdits.length/totalSig*100):0;
-
   var sub=document.getElementById('flow-sub');
-  if(sub)sub.textContent=Object.keys(byName).length+' client records  ·  '
-    +pdiEdits.length+' of '+totalPDI+' PDI matched ('+pdiCov+'%)  ·  '
-    +sigEdits.length+' of '+totalSig+' Signature matched ('+sigCov+'%)';
-
+  if(sub)sub.textContent=Object.keys(byName).length+' records  ·  PDI: '+pdiEdits.length+'/'+totalPDI+' ('+pdiCov+'%)  ·  Sig: '+sigEdits.length+'/'+totalSig+' ('+sigCov+'%)';
   if(cb){cb.style.display='block';cb.style.background='#F0F7FF';cb.style.borderColor='#C0D8F0';
-    cb.innerHTML='<strong>Data coverage:</strong> &nbsp;'
-      +'PDI: '+pdiEdits.length+'/'+totalPDI+' matched &nbsp;|&nbsp; '
-      +'Signature: '+sigEdits.length+'/'+totalSig+' matched &nbsp;|&nbsp; '
-      +'<em>Add records in the <a href="admin-fix2.html" style="color:var(--accent)">Flow Mapping tool</a>.</em>';}
-
+    cb.innerHTML='<strong>Coverage:</strong> &nbsp;PDI '+pdiEdits.length+'/'+totalPDI+' &nbsp;|&nbsp; Signature '+sigEdits.length+'/'+totalSig
+      +(missingPDI.length||missingSig.length?'<br><span style="color:#B45309;font-size:10px">&#9888; No flow record found — PDI: '+(missingPDI.join(', ')||'none')+' &nbsp;|&nbsp; Sig: '+(missingSig.join(', ')||'none')+'</span>':'')+'&nbsp;|&nbsp;<em><a href="admin-fix2.html" style="color:var(--accent)">Flow Mapping tool</a></em>';}
   var PDI_C='#4A6C8A',SIG_C='#6B5C45',EXT_C='#1D9E75',INT_C='#3786DD';
-
-  // Census
   var censusEl=document.getElementById('flow-census');
-  if(censusEl)censusEl.innerHTML=
-    kpi('Total PDI episodes',totalPDI,'all time',PDI_C)
-    +kpi('Total Signature episodes',totalSig,'all time',SIG_C)
-    +kpi('PDI\u2192Sig conversions',episodeSource.filter(function(e){return e.pdiAdmit&&e.sigAdmit&&!e.sigFirst;}).length,'direct pathway',EXT_C)
-    +kpi('Active clients',totalActive||'—','currently enrolled','var(--amber)');
-
-  // Admission source
+  if(censusEl)censusEl.innerHTML=kpi('Total PDI episodes',totalPDI,'all time',PDI_C)+kpi('Total Signature episodes',totalSig,'all time',SIG_C)+kpi('PDI\u2192Sig conversions',episodeSource.filter(function(e){return e.pdiAdmit&&e.sigAdmit&&!e.sigFirst;}).length,'direct pathway',EXT_C)+kpi('Active clients',totalActive||'—','currently enrolled','var(--amber)');
   var pdiTyped=pdiEdits.filter(function(e){return e.admitType;});
   var pdiExt=pdiTyped.filter(function(e){return e.admitType==='External';});
   var pdiInt=pdiTyped.filter(function(e){return e.admitType==='Internal';});
   var sigTyped=sigEdits.filter(function(e){return e.admitType;});
   var sigExt=sigTyped.filter(function(e){return e.admitType==='External';});
   var sigInt=sigTyped.filter(function(e){return e.admitType==='Internal';});
-
-  function renderSourceChart(chartId,ext,int,typedEdits,enroll,detailId,covId,prog,missingList){
+  function renderSourceChart(chartId,ext,int,srcEdits,enroll,detailId,covId,prog,missList){
     var typed=ext.length+int.length;
+    var noType=srcEdits.filter(function(e){return!e.admitType;}).map(function(e){return e._name;});
     var covEl=document.getElementById(covId);
-    if(covEl){
-      var noType=typedEdits.filter(function(e){return!e.admitType;}).map(function(e){return e._name;});
-      covEl.innerHTML=typed+' of '+enroll+' '+prog+' clients have source data'
-        +(missingList.length?'<br><span style="color:#B45309;font-size:10px">&#9888; No flow record: <strong>'
-          +missingList.join(', ')+'</strong></span>':'')
-        +(noType.length?'<br><span style="color:#7A5A00;font-size:10px">&#9888; Admission Type not set: <strong>'
-          +noType.join(', ')+'</strong></span>':'');
-    }
+    if(covEl)covEl.innerHTML=typed+' of '+enroll+' '+prog+' clients have source data'
+      +(missList.length?'<br><span style="color:#B45309;font-size:10px">&#9888; No flow record: <strong>'+missList.join(', ')+'</strong></span>':'')
+      +(noType.length?'<br><span style="color:#7A5A00;font-size:10px">&#9888; Admission Type not set: <strong>'+noType.join(', ')+'</strong></span>':'');
     var detEl=document.getElementById(detailId);
     if(!typed){if(detEl)detEl.innerHTML='<span style="color:var(--tx3);font-style:italic;font-size:10px">No source data yet</span>';return;}
-    mkChart(chartId,{type:'doughnut',
-      data:{labels:['External referral','Internal transfer'],
-        datasets:[{data:[ext.length,int.length],
-          backgroundColor:['rgba(29,158,117,.85)','rgba(55,134,221,.85)'],
-          borderColor:['#1D9E75','#3786DD'],borderWidth:2}]},
-      options:{cutout:'55%',responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:false},
-          tooltip:{callbacks:{label:function(ctx){
-            var pct=typed?Math.round(ctx.parsed/typed*100):0;
-            return ctx.label+': '+ctx.parsed+' ('+pct+'%)';
-          }}}}}
-    });
-    if(detEl){
-      var extPct=typed?Math.round(ext.length/typed*100):0;
-      var intPct=typed?Math.round(int.length/typed*100):0;
-      detEl.innerHTML=
-        '<div style="margin-bottom:12px">'
-        +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
-        +'<span style="width:14px;height:14px;border-radius:50%;background:#1D9E75;flex-shrink:0"></span>'
-        +'<span style="font-size:22px;font-weight:700;color:#1D9E75">'+ext.length+'</span>'
-        +'<span style="font-size:11px;color:var(--tx3)">external referrals<br>('+extPct+'% of typed)</span></div>'
-        +'<div style="display:flex;align-items:center;gap:8px">'
-        +'<span style="width:14px;height:14px;border-radius:50%;background:#3786DD;flex-shrink:0"></span>'
-        +'<span style="font-size:22px;font-weight:700;color:#3786DD">'+int.length+'</span>'
-        +'<span style="font-size:11px;color:var(--tx3)">internal transfers<br>('+intPct+'% of typed)</span></div>'
-        +'</div>'
-        +(prog==='Signature'?'<div style="font-size:9px;color:var(--tx3);border-top:1px solid var(--bd);padding-top:8px">'
-          +'PDI\u2192Sig clients counted as Internal (came from within Lifeskills)</div>':'');
+    mkChart(chartId,{type:'doughnut',data:{labels:['External referral','Internal transfer'],datasets:[{data:[ext.length,int.length],backgroundColor:['rgba(29,158,117,.85)','rgba(55,134,221,.85)'],borderColor:['#1D9E75','#3786DD'],borderWidth:2}]},options:{cutout:'55%',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){var pct=typed?Math.round(ctx.parsed/typed*100):0;return ctx.label+': '+ctx.parsed+' ('+pct+'%)';}}}}}});
+    if(detEl){var extPct=typed?Math.round(ext.length/typed*100):0,intPct=typed?Math.round(int.length/typed*100):0;
+      detEl.innerHTML='<div style="margin-bottom:12px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span style="width:14px;height:14px;border-radius:50%;background:#1D9E75;flex-shrink:0"></span><span style="font-size:22px;font-weight:700;color:#1D9E75">'+ext.length+'</span><span style="font-size:11px;color:var(--tx3)">external referrals<br>('+extPct+'% of typed)</span></div><div style="display:flex;align-items:center;gap:8px"><span style="width:14px;height:14px;border-radius:50%;background:#3786DD;flex-shrink:0"></span><span style="font-size:22px;font-weight:700;color:#3786DD">'+int.length+'</span><span style="font-size:11px;color:var(--tx3)">internal transfers<br>('+intPct+'% of typed)</span></div></div>'+(prog==='Signature'?'<div style="font-size:9px;color:var(--tx3);border-top:1px solid var(--bd);padding-top:8px">PDI\u2192Sig clients counted as Internal</div>':'');
     }
   }
   renderSourceChart('pdi-source-chart',pdiExt,pdiInt,pdiEdits,totalPDI,'pdi-source-detail','pdi-coverage-note','PDI',missingPDI);
   renderSourceChart('sig-source-chart',sigExt,sigInt,sigEdits,totalSig,'sig-source-detail','sig-coverage-note','Signature',missingSig);
-
   var capEl=document.getElementById('flow-source-caption');
-  if(capEl){
-    var pN=pdiExt.length+pdiInt.length,sN=sigExt.length+sigInt.length;
-    capEl.innerHTML=(pN?'PDI: '+(pdiExt.length>pdiInt.length?'<strong>External dominant</strong>':pdiInt.length>pdiExt.length?'<strong>Internal dominant</strong>':'Even split')+' ('+pN+' clients typed). ':'')
-      +(sN?'Signature: '+(sigExt.length>sigInt.length?'<strong>External dominant</strong>':sigInt.length>sigExt.length?'<strong>Internal dominant</strong>':'Even split')+' ('+sN+' clients typed).':'');
-  }
-
-  // Prior LOS
+  if(capEl){var pN=pdiExt.length+pdiInt.length,sN=sigExt.length+sigInt.length;capEl.innerHTML=(pN?'PDI: '+(pdiExt.length>pdiInt.length?'<strong>External dominant</strong>':pdiInt.length>pdiExt.length?'<strong>Internal dominant</strong>':'Even split')+' ('+pN+' typed). ':'')+(sN?'Signature: '+(sigExt.length>sigInt.length?'<strong>External dominant</strong>':sigInt.length>sigExt.length?'<strong>Internal dominant</strong>':'Even split')+' ('+sN+' typed).':'');}
   function renderLOS(srcEdits,chartId,kpisId,color,prog){
     var byLOC={};
-    srcEdits.filter(function(e){return e.admitType==='Internal'&&e.priorLOC&&e.priorLOC!=='None'&&e._los&&e._los>0;})
-      .forEach(function(e){if(!byLOC[e.priorLOC])byLOC[e.priorLOC]=[];byLOC[e.priorLOC].push(e._los);});
-    var locs=Object.keys(byLOC).sort(function(a,b){
-      return(byLOC[b].reduce(function(s,v){return s+v;},0)/byLOC[b].length)
-            -(byLOC[a].reduce(function(s,v){return s+v;},0)/byLOC[a].length);});
+    srcEdits.filter(function(e){return e.admitType==='Internal'&&e.priorLOC&&e.priorLOC!=='None'&&e._los&&e._los>0;}).forEach(function(e){if(!byLOC[e.priorLOC])byLOC[e.priorLOC]=[];byLOC[e.priorLOC].push(e._los);});
+    var locs=Object.keys(byLOC).sort(function(a,b){return(byLOC[b].reduce(function(s,v){return s+v;},0)/byLOC[b].length)-(byLOC[a].reduce(function(s,v){return s+v;},0)/byLOC[a].length);});
     var kpisEl=document.getElementById(kpisId);
     if(!locs.length){if(kpisEl)kpisEl.innerHTML='<div style="font-size:10px;color:var(--tx3);font-style:italic;grid-column:1/-1">No internal admit LOS data yet for '+prog+'.</div>';return;}
     var all=locs.reduce(function(a,l){return a.concat(byLOC[l]);},[]); var s=losStats(all);
-    if(kpisEl&&s)kpisEl.innerHTML=
-      kpi('Average',s.avg+' days','before '+prog,color)
-      +kpi('Shortest',s.min+' days','recorded',EXT_C)
-      +kpi('Longest',s.max+' days','recorded','#C05020');
-    mkChart(chartId,{type:'bar',
-      data:{labels:locs,datasets:[
-        {label:'Average days',data:locs.map(function(l){return Math.round(byLOC[l].reduce(function(a,b){return a+b;},0)/byLOC[l].length);}),backgroundColor:color+'cc',borderColor:color,borderWidth:1.5,borderRadius:5},
-        {label:'Shortest',data:locs.map(function(l){return Math.min.apply(null,byLOC[l]);}),backgroundColor:'rgba(29,158,117,.35)',borderWidth:0,borderRadius:3},
-        {label:'Longest',data:locs.map(function(l){return Math.max.apply(null,byLOC[l]);}),backgroundColor:'rgba(192,80,32,.35)',borderWidth:0,borderRadius:3}
-      ]},
-      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:10,boxWidth:12}},
-          tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+ctx.parsed.x+' days';}}}},
-        scales:{x:{beginAtZero:true,title:{display:true,text:'Days at prior level of care',font:{size:9}},ticks:{font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}},
-          y:{ticks:{font:{size:10}},grid:{display:false}}}
-      }
-    });
+    if(kpisEl&&s)kpisEl.innerHTML=kpi('Average',s.avg+' days','before '+prog,color)+kpi('Shortest',s.min+' days','recorded',EXT_C)+kpi('Longest',s.max+' days','recorded','#C05020');
+    mkChart(chartId,{type:'bar',data:{labels:locs,datasets:[{label:'Average days',data:locs.map(function(l){return Math.round(byLOC[l].reduce(function(a,b){return a+b;},0)/byLOC[l].length);}),backgroundColor:color+'cc',borderColor:color,borderWidth:1.5,borderRadius:5},{label:'Shortest',data:locs.map(function(l){return Math.min.apply(null,byLOC[l]);}),backgroundColor:'rgba(29,158,117,.35)',borderWidth:0,borderRadius:3},{label:'Longest',data:locs.map(function(l){return Math.max.apply(null,byLOC[l]);}),backgroundColor:'rgba(192,80,32,.35)',borderWidth:0,borderRadius:3}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:10,boxWidth:12}},tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+ctx.parsed.x+' days';}}}},scales:{x:{beginAtZero:true,title:{display:true,text:'Days at prior level of care',font:{size:9}},ticks:{font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}},y:{ticks:{font:{size:10}},grid:{display:false}}}}});
   }
   renderLOS(pdiEdits,'prior-los-pdi-chart','pdi-los-kpis','rgba(74,108,138,1)','PDI');
   renderLOS(sigEdits,'prior-los-sig-chart','sig-los-kpis','rgba(107,92,69,1)','Signature');
-
   function rtcDays(srcEdits){return srcEdits.filter(function(e){return e.admitType==='Internal'&&(e.priorLOC||'').indexOf('Residential')>=0&&e._los>0;});}
   var pdiRTC=losStats(rtcDays(pdiEdits).map(function(e){return e._los;}));
   var sigRTC=losStats(rtcDays(sigEdits).map(function(e){return e._los;}));
   var rtcEl=document.getElementById('flow-rtc-insight');
-  if(rtcEl&&(pdiRTC||sigRTC)){
-    rtcEl.style.display='block';
-    var lines=['<strong style="color:var(--amber)">&#9432; RTC Transition Timing</strong>'];
-    if(pdiRTC)lines.push('Clients from Residential into <strong>PDI</strong>: avg <strong>'+pdiRTC.avg+' days</strong> in RTC (range '+pdiRTC.min+'\u2013'+pdiRTC.max+'d, n='+pdiRTC.n+').');
-    if(sigRTC)lines.push('Clients from Residential into <strong>Signature</strong>: avg <strong>'+sigRTC.avg+' days</strong> in RTC (range '+sigRTC.min+'\u2013'+sigRTC.max+'d, n='+sigRTC.n+'). Consider whether earlier transition is clinically supported.');
-    rtcEl.innerHTML=lines.join('<br><br>');
-  }
-
-  // Step-down chart
+  if(rtcEl&&(pdiRTC||sigRTC)){rtcEl.style.display='block';var lines=['<strong style="color:var(--amber)">&#9432; RTC Transition Timing</strong>'];if(pdiRTC)lines.push('Residential\u2192PDI: avg <strong>'+pdiRTC.avg+'d</strong> (range '+pdiRTC.min+'\u2013'+pdiRTC.max+'d, n='+pdiRTC.n+').');if(sigRTC)lines.push('Residential\u2192Signature: avg <strong>'+sigRTC.avg+'d</strong> (range '+sigRTC.min+'\u2013'+sigRTC.max+'d, n='+sigRTC.n+').');rtcEl.innerHTML=lines.join('<br><br>');}
   var allEdits=Object.values(byName);
   var withSD=allEdits.filter(function(e){return e.stepDown&&e.stepDown!=='---'&&e.stepDown!=='';});
-  var sdInt={},sdExt={};
-  withSD.forEach(function(e){var s=e.stepDown;sdIsInt(s)?sdInt[s]=(sdInt[s]||0)+1:sdExt[s]=(sdExt[s]||0)+1;});
-  var allSD=Array.from(new Set(Object.keys(sdInt).concat(Object.keys(sdExt))))
-    .sort(function(a,b){return((sdInt[b]||0)+(sdExt[b]||0))-((sdInt[a]||0)+(sdExt[a]||0));});
+  var sdInt={},sdExt={};withSD.forEach(function(e){var s=e.stepDown;sdIsInt(s)?sdInt[s]=(sdInt[s]||0)+1:sdExt[s]=(sdExt[s]||0)+1;});
+  var allSD=Array.from(new Set(Object.keys(sdInt).concat(Object.keys(sdExt)))).sort(function(a,b){return((sdInt[b]||0)+(sdExt[b]||0))-((sdInt[a]||0)+(sdExt[a]||0));});
   if(allSD.length){
-    mkChart('stepdown-chart',{type:'bar',
-      data:{labels:allSD,datasets:[
-        {label:'Stays within Lifeskills',data:allSD.map(function(l){return sdInt[l]||0;}),backgroundColor:'rgba(55,134,221,.8)',borderColor:'#3786DD',borderWidth:1.5,borderRadius:4},
-        {label:'External step-down',data:allSD.map(function(l){return sdExt[l]||0;}),backgroundColor:'rgba(29,158,117,.8)',borderColor:'#1D9E75',borderWidth:1.5,borderRadius:4}
-      ]},
-      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:12,boxWidth:14}},
-          tooltip:{callbacks:{label:function(ctx){var pct=withSD.length?Math.round(ctx.parsed.x/withSD.length*100):0;return ctx.dataset.label+': '+ctx.parsed.x+' ('+pct+'%)';}}}},
-        scales:{x:{beginAtZero:true,stacked:true,ticks:{stepSize:1,font:{size:10}},grid:{color:'rgba(0,0,0,.04)'}},
-          y:{stacked:true,ticks:{font:{size:10}},grid:{display:false}}}
-      }
-    });
-    var intTot=Object.values(sdInt).reduce(function(a,b){return a+b;},0);
-    var extTot=Object.values(sdExt).reduce(function(a,b){return a+b;},0);
+    mkChart('stepdown-chart',{type:'bar',data:{labels:allSD,datasets:[{label:'Stays within Lifeskills',data:allSD.map(function(l){return sdInt[l]||0;}),backgroundColor:'rgba(55,134,221,.8)',borderColor:'#3786DD',borderWidth:1.5,borderRadius:4},{label:'External step-down',data:allSD.map(function(l){return sdExt[l]||0;}),backgroundColor:'rgba(29,158,117,.8)',borderColor:'#1D9E75',borderWidth:1.5,borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:12,boxWidth:14}},tooltip:{callbacks:{label:function(ctx){var pct=withSD.length?Math.round(ctx.parsed.x/withSD.length*100):0;return ctx.dataset.label+': '+ctx.parsed.x+' ('+pct+'%)';}}}},scales:{x:{beginAtZero:true,stacked:true,ticks:{stepSize:1,font:{size:10}},grid:{color:'rgba(0,0,0,.04)'}},y:{stacked:true,ticks:{font:{size:10}},grid:{display:false}}}}});
+    var intTot=Object.values(sdInt).reduce(function(a,b){return a+b;},0),extTot=Object.values(sdExt).reduce(function(a,b){return a+b;},0);
     var sumEl=document.getElementById('stepdown-summary');
-    if(sumEl)sumEl.innerHTML=
-      '<div style="margin-bottom:14px"><div style="font-size:32px;font-weight:700;color:var(--navy)">'+withSD.length+'</div><div style="font-size:10px;color:var(--tx3)">clients with step-down data</div></div>'
-      +'<div style="margin-bottom:12px"><div style="font-size:22px;font-weight:700;color:#3786DD">'+intTot+'</div><div style="font-size:10px;color:var(--tx3)">stayed within Lifeskills<br>('+( withSD.length?Math.round(intTot/withSD.length*100):'—')+'%)</div></div>'
-      +'<div style="margin-bottom:12px"><div style="font-size:22px;font-weight:700;color:#1D9E75">'+extTot+'</div><div style="font-size:10px;color:var(--tx3)">stepped down externally<br>('+( withSD.length?Math.round(extTot/withSD.length*100):'—')+'%)</div></div>'
-      +(allSD[0]?'<div style="border-top:1px solid var(--bd);padding-top:10px;font-size:10px;color:var(--tx3)">Most common:<br><strong style="color:var(--navy);font-size:12px">'+allSD[0]+'</strong><br>'+((sdInt[allSD[0]]||0)+(sdExt[allSD[0]]||0))+' clients</div>':'');
+    if(sumEl)sumEl.innerHTML='<div style="margin-bottom:14px"><div style="font-size:32px;font-weight:700;color:var(--navy)">'+withSD.length+'</div><div style="font-size:10px;color:var(--tx3)">clients with step-down data</div></div><div style="margin-bottom:12px"><div style="font-size:22px;font-weight:700;color:#3786DD">'+intTot+'</div><div style="font-size:10px;color:var(--tx3)">stayed within Lifeskills<br>('+( withSD.length?Math.round(intTot/withSD.length*100):'—')+'%)</div></div><div style="margin-bottom:12px"><div style="font-size:22px;font-weight:700;color:#1D9E75">'+extTot+'</div><div style="font-size:10px;color:var(--tx3)">stepped down externally<br>('+( withSD.length?Math.round(extTot/withSD.length*100):'—')+'%)</div></div>'+(allSD[0]?'<div style="border-top:1px solid var(--bd);padding-top:10px;font-size:10px;color:var(--tx3)">Most common:<br><strong style="color:var(--navy);font-size:12px">'+allSD[0]+'</strong><br>'+((sdInt[allSD[0]]||0)+(sdExt[allSD[0]]||0))+' clients</div>':'');
   }
-
-  // Detail table
   var sorted=allEdits.slice().sort(function(a,b){return(a._name||'').localeCompare(b._name||'');});
   var tbody=document.getElementById('flow-body');
   if(tbody)tbody.innerHTML=sorted.map(function(e,i){
-    var inPDI=pdiSeen.has(normFlowName(e._name||''));
-    var inSig=sigSeen.has(normFlowName(e._name||''));
+    var inPDI=pdiSeen.has(normFlowName(e._name||'')),inSig=sigSeen.has(normFlowName(e._name||''));
     var prog=inPDI&&inSig?'Both':inPDI?'PDI':inSig?'Signature':'—';
     var bc=prog==='PDI'?'badge-pdi':prog==='Signature'?'badge-sig':prog==='Both'?'badge-both':'';
-    return'<tr>'
-      +'<td style="color:var(--tx3);font-size:10px">'+(i+1)+'</td>'
-      +'<td style="font-weight:600">'+(e._name||'—')+'</td>'
-      +'<td><span class="badge '+bc+'">'+prog+'</span></td>'
-      +'<td>'+(e.admitType||'—')+'</td>'
-      +'<td>'+(e.priorLOC||'—')+'</td>'
-      +'<td style="font-weight:600">'+(e._los?e._los+'d':'—')+'</td>'
-      +'<td>'+(e.stepDown||'—')+'</td>'
-      +'<td style="color:var(--tx3)">'+(e.stepDownDate||'—')+'</td>'
-      +'</tr>';
+    return'<tr><td style="color:var(--tx3);font-size:10px">'+(i+1)+'</td><td style="font-weight:600">'+(e._name||'—')+'</td><td><span class="badge '+bc+'">'+prog+'</span></td><td>'+(e.admitType||'—')+'</td><td>'+(e.priorLOC||'—')+'</td><td style="font-weight:600">'+(e._los?e._los+'d':'—')+'</td><td>'+(e.stepDown||'—')+'</td><td style="color:var(--tx3)">'+(e.stepDownDate||'—')+'</td></tr>';
   }).join('');
 }
 >
