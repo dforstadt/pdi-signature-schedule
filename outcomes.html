@@ -756,13 +756,24 @@ function renderFlowSection(){
   if(rtcEl&&(pdiRTC||sigRTC)){rtcEl.style.display='block';var lines=['<strong style="color:var(--amber)">&#9432; RTC Transition Timing</strong>'];if(pdiRTC)lines.push('Residential\u2192PDI: avg <strong>'+pdiRTC.avg+'d</strong> (range '+pdiRTC.min+'\u2013'+pdiRTC.max+'d, n='+pdiRTC.n+').');if(sigRTC)lines.push('Residential\u2192Signature: avg <strong>'+sigRTC.avg+'d</strong> (range '+sigRTC.min+'\u2013'+sigRTC.max+'d, n='+sigRTC.n+').');rtcEl.innerHTML=lines.join('<br><br>');}
   var allEdits=Object.values(byName);
   var withSD=allEdits.filter(function(e){return e.stepDown&&e.stepDown!=='---'&&e.stepDown!=='';});
+  // Identify which matched clients are missing step-down data
+  var noSD=allEdits.filter(function(e){return!e.stepDown||e.stepDown==='---'||e.stepDown==='';})
+    .map(function(e){return e._name;});
+  // Also check Firebase clients not yet in byName
+  clients.forEach(function(c){
+    if(!byName[normFlowName(c.name||'')]&&(c.sigAdmit||c.pdiAdmit)){
+      if(noSD.indexOf(c.name)<0)noSD.push(c.name+' (no flow record)');
+    }
+  });
   var sdInt={},sdExt={};withSD.forEach(function(e){var s=e.stepDown;sdIsInt(s)?sdInt[s]=(sdInt[s]||0)+1:sdExt[s]=(sdExt[s]||0)+1;});
   var allSD=Array.from(new Set(Object.keys(sdInt).concat(Object.keys(sdExt)))).sort(function(a,b){return((sdInt[b]||0)+(sdExt[b]||0))-((sdInt[a]||0)+(sdExt[a]||0));});
   if(allSD.length){
     mkChart('stepdown-chart',{type:'bar',data:{labels:allSD,datasets:[{label:'Stays within Lifeskills',data:allSD.map(function(l){return sdInt[l]||0;}),backgroundColor:'rgba(55,134,221,.8)',borderColor:'#3786DD',borderWidth:1.5,borderRadius:4},{label:'External step-down',data:allSD.map(function(l){return sdExt[l]||0;}),backgroundColor:'rgba(29,158,117,.8)',borderColor:'#1D9E75',borderWidth:1.5,borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:12,boxWidth:14}},tooltip:{callbacks:{label:function(ctx){var pct=withSD.length?Math.round(ctx.parsed.x/withSD.length*100):0;return ctx.dataset.label+': '+ctx.parsed.x+' ('+pct+'%)';}}}},scales:{x:{beginAtZero:true,stacked:true,ticks:{stepSize:1,font:{size:10}},grid:{color:'rgba(0,0,0,.04)'}},y:{stacked:true,ticks:{font:{size:10}},grid:{display:false}}}}});
     var intTot=Object.values(sdInt).reduce(function(a,b){return a+b;},0),extTot=Object.values(sdExt).reduce(function(a,b){return a+b;},0);
     var sumEl=document.getElementById('stepdown-summary');
-    if(sumEl)sumEl.innerHTML='<div style="margin-bottom:14px"><div style="font-size:32px;font-weight:700;color:var(--navy)">'+withSD.length+'</div><div style="font-size:10px;color:var(--tx3)">clients with step-down data</div></div><div style="margin-bottom:12px"><div style="font-size:22px;font-weight:700;color:#3786DD">'+intTot+'</div><div style="font-size:10px;color:var(--tx3)">stayed within Lifeskills<br>('+( withSD.length?Math.round(intTot/withSD.length*100):'—')+'%)</div></div><div style="margin-bottom:12px"><div style="font-size:22px;font-weight:700;color:#1D9E75">'+extTot+'</div><div style="font-size:10px;color:var(--tx3)">stepped down externally<br>('+( withSD.length?Math.round(extTot/withSD.length*100):'—')+'%)</div></div>'+(allSD[0]?'<div style="border-top:1px solid var(--bd);padding-top:10px;font-size:10px;color:var(--tx3)">Most common:<br><strong style="color:var(--navy);font-size:12px">'+allSD[0]+'</strong><br>'+((sdInt[allSD[0]]||0)+(sdExt[allSD[0]]||0))+' clients</div>':'');
+    if(sumEl)sumEl.innerHTML=(noSD.length?'<div style="font-size:10px;color:#B45309;margin-bottom:10px;padding:6px 8px;background:#FFF3E0;border-radius:4px">'
+      +'&#9888; Missing step-down: <strong>'+noSD.join(', ')+'</strong>'+'<br><a href="admin-fix2.html" style="color:var(--accent)">Update in Flow Mapping tool</a></div>':'')
+      +'<div style="margin-bottom:14px"><div style="font-size:32px;font-weight:700;color:var(--navy)">'+withSD.length+'</div><div style="font-size:10px;color:var(--tx3)">clients with step-down data</div></div><div style="margin-bottom:12px"><div style="font-size:22px;font-weight:700;color:#3786DD">'+intTot+'</div><div style="font-size:10px;color:var(--tx3)">stayed within Lifeskills<br>('+( withSD.length?Math.round(intTot/withSD.length*100):'—')+'%)</div></div><div style="margin-bottom:12px"><div style="font-size:22px;font-weight:700;color:#1D9E75">'+extTot+'</div><div style="font-size:10px;color:var(--tx3)">stepped down externally<br>('+( withSD.length?Math.round(extTot/withSD.length*100):'—')+'%)</div></div>'+(allSD[0]?'<div style="border-top:1px solid var(--bd);padding-top:10px;font-size:10px;color:var(--tx3)">Most common:<br><strong style="color:var(--navy);font-size:12px">'+allSD[0]+'</strong><br>'+((sdInt[allSD[0]]||0)+(sdExt[allSD[0]]||0))+' clients</div>':'');
   }
   var sorted=allEdits.slice().sort(function(a,b){return(a._name||'').localeCompare(b._name||'');});
   var tbody=document.getElementById('flow-body');
