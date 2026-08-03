@@ -647,10 +647,11 @@ function renderFlowSection(){
   var clients=(_fbClients&&_fbClients.length)?_fbClients:[];
   var totalPDI=(_totalPDI>0)?_totalPDI:episodeSource.filter(function(ep){return ep.pdiAdmit;}).length;
   var totalSig=(_totalSig>0)?_totalSig:episodeSource.filter(function(ep){return ep.sigAdmit;}).length;
-  var totalActive=(_totalActive>0)?_totalActive:(clients.filter(function(c){
-    var d=(c.program==='PDI'?c.pdiDischarge||c.pdiDisch:c.sigDischarge||c.sigDisch||c.endDate)||'';
-    return!d||d>=TODAY;
-  }).length||'—');
+  var totalActive=(_totalActive>0)?_totalActive
+    :clients.filter(function(c){
+      var d=(c.program==='PDI'?c.pdiDischarge||c.pdiDisch:c.sigDischarge||c.sigDisch||c.endDate)||'';
+      return!d||d>=TODAY;
+    }).length||'—';
     return!d||d>=TODAY;
   }).length||'—';
 
