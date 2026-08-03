@@ -673,20 +673,48 @@ function renderFlowSection(){
     return'Unknown';
   }
 
-  // Enrich flow edits — recover _name from key if missing
+  // Enrich flow edits — resolve program per edit key (episode-accurate)
+  function progFromClient(fc){
+    if(!fc) return 'Unknown';
+    var prog=(fc.program||'').toLowerCase().trim();
+    var hasPDI=prog==='pdi'||prog==='both';
+    var hasSig=prog==='signature'||prog==='both'||prog==='sig';
+    if(!prog){
+      hasPDI=!!fc.pdiAdmit;
+      hasSig=!!fc.sigAdmit;
+      if(hasPDI&&hasSig&&fc.pdiAdmit===fc.sigAdmit)hasPDI=false;
+    }
+    if(!hasSig&&!hasPDI&&fc.sigAdmit)hasSig=true;
+    if(hasPDI&&hasSig)return'Both';
+    if(hasPDI)return'PDI';
+    if(hasSig)return'Signature';
+    return'Unknown';
+  }
+
   var allEdits=Object.entries(_flowEdits).map(function(kv){
     var key=kv[0],e=kv[1];
     var name=e._name||'';
-    if(!name&&clientById[key])name=clientById[key].name||'';
-    if(!name){var dec=key.replace(/_/g,' ').trim();var m=clientByName[normFlowName(dec)];name=m?m.name:dec;}
-    var prog=progForName(name);
-    if(prog==='Unknown'&&clientById[key]){
+    var prog='Unknown';
+
+    // Priority 1: use the exact Firebase client record for this edit key
+    // This gives episode-accurate program (e.g. Layla's PDI episode vs readmission)
+    if(clientById[key]){
       var fc=clientById[key];
-      if(fc.pdiAdmit&&fc.sigAdmit)prog='Both';
-      else if(fc.pdiAdmit)prog='PDI';
-      else if(fc.sigAdmit)prog='Signature';
-      if(!name)name=fc.name||key;
+      if(!name)name=fc.name||'';
+      prog=progFromClient(fc);
     }
+
+    // Priority 2: fall back to name-based episode lookup
+    if(prog==='Unknown'||!name){
+      if(!name){
+        var dec=key.replace(/_/g,' ').trim();
+        var mc=clientByName[normFlowName(dec)];
+        if(mc){name=mc.name;prog=progFromClient(mc);}
+        else name=dec;
+      }
+      if(prog==='Unknown')prog=progForName(name);
+    }
+
     return Object.assign({},e,{_name:name,_prog:prog,_los:parseInt(e.priorLOClos)||null});
   }).filter(function(e){return e._name&&e._name.length>1;});
 
