@@ -159,6 +159,22 @@ select:focus,input:focus{outline:none;border-color:var(--purple)}
 .na-toggle.active{border-color:var(--amber);background:#FEF9EC;color:var(--amber)}
 .fs-na{color:var(--tx3);font-size:11px;font-weight:600}
 @media print{.hdr,.view-tabs,.selector-bar,.add-btn,.print-btn{display:none!important}.page{padding:0}}
+
+/* ── Facesheet carousel ──────────────────────────────────────────────────── */
+.fs-nav{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+.fs-nav-btn{background:#fff;border:1px solid var(--bd);color:var(--navy);
+  padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;
+  font-family:inherit;display:flex;align-items:center;gap:5px;transition:all .15s;}
+.fs-nav-btn:hover{background:var(--navy);color:#fff;border-color:var(--navy);}
+.fs-nav-btn:disabled{opacity:.35;cursor:default;pointer-events:none;}
+.fs-nav-btn.today-btn{background:var(--navy);color:#fff;}
+.fs-week-label{font-size:13px;font-weight:700;color:var(--navy);
+  padding:6px 14px;background:var(--bg);border:1px solid var(--bd);border-radius:6px;
+  white-space:nowrap;}
+.fs-wrap-outer{overflow:hidden;position:relative;}
+.fs-wrap-inner{transition:opacity .18s ease,transform .18s ease;}
+.fs-wrap-inner.sliding-left{opacity:0;transform:translateX(-24px);}
+.fs-wrap-inner.sliding-right{opacity:0;transform:translateX(24px);}
 </style>
 </head>
 <body>
@@ -248,7 +264,14 @@ select:focus,input:focus{outline:none;border-color:var(--purple)}
       <button class="print-btn" onclick="window.print()">&#128438; Print</button>
     </div>
   </div>
-  <div id="facesheet-wrap"></div>
+  <div class="fs-nav" id="fs-nav-bar">
+  <button class="fs-nav-btn" onclick="fsNav(-1)" id="fs-prev-btn">&#8592; Prev Week</button>
+  <span class="fs-week-label" id="fs-week-label">Current Week</span>
+  <button class="fs-nav-btn" onclick="fsNav(1)" id="fs-next-btn" disabled>Next Week &#8594;</button>
+  <button class="fs-nav-btn today-btn" onclick="fsToday()" id="fs-today-btn" style="display:none">&#8617; Today</button>
+</div>
+<div class="fs-wrap-outer"><div class="fs-wrap-inner" id="fs-wrap-inner">
+<div id="facesheet-wrap"></div>
 </div>
 </div>
 
@@ -330,7 +353,7 @@ var NO_REF=DB.ref('lifeskills_clinical/comm_no_referent'); // clientId → true
 var noReferentClients={};
 NO_REF.on('value',function(s){noReferentClients=s.val()||{};updateNAToggle();if(document.getElementById('view-facesheet').style.display!=='none')renderFacesheet();});
 function normName(s){return(s||'').toLowerCase().trim();}
-var allClients=[], commEntries={}, selectedClient=null, statusFilter='active';
+var allClients=[], commEntries={}, selectedClient=null, statusFilter='active', fsWeekOffset=0;
 var selMethod='Call', selNature='', providerList=[], TODAY=(function(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}());
 
 // ── Firebase ────────────────────────────────────────────────────────────────
@@ -611,10 +634,12 @@ function renderFacesheet(){
   // Start from Monday of current week, project forward nDays calendar days
   var dateCols=[];
   var fsStart=new Date(TODAY+'T12:00:00');
-  // Snap back to Monday (getDay: 0=Sun,1=Mon,...,6=Sat)
+  // Snap back to Monday
   var _dow=fsStart.getDay();
-  var _daysBack=_dow===0?6:_dow-1; // days to go back to reach Monday
+  var _daysBack=_dow===0?6:_dow-1;
   fsStart.setDate(fsStart.getDate()-_daysBack);
+  // Apply week offset (negative = back in time)
+  fsStart.setDate(fsStart.getDate()+(fsWeekOffset*7));
   var fsEnd=new Date(fsStart);
   fsEnd.setDate(fsEnd.getDate()+nDays);
   var cur=new Date(fsStart);
@@ -622,6 +647,21 @@ function renderFacesheet(){
     if(cur.getDay()!==0&&cur.getDay()!==6)dateCols.push(new Date(cur));
     cur.setDate(cur.getDate()+1);
   }
+  // Update nav bar label and button states
+  (function(){
+    var mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var wkEnd=new Date(fsStart); wkEnd.setDate(wkEnd.getDate()+nDays-1);
+    var label=mo[fsStart.getMonth()]+' '+fsStart.getDate()+' – '+mo[wkEnd.getMonth()]+' '+wkEnd.getDate();
+    if(fsWeekOffset===0)label='Current Week ('+label+')';
+    else if(fsWeekOffset===-1)label='Last Week ('+label+')';
+    else label=Math.abs(fsWeekOffset)+' Weeks Ago ('+label+')';
+    var lbl=document.getElementById('fs-week-label');
+    var nxtBtn=document.getElementById('fs-next-btn');
+    var todayBtn=document.getElementById('fs-today-btn');
+    if(lbl)lbl.textContent=label;
+    if(nxtBtn)nxtBtn.disabled=(fsWeekOffset>=0);
+    if(todayBtn)todayBtn.style.display=(fsWeekOffset<0?'flex':'none');
+  })();
 
   var thead='<tr><th class="client-col">Client</th>'+
     dateCols.map(function(d){
@@ -663,6 +703,45 @@ function renderFacesheet(){
 
   document.getElementById('facesheet-wrap').innerHTML=
     '<table class="facesheet-table"><thead>'+thead+'</thead><tbody>'+tbody+'</tbody></table>';
+}
+
+// ── Facesheet week carousel ──────────────────────────────────────────────────
+function fsNav(dir){
+  // dir: -1 = go back one week, +1 = go forward one week
+  var inner=document.getElementById('fs-wrap-inner');
+  var cls=dir===-1?'sliding-left':'sliding-right';
+  if(inner){inner.classList.add(cls);}
+  setTimeout(function(){
+    fsWeekOffset+=dir;
+    renderFacesheet();
+    if(inner){
+      inner.classList.remove(cls);
+      // Force reflow then slide in from opposite side
+      inner.classList.add(dir===-1?'sliding-right':'sliding-left');
+      requestAnimationFrame(function(){
+        requestAnimationFrame(function(){
+          inner.classList.remove('sliding-left','sliding-right');
+        });
+      });
+    }
+  },160);
+}
+function fsToday(){
+  var inner=document.getElementById('fs-wrap-inner');
+  if(inner){inner.classList.add('sliding-right');}
+  setTimeout(function(){
+    fsWeekOffset=0;
+    renderFacesheet();
+    if(inner){
+      inner.classList.remove('sliding-right');
+      inner.classList.add('sliding-left');
+      requestAnimationFrame(function(){
+        requestAnimationFrame(function(){
+          inner.classList.remove('sliding-left','sliding-right');
+        });
+      });
+    }
+  },160);
 }
 
 // ── Modal ──────────────────────────────────────────────────────────────────────
