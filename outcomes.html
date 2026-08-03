@@ -641,56 +641,16 @@ function renderFlowSection(){
 
   // ALL_EPISODES is always available (hardcoded). ALL_EPS_LIVE extends it with
   // Firebase new clients — use whichever is populated.
-  var episodeSource=(typeof ALL_EPS_LIVE!=='undefined'&&ALL_EPS_LIVE.length)
-    ?ALL_EPS_LIVE:ALL_EPISODES;
+    // Use render()-computed globals (_totalPDI/_totalSig) which are set from pdiEps.length/sigEps.length
+  // These are the authoritative Firebase+hardcoded merged counts (19 PDI, 27 Sig, etc.)
+  var episodeSource=(ALL_EPS_LIVE&&ALL_EPS_LIVE.length)?ALL_EPS_LIVE:ALL_EPISODES;
   var clients=(_fbClients&&_fbClients.length)?_fbClients:[];
-
-  // Build lookups
-  var epByName={};
-  episodeSource.forEach(function(ep){
-    var k=normFlowName(ep.name||'');
-    if(!epByName[k])epByName[k]=[];
-    epByName[k].push(ep);
-  });
-  var clientById={},clientByName={};
-  clients.forEach(function(c){
-    if(c.id)clientById[c.id]=c;
-    clientByName[normFlowName(c.name||'')]=c;
-  });
-
-  function progForName(name){
-    var eps=epByName[normFlowName(name||'')]||[];
-    if(!eps.length)return'Unknown';
-    eps.sort(function(a,b){return(b.pdiAdmit||b.sigAdmit||'')>(a.pdiAdmit||a.sigAdmit||'')?1:-1;});
-    var ep=eps[0];
-    if(ep.pdiAdmit&&ep.sigAdmit)return'Both';
-    if(ep.pdiAdmit)return'PDI';
-    if(ep.sigAdmit)return'Signature';
-    return'Unknown';
-  }
-
-  // Enrich flow edits
-  var edits=Object.entries(_flowEdits).map(function(kv){
-    var key=kv[0],e=kv[1];
-    var name=e._name||'';
-    if(!name&&clientById[key])name=clientById[key].name||'';
-    if(!name){var dec=key.replace(/_/g,' ').trim();var m=clientByName[normFlowName(dec)];name=m?m.name:dec;}
-    var prog=progForName(name);
-    if(prog==='Unknown'&&clientById[key]){
-      var fc=clientById[key];
-      if(fc.pdiAdmit&&fc.sigAdmit)prog='Both';
-      else if(fc.pdiAdmit)prog='PDI';
-      else if(fc.sigAdmit)prog='Signature';
-      if(!name)name=fc.name||key;
-    }
-    return Object.assign({},e,{_name:name,_prog:prog,_los:parseInt(e.priorLOClos)||null});
-  }).filter(function(e){return e._name&&e._name.length>1;});
-
-  // Program totals from authoritative source
-  var totalPDI=episodeSource.filter(function(ep){return ep.pdiAdmit;}).length;
-  var totalSig=episodeSource.filter(function(ep){return ep.sigAdmit;}).length;
-  var totalActive=clients.filter(function(c){
+  var totalPDI=(_totalPDI>0)?_totalPDI:episodeSource.filter(function(ep){return ep.pdiAdmit;}).length;
+  var totalSig=(_totalSig>0)?_totalSig:episodeSource.filter(function(ep){return ep.sigAdmit;}).length;
+  var totalActive=(_totalActive>0)?_totalActive:(clients.filter(function(c){
     var d=(c.program==='PDI'?c.pdiDischarge||c.pdiDisch:c.sigDischarge||c.sigDisch||c.endDate)||'';
+    return!d||d>=TODAY;
+  }).length||'—');
     return!d||d>=TODAY;
   }).length||'—';
 
