@@ -634,9 +634,11 @@ function renderFlowSection(){
   // If calendar hasn't loaded yet, show waiting state and bail
   if(!ALL_EPS_LIVE.length||!_fbClients.length){
     if(cb){ cb.style.display='block'; cb.style.background='#FFF9EC'; cb.style.borderColor='#F5C842';
-      cb.innerHTML='<strong>Waiting for calendar data&hellip;</strong> &nbsp;('+diag.join(' &nbsp;|&nbsp; ')+')<br>'
-        +'<em style="font-size:10px">The flow section loads after calendar data is received. If this persists, hard-refresh the page (Cmd+Shift+R).</em>';
+      cb.innerHTML='<strong>Loading&hellip;</strong> &nbsp;'+diag.join(' &nbsp;·&nbsp; ')+' &nbsp;|&nbsp; '
+        +'<em style="font-size:10px">Waiting for calendar data. Retrying in 2s&hellip;</em>';
     }
+    // Retry once calendar data arrives
+    setTimeout(function(){ if(ALL_EPS_LIVE.length&&_fbClients.length) renderFlowSection(); }, 2000);
     return;
   }
 
@@ -1009,7 +1011,7 @@ firebase.database().ref('schedule_v3').on('value',function(snap){
   if(raw&&raw.blob){try{var d=JSON.parse(raw.blob);if(Array.isArray(d.clients))clients=d.clients;}catch(e){}}
   _fbClients=clients;
   render(clients);
-  if(Object.keys(_flowEdits).length)renderFlowSection();
+  renderFlowSection();  // always re-render flow section with fresh ALL_EPS_LIVE
 },function(err){
   document.getElementById('ldot').style.background='#c00';
   document.getElementById('llbl').textContent='Offline';
