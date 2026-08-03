@@ -219,11 +219,20 @@ function migrateLegacyEdits(){
   allClients.forEach(function(c){
     var idKey=episodeKey(c);
     var nameKey=safeKey(c.name);
-    if(nameKey!==idKey&&savedEdits[nameKey]&&!savedEdits[idKey]){
+    if(nameKey===idKey) return;
+    if(savedEdits[nameKey]&&!savedEdits[idKey]){
+      // Copy old name-key data to id-key
       var patch=Object.assign({},savedEdits[nameKey],
         {_name:c.name,_admit:c.pdiAdmit||c.sigAdmit||""});
-      EDITS_REF.child(idKey).update(patch);
-      log("Migrated: "+c.name);
+      EDITS_REF.child(idKey).update(patch,function(){
+        // Delete old duplicate after successful copy
+        EDITS_REF.child(nameKey).remove();
+      });
+      log("Migrated + cleaned: "+c.name);
+    } else if(savedEdits[nameKey]&&savedEdits[idKey]){
+      // Both exist — id-key is authoritative, remove name-key duplicate
+      EDITS_REF.child(nameKey).remove();
+      log("Removed duplicate: "+nameKey);
     }
   });
 }
