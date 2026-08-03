@@ -663,31 +663,40 @@ function renderFlowSection(){
   });
 
   function progForName(name){
-    var eps=epByName[normFlowName(name||'')]||[];
-    if(!eps.length)return'Unknown';
-    eps.sort(function(a,b){return(b.pdiAdmit||b.sigAdmit||'')>(a.pdiAdmit||a.sigAdmit||'')?1:-1;});
-    var ep=eps[0];
-    if(ep.pdiAdmit&&ep.sigAdmit)return'Both';
-    if(ep.pdiAdmit)return'PDI';
-    if(ep.sigAdmit)return'Signature';
+    var k=normFlowName(name||'');
+    var eps=epByName[k]||[];
+    if(!eps.length){
+      // Also try Firebase client roster (catches new clients not in ALL_EPISODES)
+      var fc=clientByName[k];
+      if(fc) return progFromClient(fc);
+      return'Unknown';
+    }
+    // Use ALL episodes for this name — if any has pdiAdmit, they're a PDI client
+    var anyPDI=eps.some(function(e){return e.pdiAdmit;});
+    var anySig=eps.some(function(e){return e.sigAdmit;});
+    if(anyPDI&&anySig) return'Both';
+    if(anyPDI)         return'PDI';
+    if(anySig)         return'Signature';
     return'Unknown';
   }
 
   // Enrich flow edits — resolve program per edit key (episode-accurate)
   function progFromClient(fc){
     if(!fc) return 'Unknown';
+    // Always derive from admit dates — the program field is unreliable
+    // (PDI->Sig clients may show program="Signature" even though they have pdiAdmit set)
+    var hasPDI=!!fc.pdiAdmit;
+    var hasSig=!!fc.sigAdmit;
+    // pdiAdmit===sigAdmit is a data entry error — treat as Sig only
+    if(hasPDI&&hasSig&&fc.pdiAdmit===fc.sigAdmit) hasPDI=false;
+    if(hasPDI&&hasSig) return'Both';
+    if(hasPDI)         return'PDI';
+    if(hasSig)         return'Signature';
+    // Last resort: program field
     var prog=(fc.program||'').toLowerCase().trim();
-    var hasPDI=prog==='pdi'||prog==='both';
-    var hasSig=prog==='signature'||prog==='both'||prog==='sig';
-    if(!prog){
-      hasPDI=!!fc.pdiAdmit;
-      hasSig=!!fc.sigAdmit;
-      if(hasPDI&&hasSig&&fc.pdiAdmit===fc.sigAdmit)hasPDI=false;
-    }
-    if(!hasSig&&!hasPDI&&fc.sigAdmit)hasSig=true;
-    if(hasPDI&&hasSig)return'Both';
-    if(hasPDI)return'PDI';
-    if(hasSig)return'Signature';
+    if(prog==='pdi')   return'PDI';
+    if(prog==='both')  return'Both';
+    if(prog==='signature'||prog==='sig') return'Signature';
     return'Unknown';
   }
 
