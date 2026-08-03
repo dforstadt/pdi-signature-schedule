@@ -643,8 +643,21 @@ function renderFlowSection(){
 
   var episodeSource=(ALL_EPS_LIVE&&ALL_EPS_LIVE.length)?ALL_EPS_LIVE:ALL_EPISODES;
   var clients=(_fbClients&&_fbClients.length)?_fbClients:[];
-  var totalPDI=(_totalPDI>0)?_totalPDI:episodeSource.filter(function(ep){return ep.pdiAdmit;}).length;
-  var totalSig=(_totalSig>0)?_totalSig:episodeSource.filter(function(ep){return ep.sigAdmit;}).length;
+  // Use unique client name count (not episode count) so Layla's readmission
+  // doesn't inflate the denominator beyond what sigEdits can match (1 record per name).
+  var _pdiNames=new Set(), _sigNames=new Set();
+  episodeSource.forEach(function(ep){
+    var k=normFlowName(ep.name||'');
+    if(ep.pdiAdmit)_pdiNames.add(k);
+    if(ep.sigAdmit)_sigNames.add(k);
+  });
+  clients.forEach(function(c){
+    var k=normFlowName(c.name||'');
+    if(c.pdiAdmit&&c.pdiAdmit!==c.sigAdmit)_pdiNames.add(k);
+    if(c.sigAdmit)_sigNames.add(k);
+  });
+  var totalPDI=_pdiNames.size||episodeSource.filter(function(ep){return ep.pdiAdmit;}).length;
+  var totalSig=_sigNames.size||episodeSource.filter(function(ep){return ep.sigAdmit;}).length;
   var totalActive=(_totalActive>0)?_totalActive:0;
   var clientById={},clientByName={};
   clients.forEach(function(c){if(c.id)clientById[c.id]=c;clientByName[normFlowName(c.name||'')]=c;});
@@ -757,14 +770,17 @@ function renderFlowSection(){
   var allEdits=Object.values(byName);
   var withSD=allEdits.filter(function(e){return e.stepDown&&e.stepDown!=='---'&&e.stepDown!=='';});
   // Identify which matched clients are missing step-down data
-  var noSD=allEdits.filter(function(e){return!e.stepDown||e.stepDown==='---'||e.stepDown==='';})
-    .map(function(e){return e._name;});
-  // Also check Firebase clients not yet in byName
-  clients.forEach(function(c){
-    if(!byName[normFlowName(c.name||'')]&&(c.sigAdmit||c.pdiAdmit)){
-      if(noSD.indexOf(c.name)<0)noSD.push(c.name+' (no flow record)');
+  // Only flag DISCHARGED clients — active clients won't have step-down data yet
+  var noSD=allEdits.filter(function(e){
+    if(e.stepDown&&e.stepDown!=='---'&&e.stepDown!=='')return false; // has data
+    // Check if active in calendar
+    var fc=clientByName[normFlowName(e._name||'')];
+    if(fc){
+      var d=(fc.program==='PDI'?fc.pdiDischarge||fc.pdiDisch:fc.sigDischarge||fc.sigDisch||fc.endDate)||'';
+      if(!d||d>=TODAY)return false; // still active, skip
     }
-  });
+    return true; // discharged and missing step-down
+  }).map(function(e){return e._name;});
   var sdInt={},sdExt={};withSD.forEach(function(e){var s=e.stepDown;sdIsInt(s)?sdInt[s]=(sdInt[s]||0)+1:sdExt[s]=(sdExt[s]||0)+1;});
   var allSD=Array.from(new Set(Object.keys(sdInt).concat(Object.keys(sdExt)))).sort(function(a,b){return((sdInt[b]||0)+(sdExt[b]||0))-((sdInt[a]||0)+(sdExt[a]||0));});
   if(allSD.length){
