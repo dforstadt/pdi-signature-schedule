@@ -127,6 +127,9 @@ function safeKey(name){return(name||"unnamed").replace(/[.#$/[\]]/g,"_");}
 // Handles readmissions — two admissions for same person never share a key
 function episodeKey(c){
   if(c&&c.id) return safeKey(c.id);
+  // Historical/discharged clients: key by name only (no admit suffix)
+  // so it matches records saved by saveHistClient()
+  if(c&&c._historical) return (c.name||"unnamed").replace(/\s+/g,"_");
   var admit=(c&&(c.pdiAdmit||c.sigAdmit))||"";
   return safeKey(((c&&c.name)||"unnamed")+"_"+admit);
 }
@@ -350,6 +353,16 @@ function loadData(){
       log("Roster: "+allClients.length+" clients | Calendar PDI: "+p+" | Calendar Sig: "+s);
       var cmb=document.getElementById("create-missing-btn");
       if(cmb)cmb.style.display="inline-block";
+      // Inject historical (discharged) clients as synthetic rows
+      var calNames=new Set(allClients.map(function(c){return c.name.toLowerCase().trim();}));
+      HIST_CLIENTS.forEach(function(h){
+        if(!calNames.has(h.name.toLowerCase().trim())){
+          var synth={id:null,name:h.name,program:"PDI",
+            pdiAdmit:h.pdiAdmit||"",sigAdmit:"",
+            pdiDisch:"",sigDisch:"",endDate:"",_historical:true};
+          allClients.push(synth);
+        }
+      });
       if(Object.keys(savedEdits).length)migrateLegacyEdits();
       rows=buildRows();
       showHistPanel();
