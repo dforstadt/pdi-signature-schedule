@@ -273,6 +273,25 @@ tbody tr:hover td{background:rgba(139,115,85,.05)}
     </div>
   </div>
 
+  <!-- ── Conversion funnel ──────────────────────────────────────────────── -->
+  <div style="margin-bottom:24px">
+    <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--tx3);margin-bottom:6px">PDI to Signature conversion</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div class="card">
+        <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px">Conversion Rate</div>
+        <div style="font-size:10px;color:var(--tx3);margin-bottom:10px">Of all PDI clients, how many converted directly into Signature?</div>
+        <div style="height:180px"><canvas id="conv-rate-chart"></canvas></div>
+        <div id="conv-rate-detail" style="font-size:11px;margin-top:10px;line-height:1.8;color:var(--tx3)"></div>
+      </div>
+      <div class="card">
+        <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px">Time from PDI to Signature Admission</div>
+        <div style="font-size:10px;color:var(--tx3);margin-bottom:10px">Days between PDI admit and Signature admit for converted clients</div>
+        <div id="conv-timing-kpis" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px"></div>
+        <div style="height:130px"><canvas id="conv-timing-chart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
   <!-- ── Detail table (collapsed) ─────────────────────────────────────────── -->
   <details style="margin-bottom:24px">
     <summary style="font-size:11px;font-weight:600;color:var(--tx3);cursor:pointer;
@@ -754,6 +773,16 @@ function renderFlowSection(){
   renderSourceChart('sig-source-chart',sigExt,sigInt,sigEdits,totalSig,'sig-source-detail','sig-coverage-note','Signature',missingSig);
   var capEl=document.getElementById('flow-source-caption');
   if(capEl){var pN=pdiExt.length+pdiInt.length,sN=sigExt.length+sigInt.length;capEl.innerHTML=(pN?'PDI: '+(pdiExt.length>pdiInt.length?'<strong>External dominant</strong>':pdiInt.length>pdiExt.length?'<strong>Internal dominant</strong>':'Even split')+' ('+pN+' typed). ':'')+(sN?'Signature: '+(sigExt.length>sigInt.length?'<strong>External dominant</strong>':sigInt.length>sigExt.length?'<strong>Internal dominant</strong>':'Even split')+' ('+sN+' typed).':'');}
+  function normLOC(l){
+    if(!l)return l;
+    var m={'Residential':'Lifeskills Residential','RTC':'Lifeskills Residential',
+      'Lifeskills RTC':'Lifeskills Residential','PHP':'Lifeskills PHP',
+      'IOP':'Lifeskills IOP','OP':'Lifeskills OP','Outpatient':'Lifeskills OP',
+      'RTC External':'Residential (External)','PHP External':'PHP (External)',
+      'IOP External':'IOP (External)','OP External':'OP (External)'};
+    return m[l.trim()]||l;
+  }
+
   function renderLOS(srcEdits,chartId,kpisId,color,prog){
     var byLOC={};
     srcEdits.filter(function(e){return e.admitType==='Internal'&&e.priorLOC&&e.priorLOC!=='None'&&e._los&&e._los>0;}).forEach(function(e){var loc=normLOC(e.priorLOC);if(!byLOC[loc])byLOC[loc]=[];byLOC[loc].push(e._los);});
