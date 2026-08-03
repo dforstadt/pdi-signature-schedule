@@ -189,71 +189,88 @@ tbody tr:hover td{background:rgba(139,115,85,.05)}
   <div class="sec-head" id="flow-section">
     <div class="sec-bar" style="background:var(--accent)"></div>
     <div>
-      <div class="sec-title">Client Flow &amp; Transitions</div>
-      <div class="sec-sub" id="flow-sub">Admission source, prior level of care, and step-down destination — populated from saved flow data</div>
+      <div class="sec-title">Clinical Flow &amp; Demand Analytics</div>
+      <div class="sec-sub" id="flow-sub">Admission source, prior level of care, RTC transition timing, and step-down destinations</div>
     </div>
   </div>
 
-  <!-- Stat pills row -->
-  <div class="card-row card-row-4" id="flow-pills" style="margin-bottom:14px">
-    <div class="card" style="text-align:center;padding:18px 12px">
-      <div style="font-size:26px;font-weight:700;color:var(--pdi)" id="fl-internal">—</div>
-      <div style="font-size:11px;color:var(--tx3);margin-top:4px">Internal Admits</div>
-      <div style="font-size:11px;color:var(--tx3)" id="fl-internal-pct"></div>
+  <!-- ── Demand source pills ── -->
+  <div class="card-row" style="grid-template-columns:repeat(6,1fr);margin-bottom:14px" id="flow-pills">
+    <div class="card" style="text-align:center;padding:16px 8px">
+      <div style="font-size:22px;font-weight:700;color:var(--pdi)" id="fl-pdi-ext">—</div>
+      <div style="font-size:10px;color:var(--tx3);margin-top:3px">PDI External</div>
+      <div style="font-size:10px;color:var(--tx3)" id="fl-pdi-ext-pct"></div>
     </div>
-    <div class="card" style="text-align:center;padding:18px 12px">
-      <div style="font-size:26px;font-weight:700;color:var(--sig)" id="fl-external">—</div>
-      <div style="font-size:11px;color:var(--tx3);margin-top:4px">External Admits</div>
-      <div style="font-size:11px;color:var(--tx3)" id="fl-external-pct"></div>
+    <div class="card" style="text-align:center;padding:16px 8px">
+      <div style="font-size:22px;font-weight:700;color:var(--pdi)" id="fl-pdi-int">—</div>
+      <div style="font-size:10px;color:var(--tx3);margin-top:3px">PDI Internal</div>
+      <div style="font-size:10px;color:var(--tx3)" id="fl-pdi-int-pct"></div>
     </div>
-    <div class="card" style="text-align:center;padding:18px 12px">
-      <div style="font-size:26px;font-weight:700;color:var(--green)" id="fl-stepdown">—</div>
-      <div style="font-size:11px;color:var(--tx3);margin-top:4px">Clients w/ Step-Down</div>
-      <div style="font-size:11px;color:var(--tx3)" id="fl-stepdown-pct"></div>
+    <div class="card" style="text-align:center;padding:16px 8px">
+      <div style="font-size:22px;font-weight:700;color:var(--sig)" id="fl-sig-ext">—</div>
+      <div style="font-size:10px;color:var(--tx3);margin-top:3px">Sig External</div>
+      <div style="font-size:10px;color:var(--tx3)" id="fl-sig-ext-pct"></div>
     </div>
-    <div class="card" style="text-align:center;padding:18px 12px">
-      <div style="font-size:26px;font-weight:700;color:var(--amber)" id="fl-filled">—</div>
-      <div style="font-size:11px;color:var(--tx3);margin-top:4px">Records Completed</div>
-      <div style="font-size:11px;color:var(--tx3)" id="fl-filled-pct">of all clients</div>
+    <div class="card" style="text-align:center;padding:16px 8px">
+      <div style="font-size:22px;font-weight:700;color:var(--sig)" id="fl-sig-int">—</div>
+      <div style="font-size:10px;color:var(--tx3);margin-top:3px">Sig Internal</div>
+      <div style="font-size:10px;color:var(--tx3)" id="fl-sig-int-pct"></div>
     </div>
-    <div class="card" style="text-align:center;padding:18px 12px">
-      <div style="font-size:26px;font-weight:700;color:var(--pdi)" id="fl-sd-int">—</div>
-      <div style="font-size:11px;color:var(--tx3);margin-top:4px">Lifeskills Step-Downs</div>
-      <div style="font-size:11px;color:var(--tx3)" id="fl-sd-int-pct"></div>
+    <div class="card" style="text-align:center;padding:16px 8px">
+      <div style="font-size:22px;font-weight:700;color:var(--green)" id="fl-int-avg-pdi">—</div>
+      <div style="font-size:10px;color:var(--tx3);margin-top:3px">Avg Prior LOS → PDI</div>
+      <div style="font-size:10px;color:var(--tx3)">days (internal)</div>
     </div>
-    <div class="card" style="text-align:center;padding:18px 12px">
-      <div style="font-size:26px;font-weight:700;color:var(--green)" id="fl-sd-ext">—</div>
-      <div style="font-size:11px;color:var(--tx3);margin-top:4px">External Step-Downs</div>
-      <div style="font-size:11px;color:var(--tx3)" id="fl-sd-ext-pct"></div>
-    </div>
-  </div>
-
-  <!-- Flow charts row -->
-  <div class="card-row" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:14px">
-    <div class="card">
-      <div class="chart-card-title">
-        <span style="width:10px;height:10px;border-radius:50%;background:var(--pdi);display:inline-block"></span>
-        Admission Source
-      </div>
-      <div class="chart-wrap" style="height:220px"><canvas id="admit-type-chart"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="chart-card-title">
-        <span style="width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block"></span>
-        Prior Level of Care <span style="font-size:9px;font-weight:400;color:var(--tx3)">(internal admits)</span>
-      </div>
-      <div class="chart-wrap" style="height:220px"><canvas id="prior-loc-chart"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="chart-card-title">
-        <span style="width:10px;height:10px;border-radius:50%;background:var(--green);display:inline-block"></span>
-        Step-Down Destination <span style="font-size:9px;font-weight:400;color:var(--tx3)">■ Lifeskills Internal &nbsp; ■ External</span>
-      </div>
-      <div class="chart-wrap" style="height:220px"><canvas id="stepdown-chart"></canvas></div>
+    <div class="card" style="text-align:center;padding:16px 8px">
+      <div style="font-size:22px;font-weight:700;color:var(--green)" id="fl-int-avg-sig">—</div>
+      <div style="font-size:10px;color:var(--tx3);margin-top:3px">Avg Prior LOS → Sig</div>
+      <div style="font-size:10px;color:var(--tx3)">days (internal)</div>
     </div>
   </div>
 
-  <!-- Flow detail table -->
+  <!-- ── Source doughnuts + prior LOC bar ── -->
+  <div class="card-row" style="grid-template-columns:1fr 1fr 2fr;margin-bottom:14px">
+    <div class="card">
+      <div class="chart-card-title">PDI — Admission Source</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="pdi-source-chart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="chart-card-title">Signature — Admission Source</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="sig-source-chart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="chart-card-title">Prior Level of Care Distribution <span style="font-size:9px;font-weight:400;color:var(--tx3)">(internal admits, all programs)</span></div>
+      <div class="chart-wrap" style="height:200px"><canvas id="prior-loc-dist-chart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ── RTC timing benchmarks ── -->
+  <div class="card-row" style="grid-template-columns:1fr 1fr;margin-bottom:14px">
+    <div class="card">
+      <div class="chart-card-title">Prior LOS Before PDI <span style="font-size:9px;font-weight:400;color:var(--tx3)">(internal admits — avg days at each prior LOC)</span></div>
+      <div class="chart-wrap" style="height:180px"><canvas id="prior-los-pdi-chart"></canvas></div>
+      <div id="pdi-los-stats" style="display:flex;gap:16px;padding:8px 4px 0;flex-wrap:wrap"></div>
+    </div>
+    <div class="card">
+      <div class="chart-card-title">Prior LOS Before Signature <span style="font-size:9px;font-weight:400;color:var(--tx3)">(internal admits — avg days at each prior LOC)</span></div>
+      <div class="chart-wrap" style="height:180px"><canvas id="prior-los-sig-chart"></canvas></div>
+      <div id="sig-los-stats" style="display:flex;gap:16px;padding:8px 4px 0;flex-wrap:wrap"></div>
+    </div>
+  </div>
+
+  <!-- ── Clinical pathway map ── -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="chart-card-title">Clinical Pathway Map <span style="font-size:9px;font-weight:400;color:var(--tx3)">— how clients enter and exit PDI &amp; Signature programming</span></div>
+    <div id="flow-pathway-map" style="padding:12px 4px"></div>
+  </div>
+
+  <!-- ── Step-down by program ── -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="chart-card-title">Step-Down Destinations by Program <span style="font-size:9px;font-weight:400;color:var(--tx3)">■ Lifeskills Internal &nbsp; ■ External</span></div>
+    <div class="chart-wrap" style="height:220px"><canvas id="stepdown-chart"></canvas></div>
+  </div>
+
+  <!-- ── Detail table ── -->
   <div class="tbl-wrap">
     <table>
       <thead><tr>
@@ -266,9 +283,8 @@ tbody tr:hover td{background:rgba(139,115,85,.05)}
     </table>
   </div>
   <div style="font-size:10px;color:var(--tx3);margin-top:6px;margin-bottom:24px;padding:0 4px">
-    ⓘ Flow data is entered in the Client Flow Mapping tool. Open <a href="admin-fix2.html" style="color:var(--accent)">admin-fix2.html</a> to add or edit admission source and step-down data.
+    &#9432; Flow data is entered in the <a href="admin-fix2.html" style="color:var(--accent)">Client Flow Mapping tool</a>. Charts and statistics update in real time as records are completed.
   </div>
-
 </div>
 </div>
 
