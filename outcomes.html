@@ -727,4 +727,26 @@ function renderFlowSection(){
     return'<tr><td style="color:var(--tx3);font-size:10px">'+(i+1)+'</td><td style="font-weight:600">'+(e._name||'—')+'</td><td><span class="badge '+bc+'">'+prog+'</span></td><td>'+(e.admitType||'—')+'</td><td>'+(e.priorLOC||'—')+'</td><td style="font-weight:600">'+(e._los?e._los+'d':'—')+'</td><td>'+(e.stepDown||'—')+'</td><td style="color:var(--tx3)">'+(e.stepDownDate||'—')+'</td></tr>';
   }).join('');
 }
->
+
+firebase.database().ref('schedule_v3').on('value',function(snap){
+  document.getElementById('ldot').className='ldot on';
+  document.getElementById('llbl').textContent='Live • Auto-updating';
+  var clients=[];
+  var raw=snap.val();
+  _fbClients=[];  // reset before rebuild
+  if(raw&&raw.blob){try{var d=JSON.parse(raw.blob);if(Array.isArray(d.clients))clients=d.clients;}catch(e){}}
+  _fbClients=clients;
+  render(clients);
+  if(Object.keys(_flowEdits).length)renderFlowSection();
+},function(err){
+  document.getElementById('ldot').style.background='#c00';
+  document.getElementById('llbl').textContent='Offline';
+  render([]);
+});
+
+function exportPDF(){
+  document.getElementById("print-date").textContent="Generated: "+new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"});
+  window.print();
+}
+</script>
+</body></html>
