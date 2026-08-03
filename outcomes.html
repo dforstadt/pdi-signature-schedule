@@ -652,8 +652,6 @@ function renderFlowSection(){
       var d=(c.program==='PDI'?c.pdiDischarge||c.pdiDisch:c.sigDischarge||c.sigDisch||c.endDate)||'';
       return!d||d>=TODAY;
     }).length||'—';
-    return!d||d>=TODAY;
-  }).length||'—';
 
   var pdiEdits=edits.filter(function(e){return e._prog==='PDI'||e._prog==='Both';});
   var sigEdits=edits.filter(function(e){return e._prog==='Signature'||e._prog==='Both';});
