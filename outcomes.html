@@ -709,6 +709,7 @@ function renderFlowSection(){
   // Coverage banner
   if(cb){cb.style.display='block';cb.style.background='#F0F7FF';cb.style.borderColor='#C0D8F0';
     cb.innerHTML='<strong>Data coverage:</strong> &nbsp;'
+      +'[diag: _totalPDI='+_totalPDI+' _totalSig='+_totalSig+' ALL_EPS_LIVE='+ALL_EPS_LIVE.length+' episodeSource='+episodeSource.length+' edits='+edits.length+'] &nbsp;'
       +'PDI '+pdiEdits.length+'/'+totalPDI+' ('+pdiCov+'%) &nbsp;|&nbsp; '
       +'Signature '+sigEdits.length+'/'+totalSig+' ('+sigCov+'%) &nbsp;|&nbsp; '
       +'<em>Percentages below are of clients with data entered. '
