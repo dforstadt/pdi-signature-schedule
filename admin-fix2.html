@@ -253,15 +253,12 @@ function makeInput(val,key,field,ph,w){
 }
 
 window.updateField=function(key,field,value){
-
   var row=rows.find(function(r){return r._key===key;});
   if(row)row[field]=value;
-  saveEdits(key,field,value);
-  // If program override changed, rebuild rows and re-render immediately
-  if(field==="programOverride"){
-    rows=buildRows();
-    renderTable();
-  }
+  var cName=row?row.name:"";
+  var cAdmit=row?(row.pdiAdmit||row.sigAdmit):"";
+  saveEdits(key,field,value,cName,cAdmit);
+  if(field==="programOverride"){rows=buildRows();renderTable();}
 };
 
 function renderTable(){
