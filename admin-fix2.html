@@ -101,6 +101,14 @@ function resolveProgram(c, saved){
 
 function safeKey(name){return(name||"unnamed").replace(/[.#$/[\]]/g,"_");}
 
+// episodeKey: unique per calendar entry using Firebase id
+// Handles readmissions — two admissions for same person never share a key
+function episodeKey(c){
+  if(c&&c.id) return safeKey(c.id);
+  var admit=(c&&(c.pdiAdmit||c.sigAdmit))||"";
+  return safeKey(((c&&c.name)||"unnamed")+"_"+admit);
+}
+
 var ADMIT_TYPES=["","Internal","External"];
 var PRIOR_LOC=["","None","Residential","Detox","PHP","IOP","OP","Step-Down","Hospital","Other"];
 // Step-down destinations — Lifeskills internal mirrored by external equivalents
@@ -123,8 +131,9 @@ var PROG_OPTS=["","PDI","Signature","Both"];
 
 function buildRows(){
   return allClients.map(function(c,i){
-    var key=safeKey(c.name);
-    var saved=savedEdits[key]||{};
+    var key=episodeKey(c);
+    var legacyKey=safeKey(c.name);
+    var saved=savedEdits[key]||savedEdits[legacyKey]||{};
     var prog=resolveProgram(c, saved);
     var hasPDI=prog==="PDI"||prog==="Both";
     var hasSig=prog==="Signature"||prog==="Both";
@@ -219,11 +228,14 @@ function migrateLegacyEdits(){
   });
 }
 
-function saveEdits(key,field,value){
+function saveEdits(key,field,value,cName,cAdmit){
   showSave(true);
   clearTimeout(saveTimer);
   saveTimer=setTimeout(function(){
-    EDITS_REF.child(key).update({[field]:value},function(err){
+    var p={[field]:value};
+    if(cName)p._name=cName;
+    if(cAdmit)p._admit=cAdmit;
+    EDITS_REF.child(key).update(p,function(err){
       showSave(false);
       if(err)log("Save error: "+err.message);
     });
