@@ -188,38 +188,66 @@ function buildRows(){
   }).sort(function(a,b){return a.name.localeCompare(b.name);});
 }
 
-// ALL_EPISODES names that should have flow records (PDI only — discharged clients)
-var HIST_PDI_NAMES = ["Matthew H","Leslie K","Abbegail M","Alex R"];
+// Clients in ALL_EPISODES but no longer in the calendar (discharged)
+var HIST_CLIENTS = [
+  {name:"Matthew H", pdiAdmit:"2025-11-01"},
+  {name:"Leslie K",  pdiAdmit:"2025-11-15"},
+  {name:"Abbegail M",pdiAdmit:"2025-12-01"},
+  {name:"Alex R",    pdiAdmit:"2025-12-15"}
+];
 
 function showHistPanel(){
-  if(!Object.keys(savedEdits).length) return;
+  // Always show for clients not in the calendar, regardless of savedEdits
   var calNames=new Set(allClients.map(function(c){return c.name.toLowerCase().trim();}));
-  var missing=HIST_PDI_NAMES.filter(function(n){
-    var k=n.replace(/\s+/g,'_');
-    return!calNames.has(n.toLowerCase().trim())&&!savedEdits[k]&&!savedEdits[n];
+  var offCal=HIST_CLIENTS.filter(function(h){
+    return!calNames.has(h.name.toLowerCase().trim());
   });
-  if(!missing.length){document.getElementById('hist-panel').style.display='none';return;}
-  document.getElementById('hist-panel').style.display='block';
-  document.getElementById('hist-missing-list').textContent=
-    'These clients were discharged before flow data was captured: '+missing.join(', ');
-  var sel=document.getElementById('hist-name-sel');
-  sel.innerHTML='<option value="">— Select client —</option>'
-    +missing.map(function(n){return'<option>'+n+'</option>';}).join('');
+  var panel=document.getElementById("hist-panel");
+  if(!panel)return;
+  if(!offCal.length||!allClients.length){panel.style.display="none";return;}
+  panel.style.display="block";
+  // Show status for each
+  var listEl=document.getElementById("hist-missing-list");
+  if(listEl){
+    listEl.innerHTML=offCal.map(function(h){
+      var k=h.name.replace(/\s+/g,"_");
+      var hasRec=!!(savedEdits[k]||savedEdits[safeKey(h.name)]);
+      var rec=savedEdits[k]||savedEdits[safeKey(h.name)]||{};
+      var admitType=rec.admitType||"";
+      return'<span style="margin-right:12px">'+(hasRec&&admitType
+        ?'<span style="color:#1D9E75">&#10003; '+h.name+' ('+admitType+')</span>'
+        :'<span style="color:#B45309">&#9888; '+h.name+(hasRec?' (no admit type)':' (no record)')+'</span>')
+        +'</span>';
+    }).join("");
+  }
+  // Populate dropdown with all off-calendar clients
+  var sel=document.getElementById("hist-name-sel");
+  if(sel){
+    sel.innerHTML='<option value="">Select client</option>'
+      +offCal.map(function(h){return'<option value="'+h.name+'">'+h.name+'</option>';}).join("");
+  }
 }
 
 function saveHistClient(){
-  var name=document.getElementById('hist-name-sel').value;
-  var admitType=document.getElementById('hist-admit-type').value;
-  var priorLOC=document.getElementById('hist-prior-loc').value;
-  var priorLOClos=document.getElementById('hist-prior-los').value||'';
-  if(!name){alert('Select a client first.');return;}
-  var key=name.replace(/\s+/g,'_');
+  var name=document.getElementById("hist-name-sel").value;
+  var admitType=document.getElementById("hist-admit-type").value;
+  var priorLOC=document.getElementById("hist-prior-loc").value;
+  var priorLOClos=document.getElementById("hist-prior-los").value||"";
+  if(!name){alert("Select a client first.");return;}
+  if(!admitType){alert("Select an Admission Type.");return;}
+  var key=name.replace(/\s+/g,"_");
+  showSave(true);
   var rec={_name:name,admitType:admitType,priorLOC:priorLOC,priorLOClos:priorLOClos,
-    locHistory:'',stepDown:'',stepDownDate:'',notes:''};
+    locHistory:"",stepDown:"",stepDownDate:"",notes:""};
   EDITS_REF.child(key).set(rec,function(err){
-    if(err){log('Error: '+err.message);return;}
-    log('Saved: '+name);
+    showSave(false);
+    if(err){log("Error: "+err.message);return;}
     savedEdits[key]=rec;
+    log("Saved: "+name+" ("+admitType+")");
+    // Clear form
+    document.getElementById("hist-admit-type").value="";
+    document.getElementById("hist-prior-loc").value="";
+    document.getElementById("hist-prior-los").value="";
     showHistPanel();
   });
 }
