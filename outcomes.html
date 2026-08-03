@@ -330,6 +330,8 @@ function losStr(a,b){var d=los(a,b);if(d===null)return '—';if(!b)return d+' d 
 function monthKey(d){if(!d)return null;return d.slice(0,7);}
 
 var charts={};
+var ALL_EPS_LIVE=[];  // global so renderFlowSection can read it
+var _fbClients=[];   // global client roster from Firebase
 function mkChart(id,cfg){if(charts[id])charts[id].destroy();var ctx=document.getElementById(id);if(!ctx)return;charts[id]=new Chart(ctx,cfg);}
 
 function render(fbClients){
@@ -369,7 +371,8 @@ function render(fbClients){
   // 2. Start from ALL_EPISODES array — preserving ALL entries including
   //    readmissions (same name, different dates). Build a lookup pointing
   //    at the MOST RECENT episode per name for Firebase date updates.
-  var ALL_EPS_LIVE=ALL_EPISODES.map(function(ep){return Object.assign({},ep);});
+  // Assign to global so renderFlowSection (called from separate FB listener) can read it
+  ALL_EPS_LIVE=ALL_EPISODES.map(function(ep){return Object.assign({},ep);});
   var latestByName={};  // name → index of most recent episode in ALL_EPS_LIVE
   ALL_EPS_LIVE.forEach(function(ep,i){
     var k=ep.name.toLowerCase().trim();
@@ -619,13 +622,33 @@ function renderFlowSection(){
     return'Unknown';
   }
 
-  // Enrich edits with program
-  var edits=Object.values(_flowEdits).map(function(e){
+  // Build id→client and name→client lookup from Firebase roster
+  var clientById={}, clientByName={};
+  _fbClients.forEach(function(c){
+    if(c.id)clientById[c.id]=c;
+    clientByName[normFlowName(c.name||'')]=c;
+  });
+
+  // Enrich edits with program; recover _name from key or client roster if missing
+  var edits=Object.entries(_flowEdits).map(function(kv){
+    var key=kv[0], e=kv[1];
+    var name=e._name||'';
+    // If _name missing: try to find client by id key, then decode name-based key
+    if(!name){
+      if(clientById[key])name=clientById[key].name||'';
+      if(!name){
+        // key might be safeKey(name) — reverse: replace _ with space, title-case
+        var decoded=key.replace(/_/g,' ').replace(/\w/g,function(c){return c.toUpperCase();});
+        if(clientByName[normFlowName(decoded)])name=clientByName[normFlowName(decoded)].name||decoded;
+        else name=decoded;
+      }
+    }
     return Object.assign({},e,{
-      _prog:getProgForEdit(e),
+      _name:name,
+      _prog:getProgForEdit(Object.assign({},e,{_name:name})),
       _los:parseInt(e.priorLOClos)||null
     });
-  }).filter(function(e){return e._name;});
+  }).filter(function(e){return e._name&&e._prog!=='Unknown';});
 
   var pdiEdits=edits.filter(function(e){return e._prog==='PDI'||e._prog==='Both';});
   var sigEdits=edits.filter(function(e){return e._prog==='Signature'||e._prog==='Both';});
@@ -946,8 +969,11 @@ firebase.database().ref('schedule_v3').on('value',function(snap){
   document.getElementById('llbl').textContent='Live • Auto-updating';
   var clients=[];
   var raw=snap.val();
+  _fbClients=[];  // reset before rebuild
   if(raw&&raw.blob){try{var d=JSON.parse(raw.blob);if(Array.isArray(d.clients))clients=d.clients;}catch(e){}}
+  _fbClients=clients;
   render(clients);
+  if(Object.keys(_flowEdits).length)renderFlowSection();
 },function(err){
   document.getElementById('ldot').style.background='#c00';
   document.getElementById('llbl').textContent='Offline';
