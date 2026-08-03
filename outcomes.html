@@ -623,6 +623,35 @@ function kpi(label, value, sub, color){
 }
 
 function renderFlowSection(){
+  // ── Diagnostic: bail early if core data not ready ──────────────────────
+  var diag=[];
+  diag.push('ALL_EPS_LIVE: '+ALL_EPS_LIVE.length+' episodes');
+  diag.push('_fbClients: '+_fbClients.length+' clients');
+  diag.push('_flowEdits keys: '+Object.keys(_flowEdits).length);
+
+  var cb=document.getElementById('flow-coverage-bar');
+
+  // If calendar hasn't loaded yet, show waiting state and bail
+  if(!ALL_EPS_LIVE.length||!_fbClients.length){
+    if(cb){ cb.style.display='block'; cb.style.background='#FFF9EC'; cb.style.borderColor='#F5C842';
+      cb.innerHTML='<strong>Waiting for calendar data&hellip;</strong> &nbsp;('+diag.join(' &nbsp;|&nbsp; ')+')<br>'
+        +'<em style="font-size:10px">The flow section loads after calendar data is received. If this persists, hard-refresh the page (Cmd+Shift+R).</em>';
+    }
+    return;
+  }
+
+  // If flow edits are empty
+  if(!Object.keys(_flowEdits).length){
+    if(cb){ cb.style.display='block'; cb.style.background='#FFF9EC'; cb.style.borderColor='#F5C842';
+      cb.innerHTML='<strong>No flow data entered yet.</strong> Open the '
+        +'<a href="admin-fix2.html" style="color:var(--accent)">Client Flow Mapping tool</a> '
+        +'to begin entering admission source and step-down information for each client.';
+    }
+    var sub=document.getElementById('flow-sub');
+    if(sub) sub.textContent='No flow data entered yet';
+    return;
+  }
+
   // Build name→episode lookup from global ALL_EPS_LIVE
   var epByName={};
   ALL_EPS_LIVE.forEach(function(ep){
@@ -652,16 +681,37 @@ function renderFlowSection(){
   var edits=Object.entries(_flowEdits).map(function(kv){
     var key=kv[0],e=kv[1];
     var name=e._name||'';
+
+    // Try every available source to recover the name
+    if(!name && clientById[key])      name=clientById[key].name||'';
     if(!name){
-      if(clientById[key]) name=clientById[key].name||'';
-      if(!name){
-        var decoded=key.replace(/_/g,' ');
-        var m=clientByName[normFlowName(decoded)];
-        name=m?m.name:decoded;
-      }
+      // Reverse name-based safeKey: underscores → spaces
+      var decoded=key.replace(/_/g,' ').trim();
+      var m=clientByName[normFlowName(decoded)];
+      if(m) name=m.name;
+      else  name=decoded; // best guess
     }
-    return Object.assign({},e,{_name:name,_prog:progForName(name),_los:parseInt(e.priorLOClos)||null});
-  }).filter(function(e){return e._name&&e._prog!=='Unknown';});
+
+    var prog=progForName(name);
+
+    // If still Unknown, try matching by Firebase id in _fbClients
+    if(prog==='Unknown'&&clientById[key]){
+      var fc=clientById[key];
+      var hasPDI=!!(fc.pdiAdmit);
+      var hasSig=!!(fc.sigAdmit);
+      if(hasPDI&&hasSig) prog='Both';
+      else if(hasPDI)    prog='PDI';
+      else if(hasSig)    prog='Signature';
+      if(!name) name=fc.name||key;
+    }
+
+    return Object.assign({},e,{
+      _name:name,
+      _prog:prog,
+      _los:parseInt(e.priorLOClos)||null
+    });
+  // Keep all records that have SOME identifiable data — don't drop on Unknown
+  }).filter(function(e){return e._name&&e._name!=='unnamed';});
 
   // Authoritative totals from ALL_EPS_LIVE
   var totalPDI = ALL_EPS_LIVE.filter(function(ep){return ep.pdiAdmit;}).length;
@@ -685,6 +735,8 @@ function renderFlowSection(){
   var cb=document.getElementById('flow-coverage-bar');
   if(cb){
     cb.style.display='block';
+    cb.style.background='#F0F7FF';
+    cb.style.borderColor='#C0D8F0';
     cb.innerHTML='<strong>Data completeness:</strong> &nbsp;'
       +'PDI: '+pdiEdits.length+' of '+totalPDI+' episodes ('+pdiCov+'%) &nbsp;&nbsp;|&nbsp;&nbsp;'
       +'Signature: '+sigEdits.length+' of '+totalSig+' episodes ('+sigCov+'%) &nbsp;&nbsp;|&nbsp;&nbsp;'
