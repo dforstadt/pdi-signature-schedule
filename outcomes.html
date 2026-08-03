@@ -752,7 +752,7 @@ function renderFlowSection(){
   if(capEl){var pN=pdiExt.length+pdiInt.length,sN=sigExt.length+sigInt.length;capEl.innerHTML=(pN?'PDI: '+(pdiExt.length>pdiInt.length?'<strong>External dominant</strong>':pdiInt.length>pdiExt.length?'<strong>Internal dominant</strong>':'Even split')+' ('+pN+' typed). ':'')+(sN?'Signature: '+(sigExt.length>sigInt.length?'<strong>External dominant</strong>':sigInt.length>sigExt.length?'<strong>Internal dominant</strong>':'Even split')+' ('+sN+' typed).':'');}
   function renderLOS(srcEdits,chartId,kpisId,color,prog){
     var byLOC={};
-    srcEdits.filter(function(e){return e.admitType==='Internal'&&e.priorLOC&&e.priorLOC!=='None'&&e._los&&e._los>0;}).forEach(function(e){if(!byLOC[e.priorLOC])byLOC[e.priorLOC]=[];byLOC[e.priorLOC].push(e._los);});
+    srcEdits.filter(function(e){return e.admitType==='Internal'&&e.priorLOC&&e.priorLOC!=='None'&&e._los&&e._los>0;}).forEach(function(e){var loc=normLOC(e.priorLOC);if(!byLOC[loc])byLOC[loc]=[];byLOC[loc].push(e._los);});
     var locs=Object.keys(byLOC).sort(function(a,b){return(byLOC[b].reduce(function(s,v){return s+v;},0)/byLOC[b].length)-(byLOC[a].reduce(function(s,v){return s+v;},0)/byLOC[a].length);});
     var kpisEl=document.getElementById(kpisId);
     if(!locs.length){if(kpisEl)kpisEl.innerHTML='<div style="font-size:10px;color:var(--tx3);font-style:italic;grid-column:1/-1">No internal admit LOS data yet for '+prog+'.</div>';return;}
@@ -762,7 +762,7 @@ function renderFlowSection(){
   }
   renderLOS(pdiEdits,'prior-los-pdi-chart','pdi-los-kpis','rgba(74,108,138,1)','PDI');
   renderLOS(sigEdits,'prior-los-sig-chart','sig-los-kpis','rgba(107,92,69,1)','Signature');
-  function rtcDays(srcEdits){return srcEdits.filter(function(e){return e.admitType==='Internal'&&(e.priorLOC||'').indexOf('Residential')>=0&&e._los>0;});}
+  function rtcDays(srcEdits){return srcEdits.filter(function(e){return e.admitType==='Internal'&&(normLOC(e.priorLOC||'')).indexOf('Residential')>=0&&e._los>0;});}
   var pdiRTC=losStats(rtcDays(pdiEdits).map(function(e){return e._los;}));
   var sigRTC=losStats(rtcDays(sigEdits).map(function(e){return e._los;}));
   var rtcEl=document.getElementById('flow-rtc-insight');
