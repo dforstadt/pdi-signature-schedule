@@ -1,4 +1,5 @@
-<!DOCTYPE html>
+
+<button id="create-missing-btn" onclick="createMissingRecords()" style="display:none;background:#F59E0B;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-weight:600;font-size:12px;cursor:pointer;margin-left:6px">+ Create Missing Records</button><!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><title>Client Flow Export</title>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
@@ -176,6 +177,27 @@ function buildRows(){
   }).sort(function(a,b){return a.name.localeCompare(b.name);});
 }
 
+function createMissingRecords(){
+  if(!allClients.length){log("Load clients first.");return;}
+  var missing=allClients.filter(function(c){
+    var ik=episodeKey(c),nk=safeKey(c.name);
+    return!savedEdits[ik]&&!savedEdits[nk];
+  });
+  if(!missing.length){log("All clients already have flow records.");return;}
+  log("Creating "+missing.length+" blank records…");
+  var done=0;
+  missing.forEach(function(c){
+    var key=episodeKey(c);
+    EDITS_REF.child(key).set(
+      {_name:c.name,_admit:c.pdiAdmit||c.sigAdmit||"",
+       admitType:"",priorLOC:"",priorLOClos:"",locHistory:"",
+       stepDown:"",stepDownDate:"",notes:""},
+      function(err){done++;if(done===missing.length)
+        log("Created "+done+" records. Reload the page to edit them.");}
+    );
+  });
+}
+
 function loadData(){
   document.getElementById("load-btn").disabled=true;
   document.getElementById("load-btn").textContent="Live — auto-updating";
@@ -198,6 +220,8 @@ function loadData(){
       var p=allClients.filter(function(c){return(c.program||"").toLowerCase().match(/pdi|both/);}).length;
       var s=allClients.filter(function(c){return(c.program||"").toLowerCase().match(/sig|both/);}).length;
       log("Roster: "+allClients.length+" clients | Calendar PDI: "+p+" | Calendar Sig: "+s);
+      var cmb=document.getElementById("create-missing-btn");
+      if(cmb)cmb.style.display="inline-block";
       if(Object.keys(savedEdits).length)migrateLegacyEdits();
       rows=buildRows();
       var conv=rows.filter(function(r){return r.converted==="Yes";}).length;
