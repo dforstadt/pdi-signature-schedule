@@ -709,11 +709,23 @@ function renderFlowSection(){
   });
   function renderSourceChart(chartId,ext,int,srcEdits,enroll,detailId,covId,prog,missList){
     var typed=ext.length+int.length;
+    // noType: flow edit exists but admitType not set
     var noType=srcEdits.filter(function(e){return!e.admitType;}).map(function(e){return e._name;});
+    // Also catch Firebase Sig clients in _fbClients whose flow edit has no admitType
+    if(prog==='Signature'){
+      clients.forEach(function(c){
+        if(!c.sigAdmit)return;
+        var k=normFlowName(c.name||'');
+        var edit=byName[k];
+        if(edit&&!edit.admitType&&noType.indexOf(c.name)<0)noType.push(c.name);
+      });
+    }
     var covEl=document.getElementById(covId);
     if(covEl)covEl.innerHTML=typed+' of '+enroll+' '+prog+' clients have source data'
-      +(missList.length?'<br><span style="color:#B45309;font-size:10px">&#9888; No flow record: <strong>'+missList.join(', ')+'</strong></span>':'')
-      +(noType.length?'<br><span style="color:#7A5A00;font-size:10px">&#9888; Admission Type not set: <strong>'+noType.join(', ')+'</strong></span>':'');
+      +(missList.length?'<br><span style="color:#B45309;font-size:10px">&#9888; No flow record found for: <strong>'+missList.join(', ')+'</strong></span>':'')
+      +(noType.length?'<br><span style="color:#B45309;font-size:10px">&#9888; Flow record exists but <strong>Admission Type not set</strong>: '
+        +noType.map(function(n){return'<a href="admin-fix2.html" style="color:var(--accent);font-weight:700">'+n+'</a>';}).join(', ')
+        +'</span>':'');
     var detEl=document.getElementById(detailId);
     if(!typed){if(detEl)detEl.innerHTML='<span style="color:var(--tx3);font-style:italic;font-size:10px">No source data yet</span>';return;}
     mkChart(chartId,{type:'doughnut',data:{labels:['External referral','Internal transfer'],datasets:[{data:[ext.length,int.length],backgroundColor:['rgba(29,158,117,.85)','rgba(55,134,221,.85)'],borderColor:['#1D9E75','#3786DD'],borderWidth:2}]},options:{cutout:'55%',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){var pct=typed?Math.round(ctx.parsed/typed*100):0;return ctx.label+': '+ctx.parsed+' ('+pct+'%)';}}}}}});
