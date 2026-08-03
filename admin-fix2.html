@@ -177,6 +177,42 @@ function buildRows(){
   }).sort(function(a,b){return a.name.localeCompare(b.name);});
 }
 
+// ALL_EPISODES names that should have flow records (PDI only — discharged clients)
+var HIST_PDI_NAMES = ["Matthew H","Leslie K","Abbegail M","Alex R"];
+
+function showHistPanel(){
+  if(!Object.keys(savedEdits).length) return;
+  var calNames=new Set(allClients.map(function(c){return c.name.toLowerCase().trim();}));
+  var missing=HIST_PDI_NAMES.filter(function(n){
+    var k=n.replace(/\s+/g,'_');
+    return!calNames.has(n.toLowerCase().trim())&&!savedEdits[k]&&!savedEdits[n];
+  });
+  if(!missing.length){document.getElementById('hist-panel').style.display='none';return;}
+  document.getElementById('hist-panel').style.display='block';
+  document.getElementById('hist-missing-list').textContent=
+    'These clients were discharged before flow data was captured: '+missing.join(', ');
+  var sel=document.getElementById('hist-name-sel');
+  sel.innerHTML='<option value="">— Select client —</option>'
+    +missing.map(function(n){return'<option>'+n+'</option>';}).join('');
+}
+
+function saveHistClient(){
+  var name=document.getElementById('hist-name-sel').value;
+  var admitType=document.getElementById('hist-admit-type').value;
+  var priorLOC=document.getElementById('hist-prior-loc').value;
+  var priorLOClos=document.getElementById('hist-prior-los').value||'';
+  if(!name){alert('Select a client first.');return;}
+  var key=name.replace(/\s+/g,'_');
+  var rec={_name:name,admitType:admitType,priorLOC:priorLOC,priorLOClos:priorLOClos,
+    locHistory:'',stepDown:'',stepDownDate:'',notes:''};
+  EDITS_REF.child(key).set(rec,function(err){
+    if(err){log('Error: '+err.message);return;}
+    log('Saved: '+name);
+    savedEdits[key]=rec;
+    showHistPanel();
+  });
+}
+
 function fixAndCreateRecords(){
   if(!allClients.length){alert("Click \"Load All Clients\" first.");return;}
 
@@ -324,7 +360,49 @@ window.updateField=function(key,field,value){
 };
 
 function renderTable(){
-  var h='<table><thead><tr>'
+  var h='
+<!-- Historical clients panel -->
+<div id="hist-panel" style="background:#FFF9EC;border:1px solid #F59E0B;border-radius:8px;
+  padding:14px 18px;margin-bottom:14px;display:none">
+  <div style="font-size:12px;font-weight:700;color:#92400E;margin-bottom:8px">
+    &#9888; Discharged clients not in calendar — add flow data manually
+  </div>
+  <div id="hist-missing-list" style="font-size:11px;color:#555;margin-bottom:10px"></div>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <select id="hist-name-sel" style="font-family:inherit;font-size:12px;padding:6px 10px;
+      border:1px solid #ddd;border-radius:6px">
+      <option value="">— Select client —</option>
+    </select>
+    <select id="hist-admit-type" style="font-family:inherit;font-size:12px;padding:6px 10px;
+      border:1px solid #ddd;border-radius:6px">
+      <option value="">Admission Type</option>
+      <option>External</option>
+      <option>Internal</option>
+    </select>
+    <select id="hist-prior-loc" style="font-family:inherit;font-size:12px;padding:6px 10px;
+      border:1px solid #ddd;border-radius:6px">
+      <option value="">Prior LOC</option>
+      <option>Lifeskills Residential</option>
+      <option>Lifeskills PHP</option>
+      <option>Lifeskills IOP</option>
+      <option>RTC External</option>
+      <option>PHP External</option>
+      <option>IOP External</option>
+      <option>OP External</option>
+      <option>Hospital</option>
+      <option>None</option>
+    </select>
+    <input id="hist-prior-los" type="number" placeholder="Prior LOS (days)"
+      style="font-family:inherit;font-size:12px;padding:6px 10px;border:1px solid #ddd;
+      border-radius:6px;width:130px">
+    <button onclick="saveHistClient()" style="background:#F59E0B;color:#fff;border:none;
+      padding:7px 16px;border-radius:6px;font-weight:600;font-size:12px;cursor:pointer">
+      Save Record
+    </button>
+  </div>
+</div>
+
+<table><thead><tr>'
     +'<th>#</th><th>Client</th>'
     +'<th>Program<br><span style="font-weight:400;font-size:9px;color:#aaa">(resolved)</span></th>'
     +'<th class="override-cell" style="background:#6B5020">Program Override<br><span style="font-weight:400;font-size:9px">Fix incorrect calendar value</span></th>'
