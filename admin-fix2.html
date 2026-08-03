@@ -189,6 +189,7 @@ function loadData(){
       var p=allClients.filter(function(c){return(c.program||"").toLowerCase().match(/pdi|both/);}).length;
       var s=allClients.filter(function(c){return(c.program||"").toLowerCase().match(/sig|both/);}).length;
       log("Roster: "+allClients.length+" clients | Calendar PDI: "+p+" | Calendar Sig: "+s);
+      if(Object.keys(savedEdits).length)migrateLegacyEdits();
       rows=buildRows();
       var conv=rows.filter(function(r){return r.converted==="Yes";}).length;
       document.getElementById("stats").style.display="inline";
@@ -203,6 +204,19 @@ function loadData(){
       document.getElementById("dl-btn").disabled=false;
     }catch(e){log("Parse error: "+e.message);}
   },function(err){log("ERROR: "+err.message);});
+}
+
+function migrateLegacyEdits(){
+  allClients.forEach(function(c){
+    var idKey=episodeKey(c);
+    var nameKey=safeKey(c.name);
+    if(nameKey!==idKey&&savedEdits[nameKey]&&!savedEdits[idKey]){
+      var patch=Object.assign({},savedEdits[nameKey],
+        {_name:c.name,_admit:c.pdiAdmit||c.sigAdmit||""});
+      EDITS_REF.child(idKey).update(patch);
+      log("Migrated: "+c.name);
+    }
+  });
 }
 
 function saveEdits(key,field,value){
