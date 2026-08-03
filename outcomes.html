@@ -771,7 +771,40 @@ function renderFlowSection(){
   var sigRTC=losStats(rtcDays(sigEdits).map(function(e){return e._los;}));
   var rtcEl=document.getElementById('flow-rtc-insight');
   if(rtcEl&&(pdiRTC||sigRTC)){rtcEl.style.display='block';var lines=['<strong style="color:var(--amber)">&#9432; RTC Transition Timing</strong>'];if(pdiRTC)lines.push('Residential\u2192PDI: avg <strong>'+pdiRTC.avg+'d</strong> (range '+pdiRTC.min+'\u2013'+pdiRTC.max+'d, n='+pdiRTC.n+').');if(sigRTC)lines.push('Residential\u2192Signature: avg <strong>'+sigRTC.avg+'d</strong> (range '+sigRTC.min+'\u2013'+sigRTC.max+'d, n='+sigRTC.n+').');rtcEl.innerHTML=lines.join('<br><br>');}
-  var allEdits=Object.values(byName);
+    // ── Conversion funnel ────────────────────────────────────────────────────
+  var convEps=episodeSource.filter(function(ep){return ep.pdiAdmit&&ep.sigAdmit&&!ep.sigFirst;});
+  var convN=convEps.length, pdiOnlyN=totalPDI-convN;
+  if(convN>0){
+    mkChart('conv-rate-chart',{type:'doughnut',
+      data:{labels:['Converted to Signature','PDI only'],
+        datasets:[{data:[convN,pdiOnlyN],backgroundColor:['rgba(29,158,117,.85)','rgba(74,108,138,.5)'],borderColor:['#1D9E75','#4A6C8A'],borderWidth:2}]},
+      options:{cutout:'60%',responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:10,boxWidth:12}},
+          tooltip:{callbacks:{label:function(ctx){var pct=totalPDI?Math.round(ctx.parsed/totalPDI*100):0;return ctx.label+': '+ctx.parsed+' ('+pct+'%)';}}}}}
+    });
+    var crd=document.getElementById('conv-rate-detail');
+    if(crd)crd.innerHTML='<strong style="font-size:18px;color:#1D9E75">'+Math.round(convN/totalPDI*100)+'%</strong> conversion rate &mdash; <strong>'+convN+'</strong> of '+totalPDI+' PDI clients transitioned to Signature. <strong>'+pdiOnlyN+'</strong> completed PDI without transitioning.';
+  }
+  var convTimings=convEps.map(function(ep){
+    if(!ep.pdiAdmit||!ep.sigAdmit)return null;
+    return Math.round((new Date(ep.sigAdmit+'T12:00:00')-new Date(ep.pdiAdmit+'T12:00:00'))/(864e5));
+  }).filter(function(d){return d!==null&&d>=0;});
+  var tStats=losStats(convTimings);
+  var tkEl=document.getElementById('conv-timing-kpis');
+  if(tStats&&tkEl){
+    tkEl.innerHTML=kpi('Average',tStats.avg+' days','PDI\u2192Sig','var(--green)')+kpi('Shortest',tStats.min+' days','fastest','#1D9E75')+kpi('Longest',tStats.max+' days','slowest','#C05020');
+    var bins={'0-7d':0,'8-14d':0,'15-30d':0,'31-60d':0,'60d+':0};
+    convTimings.forEach(function(d){if(d<=7)bins['0-7d']++;else if(d<=14)bins['8-14d']++;else if(d<=30)bins['15-30d']++;else if(d<=60)bins['31-60d']++;else bins['60d+']++;});
+    mkChart('conv-timing-chart',{type:'bar',
+      data:{labels:Object.keys(bins),datasets:[{label:'Clients',data:Object.values(bins),backgroundColor:'rgba(29,158,117,.7)',borderColor:'#1D9E75',borderWidth:1.5,borderRadius:4}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},title:{display:true,text:'Days from PDI to Signature admission',font:{size:9},color:'#888'}},
+        scales:{x:{ticks:{font:{size:9}},grid:{display:false}},y:{beginAtZero:true,ticks:{stepSize:1,font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}}}
+      }
+    });
+  }
+
+var allEdits=Object.values(byName);
   var withSD=allEdits.filter(function(e){return e.stepDown&&e.stepDown!=='---'&&e.stepDown!=='';});
   // Identify which matched clients are missing step-down data
   // Only flag DISCHARGED clients — active clients won't have step-down data yet
