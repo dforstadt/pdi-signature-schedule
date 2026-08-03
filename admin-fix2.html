@@ -180,55 +180,51 @@ function buildRows(){
 function fixAndCreateRecords(){
   if(!allClients.length){alert("Click \"Load All Clients\" first.");return;}
 
-  // Step 1: For every client, check their edit record and stamp _name if blank
+  // Show what we find in savedEdits for every client
+  var report=[];
   var fixed=0;
+
   allClients.forEach(function(c){
     var ik=episodeKey(c), nk=safeKey(c.name);
-    var key=savedEdits[ik]?ik:(savedEdits[nk]?nk:null);
-    if(!key)return; // no record yet — handled below
-    var rec=savedEdits[key];
-    if(!rec._name||rec._name.trim()===""){
-      EDITS_REF.child(key).update({_name:c.name,_admit:c.pdiAdmit||c.sigAdmit||""});
-      fixed++;
-    }
-  });
-  if(fixed>0)log("Stamped _name on "+fixed+" existing records.");
-
-  // Step 2: Create blank records for clients with no record at all
-  var missing=allClients.filter(function(c){
-    var ik=episodeKey(c),nk=safeKey(c.name);
-    return!savedEdits[ik]&&!savedEdits[nk];
-  });
-
-  if(!missing.length){
-    if(fixed>0){
-      log("All records exist. Refreshing table with fixed names…");
-      setTimeout(function(){rows=buildRows();renderTable();},1500);
+    var recKey=savedEdits[ik]?ik:(savedEdits[nk]?nk:null);
+    if(recKey){
+      var rec=savedEdits[recKey]||{};
+      var storedName=rec._name||"";
+      // Stamp correct name if blank or wrong
+      if(!storedName||storedName.trim()===""){
+        EDITS_REF.child(recKey).update({_name:c.name,_admit:c.pdiAdmit||c.sigAdmit||""});
+        fixed++;
+        report.push("FIXED: "+c.name+" (was blank, key="+recKey.slice(0,12)+")");
+      } else {
+        report.push("OK: "+c.name+" → \""+storedName+"\"");
+      }
     } else {
-      log("All records already have names. No action needed.");
+      report.push("MISSING: "+c.name+" (no record)");
     }
-    return;
+  });
+
+  // Show full report
+  log(report.join(" | "));
+
+  // Create records for truly missing clients
+  var missing=allClients.filter(function(c){
+    return!savedEdits[episodeKey(c)]&&!savedEdits[safeKey(c.name)];
+  });
+
+  if(missing.length){
+    missing.forEach(function(c){
+      EDITS_REF.child(episodeKey(c)).set(
+        {_name:c.name,_admit:c.pdiAdmit||c.sigAdmit||"",
+         admitType:"",priorLOC:"",priorLOClos:"",locHistory:"",
+         stepDown:"",stepDownDate:"",notes:""},
+        function(err){if(!err)log("Created: "+c.name);}
+      );
+    });
   }
 
-  if(!confirm("Create blank flow records for "+missing.length+" clients?\n\n"
-    +missing.map(function(c){return "  • "+c.name;}).join("\n")))return;
-
-  log("Creating "+missing.length+" records…");
-  showSave(true);
-  var done=0,errs=0;
-  missing.forEach(function(c){
-    EDITS_REF.child(episodeKey(c)).set(
-      {_name:c.name,_admit:c.pdiAdmit||c.sigAdmit||"",
-       admitType:"",priorLOC:"",priorLOClos:"",locHistory:"",
-       stepDown:"",stepDownDate:"",notes:""},
-      function(err){if(err)errs++;done++;
-        if(done===missing.length){
-          showSave(false);
-          log("Done: "+(done-errs)+" created"+(errs?" ("+errs+" errors)":"")+".");
-          rows=buildRows();renderTable();
-        }}
-    );
-  });
+  if(fixed>0||missing.length>0){
+    setTimeout(function(){rows=buildRows();renderTable();},1500);
+  }
 }
 
 function loadData(){
