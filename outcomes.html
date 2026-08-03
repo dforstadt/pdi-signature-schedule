@@ -868,42 +868,68 @@ function renderFlowSection(){
     rtcEl.innerHTML=lines.join('<br><br>');
   }
 
-  // Pathway map
+  // Pathway map — two clear lanes
   var mapEl=document.getElementById('flow-map-visual');
   if(mapEl){
     var conv=episodeSource.filter(function(e){return e.pdiAdmit&&e.sigAdmit&&!e.sigFirst;}).length;
-    var pdiSD=pdiEdits.filter(function(e){return e.stepDown&&e.stepDown!=='---';});
-    var sigSD=sigEdits.filter(function(e){return e.stepDown&&e.stepDown!=='---';});
-    var pdiSDInt=pdiSD.filter(function(e){return sdIsInt(e.stepDown);}).length;
-    var sigSDInt=sigSD.filter(function(e){return sdIsInt(e.stepDown);}).length;
-    var pdiRTCn=rtcDays(pdiEdits).length,sigRTCn=rtcDays(sigEdits).length;
-    function nd(top,big,bot,bg,w){
-      return'<div style="background:'+bg+';border-radius:10px;padding:14px 18px;text-align:center;min-width:'+(w||100)+'px;flex-shrink:0;color:#fff">'
-        +'<div style="font-size:9px;font-weight:600;opacity:.75;margin-bottom:2px">'+top+'</div>'
-        +'<div style="font-size:28px;font-weight:700;line-height:1.1">'+big+'</div>'
-        +'<div style="font-size:9px;opacity:.75;margin-top:2px">'+bot+'</div></div>';
+    var pdiSDAll=pdiEdits.filter(function(e){return e.stepDown&&e.stepDown!=='---';});
+    var sigSDAll=sigEdits.filter(function(e){return e.stepDown&&e.stepDown!=='---';});
+    var pdiSDInt=pdiSDAll.filter(function(e){return sdIsInt(e.stepDown);}).length;
+    var sigSDInt=sigSDAll.filter(function(e){return sdIsInt(e.stepDown);}).length;
+    var pdiRTCgrp=rtcDays(pdiEdits),sigRTCgrp=rtcDays(sigEdits);
+    var pdiRTCavg=pdiRTC?'avg '+pdiRTC.avg+'d in RTC':'';
+    var sigRTCavg=sigRTC?'avg '+sigRTC.avg+'d in RTC':'';
+
+    function mbox(n,label,sub,bg){
+      return '<div style="background:'+bg+';border-radius:8px;padding:12px 16px;text-align:center;min-width:90px;flex-shrink:0">'
+        +'<div style="font-size:22px;font-weight:700;color:#fff;line-height:1">'+n+'</div>'
+        +'<div style="font-size:10px;font-weight:600;color:rgba(255,255,255,.85);margin-top:3px">'+label+'</div>'
+        +(sub?'<div style="font-size:9px;color:rgba(255,255,255,.6);margin-top:2px">'+sub+'</div>':'')
+        +'</div>';
     }
-    function ar(txt){return'<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;color:#ccc;padding:0 8px;flex-shrink:0"><div style="font-size:20px">\u2192</div>'+(txt?'<div style="font-size:9px;color:#aaa;text-align:center;max-width:64px;line-height:1.3">'+txt+'</div>':'')+'</div>';}
-    function row(h){return'<div style="display:flex;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:4px">'+h+'</div>';}
+    function marr(lbl){
+      return '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 8px;flex-shrink:0;color:#ccc">'
+        +'<div style="font-size:20px">→</div>'
+        +(lbl?'<div style="font-size:8px;color:#bbb;text-align:center;max-width:52px;line-height:1.3;margin-top:2px">'+lbl+'</div>':'')
+        +'</div>';
+    }
+    function mlane(title,nodes){
+      return '<div style="margin-bottom:16px">'
+        +'<div style="font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--tx3);margin-bottom:8px">'+title+'</div>'
+        +'<div style="display:flex;align-items:stretch;gap:0;flex-wrap:nowrap">'+nodes+'</div>'
+        +'</div>';
+    }
+
     mapEl.innerHTML=
-      row(nd('from RTC',pdiRTCn,'internal',PDI_C+'cc',100)+ar(pdiRTC?'avg '+pdiRTC.avg+'d in RTC':'')
-        +nd('PDI',totalPDI,'total admits',PDI_C,120)+ar('step-down')
-        +(pdiSD.length?nd('Step-Down',pdiSD.length,'with data','#3786DD88',100)
-          +'<div style="font-size:9px;color:#888;margin-left:6px;align-self:center;line-height:1.8">'+pdiSDInt+' Lifeskills<br>'+(pdiSD.length-pdiSDInt)+' external</div>':''))
-      +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">'
-        +nd('External',pdiExt.length,'to PDI',EXT_C+'cc',100)
-        +'<div style="color:#ccc;font-size:16px;padding:0 6px">\u2197</div>'
-        +(conv?'<div style="font-size:9px;color:#888;align-self:center">'+conv+' also<br>converted\u2193</div>':'')
-      +'</div>'
-      +'<div style="height:1px;background:var(--bd);margin:8px 0 10px"></div>'
-      +row(nd('from RTC',sigRTCn,'internal',SIG_C+'cc',100)+ar(sigRTC?'avg '+sigRTC.avg+'d in RTC':'')
-        +nd('Signature',totalSig,'total admits',SIG_C,120)+ar('step-down')
-        +(sigSD.length?nd('Step-Down',sigSD.length,'with data','#1D9E7588',100)
-          +'<div style="font-size:9px;color:#888;margin-left:6px;align-self:center;line-height:1.8">'+sigSDInt+' Lifeskills<br>'+(sigSD.length-sigSDInt)+' external</div>':''))
-      +'<div style="display:flex;align-items:center;gap:6px">'
-        +nd('External',sigExt.length,'to Sig',EXT_C+'cc',100)
-        +'<div style="color:#ccc;font-size:16px;padding:0 6px">\u2197</div>'
-      +'</div>';
+      mlane('PDI — Premier Diagnostic Insights',
+        mbox(pdiExt.length,'External referrals','direct to PDI',EXT_C)
+        +marr('')
+        +mbox(pdiRTCgrp.length,'From Lifeskills RTC',pdiRTCavg,PDI_C+'cc')
+        +marr('admitted')
+        +mbox(totalPDI,'PDI Program','total admissions',PDI_C)
+        +marr('discharged')
+        +(pdiSDAll.length
+          ?mbox(pdiSDInt,'Stayed in Lifeskills','step-down',PDI_C+'88')
+           +marr('')
+           +mbox(pdiSDAll.length-pdiSDInt,'External step-down','',EXT_C+'88')
+          :mbox('—','Step-down','data pending','#aaa'))
+      )
+      +(conv?'<div style="font-size:10px;color:var(--tx3);margin:-4px 0 14px">'
+        +'↳ '+conv+' PDI clients converted directly into Signature (counted in both rows)'
+        +'</div>':'')
+      +mlane('Signature — Concierge Residential',
+        mbox(sigExt.length,'External referrals','direct to Sig',EXT_C)
+        +marr('')
+        +mbox(sigRTCgrp.length,'From Lifeskills RTC',sigRTCavg,SIG_C+'cc')
+        +marr('admitted')
+        +mbox(totalSig,'Signature Program','total admissions',SIG_C)
+        +marr('discharged')
+        +(sigSDAll.length
+          ?mbox(sigSDInt,'Stayed in Lifeskills','step-down',SIG_C+'88')
+           +marr('')
+           +mbox(sigSDAll.length-sigSDInt,'External step-down','',EXT_C+'88')
+          :mbox('—','Step-down','data pending','#aaa'))
+      );
   }
 
   // Step-down chart
