@@ -1,5 +1,4 @@
-
-<button id="create-missing-btn" onclick="createMissingRecords()" style="display:none;background:#F59E0B;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-weight:600;font-size:12px;cursor:pointer;margin-left:6px">+ Create Missing Records</button><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><title>Client Flow Export</title>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
@@ -44,6 +43,7 @@ select:focus,input:focus{outline:none;border-color:#8C6A2F;background:#FFFBF5}
 
 <div class="bar">
   <button class="btn" id="load-btn" onclick="loadData()">Load All Clients</button>
+  <button id="create-missing-btn" onclick="createMissingRecords()" style="display:none;background:#F59E0B;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-weight:600;font-size:12px;cursor:pointer;margin-left:6px">+ Create Missing Records</button>
   <button class="btn btn-dl" id="dl-btn" onclick="downloadExcel()" disabled>Download Excel</button>
   <button class="btn btn-clr" onclick="clearSaved()">Clear Saved Edits</button>
   <span class="stat" id="stats" style="display:none"></span>
@@ -178,22 +178,37 @@ function buildRows(){
 }
 
 function createMissingRecords(){
-  if(!allClients.length){log("Load clients first.");return;}
+  if(!allClients.length){
+    alert("Click \"Load All Clients\" first.");
+    return;
+  }
   var missing=allClients.filter(function(c){
     var ik=episodeKey(c),nk=safeKey(c.name);
     return!savedEdits[ik]&&!savedEdits[nk];
   });
-  if(!missing.length){log("All clients already have flow records.");return;}
-  log("Creating "+missing.length+" blank records…");
-  var done=0;
+  if(!missing.length){
+    alert("All clients already have flow records.");
+    return;
+  }
+  if(!confirm("Create blank flow records for "+missing.length+" clients?\n\n"
+    +missing.map(function(c){return c.name;}).join("\n")))return;
+  log("Creating "+missing.length+" records…");
+  showSave(true);
+  var done=0, errs=0;
   missing.forEach(function(c){
     var key=episodeKey(c);
     EDITS_REF.child(key).set(
       {_name:c.name,_admit:c.pdiAdmit||c.sigAdmit||"",
        admitType:"",priorLOC:"",priorLOClos:"",locHistory:"",
        stepDown:"",stepDownDate:"",notes:""},
-      function(err){done++;if(done===missing.length)
-        log("Created "+done+" records. Reload the page to edit them.");}
+      function(err){
+        if(err)errs++; done++;
+        if(done===missing.length){
+          showSave(false);
+          log("Done: "+(done-errs)+" records created"+(errs?" ("+errs+" errors)":"")+".");
+          rows=buildRows();renderTable();
+        }
+      }
     );
   });
 }
