@@ -349,6 +349,7 @@ function monthKey(d){if(!d)return null;return d.slice(0,7);}
 var charts={};
 var ALL_EPS_LIVE=[];  // global so renderFlowSection can read it
 var _fbClients=[];   // global client roster from Firebase
+var _totalPDI=0, _totalSig=0, _totalActive=0;  // authoritative totals set by render()
 function mkChart(id,cfg){if(charts[id])charts[id].destroy();var ctx=document.getElementById(id);if(!ctx)return;charts[id]=new Chart(ctx,cfg);}
 
 function render(fbClients){
@@ -440,6 +441,10 @@ function render(fbClients){
   var pdiOnly=pdiEps.filter(function(e){return !e.sigAdmit;});
   var pdiActive=pdiEps.filter(function(e){return !e.pdiDisch||e.pdiDisch>=today;});
   var sigActive=sigEps.filter(function(e){return !e.sigDisch||e.sigDisch>=today;});
+  // Store authoritative totals globally for renderFlowSection
+  _totalPDI=pdiEps.length;
+  _totalSig=sigEps.length;
+  _totalActive=pdiActive.filter(function(e){return!e.sigAdmit;}).length+sigActive.length;
 
   // LOS stats
   function losStats(eps,admitKey,dischKey){
@@ -681,10 +686,11 @@ function renderFlowSection(){
     return Object.assign({},e,{_name:name,_prog:prog,_los:parseInt(e.priorLOClos)||null});
   }).filter(function(e){return e._name&&e._name.length>1;});
 
-  // Program totals from authoritative source
-  var totalPDI=episodeSource.filter(function(ep){return ep.pdiAdmit;}).length;
-  var totalSig=episodeSource.filter(function(ep){return ep.sigAdmit;}).length;
-  var totalActive=clients.filter(function(c){
+  // Program totals — use render()-computed globals when available (Firebase-accurate)
+  // Fall back to filtering episodeSource only if render() hasn't run yet
+  var totalPDI=(_totalPDI>0)?_totalPDI:episodeSource.filter(function(ep){return ep.pdiAdmit;}).length;
+  var totalSig=(_totalSig>0)?_totalSig:episodeSource.filter(function(ep){return ep.sigAdmit;}).length;
+  var totalActive=(_totalActive>0)?_totalActive:clients.filter(function(c){
     var d=(c.program==='PDI'?c.pdiDischarge||c.pdiDisch:c.sigDischarge||c.sigDisch||c.endDate)||'';
     return!d||d>=TODAY;
   }).length||'—';
@@ -1224,7 +1230,7 @@ firebase.database().ref('schedule_v3').on('value',function(snap){
   if(raw&&raw.blob){try{var d=JSON.parse(raw.blob);if(Array.isArray(d.clients))clients=d.clients;}catch(e){}}
   _fbClients=clients;
   render(clients);
-  if(Object.keys(_flowEdits).length)renderFlowSection();
+  renderFlowSection();  // always re-render with fresh Firebase totals
 },function(err){
   document.getElementById('ldot').style.background='#c00';
   document.getElementById('llbl').textContent='Offline';
