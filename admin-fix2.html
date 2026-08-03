@@ -43,7 +43,7 @@ select:focus,input:focus{outline:none;border-color:#8C6A2F;background:#FFFBF5}
 
 <div class="bar">
   <button class="btn" id="load-btn" onclick="loadData()">Load All Clients</button>
-  <button id="create-missing-btn" onclick="createMissingRecords()" style="display:none;background:#F59E0B;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-weight:600;font-size:12px;cursor:pointer;margin-left:6px">+ Create Missing Records</button>
+  <button id="create-missing-btn" onclick="fixAndCreateRecords()" style="display:none;background:#F59E0B;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-weight:600;font-size:12px;cursor:pointer;margin-left:6px">✎ Fix &amp; Create Records</button>
   <button class="btn btn-dl" id="dl-btn" onclick="downloadExcel()" disabled>Download Excel</button>
   <button class="btn btn-clr" onclick="clearSaved()">Clear Saved Edits</button>
   <span class="stat" id="stats" style="display:none"></span>
@@ -177,38 +177,56 @@ function buildRows(){
   }).sort(function(a,b){return a.name.localeCompare(b.name);});
 }
 
-function createMissingRecords(){
-  if(!allClients.length){
-    alert("Click \"Load All Clients\" first.");
-    return;
-  }
+function fixAndCreateRecords(){
+  if(!allClients.length){alert("Click \"Load All Clients\" first.");return;}
+
+  // Step 1: For every client, check their edit record and stamp _name if blank
+  var fixed=0;
+  allClients.forEach(function(c){
+    var ik=episodeKey(c), nk=safeKey(c.name);
+    var key=savedEdits[ik]?ik:(savedEdits[nk]?nk:null);
+    if(!key)return; // no record yet — handled below
+    var rec=savedEdits[key];
+    if(!rec._name||rec._name.trim()===""){
+      EDITS_REF.child(key).update({_name:c.name,_admit:c.pdiAdmit||c.sigAdmit||""});
+      fixed++;
+    }
+  });
+  if(fixed>0)log("Stamped _name on "+fixed+" existing records.");
+
+  // Step 2: Create blank records for clients with no record at all
   var missing=allClients.filter(function(c){
     var ik=episodeKey(c),nk=safeKey(c.name);
     return!savedEdits[ik]&&!savedEdits[nk];
   });
+
   if(!missing.length){
-    alert("All clients already have flow records.");
+    if(fixed>0){
+      log("All records exist. Refreshing table with fixed names…");
+      setTimeout(function(){rows=buildRows();renderTable();},1500);
+    } else {
+      log("All records already have names. No action needed.");
+    }
     return;
   }
+
   if(!confirm("Create blank flow records for "+missing.length+" clients?\n\n"
-    +missing.map(function(c){return c.name;}).join("\n")))return;
+    +missing.map(function(c){return "  • "+c.name;}).join("\n")))return;
+
   log("Creating "+missing.length+" records…");
   showSave(true);
-  var done=0, errs=0;
+  var done=0,errs=0;
   missing.forEach(function(c){
-    var key=episodeKey(c);
-    EDITS_REF.child(key).set(
+    EDITS_REF.child(episodeKey(c)).set(
       {_name:c.name,_admit:c.pdiAdmit||c.sigAdmit||"",
        admitType:"",priorLOC:"",priorLOClos:"",locHistory:"",
        stepDown:"",stepDownDate:"",notes:""},
-      function(err){
-        if(err)errs++; done++;
+      function(err){if(err)errs++;done++;
         if(done===missing.length){
           showSave(false);
-          log("Done: "+(done-errs)+" records created"+(errs?" ("+errs+" errors)":"")+".");
+          log("Done: "+(done-errs)+" created"+(errs?" ("+errs+" errors)":"")+".");
           rows=buildRows();renderTable();
-        }
-      }
+        }}
     );
   });
 }
