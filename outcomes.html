@@ -718,8 +718,11 @@ function renderFlowSection(){
   var sigCov=totalSig?Math.round(sigEdits.length/totalSig*100):0;
 
   // Subtitle
+  var _cpdi=(document.getElementById('c-pdi')||{}).textContent||'?';
+  var _csig=(document.getElementById('c-sig')||{}).textContent||'?';
   var sub=document.getElementById('flow-sub');
-  if(sub)sub.textContent=dedupedEdits.length+' of '+(totalPDI+totalSig)+' total episodes have flow data  ·  '
+  if(sub)sub.textContent='[DEBUG c-pdi='+_cpdi+' c-sig='+_csig+' clients='+clients.length+' totalPDI='+totalPDI+' totalSig='+totalSig+'] '
+    +dedupedEdits.length+' of '+(totalPDI+totalSig)+' total episodes have flow data  ·  '
     +pdiEdits.length+' of '+totalPDI+' PDI ('+pdiCov+'%)  ·  '
     +sigEdits.length+' of '+totalSig+' Signature ('+sigCov+'%)';
 
