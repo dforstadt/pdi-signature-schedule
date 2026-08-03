@@ -656,8 +656,12 @@ function renderFlowSection(){
     if(c.pdiAdmit&&c.pdiAdmit!==c.sigAdmit)_pdiNames.add(k);
     if(c.sigAdmit)_sigNames.add(k);
   });
+  // totalSig = episode count (Layla counted twice = 27)
+  // sigEdits also counts Layla twice so denominator and numerator match
   var totalPDI=_pdiNames.size||episodeSource.filter(function(ep){return ep.pdiAdmit;}).length;
-  var totalSig=_sigNames.size||episodeSource.filter(function(ep){return ep.sigAdmit;}).length;
+  var totalSig=(episodeSource.filter(function(ep){return ep.sigAdmit;}).length
+    +clients.filter(function(c){return c.sigAdmit&&!_sigNames.has(normFlowName(c.name||''));}).length)
+    ||_sigNames.size;
   var totalActive=(_totalActive>0)?_totalActive:0;
   var clientById={},clientByName={};
   clients.forEach(function(c){if(c.id)clientById[c.id]=c;clientByName[normFlowName(c.name||'')]=c;});
@@ -673,16 +677,23 @@ function renderFlowSection(){
     var score=function(r){return(r.admitType?2:0)+(r.priorLOC?1:0)+(r.stepDown?2:0)+(r._los?1:0);};
     if(!byName[k]||score(e)>score(byName[k]))byName[k]=e;
   });
+  // Build pdiEdits/sigEdits by walking episodeSource.
+  // sigEdits allows the same name MULTIPLE times — one entry per episode.
+  // This means Layla S (2 Sig episodes) appears twice in sigEdits.
+  // pdiEdits stays deduplicated by name (PDI is one admission per client).
   var pdiEdits=[],sigEdits=[],pdiSeen=new Set(),sigSeen=new Set();
   episodeSource.forEach(function(ep){
     var k=normFlowName(ep.name||''),edit=byName[k];if(!edit)return;
     if(ep.pdiAdmit&&!pdiSeen.has(k)){pdiEdits.push(edit);pdiSeen.add(k);}
-    if(ep.sigAdmit&&!sigSeen.has(k)){sigEdits.push(edit);sigSeen.add(k);}
+    // Sig: push once PER EPISODE (no sigSeen dedup from episodeSource)
+    if(ep.sigAdmit){sigEdits.push(edit);sigSeen.add(k);}
   });
+  // Firebase clients: only add if not already counted from episodeSource
   clients.forEach(function(c){
     var k=normFlowName(c.name||''),edit=byName[k];if(!edit)return;
     var hasPDI=!!c.pdiAdmit&&c.pdiAdmit!==c.sigAdmit,hasSig=!!c.sigAdmit;
     if(hasPDI&&!pdiSeen.has(k)){pdiEdits.push(edit);pdiSeen.add(k);}
+    // For Firebase Sig clients not in episodeSource, add once
     if(hasSig&&!sigSeen.has(k)){sigEdits.push(edit);sigSeen.add(k);}
   });
   var editNameSet=new Set(Object.keys(byName));
