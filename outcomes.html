@@ -754,6 +754,16 @@ function renderFlowSection(){
   renderSourceChart('sig-source-chart',sigExt,sigInt,sigEdits,totalSig,'sig-source-detail','sig-coverage-note','Signature',missingSig);
   var capEl=document.getElementById('flow-source-caption');
   if(capEl){var pN=pdiExt.length+pdiInt.length,sN=sigExt.length+sigInt.length;capEl.innerHTML=(pN?'PDI: '+(pdiExt.length>pdiInt.length?'<strong>External dominant</strong>':pdiInt.length>pdiExt.length?'<strong>Internal dominant</strong>':'Even split')+' ('+pN+' typed). ':'')+(sN?'Signature: '+(sigExt.length>sigInt.length?'<strong>External dominant</strong>':sigInt.length>sigExt.length?'<strong>Internal dominant</strong>':'Even split')+' ('+sN+' typed).':'');}
+  function normLOC(l){
+    if(!l)return l;
+    var m={'Residential':'Lifeskills Residential','RTC':'Lifeskills Residential',
+      'Lifeskills RTC':'Lifeskills Residential','PHP':'Lifeskills PHP',
+      'IOP':'Lifeskills IOP','OP':'Lifeskills OP','Outpatient':'Lifeskills OP',
+      'RTC External':'Residential (External)','PHP External':'PHP (External)',
+      'IOP External':'IOP (External)','OP External':'OP (External)'};
+    return m[l.trim()]||l;
+  }
+
   function renderLOS(srcEdits,chartId,kpisId,color,prog){
     var byLOC={};
     srcEdits.filter(function(e){return e.admitType==='Internal'&&e.priorLOC&&e.priorLOC!=='None'&&e._los&&e._los>0;}).forEach(function(e){var loc=normLOC(e.priorLOC);if(!byLOC[loc])byLOC[loc]=[];byLOC[loc].push(e._los);});
