@@ -615,170 +615,25 @@ function kpi(label, value, sub, color){
     +'</div>';
 }
 
-function renderFlowSection(){
-  var cb=document.getElementById('flow-coverage-bar');
-  if(!Object.keys(_flowEdits).length){
-    if(cb){cb.style.display='block';cb.style.background='#FFF9EC';cb.style.borderColor='#F5C842';
-      cb.innerHTML='<strong>No flow data entered yet.</strong> Open the '
-        +'<a href="admin-fix2.html" style="color:var(--accent)">Client Flow Mapping tool</a> to begin.';}
-    return;
-  }
+firebase.database().ref('schedule_v3').on('value',function(snap){
+  document.getElementById('ldot').className='ldot on';
+  document.getElementById('llbl').textContent='Live • Auto-updating';
+  var clients=[];
+  var raw=snap.val();
+  _fbClients=[];  // reset before rebuild
+  if(raw&&raw.blob){try{var d=JSON.parse(raw.blob);if(Array.isArray(d.clients))clients=d.clients;}catch(e){}}
+  _fbClients=clients;
+  render(clients);
+  if(Object.keys(_flowEdits).length)renderFlowSection();
+},function(err){
+  document.getElementById('ldot').style.background='#c00';
+  document.getElementById('llbl').textContent='Offline';
+  render([]);
+});
 
-  var episodeSource=(ALL_EPS_LIVE&&ALL_EPS_LIVE.length)?ALL_EPS_LIVE:ALL_EPISODES;
-  var clients=(_fbClients&&_fbClients.length)?_fbClients:[];
-  // Use unique client name count (not episode count) so Layla's readmission
-  // doesn't inflate the denominator beyond what sigEdits can match (1 record per name).
-  // _epSigNames / _epPdiNames: from episodeSource ONLY (not clients)
-  // Used to identify which Firebase clients are NEW (not in ALL_EPISODES)
-  var _epPdiNames=new Set(), _epSigNames=new Set();
-  episodeSource.forEach(function(ep){
-    var k=normFlowName(ep.name||'');
-    if(ep.pdiAdmit)_epPdiNames.add(k);
-    if(ep.sigAdmit)_epSigNames.add(k);
-  });
-  // totalSig = ALL_EPISODES Sig episode count + Firebase-only Sig clients (unique names)
-  // ALL_EPISODES Sig episodes = 23 (Layla counted twice)
-  // Firebase-only new Sig clients = those in _fbClients with sigAdmit not in _epSigNames
-  var _fbSigNew=clients.filter(function(c){
-    return c.sigAdmit&&!_epSigNames.has(normFlowName(c.name||''));
-  });
-  var _fbPdiNew=clients.filter(function(c){
-    return c.pdiAdmit&&c.pdiAdmit!==c.sigAdmit&&!_epPdiNames.has(normFlowName(c.name||''));
-  });
-  var totalSig=episodeSource.filter(function(ep){return ep.sigAdmit;}).length
-    +_fbSigNew.length
-    ||episodeSource.filter(function(ep){return ep.sigAdmit;}).length;
-  var totalPDI=_epPdiNames.size+_fbPdiNew.length
-    ||episodeSource.filter(function(ep){return ep.pdiAdmit;}).length;
-  // _sigNames and _pdiNames for downstream use (conversion detection etc.)
-  var _sigNames=new Set(); _epSigNames.forEach(function(k){_sigNames.add(k);});
-  _fbSigNew.forEach(function(c){_sigNames.add(normFlowName(c.name||''));});
-  var _pdiNames=new Set(); _epPdiNames.forEach(function(k){_pdiNames.add(k);});
-  _fbPdiNew.forEach(function(c){_pdiNames.add(normFlowName(c.name||''));});
-  var totalActive=(_totalActive>0)?_totalActive:0;
-  var clientById={},clientByName={};
-  clients.forEach(function(c){if(c.id)clientById[c.id]=c;clientByName[normFlowName(c.name||'')]=c;});
-  var rawEdits=Object.entries(_flowEdits).map(function(kv){
-    var key=kv[0],e=kv[1],name=e._name||'';
-    if(!name&&clientById[key])name=clientById[key].name||'';
-    if(!name){var dec=key.replace(/_/g,' ').trim();var mc=clientByName[normFlowName(dec)];name=mc?mc.name:dec;}
-    return Object.assign({},e,{_name:name,_los:parseInt(e.priorLOClos)||null});
-  }).filter(function(e){return e._name&&e._name.length>1;});
-  var byName={};
-  rawEdits.forEach(function(e){
-    var k=normFlowName(e._name||'');if(!k)return;
-    var score=function(r){return(r.admitType?2:0)+(r.priorLOC?1:0)+(r.stepDown?2:0)+(r._los?1:0);};
-    if(!byName[k]||score(e)>score(byName[k]))byName[k]=e;
-  });
-  // Build pdiEdits/sigEdits by walking episodeSource.
-  // sigEdits allows the same name MULTIPLE times — one entry per episode.
-  // This means Layla S (2 Sig episodes) appears twice in sigEdits.
-  // pdiEdits stays deduplicated by name (PDI is one admission per client).
-  var pdiEdits=[],sigEdits=[],pdiSeen=new Set(),sigSeen=new Set();
-  episodeSource.forEach(function(ep){
-    var k=normFlowName(ep.name||''),edit=byName[k];if(!edit)return;
-    if(ep.pdiAdmit&&!pdiSeen.has(k)){pdiEdits.push(edit);pdiSeen.add(k);}
-    // Sig: push once PER EPISODE (no sigSeen dedup from episodeSource)
-    if(ep.sigAdmit){sigEdits.push(edit);sigSeen.add(k);}
-  });
-  // Firebase clients: only add if not already counted from episodeSource
-  clients.forEach(function(c){
-    var k=normFlowName(c.name||''),edit=byName[k];if(!edit)return;
-    var hasPDI=!!c.pdiAdmit&&c.pdiAdmit!==c.sigAdmit,hasSig=!!c.sigAdmit;
-    if(hasPDI&&!pdiSeen.has(k)){pdiEdits.push(edit);pdiSeen.add(k);}
-    // For Firebase Sig clients not in episodeSource, add once
-    if(hasSig&&!sigSeen.has(k)){sigEdits.push(edit);sigSeen.add(k);}
-  });
-  var editNameSet=new Set(Object.keys(byName));
-  var missingPDI=episodeSource.filter(function(ep){return ep.pdiAdmit&&!editNameSet.has(normFlowName(ep.name||''));}).map(function(ep){return ep.name;});
-  var missingSig=episodeSource.filter(function(ep){return ep.sigAdmit&&!editNameSet.has(normFlowName(ep.name||''));}).map(function(ep){return ep.name;});
-  var pdiCov=totalPDI?Math.round(pdiEdits.length/totalPDI*100):0;
-  var sigCov=totalSig?Math.round(sigEdits.length/totalSig*100):0;
-  var sub=document.getElementById('flow-sub');
-  if(sub)sub.textContent=Object.keys(byName).length+' records  ·  PDI: '+pdiEdits.length+'/'+totalPDI+' ('+pdiCov+'%)  ·  Sig: '+sigEdits.length+'/'+totalSig+' ('+sigCov+'%)';
-  if(cb){cb.style.display='block';cb.style.background='#F0F7FF';cb.style.borderColor='#C0D8F0';
-    cb.innerHTML='<strong>Coverage:</strong> &nbsp;PDI '+pdiEdits.length+'/'+totalPDI+' &nbsp;|&nbsp; Signature '+sigEdits.length+'/'+totalSig
-      +(missingPDI.length||missingSig.length?'<br><span style="color:#B45309;font-size:10px">&#9888; No flow record found — PDI: '+(missingPDI.join(', ')||'none')+' &nbsp;|&nbsp; Sig: '+(missingSig.join(', ')||'none')+'</span>':'')+'&nbsp;|&nbsp;<em><a href="admin-fix2.html" style="color:var(--accent)">Flow Mapping tool</a></em>';}
-  var PDI_C='#4A6C8A',SIG_C='#6B5C45',EXT_C='#1D9E75',INT_C='#3786DD';
-  var censusEl=document.getElementById('flow-census');
-  if(censusEl)censusEl.innerHTML=kpi('Total PDI episodes',totalPDI,'all time',PDI_C)+kpi('Total Signature episodes',totalSig,'all time',SIG_C)+kpi('PDI\u2192Sig conversions',episodeSource.filter(function(e){return e.pdiAdmit&&e.sigAdmit&&!e.sigFirst;}).length,'direct pathway',EXT_C)+kpi('Active clients',totalActive||'—','currently enrolled','var(--amber)');
-  var pdiTyped=pdiEdits.filter(function(e){return e.admitType;});
-  var pdiExt=pdiTyped.filter(function(e){return e.admitType==='External';});
-  var pdiInt=pdiTyped.filter(function(e){return e.admitType==='Internal';});
-  // Signature source split:
-  // PDI→Sig conversions are ALWAYS Internal — they transferred from PDI within Lifeskills,
-  // regardless of how they originally entered PDI (External or Internal).
-  // Only Sig-only admits use their actual admitType for External/Internal classification.
-  var sigExt=sigEdits.filter(function(e){
-    var k=normFlowName(e._name||'');
-    var isConversion=pdiSeen.has(k)&&sigSeen.has(k); // in both PDI and Sig
-    return!isConversion&&e.admitType==='External';
-  });
-  var sigInt=sigEdits.filter(function(e){
-    var k=normFlowName(e._name||'');
-    var isConversion=pdiSeen.has(k)&&sigSeen.has(k);
-    return isConversion||(e.admitType==='Internal'); // conversions always Internal
-  });
-  var sigTyped=sigEdits.filter(function(e){
-    var k=normFlowName(e._name||'');
-    var isConversion=pdiSeen.has(k)&&sigSeen.has(k);
-    return isConversion||!!e.admitType; // conversions always count as typed
-  });
-  function renderSourceChart(chartId,ext,int,srcEdits,enroll,detailId,covId,prog,missList){
-    var typed=ext.length+int.length;
-    // noType: flow edit exists but admitType not set
-    var noType=srcEdits.filter(function(e){return!e.admitType;}).map(function(e){return e._name;});
-    // Also catch Firebase Sig clients in _fbClients whose flow edit has no admitType
-    if(prog==='Signature'){
-      clients.forEach(function(c){
-        if(!c.sigAdmit)return;
-        var k=normFlowName(c.name||'');
-        var edit=byName[k];
-        if(edit&&!edit.admitType&&noType.indexOf(c.name)<0)noType.push(c.name);
-      });
-    }
-    var covEl=document.getElementById(covId);
-    if(covEl)covEl.innerHTML=typed+' of '+enroll+' '+prog+' clients have source data'
-      +(missList.length?'<br><span style="color:#B45309;font-size:10px">&#9888; No flow record found for: <strong>'+missList.join(', ')+'</strong></span>':'')
-      +(noType.length?'<br><span style="color:#B45309;font-size:10px">&#9888; Flow record exists but <strong>Admission Type not set</strong>: '
-        +noType.map(function(n){return'<a href="admin-fix2.html" style="color:var(--accent);font-weight:700">'+n+'</a>';}).join(', ')
-        +'</span>':'');
-    var detEl=document.getElementById(detailId);
-    if(!typed){if(detEl)detEl.innerHTML='<span style="color:var(--tx3);font-style:italic;font-size:10px">No source data yet</span>';return;}
-    mkChart(chartId,{type:'doughnut',data:{labels:['External referral','Internal transfer'],datasets:[{data:[ext.length,int.length],backgroundColor:['rgba(29,158,117,.85)','rgba(55,134,221,.85)'],borderColor:['#1D9E75','#3786DD'],borderWidth:2}]},options:{cutout:'55%',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){var pct=typed?Math.round(ctx.parsed/typed*100):0;return ctx.label+': '+ctx.parsed+' ('+pct+'%)';}}}}}});
-    if(detEl){var extPct=typed?Math.round(ext.length/typed*100):0,intPct=typed?Math.round(int.length/typed*100):0;
-      detEl.innerHTML='<div style="margin-bottom:12px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span style="width:14px;height:14px;border-radius:50%;background:#1D9E75;flex-shrink:0"></span><span style="font-size:22px;font-weight:700;color:#1D9E75">'+ext.length+'</span><span style="font-size:11px;color:var(--tx3)">external referrals<br>('+extPct+'% of typed)</span></div><div style="display:flex;align-items:center;gap:8px"><span style="width:14px;height:14px;border-radius:50%;background:#3786DD;flex-shrink:0"></span><span style="font-size:22px;font-weight:700;color:#3786DD">'+int.length+'</span><span style="font-size:11px;color:var(--tx3)">internal transfers<br>('+intPct+'% of typed)</span></div></div>'+(prog==='Signature'?'<div style="font-size:9px;color:var(--tx3);border-top:1px solid var(--bd);padding-top:8px">PDI\u2192Sig clients counted as Internal</div>':'');
-    }
-  }
-  renderSourceChart('pdi-source-chart',pdiExt,pdiInt,pdiEdits,totalPDI,'pdi-source-detail','pdi-coverage-note','PDI',missingPDI);
-  renderSourceChart('sig-source-chart',sigExt,sigInt,sigEdits,totalSig,'sig-source-detail','sig-coverage-note','Signature',missingSig);
-  var capEl=document.getElementById('flow-source-caption');
-  if(capEl){var pN=pdiExt.length+pdiInt.length,sN=sigExt.length+sigInt.length;capEl.innerHTML=(pN?'PDI: '+(pdiExt.length>pdiInt.length?'<strong>External dominant</strong>':pdiInt.length>pdiExt.length?'<strong>Internal dominant</strong>':'Even split')+' ('+pN+' typed). ':'')+(sN?'Signature: '+(sigExt.length>sigInt.length?'<strong>External dominant</strong>':sigInt.length>sigExt.length?'<strong>Internal dominant</strong>':'Even split')+' ('+sN+' typed).':'');}
-  function normLOC(l){
-    if(!l)return l;
-    var m={'Residential':'Lifeskills Residential','RTC':'Lifeskills Residential',
-      'Lifeskills RTC':'Lifeskills Residential','PHP':'Lifeskills PHP',
-      'IOP':'Lifeskills IOP','OP':'Lifeskills OP','Outpatient':'Lifeskills OP',
-      'RTC External':'Residential (External)','PHP External':'PHP (External)',
-      'IOP External':'IOP (External)','OP External':'OP (External)'};
-    return m[l.trim()]||l;
-  }
-
-  function renderLOS(srcEdits,chartId,kpisId,color,prog){
-    var byLOC={};
-    srcEdits.filter(function(e){return e.admitType==='Internal'&&e.priorLOC&&e.priorLOC!=='None'&&e._los&&e._los>0;}).forEach(function(e){var loc=normLOC(e.priorLOC);if(!byLOC[loc])byLOC[loc]=[];byLOC[loc].push(e._los);});
-    var locs=Object.keys(byLOC).sort(function(a,b){return(byLOC[b].reduce(function(s,v){return s+v;},0)/byLOC[b].length)-(byLOC[a].reduce(function(s,v){return s+v;},0)/byLOC[a].length);});
-    var kpisEl=document.getElementById(kpisId);
-    if(!locs.length){if(kpisEl)kpisEl.innerHTML='<div style="font-size:10px;color:var(--tx3);font-style:italic;grid-column:1/-1">No internal admit LOS data yet for '+prog+'.</div>';return;}
-    var all=locs.reduce(function(a,l){return a.concat(byLOC[l]);},[]); var s=losStats(all);
-    if(kpisEl&&s)kpisEl.innerHTML=kpi('Average',s.avg+' days','before '+prog,color)+kpi('Shortest',s.min+' days','recorded',EXT_C)+kpi('Longest',s.max+' days','recorded','#C05020');
-    mkChart(chartId,{type:'bar',data:{labels:locs,datasets:[{label:'Average days',data:locs.map(function(l){return Math.round(byLOC[l].reduce(function(a,b){return a+b;},0)/byLOC[l].length);}),backgroundColor:color+'cc',borderColor:color,borderWidth:1.5,borderRadius:5},{label:'Shortest',data:locs.map(function(l){return Math.min.apply(null,byLOC[l]);}),backgroundColor:'rgba(29,158,117,.35)',borderWidth:0,borderRadius:3},{label:'Longest',data:locs.map(function(l){return Math.max.apply(null,byLOC[l]);}),backgroundColor:'rgba(192,80,32,.35)',borderWidth:0,borderRadius:3}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:10,boxWidth:12}},tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+ctx.parsed.x+' days';}}}},scales:{x:{beginAtZero:true,title:{display:true,text:'Days at prior level of care',font:{size:9}},ticks:{font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}},y:{ticks:{font:{size:10}},grid:{display:false}}}}});
-  }
-  renderLOS(pdiEdits,'prior-los-pdi-chart','pdi-los-kpis','rgba(74,108,138,1)','PDI');
-  renderLOS(sigEdits,'prior-los-sig-chart','sig-los-kpis','rgba(107,92,69,1)','Signature');
-  function rtcDays(srcEdits){return srcEdits.filter(function(e){return e.admitType==='Internal'&&(normLOC(e.priorLOC||'')).indexOf('Residential')>=0&&e._los>0;});}
-  var pdiRTC=losStats(rtcDays(pdiEdits).map(function(e){return e._los;}));
-  var sigRTC=losStats(rtcDays(sigEdits).map(function(e){return e._los;}));
-  var rtcEl=document.getElementById('flow-rtc-insight');
-  if(rtcEl&&(pdiRTC||sigRTC)){rtcEl.style.display='block';var lines=['<strong style="color:var(--amber)">&#9432; RTC Transition Timing</strong>'];if(pdiRTC)lines.push('Residential\u2192PDI: avg <strong>'+pdiRTC.avg+'d</strong> (range '+pdiRTC.min+'\u2013'+pdiRTC.max+'d, n='+pdiRTC.n+').');if(sigRTC)lines.push('Residential\u2192Signature: avg <strong>'+sigRTC.avg+'d</strong> (range '+sigRTC.min+'\u2013'+sigRTC.max+'d, n='+sigRTC.n+').');rtcEl.innerHTML=lines.join('<br><br>');}
-  >
+function exportPDF(){
+  document.getElementById("print-date").textContent="Generated: "+new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"});
+  window.print();
+}
+</script>
+</body></html>
