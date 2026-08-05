@@ -1068,7 +1068,9 @@ function computeStipends(){
     var disch=toISO(cl.pdiDischarge||cl.pdiDisch);
     if(disch)weekSet[getSat(fromISO(disch))]=true;
   });
-  allWeeks=Object.keys(weekSet).sort().filter(function(w){return w>='2026-03-27';});
+  // Floor: use PPD schedule start (or normal floor) so PPD totals can go back to protocol start
+  var _allWeeksFloor=window._ppdTotalsMode?PAY_PERIODS[0].start:'2026-03-27';
+  allWeeks=Object.keys(weekSet).sort().filter(function(w){return w>=_allWeeksFloor;});
   if(fltFrom)allWeeks=allWeeks.filter(function(w){return w>=getSat(fromISO(fltFrom));});
   if(fltTo)  allWeeks=allWeeks.filter(function(w){return w<=getSat(fromISO(fltTo));});
 
@@ -1630,7 +1632,7 @@ function renderPPDTotals(){
   if(teEl)teEl.value=today;
   if(origTrack)origTrack.value='all';
   var D=null;
-  try{D=computeStipends();}catch(e){wrap.innerHTML='<p style="color:red;font-size:12px">Error computing totals.</p>';return;}
+  try{window._ppdTotalsMode=true;D=computeStipends();window._ppdTotalsMode=false;}catch(e){window._ppdTotalsMode=false;wrap.innerHTML='<p style="color:red;font-size:12px">Error: '+e.message+'</p>';return;}
   // Restore filter
   if(feEl)feEl.value=origFrom;
   if(teEl)teEl.value=origTo;
