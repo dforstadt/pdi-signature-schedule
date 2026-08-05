@@ -49,16 +49,6 @@ function shiftWeek(dir){
 }
 // Restore persisted week filter on load
 function restorePersistedWeek(){
-  // Restore PPD if saved
-  try{
-    var savedPPD=sessionStorage.getItem('_stipPPD');
-    if(savedPPD!==null){applyPPD(parseInt(savedPPD));return true;}
-  }catch(e){}
-  // Default to current PPD
-  applyPPD(getCurrentPPDIndex());
-  return true;
-}
-function restorePersistedWeek_ORIG(){
   try{
     var from=sessionStorage.getItem('_stipWkFrom');
     var to=sessionStorage.getItem('_stipWkTo');
@@ -388,8 +378,8 @@ window.onerror=function(msg,src,line,col,err){
 </div>
 <div class="filters">
   <!-- Week navigator -->
-  <button class="wk-nav-btn" id="ppd-prev" onclick="shiftPPD(-1)" title="Previous pay period" disabled>‹</button>
-  <button class="wk-nav-btn" id="ppd-next" onclick="shiftPPD(1)" title="Next pay period">›</button>
+  <button class="wk-nav-btn" id="ppd-prev-btn" onclick="shiftPPD(-1)" title="Prev pay period" disabled>‹</button>
+  <button class="wk-nav-btn" id="ppd-next-btn" onclick="shiftPPD(1)" title="Next pay period">›</button>
   <div class="wk-range-display" id="wk-range-display" onclick="toggleWeekPicker()" title="Click to pick date range">
     <span id="wk-range-lbl">All weeks</span>
     <span style="font-size:10px;color:var(--tx3);margin-left:6px">▾</span>
@@ -474,7 +464,6 @@ window.onerror=function(msg,src,line,col,err){
   <div id="tab-bystaff" class="hidden">
     <div style="font-size:11px;text-align:right;padding:4px 8px;min-height:18px;font-weight:600" id="approval-save-ind"></div>
 <div style="padding:14px 18px 0"><details style="background:#f7f5f2;border-radius:8px;padding:12px 16px;border:1px solid #e0ddd8;margin-bottom:10px"><summary style="font-size:12px;font-weight:700;color:#1B2A4A;cursor:pointer">&#9888; No Stipend Overrides</summary><div style="font-size:11px;color:#888;margin:10px 0 8px">One provider name per line, exactly as shown in the roster. These providers receive $0 regardless of sessions.</div><textarea id="no-stipend-names" rows="4" placeholder="e.g. Dr. Smith" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:6px;font-size:12px;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea><div style="margin-top:8px;display:flex;align-items:center;gap:10px"><button onclick="saveNoStipendList()" style="background:#1B2A4A;color:#fff;border:none;padding:6px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">Save</button><span id="no-stipend-saved" style="font-size:11px;color:#1D9E75;display:none">&#10003; Saved</span></div></details></div>
-    <div id="no-stip-diag"></div>
     <div id="bystaff-content"></div>
 </div>
 <div id="tab-leadtech" class="hidden" style="padding:20px">
@@ -634,8 +623,8 @@ FB.on('value',function(snap){
   document.getElementById('live-lbl').textContent='Live';
   document.getElementById('loading').classList.add('hidden');
   window._fbLoaded=true;
-  startManualListener(); // start early so manual entries are ready before render
-  loadApprovals(function(){restorePersistedWeek();render();});
+  startManualListener();
+  loadApprovals(function(){initPPD();});
 },function(err){
   document.getElementById('live-dot').className='live-dot off';
   document.getElementById('live-lbl').textContent='Offline';
@@ -990,73 +979,42 @@ var WEEKLY_CORE = WEEKLY_WITH_GUS; // updated per-week inside allWeeks.forEach
 
 
 // ── Pay Period Schedule (Calendar Year 2026) ─────────────────────────────────
-// Each PPD runs Sunday–Saturday, bi-weekly. Calculation still uses internal
-// Friday-Thursday billing weeks; PPD sets the date range for the filter.
-var PAY_PERIODS = [
-  {ppd:1,  start:'2025-12-14',end:'2025-12-27'},
-  {ppd:2,  start:'2025-12-28',end:'2026-01-10'},
-  {ppd:3,  start:'2026-01-11',end:'2026-01-24'},
-  {ppd:4,  start:'2026-01-25',end:'2026-02-07'},
-  {ppd:5,  start:'2026-02-08',end:'2026-02-21'},
-  {ppd:6,  start:'2026-02-22',end:'2026-03-07'},
-  {ppd:7,  start:'2026-03-08',end:'2026-03-21'},
-  {ppd:8,  start:'2026-03-22',end:'2026-04-04'},
-  {ppd:9,  start:'2026-04-05',end:'2026-04-18'},
-  {ppd:10, start:'2026-04-19',end:'2026-05-02'},
-  {ppd:11, start:'2026-05-03',end:'2026-05-16'},
-  {ppd:12, start:'2026-05-17',end:'2026-05-30'},
-  {ppd:13, start:'2026-05-31',end:'2026-06-13'},
-  {ppd:14, start:'2026-06-14',end:'2026-06-27'},
-  {ppd:15, start:'2026-06-28',end:'2026-07-11'},
-  {ppd:16, start:'2026-07-12',end:'2026-07-25'},
-  {ppd:17, start:'2026-07-26',end:'2026-08-08'},
-  {ppd:18, start:'2026-08-09',end:'2026-08-22'},
-  {ppd:19, start:'2026-08-23',end:'2026-09-05'},
-  {ppd:20, start:'2026-09-06',end:'2026-09-19'},
-  {ppd:21, start:'2026-09-20',end:'2026-10-03'},
-  {ppd:22, start:'2026-10-04',end:'2026-10-17'},
-  {ppd:23, start:'2026-10-18',end:'2026-10-31'},
-  {ppd:24, start:'2026-11-01',end:'2026-11-14'},
-  {ppd:25, start:'2026-11-15',end:'2026-11-28'},
-  {ppd:26, start:'2026-11-29',end:'2026-12-12'},
-  {ppd:27, start:'2026-12-13',end:'2026-12-26'}
+var PAY_PERIODS=[
+  {ppd:1,start:'2025-12-14',end:'2025-12-27'},{ppd:2,start:'2025-12-28',end:'2026-01-10'},
+  {ppd:3,start:'2026-01-11',end:'2026-01-24'},{ppd:4,start:'2026-01-25',end:'2026-02-07'},
+  {ppd:5,start:'2026-02-08',end:'2026-02-21'},{ppd:6,start:'2026-02-22',end:'2026-03-07'},
+  {ppd:7,start:'2026-03-08',end:'2026-03-21'},{ppd:8,start:'2026-03-22',end:'2026-04-04'},
+  {ppd:9,start:'2026-04-05',end:'2026-04-18'},{ppd:10,start:'2026-04-19',end:'2026-05-02'},
+  {ppd:11,start:'2026-05-03',end:'2026-05-16'},{ppd:12,start:'2026-05-17',end:'2026-05-30'},
+  {ppd:13,start:'2026-05-31',end:'2026-06-13'},{ppd:14,start:'2026-06-14',end:'2026-06-27'},
+  {ppd:15,start:'2026-06-28',end:'2026-07-11'},{ppd:16,start:'2026-07-12',end:'2026-07-25'},
+  {ppd:17,start:'2026-07-26',end:'2026-08-08'},{ppd:18,start:'2026-08-09',end:'2026-08-22'},
+  {ppd:19,start:'2026-08-23',end:'2026-09-05'},{ppd:20,start:'2026-09-06',end:'2026-09-19'},
+  {ppd:21,start:'2026-09-20',end:'2026-10-03'},{ppd:22,start:'2026-10-04',end:'2026-10-17'},
+  {ppd:23,start:'2026-10-18',end:'2026-10-31'},{ppd:24,start:'2026-11-01',end:'2026-11-14'},
+  {ppd:25,start:'2026-11-15',end:'2026-11-28'},{ppd:26,start:'2026-11-29',end:'2026-12-12'},
+  {ppd:27,start:'2026-12-13',end:'2026-12-26'}
 ];
-
-var _currentPPD = null; // currently selected PPD index (0-based), null = all
-
-function getCurrentPPDIndex() {
-  var today = new Date().toISOString().slice(0,10);
-  for(var i=0;i<PAY_PERIODS.length;i++){
-    if(today>=PAY_PERIODS[i].start&&today<=PAY_PERIODS[i].end)return i;
-  }
-  return PAY_PERIODS.length-1;
-}
-
-function applyPPD(idx) {
+var _currentPPD=null;
+function ppdFmtDate(iso){var mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];var d=new Date(iso+'T12:00:00');return mo[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();}
+function applyPPD(idx){
   if(idx<0||idx>=PAY_PERIODS.length)return;
-  _currentPPD=idx;
-  var pp=PAY_PERIODS[idx];
+  _currentPPD=idx;var pp=PAY_PERIODS[idx];
   var fe=document.getElementById('flt-from'),te=document.getElementById('flt-to');
-  if(fe)fe.value=pp.start;
-  if(te)te.value=pp.end;
+  if(fe)fe.value=pp.start;if(te)te.value=pp.end;
   var lbl=document.getElementById('wk-range-lbl');
-  if(lbl)lbl.innerHTML='<span style="font-size:10px;opacity:.7">PPD</span> '+pp.ppd
-    +' &ndash; <span style="font-weight:400;font-size:11px">'+fmtDate(pp.start)+' to '+fmtDate(pp.end)+'</span>';
-  var prevBtn=document.getElementById('ppd-prev'),nextBtn=document.getElementById('ppd-next');
-  if(prevBtn)prevBtn.disabled=(idx<=0);
-  if(nextBtn)nextBtn.disabled=(idx>=PAY_PERIODS.length-1);
-  try{sessionStorage.setItem('_stipPPD',idx);}catch(e){}
-  if(window._fbLoaded)render();
+  if(lbl)lbl.textContent='PPD '+pp.ppd+': '+ppdFmtDate(pp.start)+' - '+ppdFmtDate(pp.end);
+  var pb=document.getElementById('ppd-prev-btn'),nb=document.getElementById('ppd-next-btn');
+  if(pb)pb.disabled=(idx<=0);if(nb)nb.disabled=(idx>=PAY_PERIODS.length-1);
+  try{sessionStorage.setItem('_stipPPD',String(idx));}catch(e){}
+  setTimeout(function(){if(window._fbLoaded)render();},0);
 }
-
-function fmtDate(iso){
-  var d=new Date(iso+'T12:00:00');
-  return['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();
-}
-
-function shiftPPD(dir){
-  var idx=_currentPPD!==null?_currentPPD:getCurrentPPDIndex();
-  applyPPD(idx+dir);
+function shiftPPD(dir){applyPPD((_currentPPD!==null?_currentPPD:0)+dir);}
+function initPPD(){
+  try{var s=sessionStorage.getItem('_stipPPD');if(s!==null){applyPPD(parseInt(s,10));return;}}catch(e){}
+  var t=new Date().toISOString().slice(0,10);
+  for(var i=0;i<PAY_PERIODS.length;i++){if(t>=PAY_PERIODS[i].start&&t<=PAY_PERIODS[i].end){applyPPD(i);return;}}
+  applyPPD(PAY_PERIODS.length-1);
 }
 
 function computeStipends(){
@@ -1377,7 +1335,7 @@ function renderByStaff(D){
 
   // Build week-level census (Sig clients, PDI discharges) from lineItems
   var weekCensus={};
-  D.lineItems.filter(function(li){return!noStipend(li.staff);}).forEach(function(li){
+  D.lineItems.forEach(function(li){
     if(!weekCensus[li.wStart])weekCensus[li.wStart]={sig:{},pdi:{}};
     if(li.track==='Signature'&&li.type==='Weekly Stipend')weekCensus[li.wStart].sig[li.client]=1;
     if(li.track==='PDI'&&li.type==='Flat Stipend')weekCensus[li.wStart].pdi[li.client]=1;
@@ -1385,23 +1343,7 @@ function renderByStaff(D){
 
   // Build staff -> week -> amounts
   var staffMap={};
-  // Show diagnostic of what's in _noStipendOverrides
-  var diagEl=document.getElementById('no-stip-diag');
-  if(diagEl){
-    var allProvs=[];
-    D.lineItems.forEach(function(li){if(allProvs.indexOf(li.staff)<0)allProvs.push(li.staff);});
-    allProvs.sort();
-    diagEl.innerHTML='<details style="font-size:10px;color:#888;margin-top:6px">'
-      +'<summary style="cursor:pointer">Debug: overrides=['+_noStipendOverrides.join(', ')+'] | providers in line items ('+allProvs.length+')</summary>'
-      +'<div style="font-family:monospace;padding:4px;background:#f5f5f5;margin-top:4px">'
-      +allProvs.map(function(p){return'<div>'+(noStipend(p)?'<s style="color:#aaa">'+p+'</s>':'<strong>'+p+'</strong>')+'</div>';}).join('')
-      +'</div></details>';
-  }
-  // Filter out no-stipend providers from line items before building staffMap
-  var filteredItems=D.lineItems.filter(function(li){
-    return!noStipend(li.staff);
-  });
-  filteredItems.forEach(function(li){
+  D.lineItems.forEach(function(li){
     var prov=li.staff;
     if(!staffMap[prov])staffMap[prov]={weeks:{}};
     var wk=li.wStart;
