@@ -259,7 +259,48 @@ td.money.zero{color:var(--tx3);}
     Access Roster
   </button>
   
-  <!-- MANUAL ADJUSTMENTS TAB -->
+  
+<!-- PDI PSYCHOMETRIC TAB -->
+<div id="tab-psychometric" class="hidden" style="padding:20px">
+  <div style="max-width:860px">
+    <h3 style="margin-bottom:4px;color:#1B2A4A">PDI Testing — Psychometric Support</h3>
+    <p style="font-size:12px;color:#888;margin-bottom:20px">$2,133.33 per entry. Select the pay period, provider, and client.</p>
+    <!-- PPD selector -->
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <button onclick="psychShiftPPD(-1)" id="psych-prev" style="background:#f0ece6;border:1px solid #d4cfc8;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:16px;color:#4338ca" disabled>&#8249;</button>
+      <div id="psych-ppd-lbl" style="font-size:13px;font-weight:600;color:#1B2A4A;min-width:280px;text-align:center">—</div>
+      <button onclick="psychShiftPPD(1)" id="psych-next" style="background:#f0ece6;border:1px solid #d4cfc8;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:16px;color:#4338ca">&#8250;</button>
+    </div>
+    <!-- Add entry form -->
+    <div style="background:#f7f5f2;border-radius:10px;padding:16px 20px;margin-bottom:24px;border:1px solid #e0ddd8">
+      <div style="font-size:12px;font-weight:700;color:#1B2A4A;margin-bottom:12px">Add Line Item</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr auto auto;gap:10px;align-items:end">
+        <div>
+          <label style="font-size:10px;font-weight:600;color:#888;display:block;margin-bottom:4px">PROVIDER</label>
+          <select id="psych-prov-sel" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:12px;font-family:inherit"><option value="">Select provider…</option></select>
+        </div>
+        <div>
+          <label style="font-size:10px;font-weight:600;color:#888;display:block;margin-bottom:4px">CLIENT</label>
+          <select id="psych-client-sel" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:12px;font-family:inherit"><option value="">Select client…</option></select>
+        </div>
+        <div>
+          <label style="font-size:10px;font-weight:600;color:#888;display:block;margin-bottom:4px">FEE</label>
+          <div style="padding:8px 12px;background:#fff;border:1px solid #ccc;border-radius:6px;font-size:12px;font-weight:700;color:#1B2A4A">$2,133.33</div>
+        </div>
+        <button onclick="psychAddEntry()" style="background:#4338ca;color:#fff;border:none;padding:9px 18px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">+ Add</button>
+      </div>
+      <div id="psych-add-err" style="font-size:11px;color:#dc2626;margin-top:6px;min-height:16px"></div>
+    </div>
+    <!-- Current PPD entries -->
+    <div style="font-size:12px;font-weight:700;color:#1B2A4A;margin-bottom:8px">Pay Period Entries</div>
+    <div id="psych-entries-wrap" style="overflow-x:auto;margin-bottom:24px"></div>
+    <!-- History -->
+    <div style="font-size:12px;font-weight:700;color:#1B2A4A;margin-bottom:8px;padding-top:16px;border-top:1px solid #eee">All Pay Periods — History</div>
+    <div id="psych-history-wrap" style="overflow-x:auto"></div>
+  </div>
+</div>
+
+<!-- MANUAL ADJUSTMENTS TAB -->
   
 
 <div id="tab-manual" class="hidden" style="padding:20px">
@@ -967,6 +1008,7 @@ function showTab(tab){
   var el=document.getElementById('tab-'+tab);
   if(el)el.classList.remove('hidden');
   if(tab==='leadtech')ltOnTabOpen();
+  if(tab==='psychometric')psychOnTabOpen();
   if(tab==='manual'){startManualListener();setTimeout(renderManualTable,400);}
 }
 
@@ -1341,6 +1383,135 @@ function toggleApproval(key){
 }
 
 
+
+// ══ PDI PSYCHOMETRIC SUPPORT TAB ══
+var PSYCH_DB_PATH='lifeskills_clinical/pdi_psychometric';
+var PSYCH_RATE=2133.33;
+var _psychPPD=null;
+var _psychData={};
+var _psychFBOn=false;
+function psychOnTabOpen(){
+  var pSel=document.getElementById('psych-prov-sel');
+  if(pSel&&pSel.options.length<=1){
+    Object.keys(DATA.providers||{}).filter(function(p){return!noStipend(p);}).sort().forEach(function(p){
+      var o=document.createElement('option');o.value=p;o.textContent=displayName(p)||p;pSel.appendChild(o);
+    });
+  }
+  var cSel=document.getElementById('psych-client-sel');
+  if(cSel&&cSel.options.length<=1){
+    (DATA.clients||[]).filter(function(c){var g=c.program||'';return g==='PDI'||g==='Both';}).sort(function(a,b){return(a.name||'').localeCompare(b.name||'');}).forEach(function(c){
+      var o=document.createElement('option');o.value=c.id;o.textContent=c.name;cSel.appendChild(o);
+    });
+  }
+  if(_psychPPD===null){
+    var t=new Date().toISOString().slice(0,10);_psychPPD=PAY_PERIODS.length-1;
+    for(var i=0;i<PAY_PERIODS.length;i++){if(t>=PAY_PERIODS[i].start&&t<=PAY_PERIODS[i].end){_psychPPD=i;break;}}
+  }
+  if(!_psychFBOn){
+    _psychFBOn=true;
+    firebase.database().ref(PSYCH_DB_PATH).on('value',function(s){_psychData=s.val()||{};psychRender();});
+  }
+  psychSetPPD(_psychPPD);
+}
+function psychSetPPD(idx){
+  if(idx<0||idx>=PAY_PERIODS.length)return;
+  _psychPPD=idx;var pp=PAY_PERIODS[idx];
+  var mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function fd(iso){var d=new Date(iso+'T12:00:00');return mo[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();}
+  var lbl=document.getElementById('psych-ppd-lbl');
+  if(lbl)lbl.textContent='PPD '+pp.ppd+' — '+fd(pp.start)+' to '+fd(pp.end);
+  var pb=document.getElementById('psych-prev'),nb=document.getElementById('psych-next');
+  if(pb)pb.disabled=(idx<=0);if(nb)nb.disabled=(idx>=PAY_PERIODS.length-1);
+  psychRender();
+}
+function psychShiftPPD(dir){psychSetPPD((_psychPPD||0)+dir);}
+function psychAddEntry(){
+  var pSel=document.getElementById('psych-prov-sel');
+  var cSel=document.getElementById('psych-client-sel');
+  var err=document.getElementById('psych-add-err');
+  var prov=pSel?pSel.value:'',cid=cSel?cSel.value:'';
+  if(!prov||!cid){if(err)err.textContent='Please select a provider and client.';return;}
+  if(err)err.textContent='';
+  var pp=PAY_PERIODS[_psychPPD];
+  var c=(DATA.clients||[]).find(function(x){return x.id===cid;});
+  var cName=c?c.name:cid;
+  var key='ppd'+pp.ppd+'_'+Date.now();
+  var entry={ppd:pp.ppd,ppdStart:pp.start,ppdEnd:pp.end,provider:prov,clientId:cid,clientName:cName,amount:PSYCH_RATE,ts:Date.now()};
+  firebase.database().ref(PSYCH_DB_PATH+'/'+key).set(entry,function(e){
+    if(e&&document.getElementById('psych-add-err'))document.getElementById('psych-add-err').textContent='Save failed: '+e.message;
+    else{if(pSel)pSel.value='';if(cSel)cSel.value='';}
+  });
+}
+function psychDelete(key){
+  if(!confirm('Remove this entry?'))return;
+  firebase.database().ref(PSYCH_DB_PATH+'/'+key).remove();
+}
+function psychRender(){psychRenderEntries();psychRenderHistory();}
+function psychRenderEntries(){
+  var wrap=document.getElementById('psych-entries-wrap');if(!wrap||_psychPPD===null)return;
+  var pp=PAY_PERIODS[_psychPPD];
+  var entries=Object.entries(_psychData).filter(function(kv){return kv[1].ppdStart===pp.start;}).sort(function(a,b){return(a[1].ts||0)-(b[1].ts||0);});
+  if(!entries.length){wrap.innerHTML='<p style="color:#aaa;font-size:12px;padding:8px 0">No entries for this pay period.</p>';return;}
+  var total=0;
+  var rows=entries.map(function(kv){
+    var e=kv[1],k=kv[0];total+=e.amount||0;
+    return '<tr style="border-bottom:.5px solid #eee">'
+      +'<td style="padding:8px 10px;font-size:12px">'+(e.provider||'')+'</td>'
+      +'<td style="padding:8px 10px;font-size:12px">'+(e.clientName||e.clientId||'')+'</td>'
+      +'<td style="padding:8px 10px;font-size:12px;text-align:right;font-weight:600">$'+Number(e.amount||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</td>'
+      +'<td style="padding:8px 6px;text-align:center"><button onclick="psychDelete(\'' +k+ '\')" style="background:none;border:none;color:#ccc;cursor:pointer;font-size:18px">&times;</button></td>'
+      +'</tr>';
+  }).join('');
+  wrap.innerHTML='<table style="width:100%;border-collapse:collapse">'
+    +'<thead><tr style="background:#f5f3f0">'
+    +'<th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:700;color:#888">PROVIDER</th>'
+    +'<th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:700;color:#888">CLIENT</th>'
+    +'<th style="padding:7px 10px;text-align:right;font-size:10px;font-weight:700;color:#888">FEE</th>'
+    +'<th></th></tr></thead><tbody>'+rows+'</tbody>'
+    +'<tfoot><tr style="background:#eef2ff;font-weight:700">'
+    +'<td colspan="2" style="padding:8px 10px;font-size:12px">PPD Total</td>'
+    +'<td style="padding:8px 10px;text-align:right;font-size:12px">$'+total.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</td>'
+    +'<td></td></tr></tfoot></table>';
+}
+function psychRenderHistory(){
+  var wrap=document.getElementById('psych-history-wrap');if(!wrap)return;
+  var today=new Date().toISOString().slice(0,10);
+  var ppdMap={};
+  Object.values(_psychData).forEach(function(e){
+    var k=e.ppdStart;
+    if(!ppdMap[k])ppdMap[k]={ppd:e.ppd,start:e.ppdStart,end:e.ppdEnd,total:0,count:0};
+    ppdMap[k].total+=e.amount||0;ppdMap[k].count+=1;
+  });
+  var mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function fd(iso){var d=new Date(iso+'T12:00:00');return mo[d.getMonth()]+' '+d.getDate();}
+  var cum=0;
+  var activePPD=_psychPPD!==null?PAY_PERIODS[_psychPPD].start:null;
+  var rows=PAY_PERIODS.filter(function(pp){return pp.start<=today&&ppdMap[pp.start];}).map(function(pp){
+    var d=ppdMap[pp.start];cum+=d.total;
+    var hi=activePPD===pp.start?'background:#eef2ff;font-weight:700;':'';
+    return '<tr style="'+hi+'border-bottom:.5px solid #eee">'
+      +'<td style="padding:6px 10px;text-align:center;color:#888;font-size:11px">'+pp.ppd+'</td>'
+      +'<td style="padding:6px 10px;font-size:11px;white-space:nowrap">'+fd(pp.start)+' – '+fd(pp.end)+'</td>'
+      +'<td style="padding:6px 10px;text-align:center;font-size:11px;color:#888">'+d.count+' '+(d.count===1?'entry':'entries')+'</td>'
+      +'<td style="padding:6px 10px;text-align:right;font-size:11px;font-weight:600">$'+d.total.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</td>'
+      +'<td style="padding:6px 10px;text-align:right;font-size:11px;color:#6b5c45">$'+cum.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</td>'
+      +'</tr>';
+  }).join('');
+  if(!rows){wrap.innerHTML='<p style="color:#aaa;font-size:12px;padding:8px 0">No history yet.</p>';return;}
+  var grand=Object.values(ppdMap).reduce(function(s,r){return s+r.total;},0);
+  wrap.innerHTML='<table style="width:100%;border-collapse:collapse;min-width:420px">'
+    +'<thead><tr style="background:#1B2A4A;color:#fff">'
+    +'<th style="padding:7px 10px;text-align:center;font-size:10px">PPD</th>'
+    +'<th style="padding:7px 10px;text-align:left;font-size:10px">Period</th>'
+    +'<th style="padding:7px 10px;text-align:center;font-size:10px">Entries</th>'
+    +'<th style="padding:7px 10px;text-align:right;font-size:10px">Total</th>'
+    +'<th style="padding:7px 10px;text-align:right;font-size:10px">Cumulative</th>'
+    +'</tr></thead><tbody>'+rows+'</tbody>'
+    +'<tfoot><tr style="background:#f5f3f0;font-weight:700;border-top:2px solid #1B2A4A">'
+    +'<td colspan="3" style="padding:7px 10px;font-size:11px">Protocol Total</td>'
+    +'<td colspan="2" style="padding:7px 10px;text-align:right;font-size:12px">$'+grand.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</td>'
+    +'</tr></tfoot></table>';
+}
 
 function renderByStaff(D){
   var el=document.getElementById('bystaff-content');if(!el)return;
