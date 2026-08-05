@@ -932,11 +932,9 @@ function computeStipends(){
   // record is missing or has the wrong stipendType in the calendar.
   // Names must match exactly what is used in the calendar provider list.
   // Gus Hernandez last day: July 24, 2026 — exclude from weeks after that date
-  var GUS_LAST_WEEK = '2026-07-24'; // last billing week that includes July 24
-  var weekStart = getSat(fromISO(fltFrom)); // current week start (Friday)
-  var weekEnd = new Date(weekStart); weekEnd.setDate(weekEnd.getDate()+6);
-  var weekEndISO = weekEnd.toISOString().slice(0,10);
-  var includeGus = weekEndISO <= '2026-07-24';
+  var _gusWkEnd = new Date(getSat(fromISO(fltFrom)));
+  _gusWkEnd.setDate(_gusWkEnd.getDate()+6);
+  var includeGus = _gusWkEnd.toISOString().slice(0,10) <= '2026-07-24';
   var WEEKLY_CORE = includeGus
     ? ['David Ockman','Nicole','Gus Hernandez']
     : ['David Ockman','Nicole'];
