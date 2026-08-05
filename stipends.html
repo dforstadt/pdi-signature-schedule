@@ -1068,7 +1068,21 @@ function computeStipends(){
     var disch=toISO(cl.pdiDischarge||cl.pdiDisch);
     if(disch)weekSet[getSat(fromISO(disch))]=true;
   });
-  // Floor: use PPD schedule start (or normal floor) so PPD totals can go back to protocol start
+  // In PPD totals mode: seed weekSet with every billing week in the PPD schedule
+  // so pay periods with no events still appear (with $0)
+  if(window._ppdTotalsMode){
+    var today=new Date().toISOString().slice(0,10);
+    PAY_PERIODS.forEach(function(pp){
+      if(pp.start>today)return;
+      // Walk each Friday-start billing week within this PPD
+      var d=new Date(pp.start+'T12:00:00');
+      var endD=new Date(pp.end+'T12:00:00');
+      while(d<=endD){
+        weekSet[getSat(d)]=true;
+        d.setDate(d.getDate()+7);
+      }
+    });
+  }
   var _allWeeksFloor=window._ppdTotalsMode?PAY_PERIODS[0].start:'2026-03-27';
   allWeeks=Object.keys(weekSet).sort().filter(function(w){return w>=_allWeeksFloor;});
   if(fltFrom)allWeeks=allWeeks.filter(function(w){return w>=getSat(fromISO(fltFrom));});
