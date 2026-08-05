@@ -1037,8 +1037,11 @@ function computeStipends(){
     if(!pdiAdmit)return;
     var pdiDisch=toISO(client.pdiDischarge||client.pdiDisch)||today();
     var provs=new Set();
-    // Ockman/Nicole/Gus always
-    weeklyProviders.forEach(function(p){provs.add(p);});
+    // Ockman/Nicole always; Gus only for episodes where discharge is on/before July 24 2026
+    weeklyProviders.forEach(function(p){
+      if(p==='Gus Hernandez'&&pdiDisch>GUS_CUTOFF)return;
+      provs.add(p);
+    });
     // Session providers: ONLY sessions that occurred DURING the PDI episode
     DATA.events.forEach(function(ev){
       if(ev.clientId!==client.id)return;
