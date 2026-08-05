@@ -480,8 +480,8 @@ window.onerror=function(msg,src,line,col,err){
       <span id="lt-saved-indicator" style="font-size:11px;color:#1D9E75;display:none">&#10003; Saved</span>
     </div>
 
-    <!-- Day column headers -->
-    <div style="display:grid;grid-template-columns:200px repeat(7,44px) 60px 70px 80px;gap:4px;align-items:center;margin-bottom:8px;font-size:10px;font-weight:700;color:#888;text-transform:uppercase">
+    <!-- Day column headers — populated dynamically with dates by ltRenderHeader() -->
+    <div id="lt-header-row" style="display:grid;grid-template-columns:200px repeat(7,44px) 60px 70px 80px;gap:4px;align-items:center;margin-bottom:8px;font-size:10px;font-weight:700;color:#888;text-transform:uppercase">
       <div>Tech Name</div>
       <div style="text-align:center">Mon</div><div style="text-align:center">Tue</div>
       <div style="text-align:center">Wed</div><div style="text-align:center">Thu</div>
@@ -698,7 +698,28 @@ function ltNextWeek() {
   ltInitWeek();
 }
 
+function ltRenderHeader() {
+  var hdr = document.getElementById('lt-header-row');
+  if(!hdr||!ltWeekISO) return;
+  var days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  var mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var cols = ['<div>Tech Name</div>'];
+  for(var i=0;i<7;i++){
+    var d = new Date(ltWeekISO+'T12:00:00');
+    d.setDate(d.getDate()+i);
+    cols.push('<div style="text-align:center;line-height:1.3">'
+      +'<span>'+days[i]+'</span><br>'
+      +'<span style="font-size:9px;font-weight:400;color:#aaa">'+mo[d.getMonth()]+'&nbsp;'+d.getDate()+'</span>'
+      +'</div>');
+  }
+  cols.push('<div style="text-align:center">Days</div>');
+  cols.push('<div style="text-align:center">Total</div>');
+  cols.push('<div></div>');
+  hdr.innerHTML = cols.join('');
+}
+
 function ltRenderRows() {
+  ltRenderHeader();
   var container = document.getElementById('lt-rows');
   if (!container) return;
   container.innerHTML = '';
