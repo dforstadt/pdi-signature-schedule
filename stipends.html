@@ -595,7 +595,7 @@ FB.on('value',function(snap){
   document.getElementById('live-lbl').textContent='Live';
   document.getElementById('loading').classList.add('hidden');
   window._fbLoaded=true;
-  loadApprovals(function(){render();});
+  loadApprovals(function(){restorePersistedWeek();render();});
 },function(err){
   document.getElementById('live-dot').className='live-dot off';
   document.getElementById('live-lbl').textContent='Offline';
