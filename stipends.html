@@ -1694,6 +1694,7 @@ function _drawPPDSummary(wrap){
     ppdsWithData.push(pp);
     items.forEach(function(li){
       if(!li.staff||!li.amount)return;
+      if(noStipend(li.staff))return;
       if(!piv[li.staff])piv[li.staff]={};
       piv[li.staff][pp.start]=(piv[li.staff][pp.start]||0)+(li.amount||0);
     });
