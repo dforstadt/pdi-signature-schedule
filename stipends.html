@@ -1041,10 +1041,10 @@ function applyPPD(idx) {
   if(te)te.value=pp.end;
   var lbl=document.getElementById('wk-range-lbl');
   if(lbl)lbl.innerHTML='<span style="font-size:10px;opacity:.7">PPD</span> '+pp.ppd
-    +'&nbsp;&nbsp;<span style="font-weight:400;font-size:11px">'+fmtDate(pp.start)+' – '+fmtDate(pp.end)+'</span>';
-  updateNavBtns();
-  document.getElementById('ppd-prev').disabled=(idx<=0);
-  document.getElementById('ppd-next').disabled=(idx>=PAY_PERIODS.length-1);
+    +' &ndash; <span style="font-weight:400;font-size:11px">'+fmtDate(pp.start)+' to '+fmtDate(pp.end)+'</span>';
+  var prevBtn=document.getElementById('ppd-prev'),nextBtn=document.getElementById('ppd-next');
+  if(prevBtn)prevBtn.disabled=(idx<=0);
+  if(nextBtn)nextBtn.disabled=(idx>=PAY_PERIODS.length-1);
   try{sessionStorage.setItem('_stipPPD',idx);}catch(e){}
   if(window._fbLoaded)render();
 }
