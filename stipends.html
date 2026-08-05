@@ -590,6 +590,59 @@ NO_STIP_REF.on('value', function(s){
   if(ta) ta.value = _noStipendOverrides.join('\n');
 });
 
+// ── PPD Approval Lock System ─────────────────────────────────────────────────
+var ppdLocks = {};
+var PPD_LOCK_CODE = '9963';
+firebase.database().ref('lifeskills_clinical/ppd_locks').on('value', function(s){
+  ppdLocks = s.val() || {};
+  if(window._lastD) renderByStaff(window._lastD);
+});
+function isPPDLocked(ppdStart){
+  return !!(ppdLocks && ppdLocks[ppdStart.replace(/-/g,'_')]);
+}
+function lockCurrentPPD(){
+  var pp=_currentPPD!==null?PAY_PERIODS[_currentPPD]:null;
+  if(!pp){alert('No pay period selected.');return;}
+  if(isPPDLocked(pp.start)){alert('PPD '+pp.ppd+' is already locked and approved.');return;}
+  var lbl=document.getElementById('lock-ppd-lbl');
+  var mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function fd(iso){var d=new Date(iso+'T12:00:00');return mo[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();}
+  if(lbl)lbl.textContent='PPD '+pp.ppd+' — '+fd(pp.start)+' to '+fd(pp.end);
+  var inp=document.getElementById('lock-code-inp');
+  var err=document.getElementById('lock-code-err');
+  if(inp)inp.value='';
+  if(err)err.textContent='';
+  var modal=document.getElementById('ppd-lock-modal');
+  if(modal)modal.style.display='flex';
+  setTimeout(function(){if(inp)inp.focus();},60);
+}
+function confirmLockPPD(){
+  var inp=document.getElementById('lock-code-inp');
+  var err=document.getElementById('lock-code-err');
+  if(!inp)return;
+  if(inp.value.trim()!==PPD_LOCK_CODE){
+    if(err)err.textContent='Incorrect code. Authorization denied.';
+    inp.value='';inp.focus();return;
+  }
+  closeLockModal();
+  var pp=PAY_PERIODS[_currentPPD];
+  var totals={};
+  if(window._lastD){
+    (window._lastD.lineItems||[]).filter(function(li){
+      return li.wStart>=pp.start&&li.wStart<=pp.end;
+    }).forEach(function(li){totals[li.staff]=(totals[li.staff]||0)+(li.amount||0);});
+  }
+  var lockData={ppd:pp.ppd,ppdStart:pp.start,ppdEnd:pp.end,lockedAt:Date.now(),totals:totals};
+  firebase.database().ref('lifeskills_clinical/ppd_locks/'+pp.start.replace(/-/g,'_')).set(lockData,function(e){
+    if(e)alert('Lock failed: '+e.message);
+  });
+}
+function closeLockModal(){
+  var m=document.getElementById('ppd-lock-modal');
+  if(m)m.style.display='none';
+}
+
+
 function saveNoStipendList(){
   var ta = document.getElementById('no-stipend-names');
   if(!ta) return;
