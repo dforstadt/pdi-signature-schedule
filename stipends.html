@@ -259,7 +259,16 @@ td.money.zero{color:var(--tx3);}
     Access Roster
   </button>
   
-  <!-- MANUAL ADJUSTMENTS TAB -->
+  <!-- PPD SUMMARY TAB -->
+<div id="tab-ppdsummary" class="hidden" style="padding:20px">
+  <div>
+    <h3 style="margin-bottom:4px;color:#1B2A4A">Total Stipend Summary &#8212; By Provider &amp; Pay Period</h3>
+    <p style="font-size:12px;color:#888;margin-bottom:16px">All stipend types included. Only pay periods with activity shown. Scroll horizontally to view all periods.</p>
+    <div id="ppd-summary-content" style="overflow-x:auto"><p style="color:#aaa;font-size:12px">Open this tab to generate the summary.</p></div>
+  </div>
+</div>
+
+<!-- MANUAL ADJUSTMENTS TAB -->
   
 
 <div id="tab-manual" class="hidden" style="padding:20px">
@@ -369,6 +378,7 @@ window.onerror=function(msg,src,line,col,err){
   <div class="nav-tab" onclick="showTab('bystaff')">Stipend Approval</div>
   <div class="nav-tab" onclick="showTab('leadtech')" style="background:rgba(245,158,11,.12);color:#92400E;font-weight:700">Lead Tech &#9733;</div>
   <div class="nav-tab" onclick="showTab('psychometric')" style="background:rgba(99,102,241,.1);color:#4338ca;font-weight:700">PDI Psych &#10010;</div>
+  <div class="nav-tab" onclick="showTab('ppdsummary')">PPD Summary</div>
 </div>
 
 <!-- FILTERS -->
@@ -1062,6 +1072,7 @@ function showTab(tab){
   if(el)el.classList.remove('hidden');
   if(tab==='leadtech')ltOnTabOpen();
   if(tab==='psychometric')psychOnTabOpen();
+  if(tab==='ppdsummary')setTimeout(renderPPDSummary,0);
   if(tab==='manual'){startManualListener();setTimeout(renderManualTable,400);}
 }
 
@@ -1627,6 +1638,76 @@ function approveOutstanding(btn){
   approvals[key]=!approvals[key];
   saveApprovals();
   if(window._lastD){renderOutstandingItems(window._lastD);renderByStaff(window._lastD);}
+}
+
+function renderPPDSummary(){
+  var wrap=document.getElementById('ppd-summary-content');
+  if(!wrap)return;
+  wrap.innerHTML='<p style="color:#aaa;font-size:12px">Computing...</p>';
+  var feEl=document.getElementById('flt-from'),teEl=document.getElementById('flt-to'),trEl=document.getElementById('flt-track');
+  var oF=feEl?feEl.value:'',oT=teEl?teEl.value:'',oTr=trEl?trEl.value:'all';
+  var today=new Date().toISOString().slice(0,10);
+  if(feEl)feEl.value='2025-12-12';if(teEl)teEl.value=today;if(trEl)trEl.value='all';
+  var D=null;
+  try{window._ppdTotalsMode=true;D=computeStipends();window._ppdTotalsMode=false;}
+  catch(e){
+    window._ppdTotalsMode=false;
+    if(feEl)feEl.value=oF;if(teEl)teEl.value=oT;if(trEl)trEl.value=oTr;
+    wrap.textContent='Error: '+e.message;return;
+  }
+  if(feEl)feEl.value=oF;if(teEl)teEl.value=oT;if(trEl)trEl.value=oTr;
+  if(window.injectManualItems)window.injectManualItems(D);
+  function wkPPD(w){for(var i=0;i<PAY_PERIODS.length;i++){if(w>=PAY_PERIODS[i].start&&w<=PAY_PERIODS[i].end)return PAY_PERIODS[i];}return null;}
+  var piv={},ppds={};
+  (D.lineItems||[]).forEach(function(li){
+    if(!li.staff||noStipend(li.staff))return;
+    var pp=wkPPD(li.wStart);if(!pp)return;
+    if(!piv[li.staff])piv[li.staff]={_t:0};
+    piv[li.staff][pp.start]=(piv[li.staff][pp.start]||0)+(li.amount||0);
+    piv[li.staff]._t=(piv[li.staff]._t||0)+(li.amount||0);
+    ppds[pp.start]=pp;
+  });
+  var aPPDs=PAY_PERIODS.filter(function(pp){return ppds[pp.start]&&pp.start<=today;});
+  var provs=Object.keys(piv).sort();
+  if(!provs.length||!aPPDs.length){
+    wrap.innerHTML='<p style="color:#aaa;font-size:12px">No stipend data found for any pay period.</p>';return;
+  }
+  var mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function fd(iso){var d=new Date(iso+'T12:00:00');return mo[d.getMonth()]+' '+d.getDate();}
+  function f$(v){if(!v)return '<span style="color:#ddd">-</span>';return '$'+(+v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+  function ft(v){return '$'+(+v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+  var sTH='padding:7px 10px;font-size:10px;font-weight:700;color:#fff;text-align:right;white-space:nowrap;background:#1B2A4A;border-right:.5px solid rgba(255,255,255,.12)';
+  var sTH0='padding:7px 14px;font-size:10px;font-weight:700;color:#fff;text-align:left;background:#1B2A4A;position:sticky;left:0;z-index:2;min-width:160px';
+  var head='<thead><tr><th style="'+sTH0+'">PROVIDER</th>';
+  aPPDs.forEach(function(pp){
+    var lk=isPPDLocked(pp.start);
+    head+='<th style="'+sTH+(lk?';background:#15803d':'')+'">';
+    if(lk)head+='&#128274; ';
+    head+='PPD '+pp.ppd+'<br><span style="font-size:9px;font-weight:400;opacity:.8">'+fd(pp.start)+'</span></th>';
+  });
+  head+='<th style="'+sTH+';background:#6b5c45">TOTAL</th></tr></thead>';
+  var cTot={};aPPDs.forEach(function(pp){cTot[pp.start]=0;});var gTot=0;
+  var sTD='padding:6px 10px;text-align:right;font-size:12px;border-bottom:.5px solid #f0ede8;border-right:.5px solid #f0ede8';
+  var sTD0='padding:6px 14px;font-size:12px;font-weight:600;color:#1B2A4A;border-bottom:.5px solid #f0ede8;position:sticky;left:0';
+  var body='<tbody>';
+  provs.forEach(function(p,i){
+    var bg=i%2===0?'#fff':'#faf8f4';
+    body+='<tr style="background:'+bg+'"><td style="'+sTD0+';background:'+bg+'">'+p+'</td>';
+    aPPDs.forEach(function(pp){
+      var a=piv[p][pp.start]||0;cTot[pp.start]=(cTot[pp.start]||0)+a;
+      body+='<td style="'+sTD+'">'+f$(a)+'</td>';
+    });
+    var t=piv[p]._t||0;gTot+=t;
+    body+='<td style="'+sTD+';font-weight:700;color:#6b5c45">'+ft(t)+'</td></tr>';
+  });
+  body+='</tbody>';
+  var sFT='padding:7px 10px;text-align:right;font-size:12px;font-weight:700;color:#1B2A4A;background:#f5f3f0;border-top:2px solid #1B2A4A;border-right:.5px solid #e0ddd8';
+  var foot='<tfoot><tr><td style="padding:7px 14px;font-size:12px;font-weight:700;color:#1B2A4A;background:#f5f3f0;border-top:2px solid #1B2A4A;position:sticky;left:0">PPD TOTAL</td>';
+  aPPDs.forEach(function(pp){foot+='<td style="'+sFT+'">'+ft(cTot[pp.start]||0)+'</td>';});
+  foot+='<td style="'+sFT+';color:#6b5c45;font-size:13px">'+ft(gTot)+'</td></tr></tfoot>';
+  wrap.innerHTML='<table style="border-collapse:collapse;width:max-content;min-width:100%;font-family:inherit">'
+    +head+body+foot+'</table>'
+    +'<p style="font-size:11px;color:#aaa;margin-top:10px">&#128274; = Locked &amp; approved &nbsp; | &nbsp; Grand Total: <strong>'+ft(gTot)+'</strong></p>';
 }
 
 function renderByStaff(D){
