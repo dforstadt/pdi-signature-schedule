@@ -1174,6 +1174,7 @@ function computeStipends(){
         wEvs.forEach(function(ev){
           if(ev.clientId!==cid)return;
           if(!ev.provider||!ev.provider.trim())return;
+          if(noStipend(ev.provider))return; // excluded from all stipends
           if(!isSessionProv(ev.provider))return;
           if(!isBillable(ev))return; // completed only, no groups
           // activeSig already confirms client was admitted and not discharged this week
