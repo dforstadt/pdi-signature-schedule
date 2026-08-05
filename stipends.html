@@ -1644,15 +1644,8 @@ function approveOutstanding(btn){
 function renderPPDSummary(){
   var wrap=document.getElementById('ppd-summary-content');
   if(!wrap)return;
-  var cached=Object.keys(_rosterCache);
-  if(!cached.length){
-    wrap.innerHTML='<div style="padding:20px;color:#888;font-size:12px">'
-      +'<p style="margin-bottom:8px">No data cached yet. Navigate through each pay period in the <strong>Stipend Approval</strong> tab to populate this roster.</p>'
-      +'<p style="font-size:11px;color:#aaa">Alternatively, click the button below to auto-populate all pay periods.</p>'
-      +'<button onclick="_populateRosterCache()" style="margin-top:12px;background:#1B2A4A;color:#fff;border:none;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Load All Pay Periods</button></div>';
-    return;
-  }
-  _renderPPDSummaryInner(wrap);
+  // Always load all pay periods when this tab is opened
+  _populateRosterCache();
 }
 function _populateRosterCache(){
   var wrap=document.getElementById('ppd-summary-content');
