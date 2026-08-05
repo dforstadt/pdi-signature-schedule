@@ -841,6 +841,7 @@ function showTab(tab){
   if(idx>-1){document.querySelectorAll('.nav-tab')[idx].classList.add('active');}
   var el=document.getElementById('tab-'+tab);
   if(el)el.classList.remove('hidden');
+  if(tab==='leadtech')ltOnTabOpen();
 }
 
 // ── COMPUTE STIPENDS ────────────────────────────────────────────────────────
