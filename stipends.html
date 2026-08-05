@@ -935,14 +935,11 @@ function computeStipends(){
   var _gusWkEnd = new Date(getSat(fromISO(fltFrom)));
   _gusWkEnd.setDate(_gusWkEnd.getDate()+6);
   var includeGus = _gusWkEnd.toISOString().slice(0,10) <= '2026-07-24';
-  var WEEKLY_CORE = includeGus
-    ? ['David Ockman','Nicole','Gus Hernandez']
-    : ['David Ock  // Gus Hernandez — included for weeks ending on/before July 24, 2026
-  // WEEKLY_CORE is set per-week inside allWeeks.forEach using wEnd
+  // Gus Hernandez last day July 24 2026; WEEKLY_CORE set per-week in forEach
   var GUS_CUTOFF = '2026-07-24';
   var WEEKLY_WITH_GUS = ['David Ockman','Nicole','Gus Hernandez'];
   var WEEKLY_NO_GUS   = ['David Ockman','Nicole'];
-  var WEEKLY_CORE = WEEKLY_WITH_GUS; // overridden inside forEach
+  var WEEKLY_CORE = WEEKLY_WITH_GUS;
   // Providers who receive Signature session fees only — excluded from PDI flat stipend
   var PDI_EXCLUDED=['Rabbi Gaines','Rabbi Brandon Gaines','Rabbi'];
   var PDI_STIP_START='2025-12-12';
