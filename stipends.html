@@ -1688,12 +1688,13 @@ function renderPPDSummary(){
   var gsRows='';var gTot=0;
   provs.forEach(function(prov){
     var provTot=0;
+    var anchor=prov.replace(/\W+/g,'_');
     activePPDs.forEach(function(pp){var r=roster[prov][pp.start];if(r)provTot+=r.total;});
     gTot+=provTot;if(!provTot)return;
     gsRows+='<tr><td style="padding:7px 14px;font-size:12px;font-weight:600;color:#1B2A4A">'+prov+'</td>'
       +'<td style="padding:7px 14px;text-align:right;font-size:12px">'+fmtT(provTot)+'</td>'
       +'<td style="padding:7px 14px;text-align:center;font-size:11px">'
-      +'<a href="#prov-'+prov.replace(/[^a-zA-Z0-9]/g,\'_\')+\'" style="color:#1B2A4A;text-decoration:none;font-size:11px">View detail &#8595;</a></td></tr>';
+      +'<a href="#prov-'+anchor+'" style="color:#1B2A4A;text-decoration:none;font-size:11px">View detail &#8595;</a></td></tr>';
   });
   html+='<div style="background:#1B2A4A;border-radius:10px 10px 0 0;padding:12px 18px">'
     +'<div style="font-size:14px;font-weight:700;color:#fff">Stipend Roster Summary</div>'
