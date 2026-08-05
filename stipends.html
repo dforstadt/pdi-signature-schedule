@@ -876,6 +876,12 @@ function fmt$(v){return v||v===0?'$'+(+v).toFixed(2):'-';}
 var PROV_DISPLAY={"Nicole":"Nicole Williams","David Ockman":"David Ockman","Gus Hernandez":"Gus Hernandez","Tara":"Tara Alhadeff","Dr. Mirella":"Mirella Ezeta","Rabbi":"Rabbi Brandon Gaines","Sandy":"Sandra Bernstein","Dr. Hume":"Anisha Hume","Dr. Despina":"Despina Karfis","Dr. Greg":"Gregory Fortune","Dr. Paul":"Paul Lazar","T.D":"Thomas Young","Tamas":"Tamas Biro","Esther":"Esther Entin","Dr. Bruno":"Robert Bruno","Gina":"Gina Bonfigli","Dr. Alex":"Alexandra Marullo"};
 function displayName(p){return PROV_DISPLAY[p]||p;}
 
+// ── Gus Hernandez cutoff — globals so renderRoster and computeStipends share them
+var GUS_CUTOFF = '2026-07-24';
+var WEEKLY_WITH_GUS = ['David Ockman','Nicole','Gus Hernandez'];
+var WEEKLY_NO_GUS   = ['David Ockman','Nicole'];
+var WEEKLY_CORE = WEEKLY_WITH_GUS; // updated per-week inside allWeeks.forEach
+
 function computeStipends(){
   var _ftEl=document.getElementById('flt-track');var fltTrack=_ftEl?_ftEl.value:'';
   var fltFrom =document.getElementById('flt-from').value;
@@ -935,11 +941,6 @@ function computeStipends(){
   var _gusWkEnd = new Date(getSat(fromISO(fltFrom)));
   _gusWkEnd.setDate(_gusWkEnd.getDate()+6);
   var includeGus = _gusWkEnd.toISOString().slice(0,10) <= '2026-07-24';
-  // Gus Hernandez last day July 24 2026; WEEKLY_CORE set per-week in forEach
-  var GUS_CUTOFF = '2026-07-24';
-  var WEEKLY_WITH_GUS = ['David Ockman','Nicole','Gus Hernandez'];
-  var WEEKLY_NO_GUS   = ['David Ockman','Nicole'];
-  var WEEKLY_CORE = WEEKLY_WITH_GUS;
   // Providers who receive Signature session fees only — excluded from PDI flat stipend
   var PDI_EXCLUDED=['Rabbi Gaines','Rabbi Brandon Gaines','Rabbi'];
   var PDI_STIP_START='2025-12-12';
