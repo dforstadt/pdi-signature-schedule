@@ -266,6 +266,18 @@ td.money.zero{color:var(--tx3);}
 <div id="tab-manual" class="hidden" style="padding:20px">
     <div style="max-width:700px">
       <h3 style="margin-bottom:4px;color:#1B2A4A">Manual Stipend Adjustments</h3>
+      <!-- No Stipend Overrides -->
+      <div style="background:#f7f5f2;border-radius:8px;padding:14px 18px;margin-bottom:20px;border:1px solid #e0ddd8">
+        <div style="font-size:12px;font-weight:700;color:#1B2A4A;margin-bottom:6px">No Stipend Overrides</div>
+        <div style="font-size:11px;color:#888;margin-bottom:10px">Enter one provider name per line — exactly as shown in the roster. These providers will receive $0 regardless of sessions.</div>
+        <textarea id="no-stipend-names" rows="4" placeholder="e.g. Dr. Smith
+Dr. Flavia" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:12px;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea>
+        <div style="margin-top:8px;display:flex;align-items:center;gap:12px">
+          <button onclick="saveNoStipendList()" style="background:#1B2A4A;color:#fff;border:none;padding:7px 18px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">Save</button>
+          <span id="no-stipend-saved" style="font-size:11px;color:#1D9E75;display:none">&#10003; Saved</span>
+        </div>
+      </div>
+
       <p style="font-size:12px;color:#888;margin-bottom:20px">Per-diem coverage, corrections, and one-off entries (e.g. Nichole Bessent coverage days). Saved to Firebase and shown per provider.</p>
       <div style="background:#f7f5f2;border-radius:8px;padding:16px;margin-bottom:20px;border:1px solid #e0ddd8">
         <div style="font-size:12px;font-weight:600;color:#1B2A4A;margin-bottom:12px">Add Entry</div>
@@ -519,6 +531,30 @@ window.onerror=function(msg,src,line,col,err){
 </div>
 
 <script>
+
+// ── No Stipend Overrides (saved to Firebase) ─────────────────────────────────
+var NO_STIP_REF = firebase.database().ref('lifeskills_clinical/no_stipend_overrides');
+var _noStipendOverrides = [];
+
+NO_STIP_REF.on('value', function(s) {
+  var val = s.val();
+  _noStipendOverrides = val ? (Array.isArray(val) ? val : Object.values(val)) : [];
+  var ta = document.getElementById('no-stipend-names');
+  if(ta) ta.value = _noStipendOverrides.join('\n');
+});
+
+function saveNoStipendList() {
+  var ta = document.getElementById('no-stipend-names');
+  if(!ta) return;
+  var names = ta.value.split('\n').map(function(n){return n.trim();}).filter(Boolean);
+  _noStipendOverrides = names;
+  NO_STIP_REF.set(names, function(err) {
+    var ind = document.getElementById('no-stipend-saved');
+    if(ind) { ind.style.display = 'inline'; setTimeout(function(){ind.style.display='none';}, 2500); }
+    if(window._lastD) render();
+  });
+}
+
 // ── Firebase ───────────────────────────────────────────────────────────────
 firebase.initializeApp({
   apiKey:"AIzaSyCERxntgytkfCHWN7EoAVYVmLBcfWyYZ5A",
@@ -619,6 +655,8 @@ function noStipend(prov){
   // Nichole Bessent — flat fee coverage only, excluded from all session/weekly calculation
   var provL=(prov||'').toLowerCase();
   if(provL.indexOf('nichole')>=0||provL.indexOf('bessent')>=0||provL==='nichole b') return true;
+  // Check Firebase-backed overrides list
+  if(_noStipendOverrides&&_noStipendOverrides.indexOf(prov)>=0) return true;
   var excl=['Anthony Ferkel','Anthony','Alice','Dr. Flavia','Flavia','Dr. Smith','Smith'];for(var i=0;i<excl.length;i++){if(prov===excl[i])return true;}var p=DATA.providers[prov];if(!p)return false;var st=p.stipendType;if(st)return st==='none';return!!p.noStipend;}
 function provType(prov){var p=DATA.providers[prov];if(!p)return 'session';var st=p.stipendType;if(st==='weekly'||st==='pdi_weekly')return 'weekly';return p.type||'session';}
 function isPDIWeekly(prov){var p=DATA.providers[prov];return!!(p&&p.stipendType==='pdi_weekly');}
