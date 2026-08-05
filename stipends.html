@@ -35,6 +35,8 @@ function setWeekFilter(mon){
   if(te)te.value=sunISO;
   var lbl=document.getElementById('wk-range-lbl');
   if(lbl)lbl.textContent=fmtWeekRange(mon);
+  // Persist selected week so it survives page reloads
+  try{sessionStorage.setItem('_stipWkFrom',mon);sessionStorage.setItem('_stipWkTo',sunISO);}catch(e){}
   updateNavBtns();
   if(window._fbLoaded)render();
 }
@@ -44,6 +46,23 @@ function shiftWeek(dir){
   clearWeekFilter();
   var _fe=document.getElementById('flt-from');
   if(_fe&&!_fe.value)_fe.value='2026-03-27';
+}
+// Restore persisted week filter on load
+function restorePersistedWeek(){
+  try{
+    var from=sessionStorage.getItem('_stipWkFrom');
+    var to=sessionStorage.getItem('_stipWkTo');
+    if(from&&to){
+      var fe=document.getElementById('flt-from'),te=document.getElementById('flt-to');
+      if(fe)fe.value=from;
+      if(te)te.value=to;
+      var lbl=document.getElementById('wk-range-lbl');
+      if(lbl)lbl.textContent=fmtWeekRange(from);
+      updateNavBtns();
+      return true;
+    }
+  }catch(e){}
+  return false;
 }
 function clearWeekFilter(){
   _wkOffset=0;
@@ -442,6 +461,7 @@ window.onerror=function(msg,src,line,col,err){
   </div>
 
   <div id="tab-bystaff" class="hidden">
+    <div style="font-size:11px;text-align:right;padding:4px 8px;min-height:18px;font-weight:600" id="approval-save-ind"></div>
     <div id="bystaff-content"></div>
 <div id="tab-leadtech" class="hidden" style="padding:20px">
   <div style="max-width:820px">
@@ -1135,7 +1155,20 @@ function computeStipends(){
 var approvals={};// key: 'staff::weekStart' -> true/false
 
 function saveApprovals(){
-  try{firebase.database().ref('lifeskills_clinical/stipend_approvals').set(approvals);}catch(e){}
+  try{
+    firebase.database().ref('lifeskills_clinical/stipend_approvals').set(approvals,function(err){
+      var ind=document.getElementById('approval-save-ind');
+      if(!ind)return;
+      if(err){
+        ind.textContent='Error saving — check connection';
+        ind.style.color='#c0392b';
+      } else {
+        ind.textContent='✓ Saved';
+        ind.style.color='#1D9E75';
+        setTimeout(function(){ind.textContent='';},2500);
+      }
+    });
+  }catch(e){console.error('saveApprovals error',e);}
 }
 function loadApprovals(cb){
   try{firebase.database().ref('lifeskills_clinical/stipend_approvals').once('value',function(s){
