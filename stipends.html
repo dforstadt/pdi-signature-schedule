@@ -273,57 +273,7 @@ td.money.zero{color:var(--tx3);}
       <div id="man-table-wrap"><p style="color:#999;font-size:12px;text-align:center;padding:20px">Open this tab to load entries.</p></div>
     </div>
   </div>
-<div id="tab-leadtech" class="hidden" style="padding:20px">
-  <div style="max-width:820px">
-    <h3 style="margin-bottom:4px;color:#1B2A4A">Lead Tech Stipends</h3>
-    <p style="font-size:12px;color:#888;margin-bottom:20px">
-      $100 per day per lead tech on the schedule. Effective after July 24, 2026.
-      Select the week, add each lead tech, check the days they were on schedule, and save.
-    </p>
 
-    <!-- Week selector -->
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
-      <button onclick="ltPrevWeek()" style="background:#f0ece6;border:1px solid #ddd;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px">&#8592; Prev</button>
-      <div style="font-weight:700;font-size:14px;color:#1B2A4A;min-width:220px;text-align:center" id="lt-week-label">—</div>
-      <button onclick="ltNextWeek()" id="lt-next-btn" style="background:#f0ece6;border:1px solid #ddd;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px">Next &#8594;</button>
-      <span id="lt-saved-indicator" style="font-size:11px;color:#1D9E75;display:none">&#10003; Saved</span>
-    </div>
-
-    <!-- Day column headers -->
-    <div style="display:grid;grid-template-columns:200px repeat(7,44px) 60px 70px 80px;gap:4px;align-items:center;margin-bottom:8px;font-size:10px;font-weight:700;color:#888;text-transform:uppercase">
-      <div>Tech Name</div>
-      <div style="text-align:center">Mon</div><div style="text-align:center">Tue</div>
-      <div style="text-align:center">Wed</div><div style="text-align:center">Thu</div>
-      <div style="text-align:center">Fri</div><div style="text-align:center">Sat</div>
-      <div style="text-align:center">Sun</div>
-      <div style="text-align:center">Days</div>
-      <div style="text-align:center">Total</div>
-      <div></div>
-    </div>
-
-    <!-- Tech rows -->
-    <div id="lt-rows"></div>
-
-    <!-- Add tech row -->
-    <div style="margin-top:10px;margin-bottom:20px">
-      <button onclick="ltAddRow()" style="background:#f7f5f2;border:1px solid #ddd;padding:7px 16px;border-radius:6px;font-size:12px;cursor:pointer;color:#1B2A4A">+ Add Tech</button>
-    </div>
-
-    <!-- Week total -->
-    <div style="display:flex;justify-content:flex-end;margin-bottom:20px">
-      <div style="background:#1B2A4A;color:#fff;border-radius:8px;padding:12px 24px;text-align:right">
-        <div style="font-size:10px;opacity:.7;margin-bottom:2px">WEEK TOTAL</div>
-        <div style="font-size:24px;font-weight:700" id="lt-week-total">$0</div>
-      </div>
-    </div>
-
-    <button onclick="ltSaveWeek()" style="background:#1B2A4A;color:white;padding:10px 28px;border:none;border-radius:8px;font-size:13px;cursor:pointer;font-weight:600;margin-bottom:28px">Save Week</button>
-
-    <!-- Saved entries -->
-    <h4 style="color:#1B2A4A;margin-bottom:12px;border-top:1px solid #e8e4de;padding-top:16px">Saved Lead Tech Stipends</h4>
-    <div id="lt-history" style="font-size:12px;color:#888;font-style:italic">Loading&hellip;</div>
-  </div>
-</div>
 <div style="font-size:10px;color:#b0a090;margin-top:20px">Lifeskills Behavioral Health &nbsp;·&nbsp; Confidential</div>
 </div>
 </div>
@@ -493,6 +443,57 @@ window.onerror=function(msg,src,line,col,err){
 
   <div id="tab-bystaff" class="hidden">
     <div id="bystaff-content"></div>
+<div id="tab-leadtech" class="hidden" style="padding:20px">
+  <div style="max-width:820px">
+    <h3 style="margin-bottom:4px;color:#1B2A4A">Lead Tech Stipends</h3>
+    <p style="font-size:12px;color:#888;margin-bottom:20px">
+      $100 per day per lead tech on the schedule. Effective after July 24, 2026.
+      Select the week, add each lead tech, check the days they were on schedule, and save.
+    </p>
+
+    <!-- Week selector -->
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+      <button onclick="ltPrevWeek()" style="background:#f0ece6;border:1px solid #ddd;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px">&#8592; Prev</button>
+      <div style="font-weight:700;font-size:14px;color:#1B2A4A;min-width:220px;text-align:center" id="lt-week-label">—</div>
+      <button onclick="ltNextWeek()" id="lt-next-btn" style="background:#f0ece6;border:1px solid #ddd;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px">Next &#8594;</button>
+      <span id="lt-saved-indicator" style="font-size:11px;color:#1D9E75;display:none">&#10003; Saved</span>
+    </div>
+
+    <!-- Day column headers -->
+    <div style="display:grid;grid-template-columns:200px repeat(7,44px) 60px 70px 80px;gap:4px;align-items:center;margin-bottom:8px;font-size:10px;font-weight:700;color:#888;text-transform:uppercase">
+      <div>Tech Name</div>
+      <div style="text-align:center">Mon</div><div style="text-align:center">Tue</div>
+      <div style="text-align:center">Wed</div><div style="text-align:center">Thu</div>
+      <div style="text-align:center">Fri</div><div style="text-align:center">Sat</div>
+      <div style="text-align:center">Sun</div>
+      <div style="text-align:center">Days</div>
+      <div style="text-align:center">Total</div>
+      <div></div>
+    </div>
+
+    <!-- Tech rows -->
+    <div id="lt-rows"></div>
+
+    <!-- Add tech row -->
+    <div style="margin-top:10px;margin-bottom:20px">
+      <button onclick="ltAddRow()" style="background:#f7f5f2;border:1px solid #ddd;padding:7px 16px;border-radius:6px;font-size:12px;cursor:pointer;color:#1B2A4A">+ Add Tech</button>
+    </div>
+
+    <!-- Week total -->
+    <div style="display:flex;justify-content:flex-end;margin-bottom:20px">
+      <div style="background:#1B2A4A;color:#fff;border-radius:8px;padding:12px 24px;text-align:right">
+        <div style="font-size:10px;opacity:.7;margin-bottom:2px">WEEK TOTAL</div>
+        <div style="font-size:24px;font-weight:700" id="lt-week-total">$0</div>
+      </div>
+    </div>
+
+    <button onclick="ltSaveWeek()" style="background:#1B2A4A;color:white;padding:10px 28px;border:none;border-radius:8px;font-size:13px;cursor:pointer;font-weight:600;margin-bottom:28px">Save Week</button>
+
+    <!-- Saved entries -->
+    <h4 style="color:#1B2A4A;margin-bottom:12px;border-top:1px solid #e8e4de;padding-top:16px">Saved Lead Tech Stipends</h4>
+    <div id="lt-history" style="font-size:12px;color:#888;font-style:italic">Loading&hellip;</div>
+  </div>
+</div>
   </div>
 </div>
 
