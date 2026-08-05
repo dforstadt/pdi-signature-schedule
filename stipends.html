@@ -468,10 +468,7 @@ window.onerror=function(msg,src,line,col,err){
 
   <div id="tab-bystaff" class="hidden">
     <div style="font-size:11px;text-align:right;padding:4px 8px;min-height:18px;font-weight:600" id="approval-save-ind"></div>
-    <div style="padding:10px 18px 0">
-      <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:8px">Stipend Totals by Pay Period</div>
-      <div id="ppd-approval-totals" style="overflow-x:auto;margin-bottom:16px;font-size:11px;color:#aaa;font-style:italic">Computing...</div>
-    </div>
+
 <div style="padding:14px 18px 0"><details style="background:#f7f5f2;border-radius:8px;padding:12px 16px;border:1px solid #e0ddd8;margin-bottom:10px"><summary style="font-size:12px;font-weight:700;color:#1B2A4A;cursor:pointer">&#9888; No Stipend Overrides</summary><div style="font-size:11px;color:#888;margin:10px 0 8px">One provider name per line, exactly as shown in the roster. These providers receive $0 regardless of sessions.</div><textarea id="no-stipend-names" rows="4" placeholder="e.g. Dr. Smith" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:6px;font-size:12px;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea><div style="margin-top:8px;display:flex;align-items:center;gap:10px"><button onclick="saveNoStipendList()" style="background:#1B2A4A;color:#fff;border:none;padding:6px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">Save</button><span id="no-stipend-saved" style="font-size:11px;color:#1D9E75;display:none">&#10003; Saved</span></div></details></div>
     <div id="bystaff-content"></div>
 </div>
@@ -1072,23 +1069,7 @@ function computeStipends(){
     var disch=toISO(cl.pdiDischarge||cl.pdiDisch);
     if(disch)weekSet[getSat(fromISO(disch))]=true;
   });
-  // In PPD totals mode: seed weekSet with every billing week in the PPD schedule
-  // so pay periods with no events still appear (with $0)
-  if(window._ppdTotalsMode){
-    var today=new Date().toISOString().slice(0,10);
-    PAY_PERIODS.forEach(function(pp){
-      if(pp.start>today)return;
-      // Walk each Friday-start billing week within this PPD
-      var d=new Date(pp.start+'T12:00:00');
-      var endD=new Date(pp.end+'T12:00:00');
-      while(d<=endD){
-        weekSet[getSat(d)]=true;
-        d.setDate(d.getDate()+7);
-      }
-    });
-  }
-  var _allWeeksFloor=window._ppdTotalsMode?PAY_PERIODS[0].start:'2026-03-27';
-  allWeeks=Object.keys(weekSet).sort().filter(function(w){return w>=_allWeeksFloor;});
+  allWeeks=Object.keys(weekSet).sort().filter(function(w){return w>=PAY_PERIODS[0].start;});
   if(fltFrom)allWeeks=allWeeks.filter(function(w){return w>=getSat(fromISO(fltFrom));});
   if(fltTo)  allWeeks=allWeeks.filter(function(w){return w<=getSat(fromISO(fltTo));});
 
@@ -1353,83 +1334,7 @@ function toggleApproval(key){
   if(window._lastD){if(window.injectManualItems)window.injectManualItems(window._lastD);renderByStaff(window._lastD);}
 }
 
-function renderPPDApprovalTotals(){
-  var wrap=document.getElementById('ppd-approval-totals');
-  if(!wrap)return;
-  var today=new Date().toISOString().slice(0,10);
-  // Temporarily widen filter to full history — save and restore DOM values
-  var feEl=document.getElementById('flt-from'),teEl=document.getElementById('flt-to');
-  var trEl=document.getElementById('flt-track');
-  var origFrom=feEl?feEl.value:'',origTo=teEl?teEl.value:'',origTr=trEl?trEl.value:'all';
-  if(feEl)feEl.value='2025-12-12';
-  if(teEl)teEl.value=today;
-  if(trEl)trEl.value='all';
-  var D=null;
-  try{
-    window._ppdTotalsMode=true;
-    D=computeStipends();
-    window._ppdTotalsMode=false;
-    // Inject manual entries (Excel uploads, Nichole, Dr. entries from Firebase)
-    if(window.injectManualItems)window.injectManualItems(D);
-  }catch(e){
-    window._ppdTotalsMode=false;
-    wrap.textContent='Error: '+e.message;
-    if(feEl)feEl.value=origFrom;if(teEl)teEl.value=origTo;if(trEl)trEl.value=origTr;
-    return;
-  }
-  // Restore original filter so main roster is unaffected
-  if(feEl)feEl.value=origFrom;
-  if(teEl)teEl.value=origTo;
-  if(trEl)trEl.value=origTr;
-  // Group line items by PPD
-  function wkToPPD(w){for(var i=0;i<PAY_PERIODS.length;i++){if(w>=PAY_PERIODS[i].start&&w<=PAY_PERIODS[i].end)return i;}return -1;}
-  var ppdMap={};
-  (D.summaryFinal||[]).forEach(function(r){
-    var i=wkToPPD(r.wStart);if(i<0)return;
-    var k=PAY_PERIODS[i].ppd;
-    if(!ppdMap[k])ppdMap[k]={ppd:PAY_PERIODS[i].ppd,start:PAY_PERIODS[i].start,end:PAY_PERIODS[i].end,sig:0,pdi:0,man:0};
-    ppdMap[k].sig+=r.sigCost||0;ppdMap[k].pdi+=r.pdiCost||0;
-  });
-  (D.lineItems||[]).filter(function(li){return li.type==='Manual';}).forEach(function(li){
-    var i=wkToPPD(li.wStart);if(i<0)return;
-    var k=PAY_PERIODS[i].ppd;
-    if(!ppdMap[k])ppdMap[k]={ppd:PAY_PERIODS[i].ppd,start:PAY_PERIODS[i].start,end:PAY_PERIODS[i].end,sig:0,pdi:0,man:0};
-    ppdMap[k].man+=li.amount||0;
-  });
-  var mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  function fd(iso){var d=new Date(iso+'T12:00:00');return mo[d.getMonth()]+' '+d.getDate();}
-  function fmt$(v){return '$'+(+v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
-  var cum=0,activePPD=_currentPPD!==null?PAY_PERIODS[_currentPPD].ppd:null;
-  var rows=PAY_PERIODS.filter(function(pp){return pp.start<=today;}).map(function(pp){
-    var d=ppdMap[pp.ppd]||{sig:0,pdi:0,man:0};
-    var tot=(d.sig||0)+(d.pdi||0)+(d.man||0);cum+=tot;
-    var hi=activePPD===pp.ppd?'background:#fff9ec;font-weight:700;':'' ;
-    return '<tr style="'+hi+'border-bottom:.5px solid #eee">'
-      +'<td style="padding:6px 10px;text-align:center;color:#888;font-size:11px">'+pp.ppd+'</td>'
-      +'<td style="padding:6px 10px;font-size:11px;white-space:nowrap">'+fd(pp.start)+' â '+fd(pp.end)+'</td>'
-      +'<td style="padding:6px 10px;text-align:right;font-size:11px">'+fmt$(d.sig||0)+'</td>'
-      +'<td style="padding:6px 10px;text-align:right;font-size:11px">'+fmt$(d.pdi||0)+'</td>'
-      +'<td style="padding:6px 10px;text-align:right;font-size:11px">'+fmt$(d.man||0)+'</td>'
-      +'<td style="padding:6px 10px;text-align:right;font-size:11px;font-weight:600">'+fmt$(tot)+'</td>'
-      +'<td style="padding:6px 10px;text-align:right;font-size:11px;color:#6b5c45">'+fmt$(cum)+'</td>'
-      +'</tr>';
-  }).join('');
-  var grand=Object.values(ppdMap).reduce(function(s,r){return s+(r.sig||0)+(r.pdi||0)+(r.man||0);},0);
-  wrap.innerHTML='<table style="width:100%;border-collapse:collapse;min-width:560px">'
-    +'<thead><tr style="background:#1B2A4A;color:#fff">'
-    +'<th style="padding:7px 10px;text-align:center;font-size:10px">PPD</th>'
-    +'<th style="padding:7px 10px;text-align:left;font-size:10px">Period</th>'
-    +'<th style="padding:7px 10px;text-align:right;font-size:10px">Signature</th>'
-    +'<th style="padding:7px 10px;text-align:right;font-size:10px">PDI</th>'
-    +'<th style="padding:7px 10px;text-align:right;font-size:10px">Manual</th>'
-    +'<th style="padding:7px 10px;text-align:right;font-size:10px">Total</th>'
-    +'<th style="padding:7px 10px;text-align:right;font-size:10px">Cumulative</th>'
-    +'</tr></thead><tbody>'+rows+'</tbody>'
-    +'<tfoot><tr style="background:#f5f3f0;font-weight:700;border-top:2px solid #1B2A4A">'
-    +'<td colspan="5" style="padding:7px 10px;font-size:11px">Protocol Total</td>'
-    +'<td colspan="2" style="padding:7px 10px;text-align:right;font-size:12px">'+fmt$(grand)+'</td>'
-    +'</tr></tfoot></table>';
-}
+
 
 function renderByStaff(D){
   var el=document.getElementById('bystaff-content');if(!el)return;
@@ -1599,7 +1504,6 @@ function renderByStaff(D){
 
   el.innerHTML=html;
 
-  setTimeout(renderPPDApprovalTotals,50);
 }
 
 function toggleWeekApproval(key,btnId){
