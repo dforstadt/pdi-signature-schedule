@@ -427,6 +427,11 @@ window.onerror=function(msg,src,line,col,err){
     </div>
   
 <div style="margin-top:24px"><div style="font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--tx3);margin-bottom:8px;display:flex;align-items:center;gap:10px">Client Census<div style="flex:1;height:.5px;background:var(--bd2)"></div></div><p style="font-size:11px;color:var(--tx3);margin-bottom:10px">Active Signature clients per billing week — flat fee ($250/client) for Ockman, Nicole Williams &amp; Gus. PDI discharge weeks in blue.</p><div class="tbl-wrap" id="census-table-wrap"></div></div>
+  <!-- PPD Totals Table -->
+  <div style="padding:0 20px 20px">
+    <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:10px;margin-top:20px;border-top:1px solid var(--bd);padding-top:16px">Stipend Totals by Pay Period</div>
+    <div id="ppd-totals-wrap" style="overflow-x:auto"></div>
+  </div>
 </div>
 
   <!-- LINE ITEMS TAB -->
@@ -1601,7 +1606,97 @@ function renderSummary(D){
     var chHrs=document.getElementById('ch-hours');if(chHrs)window._summaryCharts['ch-hours']=new Chart(chHrs,{type:'bar',data:{labels:wLabels,datasets:[{label:'Sig Hours',data:tot.map(function(r){return r.sigHrs;}),backgroundColor:'#1D9E75',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:9},maxRotation:45}},y:{beginAtZero:true,grid:{color:'#f3f4f6'}}}}});
     var chStaff=document.getElementById('ch-staff');if(chStaff)window._summaryCharts['ch-staff']=new Chart(chStaff,{type:'doughnut',data:{labels:staffKeys,datasets:[{data:staffKeys.map(function(k){return staffTotals[k];}),backgroundColor:COLORS,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'right',labels:{boxWidth:10,font:{size:9},padding:4}}}}});
   },50);
+
+  setTimeout(renderPPDTotals,100);
 }
+function renderPPDTotals(){
+  var wrap=document.getElementById('ppd-totals-wrap');
+  if(!wrap)return;
+  var today=new Date().toISOString().slice(0,10);
+  var ppdStipData=PAY_PERIODS.filter(function(pp){return pp.start<=today;});
+  if(!ppdStipData.length){wrap.innerHTML='<p style="color:#aaa;font-size:12px">No pay periods yet.</p>';return;}
+  wrap.innerHTML='<p style="font-size:11px;color:#aaa;text-align:center">Computing pay period totals...</p>';
+  // Save current filter values to restore
+  var feEl=document.getElementById('flt-from'),teEl=document.getElementById('flt-to');
+  var origFrom=feEl?feEl.value:'',origTo=teEl?teEl.value:'';
+  var origTrack=document.getElementById('flt-track');
+  var origTrackVal=origTrack?origTrack.value:'all';
+  // Build rows by temporarily setting filter for each PPD
+  var rows=[];
+  var cumSig=0,cumPDI=0,cumTotal=0;
+  var prevOrigFlt=null;
+  // Compute totals for all past PPDs using one wide computeStipends call
+  if(feEl)feEl.value='2025-12-12';
+  if(teEl)teEl.value=today;
+  if(origTrack)origTrack.value='all';
+  var D=null;
+  try{D=computeStipends();}catch(e){wrap.innerHTML='<p style="color:red;font-size:12px">Error computing totals.</p>';return;}
+  // Restore filter
+  if(feEl)feEl.value=origFrom;
+  if(teEl)teEl.value=origTo;
+  if(origTrack)origTrack.value=origTrackVal;
+  // Group D.summaryFinal (weekly rows) by PPD
+  function wkToPPD(wStart){
+    for(var i=0;i<PAY_PERIODS.length;i++){
+      if(wStart>=PAY_PERIODS[i].start&&wStart<=PAY_PERIODS[i].end)return i;
+    }
+    return -1;
+  }
+  var ppdMap={};
+  (D.summaryFinal||[]).forEach(function(r){
+    var idx=wkToPPD(r.wStart);
+    if(idx<0)return;
+    var pp=PAY_PERIODS[idx];
+    var key=pp.ppd;
+    if(!ppdMap[key])ppdMap[key]={ppd:pp.ppd,start:pp.start,end:pp.end,sigCost:0,pdiCost:0,sigHrs:0};
+    ppdMap[key].sigCost+=r.sigCost||0;
+    ppdMap[key].pdiCost+=r.pdiCost||0;
+    ppdMap[key].sigHrs+=r.sigHrs||0;
+  });
+  // Also include manual entries grouped by PPD
+  (D.lineItems||[]).filter(function(li){return li.type==='Manual';}).forEach(function(li){
+    var idx=wkToPPD(li.wStart);
+    if(idx<0)return;
+    var pp=PAY_PERIODS[idx];
+    if(!ppdMap[pp.ppd])ppdMap[pp.ppd]={ppd:pp.ppd,start:pp.start,end:pp.end,sigCost:0,pdiCost:0,sigHrs:0};
+    ppdMap[pp.ppd].sigCost+=li.amount||0;
+  });
+  var mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function fd(iso){var d=new Date(iso+'T12:00:00');return mo[d.getMonth()]+' '+d.getDate();}
+  function fmt$(v){return '$'+(+v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+  var thead='<thead><tr style="background:#1B2A4A;color:#fff">'
+    +'<th style="padding:8px 12px;text-align:center;font-size:11px;white-space:nowrap">PPD #</th>'
+    +'<th style="padding:8px 12px;text-align:left;font-size:11px;white-space:nowrap">Period</th>'
+    +'<th style="padding:8px 12px;text-align:right;font-size:11px">Signature</th>'
+    +'<th style="padding:8px 12px;text-align:right;font-size:11px">PDI</th>'
+    +'<th style="padding:8px 12px;text-align:right;font-size:11px">Total</th>'
+    +'<th style="padding:8px 12px;text-align:right;font-size:11px">Cumulative</th>'
+    +'</tr></thead>';
+  var tbody='<tbody>';
+  var cumTotal=0;
+  ppdStipData.forEach(function(pp){
+    var d=ppdMap[pp.ppd]||{sigCost:0,pdiCost:0};
+    var tot=(d.sigCost||0)+(d.pdiCost||0);
+    cumTotal+=tot;
+    var isCurrent=_currentPPD!==null&&PAY_PERIODS[_currentPPD]&&PAY_PERIODS[_currentPPD].ppd===pp.ppd;
+    tbody+='<tr style="'+(isCurrent?'background:#fff9ec;font-weight:700;':'')+'border-bottom:.5px solid #eee">'
+      +'<td style="padding:7px 12px;text-align:center;font-size:12px;color:#888">'+pp.ppd+'</td>'
+      +'<td style="padding:7px 12px;font-size:12px;white-space:nowrap">'+fd(pp.start)+' – '+fd(pp.end)+'</td>'
+      +'<td style="padding:7px 12px;text-align:right;font-size:12px">'+fmt$(d.sigCost||0)+'</td>'
+      +'<td style="padding:7px 12px;text-align:right;font-size:12px">'+fmt$(d.pdiCost||0)+'</td>'
+      +'<td style="padding:7px 12px;text-align:right;font-size:12px;font-weight:600">'+fmt$(tot)+'</td>'
+      +'<td style="padding:7px 12px;text-align:right;font-size:12px;color:#6b5c45">'+fmt$(cumTotal)+'</td>'
+      +'</tr>';
+  });
+  tbody+='<tr style="background:#f5f3f0;font-weight:700;border-top:2px solid #1B2A4A">'
+    +'<td colspan="2" style="padding:8px 12px;font-size:12px">All Pay Periods Total</td>'
+    +'<td style="padding:8px 12px;text-align:right;font-size:12px">'+fmt$(Object.values(ppdMap).reduce(function(s,r){return s+(r.sigCost||0);},0))+'</td>'
+    +'<td style="padding:8px 12px;text-align:right;font-size:12px">'+fmt$(Object.values(ppdMap).reduce(function(s,r){return s+(r.pdiCost||0);},0))+'</td>'
+    +'<td colspan="2" style="padding:8px 12px;text-align:right;font-size:12px">'+fmt$(cumTotal)+'</td>'
+    +'</tr></tbody>';
+  wrap.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:12px;min-width:500px">'+thead+tbody+'</table>';
+}
+
 
 function renderLineItems(D){
   window._debugEvents=DATA.events;window._debugClients=DATA.clients;
