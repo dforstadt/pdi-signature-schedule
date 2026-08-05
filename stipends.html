@@ -373,7 +373,7 @@ window.onerror=function(msg,src,line,col,err){
 <!-- FILTERS -->
 <div style="background:#fffbeb;border-bottom:1px solid #fde68a;padding:10px 32px;font-size:12px;color:#92400e;display:flex;align-items:center;gap:10px">
   <span style="font-size:16px">&#x2139;&#xFE0F;</span>
-  <span><strong>Stipend rules:</strong> Providers marked <strong>No Stipend</strong> are excluded. Providers set to <strong>Weekly</strong> type always receive the PDI flat stipend ($250/episode) plus the Signature weekly stipend ($250/wk). Session-type providers receive PDI flat stipend only when they have sessions, plus Signature session fees ($150/hr). Configure in <strong>Manage Providers</strong> on the calendar.</span>
+  <span><strong>Stipend rules:</strong> Providers marked <strong>No Stipend</strong> are excluded. Providers set to <strong>Weekly</strong> type always receive the PDI flat stipend ($100/episode) plus the Signature weekly stipend ($100/wk). Session-type providers receive PDI flat stipend only when they have sessions, plus Signature session fees ($150/hr). Configure in <strong>Manage Providers</strong> on the calendar.</span>
 </div>
 <div class="filters">
   <!-- Week navigator -->
@@ -410,7 +410,7 @@ window.onerror=function(msg,src,line,col,err){
       <div class="tbl-hdr">
         <div>
           <h3>Weekly Summary</h3>
-          <p>Signature Hrs = direct service sessions @ $150. Signature Cost includes sessions + $250/wk weekly stipends. PDI Cost = flat $250 stipends (once per episode).</p>
+          <p>Signature Hrs = direct service sessions @ $150. Signature Cost includes sessions + $100/wk weekly stipends. PDI Cost = flat $100 stipends (once per episode).</p>
         </div>
       </div>
       <table>
@@ -425,7 +425,7 @@ window.onerror=function(msg,src,line,col,err){
       </table>
     </div>
   
-<div style="margin-top:24px"><div style="font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--tx3);margin-bottom:8px;display:flex;align-items:center;gap:10px">Client Census<div style="flex:1;height:.5px;background:var(--bd2)"></div></div><p style="font-size:11px;color:var(--tx3);margin-bottom:10px">Active Signature clients per billing week — flat fee ($250/client) for Ockman, Nicole Williams &amp; Gus. PDI discharge weeks in blue.</p><div class="tbl-wrap" id="census-table-wrap"></div></div>
+<div style="margin-top:24px"><div style="font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--tx3);margin-bottom:8px;display:flex;align-items:center;gap:10px">Client Census<div style="flex:1;height:.5px;background:var(--bd2)"></div></div><p style="font-size:11px;color:var(--tx3);margin-bottom:10px">Active Signature clients per billing week — flat fee ($100/client) for Ockman, Nicole Williams &amp; Gus. PDI discharge weeks in blue.</p><div class="tbl-wrap" id="census-table-wrap"></div></div>
 </div>
 
   <!-- LINE ITEMS TAB -->
@@ -434,7 +434,7 @@ window.onerror=function(msg,src,line,col,err){
       <div class="tbl-hdr">
         <div>
           <h3>Staff Stipends — Signature &amp; PDI Detail</h3>
-          <p>Signature: Session ($150/hr) and Weekly Stipend ($250/wk). PDI = flat $250 per provider per episode. "Counted ($)" = episode-adjusted amount used in totals.</p>
+          <p>Signature: Session ($150/hr) and Weekly Stipend ($100/wk). PDI = flat $100 per provider per episode. "Counted ($)" = episode-adjusted amount used in totals.</p>
         </div>
         <button class="excel-btn" onclick="exportLineItemsExcel()" style="flex-shrink:0">&#x2193; Export Line Items</button>
       </div>
@@ -672,12 +672,18 @@ function ltInitWeek() {
   if (lbl) lbl.textContent = ltFmtWeek(ltWeekISO);
   var nextBtn = document.getElementById('lt-next-btn');
   if (nextBtn) nextBtn.disabled = LT_WEEK_OFFSET >= 0;
-  // Load saved data for this week
-  firebase.database().ref(LT_DB_PATH + '/' + ltWeekISO).once('value', function(snap) {
-    ltSavedData = snap.val() || {};
-    ltRenderRows();
+  // Render immediately with defaults, then update when Firebase replies
+  ltSavedData = {};
+  ltRenderRows();
+  try {
+    firebase.database().ref(LT_DB_PATH + '/' + ltWeekISO).once('value', function(snap) {
+      ltSavedData = snap.val() || {};
+      ltRenderRows();
+      ltLoadHistory();
+    });
+  } catch(e) {
     ltLoadHistory();
-  });
+  }
 }
 
 function ltPrevWeek() {
@@ -968,7 +974,7 @@ function computeStipends(){
   var lineItems=[];
 
   // Pre-compute the PDI stipend trigger week for each PDI client.
-  // Rule: fire the flat $250 in the week containing pdiDischarge.
+  // Rule: fire the flat $100 in the week containing pdiDischarge.
   // If still active (no discharge), fire in the current/last event week for that client.
   var pdiStipendWeek={};  // clientId -> ISO Monday of the week to fire
   DATA.clients.forEach(function(client){
@@ -1057,18 +1063,18 @@ function computeStipends(){
         var sigDisch =toISO(client.sigDischarge||client.sigDisch)||today();
         if(!byClientSig[cid])byClientSig[cid]={staffHrs:{},weeklyStaff:new Set(),sigHrs:0,sessAmt:0,wklyAmt:0};
 
-        // ── Weekly stipend: $250/wk per active Sig client (Ockman/Nicole/Gus) ──
+        // ── Weekly stipend: $100/wk per active Sig client (Ockman/Nicole/Gus) ──
         // Exclude Gus from weeks ending after July 24 2026
         weeklyProviders.filter(function(p){
           return p!=='Gus Hernandez'||wEnd<=GUS_CUTOFF;
         }).forEach(function(prov){
           lineItems.push({week:wLbl,wStart:wStart,client:cName,track:'Signature',
-            staff:displayName(prov),type:'Weekly Stipend',sessHrs:'',rate:'',amount:250,counted:250,notes:''});
+            staff:displayName(prov),type:'Weekly Stipend',sessHrs:'',rate:'',amount:100,counted:100,notes:''});
           if(!sigStiByStaff[prov])sigStiByStaff[prov]={};
-          sigStiByStaff[prov][wStart]=(sigStiByStaff[prov][wStart]||0)+250;
+          sigStiByStaff[prov][wStart]=(sigStiByStaff[prov][wStart]||0)+100;
           weekStiStaffSet[prov]=true;
           byClientSig[cid].weeklyStaff.add(prov);
-          byClientSig[cid].wklyAmt+=250;
+          byClientSig[cid].wklyAmt+=100;
         });
 
         // ── Session fees: $150/completed session, ONLY within Signature episode dates ──
@@ -1126,12 +1132,12 @@ function computeStipends(){
 
         provs.forEach(function(prov){
           lineItems.push({week:wLbl,wStart:wStart,client:cName,track:'PDI',
-            staff:displayName(prov),type:'Flat Stipend',sessHrs:'',rate:'',amount:250,counted:250,
+            staff:displayName(prov),type:'Flat Stipend',sessHrs:'',rate:'',amount:100,counted:100,
             notes:note});
           if(!pdiStiByStaff[prov])pdiStiByStaff[prov]={};
-          pdiStiByStaff[prov][wStart]=(pdiStiByStaff[prov][wStart]||0)+250;
+          pdiStiByStaff[prov][wStart]=(pdiStiByStaff[prov][wStart]||0)+100;
           pdiStaffSet[prov]=true;
-          byClientPDI[cid].staffAmt[prov]=(byClientPDI[cid].staffAmt[prov]||0)+250;
+          byClientPDI[cid].staffAmt[prov]=(byClientPDI[cid].staffAmt[prov]||0)+100;
         });
       });
     }
@@ -1514,8 +1520,8 @@ function renderRosterSection(title,staffSet,dataByStaff,sortedWeeks,unit){
 function renderRoster(D){
   var h='';
   if(D.fltTrack!=='PDI')h+=renderRosterSection('SIGNATURE \u2014 Direct Service Hours per Billing Period ($150/hr)',D.sigStaffSet,D.sigHrsByStaff,D.sortedWeeks,'hrs');
-  if(D.fltTrack!=='PDI')h+=renderRosterSection((WEEKLY_CORE===WEEKLY_WITH_GUS?'SIGNATURE \u2014 Weekly Stipend ($250/wk per active client \u2014 Ockman, Nicole, Gus)':'SIGNATURE \u2014 Weekly Stipend ($250/wk per active client \u2014 Ockman, Nicole)'),D.weekStiStaffSet,D.sigStiByStaff,D.sortedWeeks,'$');
-  if(D.fltTrack!=='Signature')h+=renderRosterSection((WEEKLY_CORE===WEEKLY_WITH_GUS?'PDI \u2014 Flat Stipend ($250/episode, Ockman/Nicole/Gus always + direct service providers)':'PDI \u2014 Flat Stipend ($250/episode, Ockman/Nicole always + direct service providers)'),D.pdiStaffSet,D.pdiStiByStaff,D.sortedWeeks,'$');
+  if(D.fltTrack!=='PDI')h+=renderRosterSection((WEEKLY_CORE===WEEKLY_WITH_GUS?'SIGNATURE \u2014 Weekly Stipend ($100/wk per active client \u2014 Ockman, Nicole, Gus)':'SIGNATURE \u2014 Weekly Stipend ($100/wk per active client \u2014 Ockman, Nicole)'),D.weekStiStaffSet,D.sigStiByStaff,D.sortedWeeks,'$');
+  if(D.fltTrack!=='Signature')h+=renderRosterSection((WEEKLY_CORE===WEEKLY_WITH_GUS?'PDI \u2014 Flat Stipend ($100/episode, Ockman/Nicole/Gus always + direct service providers)':'PDI \u2014 Flat Stipend ($100/episode, Ockman/Nicole always + direct service providers)'),D.pdiStaffSet,D.pdiStiByStaff,D.sortedWeeks,'$');
   var btn='<div style="display:flex;justify-content:flex-end;padding:12px 0 8px"><button class="excel-btn" onclick="exportRosterExcel()">\u2193 Export Staff Roster</button></div>';
   document.getElementById('roster-content').innerHTML=btn+(h||'<div class="empty">No data for selected filters.</div>');
 }
@@ -1556,7 +1562,7 @@ function renderByClient(D){
     html+='</tr></tbody></table></div>';
   }
   if(D.fltTrack!=='Signature'&&pdiClients.length){
-    html+='<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--tx3);margin:0 0 8px;padding:0 16px">PDI \u2014 Flat Stipend by Client ($250 per provider, once per PDI episode, shown in discharge week)</div>';
+    html+='<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--tx3);margin:0 0 8px;padding:0 16px">PDI \u2014 Flat Stipend by Client ($100 per provider, once per PDI episode, shown in discharge week)</div>';
     html+='<div style="overflow:auto;margin-bottom:20px"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:#1e170e;color:#fff"><th style="padding:7px 12px;text-align:left;font-size:10px;font-weight:500;position:sticky;left:0;background:#1e170e">Client</th><th style="'+thS()+'">PDI Total</th>';
     pdiStaffArr.forEach(function(p){html+='<th style="'+thS()+'">'+p.split(' ').pop()+'</th>';});
     html+='</tr></thead><tbody>';
