@@ -66,6 +66,7 @@ function restorePersistedWeek(){
 }
 function clearWeekFilter(){
   _wkOffset=0;
+  _ppdFrom=null;_ppdTo=null;
   var fe=document.getElementById('flt-from'),te=document.getElementById('flt-to');
   if(fe)fe.value='';if(te)te.value='';
   var lbl=document.getElementById('wk-range-lbl');
@@ -1001,9 +1002,11 @@ var PAY_PERIODS=[
 ];
 var _currentPPD=null;
 function ppdFmtDate(iso){var mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];var d=new Date(iso+'T12:00:00');return mo[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();}
+var _ppdFrom=null,_ppdTo=null; // raw PPD ISO dates — set by applyPPD
 function applyPPD(idx){
   if(idx<0||idx>=PAY_PERIODS.length)return;
   _currentPPD=idx;var pp=PAY_PERIODS[idx];
+  _ppdFrom=pp.start;_ppdTo=pp.end; // store raw PPD dates
   var fe=document.getElementById('flt-from'),te=document.getElementById('flt-to');
   if(fe)fe.value=pp.start;if(te)te.value=pp.end;
   var lbl=document.getElementById('wk-range-lbl');
@@ -1073,8 +1076,19 @@ function computeStipends(){
     if(wk){var s=getSat(fromISO(wk));if(s)weekSet[s]=true;}
   });
   allWeeks=Object.keys(weekSet).sort().filter(function(w){return w>=PAY_PERIODS[0].start;});
-  if(fltFrom)allWeeks=allWeeks.filter(function(w){return w>=getSat(fromISO(fltFrom));});
-  if(fltTo)  allWeeks=allWeeks.filter(function(w){return w<=getSat(fromISO(fltTo));});
+  // When navigating by PPD, use the exact PPD boundary dates so billing weeks
+  // that start before the PPD (but partially overlap) are excluded.
+  // weekEnd(w) = the last day of billing week w (Thursday).
+  if(_ppdFrom&&_ppdTo){
+    // Keep only weeks whose END date falls within the PPD range.
+    // This ensures weeks that start before the PPD but end after its start are excluded.
+    allWeeks=allWeeks.filter(function(w){
+      return weekEnd(w)>=_ppdFrom&&w<=_ppdTo;
+    });
+  } else {
+    if(fltFrom)allWeeks=allWeeks.filter(function(w){return w>=getSat(fromISO(fltFrom));});
+    if(fltTo)  allWeeks=allWeeks.filter(function(w){return w<=getSat(fromISO(fltTo));});
+  }
 
   // ── Weekly-type providers: Ockman, Nicole, Gus ──────────────────────────────
   // These three ALWAYS receive the weekly Signature stipend and PDI flat stipend.
