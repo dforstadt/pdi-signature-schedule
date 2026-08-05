@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><!-- deploy:1783780897 -->
+<meta charset="UTF-8"><!-- deploy:1785940426 -->
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PDI / Signature — Stipend Roster</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -97,9 +97,7 @@ function updateNavBtns(){
   if(nb)nb.disabled=_wkOffset>=0;
 }
 window.addEventListener('DOMContentLoaded',function(){
-  clearWeekFilter();
-  var _fe=document.getElementById('flt-from');
-  if(_fe&&!_fe.value)_fe.value='2026-03-27';
+  // PPD navigation sets flt-from/flt-to via initPPD — don't override it here
 });
 </script>
 <style>
