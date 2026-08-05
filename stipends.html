@@ -1069,6 +1069,11 @@ function computeStipends(){
     var disch=toISO(cl.pdiDischarge||cl.pdiDisch);
     if(disch)weekSet[getSat(fromISO(disch))]=true;
   });
+  // Seed from manual entries so historical PPDs with only manual data appear
+  manualEntries.forEach(function(e){
+    var wk=e.startWeek||e.week||'';
+    if(wk){var s=getSat(fromISO(wk));if(s)weekSet[s]=true;}
+  });
   allWeeks=Object.keys(weekSet).sort().filter(function(w){return w>=PAY_PERIODS[0].start;});
   if(fltFrom)allWeeks=allWeeks.filter(function(w){return w>=getSat(fromISO(fltFrom));});
   if(fltTo)  allWeeks=allWeeks.filter(function(w){return w<=getSat(fromISO(fltTo));});
