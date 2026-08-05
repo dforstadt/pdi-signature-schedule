@@ -883,6 +883,42 @@ function ltOnTabOpen() {
   ltInitWeek();
 }
 
+function renderManualTable(){
+  var wrap=document.getElementById('man-table-wrap');
+  if(!wrap)return;
+  if(!manualEntries.length){
+    wrap.innerHTML='<p style="color:#999;font-size:12px;text-align:center;padding:20px">No manual entries found in Firebase.</p>';
+    return;
+  }
+  var rows=manualEntries.slice().sort(function(a,b){
+    var sa=a.startWeek||a.week||'',sb=b.startWeek||b.week||'';
+    return sb.localeCompare(sa);
+  }).map(function(e){
+    var prov=e.provider||e.prov||'—';
+    var wk=e.startWeek||e.week||'—';
+    var amt=e.amountPerWeek||e.amount||0;
+    var type=e.type||'Manual';
+    var notes=e.notes||e.note||'';
+    return '<tr>'
+      +'<td style="padding:6px 10px;border-top:1px solid #eee">'+prov+'</td>'
+      +'<td style="padding:6px 10px;border-top:1px solid #eee">'+wk+(e.endWeek&&e.endWeek!==wk?' → '+e.endWeek:'')+'</td>'
+      +'<td style="padding:6px 10px;border-top:1px solid #eee;font-weight:600">$'+amt+'</td>'
+      +'<td style="padding:6px 10px;border-top:1px solid #eee;color:#888">'+type+'</td>'
+      +'<td style="padding:6px 10px;border-top:1px solid #eee;color:#aaa;font-size:11px">'+notes+'</td>'
+      +'<td style="padding:6px 10px"><button onclick="deleteManEntry(\''+e._key+'\')" style="background:none;border:none;color:#ccc;cursor:pointer;font-size:14px" title="Delete">&times;</button></td>'
+      +'</tr>';
+  }).join('');
+  wrap.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:12px">'
+    +'<thead><tr style="background:#f5f3f0">'
+    +'<th style="text-align:left;padding:7px 10px;font-size:10px;font-weight:700;color:#888">PROVIDER</th>'
+    +'<th style="text-align:left;padding:7px 10px;font-size:10px;font-weight:700;color:#888">WEEK</th>'
+    +'<th style="text-align:left;padding:7px 10px;font-size:10px;font-weight:700;color:#888">AMOUNT</th>'
+    +'<th style="text-align:left;padding:7px 10px;font-size:10px;font-weight:700;color:#888">TYPE</th>'
+    +'<th style="text-align:left;padding:7px 10px;font-size:10px;font-weight:700;color:#888">NOTES</th>'
+    +'<th></th>'
+    +'</tr></thead><tbody>'+rows+'</tbody></table>';
+}
+
 function showTab(tab){
   currentTab=tab;
   document.querySelectorAll('.nav-tab').forEach(function(el){el.classList.remove('active');});
@@ -897,6 +933,7 @@ function showTab(tab){
   var el=document.getElementById('tab-'+tab);
   if(el)el.classList.remove('hidden');
   if(tab==='leadtech')ltOnTabOpen();
+  if(tab==='manual'){startManualListener();setTimeout(renderManualTable,400);}
 }
 
 // ── COMPUTE STIPENDS ────────────────────────────────────────────────────────
@@ -1946,7 +1983,10 @@ function startManualListener(){
     });
     if(window._lastD){
       window.injectManualItems(window._lastD);
+      renderSummary(window._lastD);
+      renderLineItems(window._lastD);
       renderByStaff(window._lastD);
+      renderManualTable();
     }
   }
   var _newData = null, _oldData = null, _newReady = false, _oldReady = false;
