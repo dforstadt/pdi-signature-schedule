@@ -532,28 +532,7 @@ window.onerror=function(msg,src,line,col,err){
 
 <script>
 
-// ── No Stipend Overrides (saved to Firebase) ─────────────────────────────────
-var NO_STIP_REF = firebase.database().ref('lifeskills_clinical/no_stipend_overrides');
 var _noStipendOverrides = [];
-
-NO_STIP_REF.on('value', function(s) {
-  var val = s.val();
-  _noStipendOverrides = val ? (Array.isArray(val) ? val : Object.values(val)) : [];
-  var ta = document.getElementById('no-stipend-names');
-  if(ta) ta.value = _noStipendOverrides.join('\n');
-});
-
-function saveNoStipendList() {
-  var ta = document.getElementById('no-stipend-names');
-  if(!ta) return;
-  var names = ta.value.split('\n').map(function(n){return n.trim();}).filter(Boolean);
-  _noStipendOverrides = names;
-  NO_STIP_REF.set(names, function(err) {
-    var ind = document.getElementById('no-stipend-saved');
-    if(ind) { ind.style.display = 'inline'; setTimeout(function(){ind.style.display='none';}, 2500); }
-    if(window._lastD) render();
-  });
-}
 
 // ── Firebase ───────────────────────────────────────────────────────────────
 firebase.initializeApp({
@@ -565,6 +544,28 @@ firebase.initializeApp({
   messagingSenderId:"545049861408",
   appId:"1:545049861408:web:1e0bf60ab88497f67a8b45"
 });
+
+// ── No Stipend Overrides ────────────────────────────────────────────────────
+var NO_STIP_REF = firebase.database().ref('lifeskills_clinical/no_stipend_overrides');
+NO_STIP_REF.on('value', function(s){
+  var val = s.val();
+  _noStipendOverrides = val ? (Array.isArray(val) ? val : Object.values(val)) : [];
+  var ta = document.getElementById('no-stipend-names');
+  if(ta) ta.value = _noStipendOverrides.join('\n');
+});
+
+function saveNoStipendList(){
+  var ta = document.getElementById('no-stipend-names');
+  if(!ta) return;
+  var names = ta.value.split('\n').map(function(n){return n.trim();}).filter(Boolean);
+  _noStipendOverrides = names;
+  NO_STIP_REF.set(names, function(err){
+    var ind = document.getElementById('no-stipend-saved');
+    if(ind){ind.style.display='inline';setTimeout(function(){ind.style.display='none';},2500);}
+    if(window._lastD) render();
+  });
+}
+
 var db=firebase.database();
 var FB=db.ref('schedule_v3');
 
