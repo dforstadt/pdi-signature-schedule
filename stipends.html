@@ -1644,71 +1644,130 @@ function renderPPDSummary(){
   var wrap=document.getElementById('ppd-summary-content');
   if(!wrap)return;
   wrap.innerHTML='<p style="color:#aaa;font-size:12px">Computing...</p>';
+  // Compute full history
   var feEl=document.getElementById('flt-from'),teEl=document.getElementById('flt-to'),trEl=document.getElementById('flt-track');
   var oF=feEl?feEl.value:'',oT=teEl?teEl.value:'',oTr=trEl?trEl.value:'all';
   var today=new Date().toISOString().slice(0,10);
   if(feEl)feEl.value='2025-12-12';if(teEl)teEl.value=today;if(trEl)trEl.value='all';
   var D=null;
   try{window._ppdTotalsMode=true;D=computeStipends();window._ppdTotalsMode=false;}
-  catch(e){
-    window._ppdTotalsMode=false;
-    if(feEl)feEl.value=oF;if(teEl)teEl.value=oT;if(trEl)trEl.value=oTr;
-    wrap.textContent='Error: '+e.message;return;
-  }
+  catch(e){window._ppdTotalsMode=false;if(feEl)feEl.value=oF;if(teEl)teEl.value=oT;if(trEl)trEl.value=oTr;wrap.textContent='Error: '+e.message;return;}
   if(feEl)feEl.value=oF;if(teEl)teEl.value=oT;if(trEl)trEl.value=oTr;
   if(window.injectManualItems)window.injectManualItems(D);
+
   function wkPPD(w){for(var i=0;i<PAY_PERIODS.length;i++){if(w>=PAY_PERIODS[i].start&&w<=PAY_PERIODS[i].end)return PAY_PERIODS[i];}return null;}
-  var piv={},ppds={};
+  var mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function fd(iso){var d=new Date(iso+'T12:00:00');return mo[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();}
+  function fds(iso){var d=new Date(iso+'T12:00:00');return mo[d.getMonth()]+' '+d.getDate();}
+  function fmt(v){return v?'$'+(+v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'<span style="color:#ccc">-</span>';}
+  function fmtT(v){return '$'+(+v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+
+  // Build: prov -> ppdStart -> {sig, pdi, sess, man, total}
+  var roster={};
   (D.lineItems||[]).forEach(function(li){
     if(!li.staff||noStipend(li.staff))return;
     var pp=wkPPD(li.wStart);if(!pp)return;
-    if(!piv[li.staff])piv[li.staff]={_t:0};
-    piv[li.staff][pp.start]=(piv[li.staff][pp.start]||0)+(li.amount||0);
-    piv[li.staff]._t=(piv[li.staff]._t||0)+(li.amount||0);
-    ppds[pp.start]=pp;
+    if(!roster[li.staff])roster[li.staff]={};
+    if(!roster[li.staff][pp.start])roster[li.staff][pp.start]={sig:0,pdi:0,sess:0,man:0,total:0,ppd:pp};
+    var r=roster[li.staff][pp.start];
+    if(li.type==='Weekly Stipend')r.sig+=li.amount||0;
+    else if(li.type==='Flat Stipend')r.pdi+=li.amount||0;
+    else if(li.type==='Session')r.sess+=li.amount||0;
+    else if(li.type==='Manual')r.man+=li.amount||0;
+    r.total+=li.amount||0;
   });
-  var aPPDs=PAY_PERIODS.filter(function(pp){return ppds[pp.start]&&pp.start<=today;});
-  var provs=Object.keys(piv).sort();
-  if(!provs.length||!aPPDs.length){
-    wrap.innerHTML='<p style="color:#aaa;font-size:12px">No stipend data found for any pay period.</p>';return;
-  }
-  var mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  function fd(iso){var d=new Date(iso+'T12:00:00');return mo[d.getMonth()]+' '+d.getDate();}
-  function f$(v){if(!v)return '<span style="color:#ddd">-</span>';return '$'+(+v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
-  function ft(v){return '$'+(+v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
-  var sTH='padding:7px 10px;font-size:10px;font-weight:700;color:#fff;text-align:right;white-space:nowrap;background:#1B2A4A;border-right:.5px solid rgba(255,255,255,.12)';
-  var sTH0='padding:7px 14px;font-size:10px;font-weight:700;color:#fff;text-align:left;background:#1B2A4A;position:sticky;left:0;z-index:2;min-width:160px';
-  var head='<thead><tr><th style="'+sTH0+'">PROVIDER</th>';
-  aPPDs.forEach(function(pp){
-    var lk=isPPDLocked(pp.start);
-    head+='<th style="'+sTH+(lk?';background:#15803d':'')+'">';
-    if(lk)head+='&#128274; ';
-    head+='PPD '+pp.ppd+'<br><span style="font-size:9px;font-weight:400;opacity:.8">'+fd(pp.start)+'</span></th>';
+
+  var provs=Object.keys(roster).sort();
+  if(!provs.length){wrap.innerHTML='<p style="color:#aaa;font-size:12px">No data found.</p>';return;}
+  var activePPDs=PAY_PERIODS.filter(function(pp){
+    return pp.start<=today&&provs.some(function(p){return roster[p][pp.start];});
   });
-  head+='<th style="'+sTH+';background:#6b5c45">TOTAL</th></tr></thead>';
-  var cTot={};aPPDs.forEach(function(pp){cTot[pp.start]=0;});var gTot=0;
-  var sTD='padding:6px 10px;text-align:right;font-size:12px;border-bottom:.5px solid #f0ede8;border-right:.5px solid #f0ede8';
-  var sTD0='padding:6px 14px;font-size:12px;font-weight:600;color:#1B2A4A;border-bottom:.5px solid #f0ede8;position:sticky;left:0';
-  var body='<tbody>';
-  provs.forEach(function(p,i){
-    var bg=i%2===0?'#fff':'#faf8f4';
-    body+='<tr style="background:'+bg+'"><td style="'+sTD0+';background:'+bg+'">'+p+'</td>';
-    aPPDs.forEach(function(pp){
-      var a=piv[p][pp.start]||0;cTot[pp.start]=(cTot[pp.start]||0)+a;
-      body+='<td style="'+sTD+'">'+f$(a)+'</td>';
+
+  var html='';
+  // Grand summary table first
+  var gsRows='';var gTot=0;
+  provs.forEach(function(prov){
+    var provTot=0;
+    activePPDs.forEach(function(pp){var r=roster[prov][pp.start];if(r)provTot+=r.total;});
+    gTot+=provTot;if(!provTot)return;
+    gsRows+='<tr><td style="padding:7px 14px;font-size:12px;font-weight:600;color:#1B2A4A">'+prov+'</td>'
+      +'<td style="padding:7px 14px;text-align:right;font-size:12px">'+fmtT(provTot)+'</td>'
+      +'<td style="padding:7px 14px;text-align:center;font-size:11px">'
+      +'<a href="#prov-'+prov.replace(/[^a-zA-Z0-9]/g,\'_\')+\'" style="color:#1B2A4A;text-decoration:none;font-size:11px">View detail &#8595;</a></td></tr>';
+  });
+  html+='<div style="background:#1B2A4A;border-radius:10px 10px 0 0;padding:12px 18px">'
+    +'<div style="font-size:14px;font-weight:700;color:#fff">Stipend Roster Summary</div>'
+    +'<div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:2px">All pay periods from protocol start</div></div>'
+    +'<table style="width:100%;border-collapse:collapse;margin-bottom:32px;border:1px solid #e0ddd8;border-top:none">'
+    +'<thead><tr style="background:#f5f3f0">'
+    +'<th style="padding:7px 14px;text-align:left;font-size:10px;font-weight:700;color:#888">PROVIDER</th>'
+    +'<th style="padding:7px 14px;text-align:right;font-size:10px;font-weight:700;color:#888">TOTAL PAID</th>'
+    +'<th style="padding:7px 14px;text-align:center;font-size:10px;font-weight:700;color:#888">DETAIL</th>'
+    +'</tr></thead><tbody>'+gsRows+'</tbody>'
+    +'<tfoot><tr style="background:#1B2A4A">'
+    +'<td style="padding:8px 14px;font-size:12px;font-weight:700;color:#fff">PROTOCOL TOTAL</td>'
+    +'<td style="padding:8px 14px;text-align:right;font-size:13px;font-weight:700;color:#fbbf24">'+fmtT(gTot)+'</td>'
+    +'<td></td></tr></tfoot></table>';
+
+  // Per-provider detail tables
+  provs.forEach(function(prov){
+    var provTot=0;var provCum=0;
+    activePPDs.forEach(function(pp){var r=roster[prov][pp.start];if(r)provTot+=r.total;});
+    if(!provTot)return;
+    var anchor=prov.replace(/[^a-zA-Z0-9]/g,'_');
+    var hasSig=false,hasPDI=false,hasSess=false,hasMan=false;
+    activePPDs.forEach(function(pp){var r=roster[prov][pp.start];if(!r)return;if(r.sig)hasSig=true;if(r.pdi)hasPDI=true;if(r.sess)hasSess=true;if(r.man)hasMan=true;});
+    html+='<div id="prov-'+anchor+'" style="margin-bottom:32px;border:1px solid #e0ddd8;border-radius:10px;overflow:hidden">';
+    html+='<div style="background:#f5f3f0;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">';
+    html+='<div><div style="font-size:14px;font-weight:700;color:#1B2A4A">'+prov+'</div>'
+      +'<div style="font-size:11px;color:#888;margin-top:2px">Pay period detail</div></div>';
+    html+='<div style="font-size:13px;font-weight:700;color:#6b5c45">Total: '+fmtT(provTot)+'</div>';
+    html+='</div>';
+    // Column headers
+    html+='<table style="width:100%;border-collapse:collapse">';
+    html+='<thead><tr style="background:#1B2A4A;color:#fff">';
+    html+='<th style="padding:7px 12px;text-align:center;font-size:10px;font-weight:700;width:50px">PPD</th>';
+    html+='<th style="padding:7px 12px;text-align:left;font-size:10px;font-weight:700">PERIOD</th>';
+    if(hasSig)html+='<th style="padding:7px 12px;text-align:right;font-size:10px;font-weight:700">SIG WEEKLY</th>';
+    if(hasPDI)html+='<th style="padding:7px 12px;text-align:right;font-size:10px;font-weight:700">PDI FLAT</th>';
+    if(hasSess)html+='<th style="padding:7px 12px;text-align:right;font-size:10px;font-weight:700">SESSION FEES</th>';
+    if(hasMan)html+='<th style="padding:7px 12px;text-align:right;font-size:10px;font-weight:700">MANUAL</th>';
+    html+='<th style="padding:7px 12px;text-align:right;font-size:10px;font-weight:700">TOTAL</th>';
+    html+='<th style="padding:7px 12px;text-align:right;font-size:10px;font-weight:700">CUMULATIVE</th>';
+    html+='<th style="padding:7px 12px;text-align:center;font-size:10px;font-weight:700">STATUS</th>';
+    html+='</tr></thead><tbody>';
+    activePPDs.forEach(function(pp,pi){
+      var r=roster[prov][pp.start]||{sig:0,pdi:0,sess:0,man:0,total:0};
+      provCum+=r.total;
+      var lk=isPPDLocked(pp.start);
+      var bg=pi%2===0?'#fff':'#faf8f4';
+      var lockBg=lk?'background:#f0fdf4;':'background:'+bg+';';
+      html+='<tr style="'+lockBg+'border-bottom:.5px solid #f0ede8">';
+      html+='<td style="padding:7px 12px;text-align:center;font-size:11px;color:#888">'+pp.ppd+'</td>';
+      html+='<td style="padding:7px 12px;font-size:11px;white-space:nowrap">'+fds(pp.start)+' &#8211; '+fds(pp.end)+'</td>';
+      if(hasSig)html+='<td style="padding:7px 12px;text-align:right;font-size:11px">'+fmt(r.sig)+'</td>';
+      if(hasPDI)html+='<td style="padding:7px 12px;text-align:right;font-size:11px">'+fmt(r.pdi)+'</td>';
+      if(hasSess)html+='<td style="padding:7px 12px;text-align:right;font-size:11px">'+fmt(r.sess)+'</td>';
+      if(hasMan)html+='<td style="padding:7px 12px;text-align:right;font-size:11px">'+fmt(r.man)+'</td>';
+      html+='<td style="padding:7px 12px;text-align:right;font-size:11px;font-weight:600">'+fmt(r.total)+'</td>';
+      html+='<td style="padding:7px 12px;text-align:right;font-size:11px;color:#6b5c45">'+fmtT(provCum)+'</td>';
+      html+='<td style="padding:7px 12px;text-align:center;font-size:10px">';
+      if(lk)html+='<span style="background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:12px;font-weight:700">&#128274; Locked</span>';
+      else html+='<span style="background:#f0f4ff;color:#6366f1;padding:2px 8px;border-radius:12px">Open</span>';
+      html+='</td></tr>';
     });
-    var t=piv[p]._t||0;gTot+=t;
-    body+='<td style="'+sTD+';font-weight:700;color:#6b5c45">'+ft(t)+'</td></tr>';
+    html+='<tr style="background:#f5f3f0;font-weight:700;border-top:2px solid #1B2A4A">';
+    html+='<td colspan="2" style="padding:8px 12px;font-size:12px;color:#1B2A4A">Provider Total</td>';
+    if(hasSig)html+='<td></td>';if(hasPDI)html+='<td></td>';if(hasSess)html+='<td></td>';if(hasMan)html+='<td></td>';
+    html+='<td style="padding:8px 12px;text-align:right;font-size:12px;color:#1B2A4A">'+fmtT(provTot)+'</td>';
+    html+='<td style="padding:8px 12px;text-align:right;font-size:13px;color:#6b5c45">'+fmtT(provCum)+'</td>';
+    html+='<td></td></tr>';
+    html+='</tbody></table></div>';
   });
-  body+='</tbody>';
-  var sFT='padding:7px 10px;text-align:right;font-size:12px;font-weight:700;color:#1B2A4A;background:#f5f3f0;border-top:2px solid #1B2A4A;border-right:.5px solid #e0ddd8';
-  var foot='<tfoot><tr><td style="padding:7px 14px;font-size:12px;font-weight:700;color:#1B2A4A;background:#f5f3f0;border-top:2px solid #1B2A4A;position:sticky;left:0">PPD TOTAL</td>';
-  aPPDs.forEach(function(pp){foot+='<td style="'+sFT+'">'+ft(cTot[pp.start]||0)+'</td>';});
-  foot+='<td style="'+sFT+';color:#6b5c45;font-size:13px">'+ft(gTot)+'</td></tr></tfoot>';
-  wrap.innerHTML='<table style="border-collapse:collapse;width:max-content;min-width:100%;font-family:inherit">'
-    +head+body+foot+'</table>'
-    +'<p style="font-size:11px;color:#aaa;margin-top:10px">&#128274; = Locked &amp; approved &nbsp; | &nbsp; Grand Total: <strong>'+ft(gTot)+'</strong></p>';
+
+  wrap.innerHTML=html;
 }
+
 
 function renderByStaff(D){
   var el=document.getElementById('bystaff-content');if(!el)return;
