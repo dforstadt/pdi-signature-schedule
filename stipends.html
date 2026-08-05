@@ -837,8 +837,12 @@ function showTab(tab){
   document.querySelectorAll('.nav-tab').forEach(function(el){el.classList.remove('active');});
   document.querySelectorAll('[id^="tab-"]').forEach(function(el){el.classList.add('hidden');});
   var tabs=['summary','lineitems','roster','byclient','bystaff','manual','leadtech'];
-  var idx=tabs.indexOf(tab);
-  if(idx>-1){document.querySelectorAll('.nav-tab')[idx].classList.add('active');}
+  // Match nav tab by onclick content — immune to array/DOM index mismatch
+  document.querySelectorAll('.nav-tab').forEach(function(btn){
+    if(btn.getAttribute('onclick')&&btn.getAttribute('onclick').indexOf("'"+tab+"'")>-1){
+      btn.classList.add('active');
+    }
+  });
   var el=document.getElementById('tab-'+tab);
   if(el)el.classList.remove('hidden');
   if(tab==='leadtech')ltOnTabOpen();
