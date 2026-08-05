@@ -1296,7 +1296,7 @@ function renderByStaff(D){
 
   // Build week-level census (Sig clients, PDI discharges) from lineItems
   var weekCensus={};
-  D.lineItems.forEach(function(li){
+  D.lineItems.filter(function(li){return!noStipend(li.staff);}).forEach(function(li){
     if(!weekCensus[li.wStart])weekCensus[li.wStart]={sig:{},pdi:{}};
     if(li.track==='Signature'&&li.type==='Weekly Stipend')weekCensus[li.wStart].sig[li.client]=1;
     if(li.track==='PDI'&&li.type==='Flat Stipend')weekCensus[li.wStart].pdi[li.client]=1;
@@ -1316,7 +1316,11 @@ function renderByStaff(D){
       +allProvs.map(function(p){return'<div>'+(noStipend(p)?'<s style="color:#aaa">'+p+'</s>':'<strong>'+p+'</strong>')+'</div>';}).join('')
       +'</div></details>';
   }
-  D.lineItems.forEach(function(li){
+  // Filter out no-stipend providers from line items before building staffMap
+  var filteredItems=D.lineItems.filter(function(li){
+    return!noStipend(li.staff);
+  });
+  filteredItems.forEach(function(li){
     var prov=li.staff;
     if(!staffMap[prov])staffMap[prov]={weeks:{}};
     var wk=li.wStart;
