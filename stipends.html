@@ -20,10 +20,10 @@ function getMondayISO(offset){
   d.setDate(d.getDate()-diff+offset*7);
   return d.toISOString().slice(0,10);
 }
-function fmtWeekRange(sat){
-  // Billing period: Friday through Thursday
-  var d=new Date(sat+'T12:00:00'),e=new Date(sat+'T12:00:00');
-  e.setDate(e.getDate()+6); // +6 days = Thursday
+function fmtWeekRange(sun){
+  // Billing period: Sunday through Saturday (aligned to PPD)
+  var d=new Date(sun+'T12:00:00'),e=new Date(sun+'T12:00:00');
+  e.setDate(e.getDate()+6); // +6 days = Saturday
   return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})+
     ' – '+e.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
 }
@@ -1045,11 +1045,10 @@ function computeStipends(){
   // Billing period: Friday – Thursday
   // getSat returns the Saturday on or before a given date
   function getSat(date){
-    // Billing period starts on FRIDAY
+    // Billing period starts on SUNDAY (aligned to PPD schedule)
     var d=new Date(date);
     var day=d.getDay(); // 0=Sun..6=Sat
-    var diff=(day+2)%7; // Fri→0, Sat→1, Sun→2, Mon→3, Tue→4, Wed→5, Thu→6
-    d.setDate(d.getDate()-diff);
+    d.setDate(d.getDate()-day); // go back to Sunday
     return d.toISOString().slice(0,10);
   }
   function weekEnd(ws){var d=new Date(ws+'T12:00:00');d.setDate(d.getDate()+6);return d.toISOString().slice(0,10);}
@@ -1057,7 +1056,7 @@ function computeStipends(){
   // ── Weeks derived from events + PDI discharge dates (Sat–Fri billing periods)
   var weekSet={};
   // Fixed Friday-Thursday grid: every Friday from launch through today
-  var _gd=fromISO('2026-03-27');
+  var _gd=fromISO('2025-12-14'); // PPD#1 start — first Sunday
   var _today=getSat(new Date());
   while(_gd.toISOString().slice(0,10)<=_today){
     weekSet[_gd.toISOString().slice(0,10)]=true;
@@ -1076,19 +1075,9 @@ function computeStipends(){
     if(wk){var s=getSat(fromISO(wk));if(s)weekSet[s]=true;}
   });
   allWeeks=Object.keys(weekSet).sort().filter(function(w){return w>=PAY_PERIODS[0].start;});
-  // When navigating by PPD, use the exact PPD boundary dates so billing weeks
-  // that start before the PPD (but partially overlap) are excluded.
-  // weekEnd(w) = the last day of billing week w (Thursday).
-  if(_ppdFrom&&_ppdTo){
-    // Keep only weeks whose END date falls within the PPD range.
-    // This ensures weeks that start before the PPD but end after its start are excluded.
-    allWeeks=allWeeks.filter(function(w){
-      return weekEnd(w)>=_ppdFrom&&w<=_ppdTo;
-    });
-  } else {
-    if(fltFrom)allWeeks=allWeeks.filter(function(w){return w>=getSat(fromISO(fltFrom));});
-    if(fltTo)  allWeeks=allWeeks.filter(function(w){return w<=getSat(fromISO(fltTo));});
-  }
+  // Weeks now start on Sunday, aligned to PPD boundaries — simple date filter
+  if(fltFrom)allWeeks=allWeeks.filter(function(w){return w>=getSat(fromISO(fltFrom));});
+  if(fltTo)  allWeeks=allWeeks.filter(function(w){return w<=fltTo;});
 
   // ── Weekly-type providers: Ockman, Nicole, Gus ──────────────────────────────
   // These three ALWAYS receive the weekly Signature stipend and PDI flat stipend.
@@ -1189,7 +1178,7 @@ function computeStipends(){
   allWeeks.forEach(function(wStart){
     var wEnd=weekEnd(wStart);
     // Set Gus inclusion based on whether this week ends before/on cutoff
-    WEEKLY_CORE = wEnd <= GUS_CUTOFF ? WEEKLY_WITH_GUS : WEEKLY_NO_GUS;
+    WEEKLY_CORE = wStart <= GUS_CUTOFF ? WEEKLY_WITH_GUS : WEEKLY_NO_GUS;
     var wLbl=wkLabel(wStart);
     var wEvs=DATA.events.filter(function(ev){return ev.date&&getSat(fromISO(ev.date))===wStart;});
 
@@ -1220,7 +1209,7 @@ function computeStipends(){
         // ── Weekly stipend: $250/wk per active Sig client (Ockman/Nicole/Gus) ──
         // Exclude Gus from weeks ending after July 24 2026
         weeklyProviders.filter(function(p){
-          return p!=='Gus Hernandez'||wEnd<=GUS_CUTOFF;
+          return p!=='Gus Hernandez'||wStart<=GUS_CUTOFF;
         }).forEach(function(prov){
           lineItems.push({week:wLbl,wStart:wStart,client:cName,track:'Signature',
             staff:displayName(prov),type:'Weekly Stipend',sessHrs:'',rate:'',amount:250,counted:250,notes:''});
