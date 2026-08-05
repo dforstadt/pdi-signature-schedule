@@ -1859,16 +1859,35 @@ var _manRealtimeStarted = false;
 function startManualListener(){
   if(_manRealtimeStarted) return;
   _manRealtimeStarted = true;
-  MANUAL_REF.on('value', function(s){
-    var d = s.val();
-    manualEntries = d ? Object.entries(d).map(function(kv){
+  // Merge entries from both old path (schedule_v3) and new path (lifeskills_clinical)
+  // Old entries (Nichole Bessent, testing entries) live under schedule_v3/manual_stipends
+  var oldRef = firebase.database().ref('schedule_v3/manual_stipends');
+  function mergeAndRefresh(newData, oldData) {
+    var merged = {};
+    // Old entries first (prefix key to avoid collision)
+    if(oldData) Object.entries(oldData).forEach(function(kv){
+      merged['legacy_'+kv[0]] = kv[1];
+    });
+    // New entries override if same (new takes priority)
+    if(newData) Object.entries(newData).forEach(function(kv){
+      merged[kv[0]] = kv[1];
+    });
+    manualEntries = Object.entries(merged).map(function(kv){
       return Object.assign({_key: kv[0]}, kv[1]);
-    }) : [];
-    // Re-inject into last rendered D and refresh the approval tab only
+    });
     if(window._lastD){
       window.injectManualItems(window._lastD);
       renderByStaff(window._lastD);
     }
+  }
+  var _newData = null, _oldData = null, _newReady = false, _oldReady = false;
+  MANUAL_REF.on('value', function(s){
+    _newData = s.val(); _newReady = true;
+    if(_oldReady) mergeAndRefresh(_newData, _oldData);
+  });
+  oldRef.once('value', function(s){
+    _oldData = s.val(); _oldReady = true;
+    if(_newReady) mergeAndRefresh(_newData, _oldData);
   });
 }
 
