@@ -1566,8 +1566,72 @@ function psychRenderHistory(){
     +'</tr></tfoot></table>';
 }
 
+function renderOutstandingItems(D){
+  var wrap=document.getElementById('outstanding-items-wrap');
+  if(!wrap)return;
+  // Collect unapproved items from ALL locked PPDs
+  var items=[];
+  Object.keys(ppdLocks).forEach(function(lkKey){
+    var lock=ppdLocks[lkKey];
+    var pp=PAY_PERIODS.find(function(p){return p.start===lock.ppdStart;});
+    if(!pp)return;
+    D.lineItems.filter(function(li){
+      return!noStipend(li.staff)&&li.wStart>=pp.start&&li.wStart<=pp.end
+        &&!approvals['staff::'+li.staff+'::'+li.wStart]
+        &&li.type!=='Manual';
+    }).forEach(function(li){
+      items.push({pp:pp,li:li,key:'outstanding::'+pp.start+'::'+li.staff+'::'+li.wStart+'::'+li.type+'::'+li.client});
+    });
+  });
+  if(!items.length){wrap.innerHTML='';return;}
+  var mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function fd(iso){var d=new Date(iso+'T12:00:00');return mo[d.getMonth()]+' '+d.getDate();}
+  var rows=items.map(function(it){
+    var apvd=!!approvals[it.key];
+    var btnStyle=apvd
+      ?'background:#15803d;color:#fff;border:none;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer'
+      :'background:#fff7ed;color:#c2410c;border:1.5px solid #ea580c;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer';
+    var btnLabel=apvd?'&#10003; Approved':'Approve';
+    return '<tr style="border-bottom:.5px solid #fde8d8">'
+      +'<td style="padding:8px 10px;font-size:11px;color:#888;white-space:nowrap">PPD '+it.pp.ppd+'</td>'
+      +'<td style="padding:8px 10px;font-size:11px;white-space:nowrap">'+fd(it.li.wStart)+'</td>'
+      +'<td style="padding:8px 10px;font-size:12px;font-weight:600">'+it.li.staff+'</td>'
+      +'<td style="padding:8px 10px;font-size:11px;color:#555">'+it.li.client+'</td>'
+      +'<td style="padding:8px 10px;font-size:11px;color:#555">'+it.li.type+'</td>'
+      +'<td style="padding:8px 10px;text-align:right;font-size:12px;font-weight:700">$'+(it.li.amount||0).toFixed(2)+'</td>'
+      +'<td style="padding:8px 10px;text-align:center"><button data-okey="'+encodeURIComponent(it.key)+'" onclick="approveOutstanding(this)" style="'+btnStyle+'">'+btnLabel+'</button></td>'
+      +'</tr>';
+  }).join('');
+  wrap.innerHTML=
+    '<div style="margin:0 0 16px;border:2px solid #ea580c;border-radius:12px;overflow:hidden">'
+    +'<div style="background:#ea580c;padding:12px 18px;display:flex;align-items:center;justify-content:space-between">'
+    +'<div style="display:flex;align-items:center;gap:10px">'
+    +'<div style="font-size:20px">&#9888;</div>'
+    +'<div><div style="font-size:13px;font-weight:700;color:#fff">Outstanding Items &#8212; Pending Finance Approval</div>'
+    +'<div style="font-size:11px;color:#fde8d8;margin-top:1px">Sessions logged after a locked pay period. Approve each item for finance submission.</div></div></div>'
+    +'<div style="font-size:12px;font-weight:700;color:#fff;background:rgba(0,0,0,.2);padding:4px 12px;border-radius:20px">'+items.length+' item'+(items.length!==1?'s':'')+'</div>'
+    +'</div>'
+    +'<table style="width:100%;border-collapse:collapse;background:#fff">'
+    +'<thead><tr style="background:#fff7ed">'
+    +'<th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:700;color:#c2410c">PPD</th>'
+    +'<th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:700;color:#c2410c">WEEK</th>'
+    +'<th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:700;color:#c2410c">PROVIDER</th>'
+    +'<th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:700;color:#c2410c">CLIENT</th>'
+    +'<th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:700;color:#c2410c">TYPE</th>'
+    +'<th style="padding:7px 10px;text-align:right;font-size:10px;font-weight:700;color:#c2410c">AMOUNT</th>'
+    +'<th style="padding:7px 10px;text-align:center;font-size:10px;font-weight:700;color:#c2410c">ACTION</th>'
+    +'</tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+function approveOutstanding(btn){
+  var key=decodeURIComponent(btn.getAttribute('data-okey'));
+  approvals[key]=!approvals[key];
+  saveApprovals();
+  if(window._lastD){renderOutstandingItems(window._lastD);renderByStaff(window._lastD);}
+}
+
 function renderByStaff(D){
   var el=document.getElementById('bystaff-content');if(!el)return;
+  renderOutstandingItems(D);
   function fmt$(v){return v||v===0?'$'+(+v).toFixed(2):'-';}
   function fmtH(v){return v||v===0?(+v).toFixed(1)+' hr':'-';}
 
@@ -1743,17 +1807,9 @@ function renderByStaff(D){
       _lockBanner='<div style="margin:0 0 14px;padding:12px 18px;background:#f0fdf4;border:1.5px solid #16a34a;border-radius:10px;display:flex;align-items:center;gap:14px">';
       _lockBanner+='<div style="font-size:24px">&#128274;</div>';
       _lockBanner+='<div><div style="font-size:13px;font-weight:700;color:#15803d">PPD '+_pp.ppd+' &#8212; Approved &amp; Locked</div>';
-      _lockBanner+='<div style="font-size:11px;color:#16a34a;margin-top:2px">Locked '+_ld+'. All amounts are final. Post-lock sessions appear as outstanding below.</div></div>';
+      _lockBanner+='<div style="font-size:11px;color:#16a34a;margin-top:2px">Locked '+_ld+'. All amounts are final. Post-lock sessions are routed to Outstanding Items for separate finance approval.</div></div>';
       _lockBanner+='</div>';
-      // Outstanding: unapproved items in this locked PPD
-      var _unappr={};
-      D.lineItems.filter(function(li){return!noStipend(li.staff)&&li.wStart>=_pp.start&&li.wStart<=_pp.end&&!approvals['staff::'+li.staff+'::'+li.wStart];}).forEach(function(li){_unappr[li.staff]=(_unappr[li.staff]||0)+(li.amount||0);});
-      if(Object.keys(_unappr).length){
-        _lockBanner+='<div style="margin:0 0 14px;padding:12px 18px;background:#fff7ed;border:1.5px solid #ea580c;border-radius:10px">';
-        _lockBanner+='<div style="font-size:12px;font-weight:700;color:#c2410c;margin-bottom:8px">&#9888; Post-Lock Outstanding Items &#8212; Carry to Next Pay Period</div>';
-        Object.keys(_unappr).forEach(function(s){_lockBanner+='<div style="font-size:12px;color:#9a3412;padding:2px 0">'+s+' &mdash; <strong>$'+_unappr[s].toFixed(2)+'</strong></div>';});
-        _lockBanner+='</div>';
-      }
+      // Outstanding items are shown in the separate Outstanding Items section above
     } else {
       _lockBanner='<div style="margin:0 0 14px;padding:10px 18px;background:#eef2ff;border:1.5px solid #818cf8;border-radius:10px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">';
       _lockBanner+='<div style="font-size:12px;color:#3730a3"><strong>PPD '+_pp.ppd+' is open.</strong> Verify all stipends, then lock this period for finance submission.</div>';
