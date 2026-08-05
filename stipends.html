@@ -1648,7 +1648,13 @@ function approveOutstanding(btn){
 function renderPPDSummary(){
   var wrap=document.getElementById('ppd-summary-content');
   if(!wrap)return;
-  wrap.innerHTML='<p style="color:#aaa;font-size:12px;padding:10px 0">Loading… <span id="ppd-sum-prog"></span></p>';
+  // Immediately show current data from cache, then load rest
+  _drawPPDSummary(wrap);
+  // Load all past PPDs in background
+  _loadAllPPDs(wrap);
+}
+function _populateRosterCache(){renderPPDSummary();}
+function _loadAllPPDs(wrap){
   var today=new Date().toISOString().slice(0,10);
   var pastPPDs=PAY_PERIODS.filter(function(pp){return pp.start<=today;});
   var feEl=document.getElementById('flt-from'),teEl=document.getElementById('flt-to'),trEl=document.getElementById('flt-track');
@@ -1657,34 +1663,32 @@ function renderPPDSummary(){
   var idx=0;
   function step(){
     if(idx>=pastPPDs.length){
-      // restore
       if(feEl)feEl.value=oF;if(teEl)teEl.value=oT;if(trEl)trEl.value=oTr;
       _ppdFrom=oPF;_ppdTo=oPT;_currentPPD=oPIdx;
-      _drawPPDSummary(wrap,pastPPDs);
+      _drawPPDSummary(wrap);
       return;
     }
     var pp=pastPPDs[idx++];
-    var prog=document.getElementById('ppd-sum-prog');
-    if(prog)prog.textContent='PPD '+pp.ppd+' of '+pastPPDs.length;
     try{
       if(feEl)feEl.value=pp.start;if(teEl)teEl.value=pp.end;if(trEl)trEl.value='all';
       _ppdFrom=pp.start;_ppdTo=pp.end;_currentPPD=PAY_PERIODS.indexOf(pp);
       var D=computeStipends();
       if(window.injectManualItems)window.injectManualItems(D);
-      _rosterCache[pp.start]=(D.lineItems||[]).slice();
-    }catch(e){_rosterCache[pp.start]=[];}
+      if(D.lineItems&&D.lineItems.length)_rosterCache[pp.start]=D.lineItems.slice();
+    }catch(e){}
     setTimeout(step,0);
   }
   step();
 }
-function _populateRosterCache(){renderPPDSummary();}
-function _drawPPDSummary(wrap,pastPPDs){
+function _drawPPDSummary(wrap){
+  if(!wrap)return;
+  var today=new Date().toISOString().slice(0,10);
   var mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  function fds(iso){var d=new Date(iso+'T12:00:00');return mo[d.getMonth()]+' '+d.getDate();}
+  function fds(iso){var d=new Date(iso+'T12:00:00');return 'PPD '+(PAY_PERIODS.find(function(p){return p.start===iso;})||{ppd:''}).ppd+'<br><span style="font-weight:400;opacity:.7">'+mo[d.getMonth()]+' '+d.getDate()+'</span>';}
   function fmtT(v){return v?'$'+(+v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'—';}
-  // Build provider -> ppdStart -> total
   var piv={},ppdsWithData=[];
-  pastPPDs.forEach(function(pp){
+  PAY_PERIODS.forEach(function(pp){
+    if(pp.start>today)return;
     var items=_rosterCache[pp.start]||[];
     if(!items.length)return;
     ppdsWithData.push(pp);
@@ -1695,39 +1699,37 @@ function _drawPPDSummary(wrap,pastPPDs){
     });
   });
   var provs=Object.keys(piv).sort();
+  var cached=Object.keys(_rosterCache).length;
+  var total_past=PAY_PERIODS.filter(function(pp){return pp.start<=today;}).length;
+  var statusBar='<div style="font-size:10px;color:#999;margin-bottom:10px;display:flex;align-items:center;gap:12px">'
+    +'<span>'+cached+' of '+total_past+' pay periods loaded</span>'
+    +(cached<total_past?'<span style="color:#aaa">(loading remaining…)</span>':'<span style="color:#16a34a">&#10003; Complete</span>')
+    +'</div>';
   if(!provs.length||!ppdsWithData.length){
-    wrap.innerHTML='<p style="color:#999;font-size:12px;padding:20px 0">No stipend data found across any pay period. Verify calendar has session events.</p>';
+    wrap.innerHTML=statusBar+'<p style="color:#999;font-size:12px">No data yet — loading pay periods…</p>';
     return;
   }
-  // Header
-  var h='<div style="overflow-x:auto"><table style="border-collapse:collapse;font-size:11px;font-family:inherit;min-width:100%">';
+  var h=statusBar+'<div style="overflow-x:auto"><table style="border-collapse:collapse;font-size:11px;min-width:100%">';
   h+='<thead><tr>';
-  h+='<th style="padding:8px 14px;background:#1B2A4A;color:#fff;text-align:left;font-size:11px;position:sticky;left:0;z-index:2;min-width:150px">PROVIDER</th>';
+  h+='<th style="padding:8px 14px;background:#1B2A4A;color:#fff;text-align:left;position:sticky;left:0;z-index:2;min-width:160px">PROVIDER</th>';
   ppdsWithData.forEach(function(pp){
     var lk=isPPDLocked(pp.start);
-    h+='<th style="padding:8px 10px;background:'+(lk?'#15803d':'#1B2A4A')+';color:#fff;text-align:right;font-size:10px;white-space:nowrap">';
-    h+=(lk?'&#128274; ':'')+' PPD '+pp.ppd+'<br><span style="font-weight:400;opacity:.75">'+fds(pp.start)+'</span></th>';
+    h+='<th style="padding:7px 10px;background:'+(lk?'#15803d':'#1B2A4A')+';color:#fff;text-align:right;font-size:10px;white-space:nowrap">'+(lk?'&#128274; ':'')+fds(pp.start)+'</th>';
   });
-  h+='<th style="padding:8px 10px;background:#6b5c45;color:#fff;text-align:right;font-size:11px">TOTAL</th>';
-  h+='</tr></thead><tbody>';
-  // Rows
+  h+='<th style="padding:8px 10px;background:#6b5c45;color:#fff;text-align:right">TOTAL</th></tr></thead><tbody>';
   var gTot=0;
   provs.forEach(function(prov,pi){
-    var rowTot=0;
-    ppdsWithData.forEach(function(pp){rowTot+=(piv[prov][pp.start]||0);});
-    if(!rowTot)return;
-    gTot+=rowTot;
+    var rowTot=0;ppdsWithData.forEach(function(pp){rowTot+=(piv[prov][pp.start]||0);});
+    if(!rowTot)return;gTot+=rowTot;
     var bg=pi%2===0?'#fff':'#faf8f4';
     h+='<tr style="background:'+bg+'">';
     h+='<td style="padding:7px 14px;font-weight:600;color:#1B2A4A;position:sticky;left:0;background:'+bg+'">'+prov+'</td>';
     ppdsWithData.forEach(function(pp){
       var v=piv[prov][pp.start]||0;
-      h+='<td style="padding:7px 10px;text-align:right;color:'+(v?'#1B2A4A':'#ccc')+'">'+(v?fmtT(v):'—')+'</td>';
+      h+='<td style="padding:7px 10px;text-align:right;color:'+(v?'#1B2A4A':'#ddd')+'">'+fmtT(v)+'</td>';
     });
-    h+='<td style="padding:7px 10px;text-align:right;font-weight:700;color:#6b5c45">'+fmtT(rowTot)+'</td>';
-    h+='</tr>';
+    h+='<td style="padding:7px 10px;text-align:right;font-weight:700;color:#6b5c45">'+fmtT(rowTot)+'</td></tr>';
   });
-  // Footer
   h+='<tr style="background:#1B2A4A;color:#fff;font-weight:700">';
   h+='<td style="padding:8px 14px;position:sticky;left:0;background:#1B2A4A">TOTAL</td>';
   ppdsWithData.forEach(function(pp){
@@ -1736,14 +1738,10 @@ function _drawPPDSummary(wrap,pastPPDs){
   });
   h+='<td style="padding:8px 10px;text-align:right;color:#fbbf24;font-size:13px">'+fmtT(gTot)+'</td>';
   h+='</tr></tbody></table></div>';
-  h+='<p style="font-size:10px;color:#aaa;margin-top:8px">'+provs.length+' providers · '+ppdsWithData.length+' pay periods · Protocol total: <strong>'+fmtT(gTot)+'</strong>'
-    +' &nbsp;<button onclick="renderPPDSummary()" style="background:none;border:1px solid #ccc;color:#888;padding:3px 10px;border-radius:4px;font-size:10px;cursor:pointer">&#8635; Refresh</button></p>';
   wrap.innerHTML=h;
 }
-function _renderPPDSummaryInner(wrap){
-  var today=new Date().toISOString().slice(0,10);
-  _drawPPDSummary(wrap,PAY_PERIODS.filter(function(pp){return pp.start<=today;}));
-}
+function _renderPPDSummaryInner(wrap){_drawPPDSummary(wrap);}
+
 
 
 
