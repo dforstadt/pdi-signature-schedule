@@ -259,48 +259,7 @@ td.money.zero{color:var(--tx3);}
     Access Roster
   </button>
   
-  
-<!-- PDI PSYCHOMETRIC TAB -->
-<div id="tab-psychometric" class="hidden" style="padding:20px">
-  <div style="max-width:860px">
-    <h3 style="margin-bottom:4px;color:#1B2A4A">PDI Testing — Psychometric Support</h3>
-    <p style="font-size:12px;color:#888;margin-bottom:20px">$2,133.33 per entry. Select the pay period, provider, and client.</p>
-    <!-- PPD selector -->
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
-      <button onclick="psychShiftPPD(-1)" id="psych-prev" style="background:#f0ece6;border:1px solid #d4cfc8;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:16px;color:#4338ca" disabled>&#8249;</button>
-      <div id="psych-ppd-lbl" style="font-size:13px;font-weight:600;color:#1B2A4A;min-width:280px;text-align:center">—</div>
-      <button onclick="psychShiftPPD(1)" id="psych-next" style="background:#f0ece6;border:1px solid #d4cfc8;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:16px;color:#4338ca">&#8250;</button>
-    </div>
-    <!-- Add entry form -->
-    <div style="background:#f7f5f2;border-radius:10px;padding:16px 20px;margin-bottom:24px;border:1px solid #e0ddd8">
-      <div style="font-size:12px;font-weight:700;color:#1B2A4A;margin-bottom:12px">Add Line Item</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr auto auto;gap:10px;align-items:end">
-        <div>
-          <label style="font-size:10px;font-weight:600;color:#888;display:block;margin-bottom:4px">PROVIDER</label>
-          <select id="psych-prov-sel" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:12px;font-family:inherit"><option value="">Select provider…</option></select>
-        </div>
-        <div>
-          <label style="font-size:10px;font-weight:600;color:#888;display:block;margin-bottom:4px">CLIENT</label>
-          <select id="psych-client-sel" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:12px;font-family:inherit"><option value="">Select client…</option></select>
-        </div>
-        <div>
-          <label style="font-size:10px;font-weight:600;color:#888;display:block;margin-bottom:4px">FEE</label>
-          <div style="padding:8px 12px;background:#fff;border:1px solid #ccc;border-radius:6px;font-size:12px;font-weight:700;color:#1B2A4A">$2,133.33</div>
-        </div>
-        <button onclick="psychAddEntry()" style="background:#4338ca;color:#fff;border:none;padding:9px 18px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">+ Add</button>
-      </div>
-      <div id="psych-add-err" style="font-size:11px;color:#dc2626;margin-top:6px;min-height:16px"></div>
-    </div>
-    <!-- Current PPD entries -->
-    <div style="font-size:12px;font-weight:700;color:#1B2A4A;margin-bottom:8px">Pay Period Entries</div>
-    <div id="psych-entries-wrap" style="overflow-x:auto;margin-bottom:24px"></div>
-    <!-- History -->
-    <div style="font-size:12px;font-weight:700;color:#1B2A4A;margin-bottom:8px;padding-top:16px;border-top:1px solid #eee">All Pay Periods — History</div>
-    <div id="psych-history-wrap" style="overflow-x:auto"></div>
-  </div>
-</div>
-
-<!-- MANUAL ADJUSTMENTS TAB -->
+  <!-- MANUAL ADJUSTMENTS TAB -->
   
 
 <div id="tab-manual" class="hidden" style="padding:20px">
@@ -564,6 +523,46 @@ window.onerror=function(msg,src,line,col,err){
     <div id="lt-history" style="font-size:12px;color:#888;font-style:italic">Loading&hellip;</div>
   </div>
 </div>
+<!-- PDI PSYCHOMETRIC TAB -->
+<div id="tab-psychometric" class="hidden" style="padding:20px">
+  <div style="max-width:860px">
+    <h3 style="margin-bottom:4px;color:#1B2A4A">PDI Testing — Psychometric Support</h3>
+    <p style="font-size:12px;color:#888;margin-bottom:20px">$2,133.33 per entry. Select the pay period, provider, and client.</p>
+    <!-- PPD selector -->
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <button onclick="psychShiftPPD(-1)" id="psych-prev" style="background:#f0ece6;border:1px solid #d4cfc8;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:16px;color:#4338ca" disabled>&#8249;</button>
+      <div id="psych-ppd-lbl" style="font-size:13px;font-weight:600;color:#1B2A4A;min-width:280px;text-align:center">—</div>
+      <button onclick="psychShiftPPD(1)" id="psych-next" style="background:#f0ece6;border:1px solid #d4cfc8;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:16px;color:#4338ca">&#8250;</button>
+    </div>
+    <!-- Add entry form -->
+    <div style="background:#f7f5f2;border-radius:10px;padding:16px 20px;margin-bottom:24px;border:1px solid #e0ddd8">
+      <div style="font-size:12px;font-weight:700;color:#1B2A4A;margin-bottom:12px">Add Line Item</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr auto auto;gap:10px;align-items:end">
+        <div>
+          <label style="font-size:10px;font-weight:600;color:#888;display:block;margin-bottom:4px">PROVIDER</label>
+          <select id="psych-prov-sel" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:12px;font-family:inherit"><option value="">Select provider…</option></select>
+        </div>
+        <div>
+          <label style="font-size:10px;font-weight:600;color:#888;display:block;margin-bottom:4px">CLIENT</label>
+          <select id="psych-client-sel" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:12px;font-family:inherit"><option value="">Select client…</option></select>
+        </div>
+        <div>
+          <label style="font-size:10px;font-weight:600;color:#888;display:block;margin-bottom:4px">FEE</label>
+          <div style="padding:8px 12px;background:#fff;border:1px solid #ccc;border-radius:6px;font-size:12px;font-weight:700;color:#1B2A4A">$2,133.33</div>
+        </div>
+        <button onclick="psychAddEntry()" style="background:#4338ca;color:#fff;border:none;padding:9px 18px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">+ Add</button>
+      </div>
+      <div id="psych-add-err" style="font-size:11px;color:#dc2626;margin-top:6px;min-height:16px"></div>
+    </div>
+    <!-- Current PPD entries -->
+    <div style="font-size:12px;font-weight:700;color:#1B2A4A;margin-bottom:8px">Pay Period Entries</div>
+    <div id="psych-entries-wrap" style="overflow-x:auto;margin-bottom:24px"></div>
+    <!-- History -->
+    <div style="font-size:12px;font-weight:700;color:#1B2A4A;margin-bottom:8px;padding-top:16px;border-top:1px solid #eee">All Pay Periods — History</div>
+    <div id="psych-history-wrap" style="overflow-x:auto"></div>
+  </div>
+</div>
+
   </div>
 </div>
 
