@@ -1942,15 +1942,20 @@ window.injectManualItems = function(D){
   function getFri(s){ var d=new Date(s+'T12:00:00'); d.setDate(d.getDate()-((d.getDay()+2)%7)); return d.toISOString().slice(0,10); }
   function nextFri(s){ var d=new Date(s+'T12:00:00'); d.setDate(d.getDate()+7); return d.toISOString().slice(0,10); }
   manualEntries.forEach(function(e){
-    if(!e.provider||!e.startWeek||!e.amountPerWeek) return;
-    var start=getFri(e.startWeek), end=e.endWeek?getFri(e.endWeek):start;
+    // Support both old field names (week, amount) and new (startWeek, amountPerWeek)
+    var eProv = e.provider||e.prov||'';
+    var eStart = e.startWeek||e.week||e.weekFri||'';
+    var eAmt   = e.amountPerWeek||e.amount||e.amt||0;
+    var eEnd   = e.endWeek||e.week||eStart;
+    if(!eProv||!eStart||!eAmt) return;
+    var start=getFri(eStart), end=getFri(eEnd);
     var wk=start, safety=0;
     while(wk<=end&&safety++<52){
       D.lineItems.push({
         week:wkLabel(wk), wStart:wk, client:'Manual',
-        track:'Signature', staff:e.provider, type:'Manual',
-        sessHrs:'', rate:'', amount:e.amountPerWeek,
-        counted:e.amountPerWeek, notes:e.notes||'', _manKey:e._key
+        track:'Signature', staff:eProv, type:'Manual',
+        sessHrs:'', rate:'', amount:eAmt,
+        counted:eAmt, notes:e.notes||e.note||'', _manKey:e._key
       });
       wk=nextFri(wk);
     }
