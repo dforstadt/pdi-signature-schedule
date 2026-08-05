@@ -579,6 +579,7 @@ window.onerror=function(msg,src,line,col,err){
 <script>
 
 var _noStipendOverrides = [];
+var _rosterCache = {}; // ppdStart -> lineItems[], populated by render()
 
 // ── Firebase ───────────────────────────────────────────────────────────────
 firebase.initializeApp({
@@ -1643,11 +1644,43 @@ function approveOutstanding(btn){
 function renderPPDSummary(){
   var wrap=document.getElementById('ppd-summary-content');
   if(!wrap)return;
-  wrap.innerHTML='<p style="color:#aaa;font-size:12px">Computing… this may take a moment</p>';
-  setTimeout(function(){
-    try{_renderPPDSummaryInner(wrap);}
-    catch(e){wrap.innerHTML='<div style="color:#dc2626;font-size:12px;padding:12px">Error: '+e.message+'</div>';}
-  },50);
+  var cached=Object.keys(_rosterCache);
+  if(!cached.length){
+    wrap.innerHTML='<div style="padding:20px;color:#888;font-size:12px">'
+      +'<p style="margin-bottom:8px">No data cached yet. Navigate through each pay period in the <strong>Stipend Approval</strong> tab to populate this roster.</p>'
+      +'<p style="font-size:11px;color:#aaa">Alternatively, click the button below to auto-populate all pay periods.</p>'
+      +'<button onclick="_populateRosterCache()" style="margin-top:12px;background:#1B2A4A;color:#fff;border:none;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Load All Pay Periods</button></div>';
+    return;
+  }
+  _renderPPDSummaryInner(wrap);
+}
+function _populateRosterCache(){
+  var wrap=document.getElementById('ppd-summary-content');
+  if(wrap)wrap.innerHTML='<p style="color:#aaa;font-size:12px;padding:20px 0">Loading all pay periods… please wait</p>';
+  var today=new Date().toISOString().slice(0,10);
+  var feEl=document.getElementById('flt-from'),teEl=document.getElementById('flt-to'),trEl=document.getElementById('flt-track');
+  var oF=feEl?feEl.value:'',oT=teEl?teEl.value:'',oTr=trEl?trEl.value:'all';
+  var oPF=_ppdFrom,oPT=_ppdTo,oPIdx=_currentPPD;
+  var i=0;
+  function next(){
+    if(i>=PAY_PERIODS.length){finished();return;}
+    var pp=PAY_PERIODS[i++];
+    if(pp.start>today){next();return;}
+    if(feEl)feEl.value=pp.start;if(teEl)teEl.value=pp.end;if(trEl)trEl.value='all';
+    _ppdFrom=pp.start;_ppdTo=pp.end;_currentPPD=PAY_PERIODS.indexOf(pp);
+    try{
+      var D=computeStipends();
+      if(window.injectManualItems)window.injectManualItems(D);
+      _rosterCache[pp.start]=(D.lineItems||[]).slice();
+    }catch(e){}
+    setTimeout(next,0);
+  }
+  function finished(){
+    if(feEl)feEl.value=oF;if(teEl)teEl.value=oT;if(trEl)trEl.value=oTr;
+    _ppdFrom=oPF;_ppdTo=oPT;_currentPPD=oPIdx;
+    if(wrap)_renderPPDSummaryInner(wrap);
+  }
+  next();
 }
 function _renderPPDSummaryInner(wrap){
   var today=new Date().toISOString().slice(0,10);
@@ -1655,18 +1688,12 @@ function _renderPPDSummaryInner(wrap){
   function fds(iso){var d=new Date(iso+'T12:00:00');return mo[d.getMonth()]+' '+d.getDate();}
   function fmt(v){return v?'$'+(+v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'<span style="color:#ccc">—</span>';}
   function fmtT(v){return '$'+(+v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
-  function mkA(p){var s='';for(var i=0;i<p.length;i++){var c=p[i];s+=(c>='a'&&c<='z'||c>='A'&&c<='Z'||c>='0'&&c<='9')?c:'_';}return s;}
-  var feEl=document.getElementById('flt-from'),teEl=document.getElementById('flt-to'),trEl=document.getElementById('flt-track');
-  var oF=feEl?feEl.value:'',oT=teEl?teEl.value:'',oTr=trEl?trEl.value:'all';
-  var oPF=_ppdFrom,oPT=_ppdTo,oPIdx=_currentPPD;
+  function mkA(p){var s='';for(var j=0;j<p.length;j++){var c=p[j];s+=(c>='a'&&c<='z'||c>='A'&&c<='Z'||c>='0'&&c<='9')?c:'_';}return s;}
   var roster={},activePPDs=[];
   PAY_PERIODS.forEach(function(pp){
     if(pp.start>today)return;
-    if(feEl)feEl.value=pp.start;if(teEl)teEl.value=pp.end;if(trEl)trEl.value='all';
-    _ppdFrom=pp.start;_ppdTo=pp.end;_currentPPD=PAY_PERIODS.indexOf(pp);
-    var D=computeStipends();
-    if(window.injectManualItems)window.injectManualItems(D);
-    var items=D.lineItems||[];if(!items.length)return;
+    var items=_rosterCache[pp.start];
+    if(!items||!items.length)return;
     activePPDs.push(pp);
     items.forEach(function(li){
       if(!li.staff)return;
@@ -1680,14 +1707,11 @@ function _renderPPDSummaryInner(wrap){
       r.total+=amt;
     });
   });
-  if(feEl)feEl.value=oF;if(teEl)teEl.value=oT;if(trEl)trEl.value=oTr;
-  _ppdFrom=oPF;_ppdTo=oPT;_currentPPD=oPIdx;
   var provs=Object.keys(roster).sort();
-  if(!provs.length){
-    wrap.innerHTML='<p style="color:#aaa;font-size:12px;padding:20px 0">No stipend data found. Verify calendar has session events.</p>';
-    return;
-  }
-  var html='<p style="font-size:10px;color:#bbb;margin-bottom:12px">'+provs.length+' providers · '+activePPDs.length+' pay periods with data</p>';
+  if(!provs.length){wrap.innerHTML='<p style="color:#aaa;font-size:12px;padding:20px 0">No data. Click Load All Pay Periods below.</p>'+'<button onclick="_populateRosterCache()" style="margin-top:8px;background:#1B2A4A;color:#fff;border:none;padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Load All Pay Periods</button>';return;}
+  var html='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">'
+    +'<p style="font-size:10px;color:#bbb;margin:0">'+provs.length+' providers · '+activePPDs.length+' pay periods</p>'
+    +'<button onclick="_populateRosterCache()" style="background:#f0ece6;border:1px solid #d4cfc8;color:#6b5c45;padding:6px 14px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer">&#8635; Refresh All</button></div>';
   var gTot=0,gsRows='';
   provs.forEach(function(prov){
     var tot=0;activePPDs.forEach(function(pp){if(roster[prov]&&roster[prov][pp.start])tot+=roster[prov][pp.start].total;});
@@ -1756,8 +1780,7 @@ function _renderPPDSummaryInner(wrap){
       +'<td colspan="'+sc+'" style="padding:8px 10px;font-size:12px;color:#1B2A4A">Provider Total</td>'
       +'<td style="padding:8px 10px;text-align:right;font-size:12px;color:#1B2A4A">'+fmtT(tot)+'</td>'
       +'<td style="padding:8px 10px;text-align:right;font-size:13px;color:#6b5c45">'+fmtT(cum)+'</td>'
-      +'<td></td></tr>'
-      +'</tbody></table></div>';
+      +'<td></td></tr></tbody></table></div>';
   });
   wrap.innerHTML=html;
   wrap.querySelectorAll('.pps-jmp').forEach(function(row){
@@ -1767,6 +1790,7 @@ function _renderPPDSummaryInner(wrap){
     });
   });
 }
+
 
 
 
@@ -1987,6 +2011,10 @@ function render(){
     // Inject manual adjustments into lineItems so they flow through all renders
     if(window.injectManualItems) window.injectManualItems(D);
     window._lastD=D;
+    // Cache line items per PPD for PPD Summary tab
+    if(_currentPPD!==null&&PAY_PERIODS[_currentPPD]){
+      _rosterCache[PAY_PERIODS[_currentPPD].start]=(D.lineItems||[]).slice();
+    }
 
     renderSummary(D);
     renderLineItems(D);
