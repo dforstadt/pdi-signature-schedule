@@ -49,6 +49,16 @@ function shiftWeek(dir){
 }
 // Restore persisted week filter on load
 function restorePersistedWeek(){
+  // Restore PPD if saved
+  try{
+    var savedPPD=sessionStorage.getItem('_stipPPD');
+    if(savedPPD!==null){applyPPD(parseInt(savedPPD));return true;}
+  }catch(e){}
+  // Default to current PPD
+  applyPPD(getCurrentPPDIndex());
+  return true;
+}
+function restorePersistedWeek_ORIG(){
   try{
     var from=sessionStorage.getItem('_stipWkFrom');
     var to=sessionStorage.getItem('_stipWkTo');
@@ -378,8 +388,8 @@ window.onerror=function(msg,src,line,col,err){
 </div>
 <div class="filters">
   <!-- Week navigator -->
-  <button class="wk-nav-btn" id="wk-prev" onclick="shiftWeek(-1)" title="Previous week">‹</button>
-  <button class="wk-nav-btn" id="wk-next" onclick="shiftWeek(1)" title="Next week">›</button>
+  <button class="wk-nav-btn" id="ppd-prev" onclick="shiftPPD(-1)" title="Previous pay period" disabled>‹</button>
+  <button class="wk-nav-btn" id="ppd-next" onclick="shiftPPD(1)" title="Next pay period">›</button>
   <div class="wk-range-display" id="wk-range-display" onclick="toggleWeekPicker()" title="Click to pick date range">
     <span id="wk-range-lbl">All weeks</span>
     <span style="font-size:10px;color:var(--tx3);margin-left:6px">▾</span>
@@ -977,6 +987,77 @@ var GUS_CUTOFF = '2026-07-24';
 var WEEKLY_WITH_GUS = ['David Ockman','Nicole','Gus Hernandez'];
 var WEEKLY_NO_GUS   = ['David Ockman','Nicole'];
 var WEEKLY_CORE = WEEKLY_WITH_GUS; // updated per-week inside allWeeks.forEach
+
+
+// ── Pay Period Schedule (Calendar Year 2026) ─────────────────────────────────
+// Each PPD runs Sunday–Saturday, bi-weekly. Calculation still uses internal
+// Friday-Thursday billing weeks; PPD sets the date range for the filter.
+var PAY_PERIODS = [
+  {ppd:1,  start:'2025-12-14',end:'2025-12-27'},
+  {ppd:2,  start:'2025-12-28',end:'2026-01-10'},
+  {ppd:3,  start:'2026-01-11',end:'2026-01-24'},
+  {ppd:4,  start:'2026-01-25',end:'2026-02-07'},
+  {ppd:5,  start:'2026-02-08',end:'2026-02-21'},
+  {ppd:6,  start:'2026-02-22',end:'2026-03-07'},
+  {ppd:7,  start:'2026-03-08',end:'2026-03-21'},
+  {ppd:8,  start:'2026-03-22',end:'2026-04-04'},
+  {ppd:9,  start:'2026-04-05',end:'2026-04-18'},
+  {ppd:10, start:'2026-04-19',end:'2026-05-02'},
+  {ppd:11, start:'2026-05-03',end:'2026-05-16'},
+  {ppd:12, start:'2026-05-17',end:'2026-05-30'},
+  {ppd:13, start:'2026-05-31',end:'2026-06-13'},
+  {ppd:14, start:'2026-06-14',end:'2026-06-27'},
+  {ppd:15, start:'2026-06-28',end:'2026-07-11'},
+  {ppd:16, start:'2026-07-12',end:'2026-07-25'},
+  {ppd:17, start:'2026-07-26',end:'2026-08-08'},
+  {ppd:18, start:'2026-08-09',end:'2026-08-22'},
+  {ppd:19, start:'2026-08-23',end:'2026-09-05'},
+  {ppd:20, start:'2026-09-06',end:'2026-09-19'},
+  {ppd:21, start:'2026-09-20',end:'2026-10-03'},
+  {ppd:22, start:'2026-10-04',end:'2026-10-17'},
+  {ppd:23, start:'2026-10-18',end:'2026-10-31'},
+  {ppd:24, start:'2026-11-01',end:'2026-11-14'},
+  {ppd:25, start:'2026-11-15',end:'2026-11-28'},
+  {ppd:26, start:'2026-11-29',end:'2026-12-12'},
+  {ppd:27, start:'2026-12-13',end:'2026-12-26'}
+];
+
+var _currentPPD = null; // currently selected PPD index (0-based), null = all
+
+function getCurrentPPDIndex() {
+  var today = new Date().toISOString().slice(0,10);
+  for(var i=0;i<PAY_PERIODS.length;i++){
+    if(today>=PAY_PERIODS[i].start&&today<=PAY_PERIODS[i].end)return i;
+  }
+  return PAY_PERIODS.length-1;
+}
+
+function applyPPD(idx) {
+  if(idx<0||idx>=PAY_PERIODS.length)return;
+  _currentPPD=idx;
+  var pp=PAY_PERIODS[idx];
+  var fe=document.getElementById('flt-from'),te=document.getElementById('flt-to');
+  if(fe)fe.value=pp.start;
+  if(te)te.value=pp.end;
+  var lbl=document.getElementById('wk-range-lbl');
+  if(lbl)lbl.innerHTML='<span style="font-size:10px;opacity:.7">PPD</span> '+pp.ppd
+    +'&nbsp;&nbsp;<span style="font-weight:400;font-size:11px">'+fmtDate(pp.start)+' – '+fmtDate(pp.end)+'</span>';
+  updateNavBtns();
+  document.getElementById('ppd-prev').disabled=(idx<=0);
+  document.getElementById('ppd-next').disabled=(idx>=PAY_PERIODS.length-1);
+  try{sessionStorage.setItem('_stipPPD',idx);}catch(e){}
+  if(window._fbLoaded)render();
+}
+
+function fmtDate(iso){
+  var d=new Date(iso+'T12:00:00');
+  return['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();
+}
+
+function shiftPPD(dir){
+  var idx=_currentPPD!==null?_currentPPD:getCurrentPPDIndex();
+  applyPPD(idx+dir);
+}
 
 function computeStipends(){
   var _ftEl=document.getElementById('flt-track');var fltTrack=_ftEl?_ftEl.value:'';
