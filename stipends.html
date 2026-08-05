@@ -911,7 +911,15 @@ function computeStipends(){
   // They are hardcoded so they are never accidentally excluded if their provider
   // record is missing or has the wrong stipendType in the calendar.
   // Names must match exactly what is used in the calendar provider list.
-  var WEEKLY_CORE=['David Ockman','Nicole','Gus Hernandez'];
+  // Gus Hernandez last day: July 24, 2026 — exclude from weeks after that date
+  var GUS_LAST_WEEK = '2026-07-24'; // last billing week that includes July 24
+  var weekStart = getSat(fromISO(fltFrom)); // current week start (Friday)
+  var weekEnd = new Date(weekStart); weekEnd.setDate(weekEnd.getDate()+6);
+  var weekEndISO = weekEnd.toISOString().slice(0,10);
+  var includeGus = weekEndISO <= '2026-07-24';
+  var WEEKLY_CORE = includeGus
+    ? ['David Ockman','Nicole','Gus Hernandez']
+    : ['David Ockman','Nicole'];
   // Providers who receive Signature session fees only — excluded from PDI flat stipend
   var PDI_EXCLUDED=['Rabbi Gaines','Rabbi Brandon Gaines','Rabbi'];
   var PDI_STIP_START='2025-12-12';
@@ -1466,8 +1474,10 @@ function renderRosterSection(title,staffSet,dataByStaff,sortedWeeks,unit){
 function renderRoster(D){
   var h='';
   if(D.fltTrack!=='PDI')h+=renderRosterSection('SIGNATURE \u2014 Direct Service Hours per Billing Period ($150/hr)',D.sigStaffSet,D.sigHrsByStaff,D.sortedWeeks,'hrs');
-  if(D.fltTrack!=='PDI')h+=renderRosterSection('SIGNATURE \u2014 Weekly Stipend ($250/wk per active client \u2014 Ockman, Nicole, Gus)',D.weekStiStaffSet,D.sigStiByStaff,D.sortedWeeks,'$');
-  if(D.fltTrack!=='Signature')h+=renderRosterSection('PDI \u2014 Flat Stipend ($250/episode, Ockman/Nicole/Gus always + direct service providers)',D.pdiStaffSet,D.pdiStiByStaff,D.sortedWeeks,'$');
+  if(D.fltTrack!=='PDI')h+=renderRosterSection((includeGus ? 'SIGNATURE \u2014 Weekly Stipend ($250/wk per active client \u2014 Ockman, Nicole, Gus)'
+    : 'SIGNATURE \u2014 Weekly Stipend ($250/wk per active client \u2014 Ockman, Nicole)'),D.weekStiStaffSet,D.sigStiByStaff,D.sortedWeeks,'$');
+  if(D.fltTrack!=='Signature')h+=renderRosterSection((includeGus ? 'PDI \u2014 Flat Stipend ($250/episode, Ockman/Nicole/Gus always + direct service providers)'
+    : 'PDI \u2014 Flat Stipend ($250/episode, Ockman/Nicole always + direct service providers)'),D.pdiStaffSet,D.pdiStiByStaff,D.sortedWeeks,'$');
   var btn='<div style="display:flex;justify-content:flex-end;padding:12px 0 8px"><button class="excel-btn" onclick="exportRosterExcel()">\u2193 Export Staff Roster</button></div>';
   document.getElementById('roster-content').innerHTML=btn+(h||'<div class="empty">No data for selected filters.</div>');
 }
