@@ -1941,7 +1941,9 @@ function provColChange(idx,val){
       '<div style="font-size:12px;color:var(--tx3);text-align:center;padding:8px 0">All staff members already added</div>';})()+'</div>'+
 
 function openEditStipend(name){
-  var p=S.providers[name];if(!p)return;
+  // Create a default entry if provider exists in events but not formally in providers
+  if(!S.providers[name])S.providers[name]={color:'#888',stipendType:'session',noStipend:false};
+  var p=S.providers[name];
   var stype=p.stipendType||'session',color=p.color||'#888';
   var opts=[
     {val:'none',label:'Not eligible',desc:'Excluded from all stipend calculations.',c:'#6b7280'},
@@ -1984,11 +1986,10 @@ function saveStipendType(){
   var name=window._editStipendName;
   var sel=document.querySelector('input[name="st-type"]:checked');
   if(!sel||!name)return;
-  if(S.providers[name]){
-    S.providers[name].stipendType=sel.value;
-    S.providers[name].noStipend=sel.value==='none';
-    S.providers[name].type=sel.value==='pdi_weekly'?'weekly':'session';
-  }
+  if(!S.providers[name])S.providers[name]={color:'#888'};
+  S.providers[name].stipendType=sel.value;
+  S.providers[name].noStipend=sel.value==='none';
+  S.providers[name].type=sel.value==='pdi_weekly'?'weekly':'session';
   saveAll();buildProvModal();
 }
 
