@@ -1643,86 +1643,88 @@ function approveOutstanding(btn){
 function renderPPDSummary(){
   var wrap=document.getElementById('ppd-summary-content');
   if(!wrap)return;
-  wrap.innerHTML='<p style="color:#aaa;font-size:12px">Computing...</p>';
-  // Use existing _lastD if available, otherwise compute full history
-  var D=null;
-  var feEl=document.getElementById('flt-from'),teEl=document.getElementById('flt-to'),trEl=document.getElementById('flt-track');
-  var oF=feEl?feEl.value:'',oT=teEl?teEl.value:'',oTr=trEl?trEl.value:'all';
-  var today=new Date().toISOString().slice(0,10);
-  if(feEl)feEl.value='2025-12-12';if(teEl)teEl.value=today;if(trEl)trEl.value='all';
+  wrap.innerHTML='<p style="color:#aaa;font-size:12px">Computing…</p>';
   try{
-    window._ppdTotalsMode=true;
-    D=computeStipends();
-    window._ppdTotalsMode=false;
-    if(window.injectManualItems)window.injectManualItems(D);
+    _renderPPDSummaryInner(wrap);
   }catch(e){
-    window._ppdTotalsMode=false;
-    if(feEl)feEl.value=oF;if(teEl)teEl.value=oT;if(trEl)trEl.value=oTr;
-    wrap.innerHTML='<p style="color:#dc2626;font-size:12px">Error: '+e.message+'</p>';
-    return;
+    wrap.innerHTML='<div style="color:#dc2626;font-size:12px;padding:12px;background:#fee2e2;border-radius:8px">'
+      +'<strong>Error in PPD Summary:</strong> '+e.message+'<br><pre style="font-size:10px;margin-top:6px;white-space:pre-wrap">'+e.stack+'</pre></div>';
   }
-  if(feEl)feEl.value=oF;if(teEl)teEl.value=oT;if(trEl)trEl.value=oTr;
-
-  var items=D.lineItems||[];
-  // Debug info
-  var dbg='<p style="font-size:10px;color:#bbb;margin-bottom:12px">'+items.length+' line items across '+D.sortedWeeks.length+' weeks</p>';
-
-  function wkPPD(w){for(var i=0;i<PAY_PERIODS.length;i++){if(w>=PAY_PERIODS[i].start&&w<=PAY_PERIODS[i].end)return PAY_PERIODS[i];}return null;}
+}
+function _renderPPDSummaryInner(wrap){
+  var today=new Date().toISOString().slice(0,10);
   var mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   function fds(iso){var d=new Date(iso+'T12:00:00');return mo[d.getMonth()]+' '+d.getDate();}
   function fmt(v){return v?'$'+(+v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'<span style="color:#ccc">—</span>';}
   function fmtT(v){return '$'+(+v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
 
-  // Build roster: prov -> ppdStart -> {sig,pdi,sess,man,total,ppd}
-  var roster={};
-  items.forEach(function(li){
-    if(!li.staff)return;
-    var pp=wkPPD(li.wStart);if(!pp)return;
-    if(!roster[li.staff])roster[li.staff]={};
-    if(!roster[li.staff][pp.start])roster[li.staff][pp.start]={sig:0,pdi:0,sess:0,man:0,total:0,ppd:pp};
-    var r=roster[li.staff][pp.start];
-    var amt=li.amount||0;
-    if(li.type==='Weekly Stipend')r.sig+=amt;
-    else if(li.type==='Flat Stipend')r.pdi+=amt;
-    else if(li.type==='Session')r.sess+=amt;
-    else r.man+=amt;
-    r.total+=amt;
+  // Compute each PPD individually — avoids any global filter interference
+  var feEl=document.getElementById('flt-from'),teEl=document.getElementById('flt-to'),trEl=document.getElementById('flt-track');
+  var oF=feEl?feEl.value:'',oT=teEl?teEl.value:'',oTr=trEl?trEl.value:'all';
+  var oPPDFrom=_ppdFrom,oPPDTo=_ppdTo,oPPDIdx=_currentPPD;
+
+  var roster={};   // prov -> ppdStart -> {sig,pdi,sess,man,total,ppd}
+  var activePPDs=[];
+
+  PAY_PERIODS.forEach(function(pp){
+    if(pp.start>today)return;
+    // Set filter to this specific PPD
+    if(feEl)feEl.value=pp.start;
+    if(teEl)teEl.value=pp.end;
+    if(trEl)trEl.value='all';
+    _ppdFrom=pp.start;_ppdTo=pp.end;_currentPPD=PAY_PERIODS.indexOf(pp);
+    var D=computeStipends();
+    if(window.injectManualItems)window.injectManualItems(D);
+    var items=D.lineItems||[];
+    if(!items.length)return;
+    activePPDs.push(pp);
+    items.forEach(function(li){
+      if(!li.staff)return;
+      if(!roster[li.staff])roster[li.staff]={};
+      if(!roster[li.staff][pp.start])roster[li.staff][pp.start]={sig:0,pdi:0,sess:0,man:0,total:0};
+      var r=roster[li.staff][pp.start];
+      var amt=li.amount||0;
+      if(li.type==='Weekly Stipend')r.sig+=amt;
+      else if(li.type==='Flat Stipend')r.pdi+=amt;
+      else if(li.type==='Session')r.sess+=amt;
+      else r.man+=amt;
+      r.total+=amt;
+    });
   });
+
+  // Restore
+  if(feEl)feEl.value=oF;if(teEl)teEl.value=oT;if(trEl)trEl.value=oTr;
+  _ppdFrom=oPPDFrom;_ppdTo=oPPDTo;_currentPPD=oPPDIdx;
 
   var provs=Object.keys(roster).sort();
   if(!provs.length){
-    wrap.innerHTML=dbg+'<p style="color:#aaa;font-size:12px">No stipend data found. Check that the calendar has session data and that the date range covers the protocol start.</p>';
+    wrap.innerHTML='<p style="color:#aaa;font-size:12px;padding:20px 0">No stipend data found across any pay period.</p>';
     return;
   }
-  var activePPDs=PAY_PERIODS.filter(function(pp){
-    return pp.start<=today && Object.values(roster).some(function(r){return r[pp.start];});
-  });
-  if(!activePPDs.length){
-    wrap.innerHTML=dbg+'<p style="color:#aaa;font-size:12px">No active pay periods with data.</p>';return;
-  }
 
-  var html=dbg;
-  // Grand summary
+  var html='<p style="font-size:10px;color:#bbb;margin-bottom:12px">'+provs.length+' providers · '+activePPDs.length+' pay periods with data</p>';
+
+  // Grand summary table
   var gTot=0,gsRows='';
   provs.forEach(function(prov){
-    var tot=0;
-    activePPDs.forEach(function(pp){if(roster[prov]&&roster[prov][pp.start])tot+=roster[prov][pp.start].total;});
+    var tot=0;activePPDs.forEach(function(pp){if(roster[prov]&&roster[prov][pp.start])tot+=roster[prov][pp.start].total;});
     if(!tot)return;
     gTot+=tot;
     var anc=prov.replace(/\W+/g,'_');
-    gsRows+='<tr onclick="document.getElementById(\'prov-'+anc+'\').scrollIntoView({behavior:\'smooth\'})" style="cursor:pointer">'
+    gsRows+='<tr onclick="var el=document.getElementById('prov-'+anc+'');if(el)el.scrollIntoView({behavior:'smooth'})" style="cursor:pointer;border-bottom:.5px solid #f0ede8">'
       +'<td style="padding:7px 14px;font-size:12px;font-weight:600;color:#1B2A4A">'+prov+'</td>'
-      +'<td style="padding:7px 14px;text-align:right;font-size:12px;font-weight:700;color:#1B2A4A">'+fmtT(tot)+'</td>'
-      +'<td style="padding:7px 14px;text-align:center;font-size:11px;color:#6366f1">&#8595; Detail</td></tr>';
+      +'<td style="padding:7px 14px;text-align:right;font-size:12px;font-weight:700">'+fmtT(tot)+'</td>'
+      +'<td style="padding:7px 14px;text-align:center;font-size:11px;color:#6366f1">&#8595;</td></tr>';
   });
+
   html+='<div style="background:#1B2A4A;border-radius:10px 10px 0 0;padding:12px 18px">'
-    +'<div style="font-size:14px;font-weight:700;color:#fff">Stipend Roster Summary</div>'
-    +'<div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:2px">'+activePPDs.length+' active pay periods &nbsp;|&nbsp; '+provs.length+' providers</div></div>'
+    +'<div style="font-size:14px;font-weight:700;color:#fff">Stipend Roster — All Pay Periods</div>'
+    +'<div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:2px">Click a provider to jump to detail</div></div>'
     +'<table style="width:100%;border-collapse:collapse;margin-bottom:32px;border:1px solid #e0ddd8;border-top:none">'
     +'<thead><tr style="background:#f5f3f0">'
     +'<th style="padding:7px 14px;text-align:left;font-size:10px;font-weight:700;color:#888">PROVIDER</th>'
     +'<th style="padding:7px 14px;text-align:right;font-size:10px;font-weight:700;color:#888">TOTAL PAID</th>'
-    +'<th style="padding:7px 14px;text-align:center;font-size:10px;font-weight:700;color:#888">JUMP TO</th>'
+    +'<th style="padding:7px 14px;text-align:center;font-size:10px;font-weight:700;color:#888">DETAIL</th>'
     +'</tr></thead><tbody>'+gsRows+'</tbody>'
     +'<tfoot><tr style="background:#1B2A4A">'
     +'<td style="padding:8px 14px;font-size:12px;font-weight:700;color:#fff">PROTOCOL TOTAL</td>'
@@ -1733,58 +1735,56 @@ function renderPPDSummary(){
   provs.forEach(function(prov){
     var tot=0;activePPDs.forEach(function(pp){if(roster[prov]&&roster[prov][pp.start])tot+=roster[prov][pp.start].total;});
     if(!tot)return;
-    var anc=prov.replace(/\W+/g,'_');
-    var cum=0;
+    var anc=prov.replace(/\W+/g,'_');var cum=0;
     var hasSig=false,hasPDI=false,hasSess=false,hasMan=false;
     activePPDs.forEach(function(pp){var r=roster[prov]&&roster[prov][pp.start];if(!r)return;if(r.sig)hasSig=true;if(r.pdi)hasPDI=true;if(r.sess)hasSess=true;if(r.man)hasMan=true;});
     html+='<div id="prov-'+anc+'" style="margin-bottom:28px;border:1px solid #e0ddd8;border-radius:10px;overflow:hidden">';
     html+='<div style="background:#f5f3f0;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">';
     html+='<div><div style="font-size:14px;font-weight:700;color:#1B2A4A">'+prov+'</div>'
-      +'<div style="font-size:11px;color:#888;margin-top:2px">Pay period reconciliation</div></div>';
-    html+='<div style="font-size:13px;font-weight:700;color:#6b5c45">'+fmtT(tot)+'</div></div>';
+      +'<div style="font-size:11px;color:#888;margin-top:2px">Pay period reconciliation — period over period</div></div>';
+    html+='<div style="font-size:14px;font-weight:700;color:#6b5c45">'+fmtT(tot)+'</div></div>';
     html+='<table style="width:100%;border-collapse:collapse">';
-    html+='<thead><tr style="background:#1B2A4A;color:#fff">';
-    html+='<th style="padding:7px 10px;text-align:center;font-size:10px;font-weight:700;min-width:42px">PPD</th>';
-    html+='<th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:700;white-space:nowrap">PERIOD</th>';
-    if(hasSig)html+='<th style="padding:7px 10px;text-align:right;font-size:10px;font-weight:700">SIG WEEKLY</th>';
-    if(hasPDI)html+='<th style="padding:7px 10px;text-align:right;font-size:10px;font-weight:700">PDI FLAT</th>';
-    if(hasSess)html+='<th style="padding:7px 10px;text-align:right;font-size:10px;font-weight:700">SESSIONS</th>';
-    if(hasMan)html+='<th style="padding:7px 10px;text-align:right;font-size:10px;font-weight:700">MANUAL</th>';
-    html+='<th style="padding:7px 10px;text-align:right;font-size:10px;font-weight:700">TOTAL</th>';
-    html+='<th style="padding:7px 10px;text-align:right;font-size:10px;font-weight:700">CUMULATIVE</th>';
-    html+='<th style="padding:7px 10px;text-align:center;font-size:10px;font-weight:700">STATUS</th>';
-    html+='</tr></thead><tbody>';
+    html+='<thead><tr style="background:#1B2A4A;color:#fff">'
+      +'<th style="padding:7px 10px;text-align:center;font-size:10px;min-width:42px">PPD</th>'
+      +'<th style="padding:7px 10px;text-align:left;font-size:10px;white-space:nowrap">PERIOD</th>';
+    if(hasSig)html+='<th style="padding:7px 10px;text-align:right;font-size:10px">SIG WEEKLY</th>';
+    if(hasPDI)html+='<th style="padding:7px 10px;text-align:right;font-size:10px">PDI FLAT</th>';
+    if(hasSess)html+='<th style="padding:7px 10px;text-align:right;font-size:10px">SESSIONS</th>';
+    if(hasMan)html+='<th style="padding:7px 10px;text-align:right;font-size:10px">MANUAL</th>';
+    html+='<th style="padding:7px 10px;text-align:right;font-size:10px">TOTAL</th>'
+      +'<th style="padding:7px 10px;text-align:right;font-size:10px">CUMULATIVE</th>'
+      +'<th style="padding:7px 10px;text-align:center;font-size:10px">STATUS</th>'
+      +'</tr></thead><tbody>';
     activePPDs.forEach(function(pp,pi){
       var r=(roster[prov]&&roster[prov][pp.start])||{sig:0,pdi:0,sess:0,man:0,total:0};
       cum+=r.total;
       var lk=isPPDLocked(pp.start);
       var bg=lk?'#f0fdf4':(pi%2===0?'#fff':'#faf8f4');
-      html+='<tr style="background:'+bg+';border-bottom:.5px solid #f0ede8">';
-      html+='<td style="padding:7px 10px;text-align:center;font-size:11px;color:#888">'+pp.ppd+'</td>';
-      html+='<td style="padding:7px 10px;font-size:11px;white-space:nowrap">'+fds(pp.start)+' &#8211; '+fds(pp.end)+'</td>';
+      html+='<tr style="background:'+bg+';border-bottom:.5px solid #f0ede8">'
+        +'<td style="padding:7px 10px;text-align:center;font-size:11px;color:#888">'+pp.ppd+'</td>'
+        +'<td style="padding:7px 10px;font-size:11px;white-space:nowrap">'+fds(pp.start)+' – '+fds(pp.end)+'</td>';
       if(hasSig)html+='<td style="padding:7px 10px;text-align:right;font-size:11px">'+fmt(r.sig)+'</td>';
       if(hasPDI)html+='<td style="padding:7px 10px;text-align:right;font-size:11px">'+fmt(r.pdi)+'</td>';
       if(hasSess)html+='<td style="padding:7px 10px;text-align:right;font-size:11px">'+fmt(r.sess)+'</td>';
       if(hasMan)html+='<td style="padding:7px 10px;text-align:right;font-size:11px">'+fmt(r.man)+'</td>';
-      html+='<td style="padding:7px 10px;text-align:right;font-size:11px;font-weight:600">'+fmt(r.total)+'</td>';
-      html+='<td style="padding:7px 10px;text-align:right;font-size:11px;color:#6b5c45">'+fmtT(cum)+'</td>';
-      html+='<td style="padding:7px 10px;text-align:center;font-size:10px">';
+      html+='<td style="padding:7px 10px;text-align:right;font-size:11px;font-weight:600">'+fmt(r.total)+'</td>'
+        +'<td style="padding:7px 10px;text-align:right;font-size:11px;color:#6b5c45">'+fmtT(cum)+'</td>'
+        +'<td style="padding:7px 10px;text-align:center;font-size:10px">';
       if(lk)html+='<span style="background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:12px;font-weight:700">&#128274; Locked</span>';
       else html+='<span style="background:#eef2ff;color:#6366f1;padding:2px 8px;border-radius:12px">Open</span>';
       html+='</td></tr>';
     });
-    // Provider total row
-    var colSpan=2+(hasSig?1:0)+(hasPDI?1:0)+(hasSess?1:0)+(hasMan?1:0);
+    var sc=2+(hasSig?1:0)+(hasPDI?1:0)+(hasSess?1:0)+(hasMan?1:0);
     html+='<tr style="background:#f5f3f0;font-weight:700;border-top:2px solid #1B2A4A">'
-      +'<td colspan="'+colSpan+'" style="padding:8px 10px;font-size:12px;color:#1B2A4A">Provider Total</td>'
+      +'<td colspan="'+sc+'" style="padding:8px 10px;font-size:12px;color:#1B2A4A">Provider Total</td>'
       +'<td style="padding:8px 10px;text-align:right;font-size:12px;color:#1B2A4A">'+fmtT(tot)+'</td>'
       +'<td style="padding:8px 10px;text-align:right;font-size:13px;color:#6b5c45">'+fmtT(cum)+'</td>'
-      +'<td></td></tr>';
-    html+='</tbody></table></div>';
+      +'<td></td></tr>'
+      +'</tbody></table></div>';
   });
-
   wrap.innerHTML=html;
 }
+
 
 
 
