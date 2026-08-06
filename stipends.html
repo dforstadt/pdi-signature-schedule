@@ -599,6 +599,12 @@ firebase.initializeApp({
 
 // ── No Stipend Overrides ────────────────────────────────────────────────────
 var NO_STIP_REF = firebase.database().ref('lifeskills_clinical/no_stipend_overrides');
+
+// ── PDI Psychometric data — load on startup so PPD Summary includes it ────────
+firebase.database().ref('lifeskills_clinical/pdi_psychometric').on('value',function(s){
+  _psychData=s.val()||{};
+  _psychFBOn=true;
+});
 NO_STIP_REF.on('value', function(s){
   var val = s.val();
   _noStipendOverrides = val ? (Array.isArray(val) ? val : Object.values(val)) : [];
@@ -1813,8 +1819,33 @@ function _drawPPDSummary(wrap){
     if(hasPsych)subRow('PDI Psych Testing','psych','#b45309');
   });
 
-  // Grand total row
-  var gTot=grandSig+grandPDI+grandPsych+grandOther;
+  // Grand total row — recalculate from piv to ensure psych is included
+  var gTot=0,grandTotCheck={};
+  provs.forEach(function(prov){
+    ppdsWithData.forEach(function(pp){
+      var r=piv[prov]&&piv[prov][pp.start];if(!r)return;
+      var v=r.sig+r.pdi+r.sess+r.man+r.psych;
+      gTot+=v;
+      colTotals[pp.start]=(colTotals[pp.start]||0);
+    });
+  });
+  // Rebuild colTotals cleanly from piv
+  ppdsWithData.forEach(function(pp){colTotals[pp.start]=0;});
+  provs.forEach(function(prov){
+    ppdsWithData.forEach(function(pp){
+      var r=piv[prov]&&piv[prov][pp.start];if(!r)return;
+      colTotals[pp.start]+=(r.sig+r.pdi+r.sess+r.man+r.psych);
+    });
+  });
+  // Recalculate category subtotals from piv
+  grandSig=0;grandPDI=0;grandPsych=0;grandOther=0;
+  provs.forEach(function(prov){
+    ppdsWithData.forEach(function(pp){
+      var r=piv[prov]&&piv[prov][pp.start];if(!r)return;
+      grandSig+=r.sig;grandPDI+=r.pdi;grandPsych+=r.psych;grandOther+=r.sess+r.man;
+    });
+  });
+  gTot=grandSig+grandPDI+grandPsych+grandOther;
   h+='<tr style="background:#1B2A4A;color:#fff;font-weight:700">';
   h+='<td style="padding:9px 14px;position:sticky;left:0;background:#1B2A4A;font-size:12px">GRAND TOTAL</td>';
   ppdsWithData.forEach(function(pp){
