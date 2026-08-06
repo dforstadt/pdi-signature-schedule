@@ -1697,63 +1697,143 @@ function _drawPPDSummary(wrap){
   if(!wrap)return;
   var today=new Date().toISOString().slice(0,10);
   var mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  function fds(iso){var d=new Date(iso+'T12:00:00');return 'PPD '+(PAY_PERIODS.find(function(p){return p.start===iso;})||{ppd:''}).ppd+'<br><span style="font-weight:400;opacity:.7">'+mo[d.getMonth()]+' '+d.getDate()+'</span>';}
+  function fds(iso){var d=new Date(iso+'T12:00:00');return mo[d.getMonth()]+' '+d.getDate();}
   function fmtT(v){return v?'$'+(+v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'—';}
+  function fmtV(v){return v?'$'+(+v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'<span style="color:#ddd">—</span>';}
+
+  // Build pivot: prov -> ppdStart -> {sig, pdi, sess, man, psych, total}
   var piv={},ppdsWithData=[];
   PAY_PERIODS.forEach(function(pp){
     if(pp.start>today)return;
     var items=_rosterCache[pp.start]||[];
-    if(!items.length)return;
-    ppdsWithData.push(pp);
+    var hasSomething=false;
     items.forEach(function(li){
       if(!li.staff||!li.amount)return;
       if(noStipend(li.staff))return;
       if(!piv[li.staff])piv[li.staff]={};
-      piv[li.staff][pp.start]=(piv[li.staff][pp.start]||0)+(li.amount||0);
+      if(!piv[li.staff][pp.start])piv[li.staff][pp.start]={sig:0,pdi:0,sess:0,man:0,psych:0};
+      var r=piv[li.staff][pp.start],amt=li.amount||0;
+      if(li.type==='Weekly Stipend')r.sig+=amt;
+      else if(li.type==='Flat Stipend')r.pdi+=amt;
+      else if(li.type==='Session')r.sess+=amt;
+      else r.man+=amt;
+      hasSomething=true;
     });
+    // Include PDI Psychometric entries from _psychData
+    if(typeof _psychData!=='undefined'){
+      Object.values(_psychData).forEach(function(e){
+        if(e.ppdStart!==pp.start)return;
+        var prov=e.provider||'';
+        if(!prov)return;
+        if(!piv[prov])piv[prov]={};
+        if(!piv[prov][pp.start])piv[prov][pp.start]={sig:0,pdi:0,sess:0,man:0,psych:0};
+        piv[prov][pp.start].psych+=(e.amount||0);
+        hasSomething=true;
+      });
+    }
+    if(hasSomething)ppdsWithData.push(pp);
   });
+
   var provs=Object.keys(piv).sort();
   var cached=Object.keys(_rosterCache).length;
   var total_past=PAY_PERIODS.filter(function(pp){return pp.start<=today;}).length;
-  var statusBar='<div style="font-size:10px;color:#999;margin-bottom:10px;display:flex;align-items:center;gap:12px">'
-    +'<span>'+cached+' of '+total_past+' pay periods loaded</span>'
-    +(cached<total_past?'<span style="color:#aaa">(loading remaining…)</span>':'<span style="color:#16a34a">&#10003; Complete</span>')
+  var statusBar='<div style="font-size:10px;color:#999;margin-bottom:12px;display:flex;align-items:center;gap:12px">'
+    +'<span>'+cached+'/'+total_past+' pay periods loaded</span>'
+    +(cached<total_past?'<span style="color:#aaa">… loading</span>':'<span style="color:#16a34a">&#10003; Complete</span>')
     +'</div>';
+
   if(!provs.length||!ppdsWithData.length){
     wrap.innerHTML=statusBar+'<p style="color:#999;font-size:12px">No data yet — loading pay periods…</p>';
     return;
   }
-  var h=statusBar+'<div style="overflow-x:auto"><table style="border-collapse:collapse;font-size:11px;min-width:100%">';
+
+  var h=statusBar+'<div style="overflow-x:auto"><table style="border-collapse:collapse;font-size:11px;min-width:100%;font-family:inherit">';
+
+  // Header row
   h+='<thead><tr>';
-  h+='<th style="padding:8px 14px;background:#1B2A4A;color:#fff;text-align:left;position:sticky;left:0;z-index:2;min-width:160px">PROVIDER</th>';
+  h+='<th style="padding:8px 14px;background:#1B2A4A;color:#fff;text-align:left;position:sticky;left:0;z-index:2;min-width:180px">PROVIDER / CATEGORY</th>';
   ppdsWithData.forEach(function(pp){
     var lk=isPPDLocked(pp.start);
-    h+='<th style="padding:7px 10px;background:'+(lk?'#15803d':'#1B2A4A')+';color:#fff;text-align:right;font-size:10px;white-space:nowrap">'+(lk?'&#128274; ':'')+fds(pp.start)+'</th>';
+    h+='<th style="padding:7px 10px;background:'+(lk?'#15803d':'#1B2A4A')+';color:#fff;text-align:right;font-size:10px;white-space:nowrap">'+(lk?'&#128274; ':'')+'PPD '+pp.ppd+'<br><span style="font-weight:400;opacity:.75">'+fds(pp.start)+'</span></th>';
   });
-  h+='<th style="padding:8px 10px;background:#6b5c45;color:#fff;text-align:right">TOTAL</th></tr></thead><tbody>';
-  var gTot=0;
+  h+='<th style="padding:8px 10px;background:#6b5c45;color:#fff;text-align:right;white-space:nowrap">TOTAL</th></tr></thead><tbody>';
+
+  // Grand totals accumulators
+  var grandSig=0,grandPDI=0,grandPsych=0,grandOther=0;
+  var colTotals={};
+  ppdsWithData.forEach(function(pp){colTotals[pp.start]=0;});
+
   provs.forEach(function(prov,pi){
-    var rowTot=0;ppdsWithData.forEach(function(pp){rowTot+=(piv[prov][pp.start]||0);});
-    if(!rowTot)return;gTot+=rowTot;
-    var bg=pi%2===0?'#fff':'#faf8f4';
-    h+='<tr style="background:'+bg+'">';
-    h+='<td style="padding:7px 14px;font-weight:600;color:#1B2A4A;position:sticky;left:0;background:'+bg+'">'+prov+'</td>';
+    // Check if provider has any data
+    var hasSig=false,hasPDI=false,hasSess=false,hasMan=false,hasPsych=false;
+    var provGrand=0;
     ppdsWithData.forEach(function(pp){
-      var v=piv[prov][pp.start]||0;
-      h+='<td style="padding:7px 10px;text-align:right;color:'+(v?'#1B2A4A':'#ddd')+'">'+fmtT(v)+'</td>';
+      var r=piv[prov]&&piv[prov][pp.start];
+      if(!r)return;
+      if(r.sig)hasSig=true;if(r.pdi)hasPDI=true;
+      if(r.sess)hasSess=true;if(r.man)hasMan=true;if(r.psych)hasPsych=true;
+      provGrand+=r.sig+r.pdi+r.sess+r.man+r.psych;
     });
-    h+='<td style="padding:7px 10px;text-align:right;font-weight:700;color:#6b5c45">'+fmtT(rowTot)+'</td></tr>';
+    if(!provGrand)return;
+
+    // Provider header row
+    var bg=pi%2===0?'#f5f3f0':'#eee9e3';
+    h+='<tr style="background:'+bg+'">';
+    h+='<td style="padding:8px 14px;font-weight:700;color:#1B2A4A;position:sticky;left:0;background:'+bg+';font-size:12px">'+prov+'</td>';
+    ppdsWithData.forEach(function(pp){
+      var r=piv[prov]&&piv[prov][pp.start];
+      var tot=r?(r.sig+r.pdi+r.sess+r.man+r.psych):0;
+      h+='<td style="padding:8px 10px;text-align:right;font-weight:600;color:#1B2A4A">'+fmtV(tot)+'</td>';
+    });
+    h+='<td style="padding:8px 10px;text-align:right;font-weight:700;color:#1B2A4A;font-size:12px">'+fmtT(provGrand)+'</td></tr>';
+
+    // Sub-rows per category
+    function subRow(label,key,color){
+      var rowTot=0;
+      ppdsWithData.forEach(function(pp){var r=piv[prov]&&piv[prov][pp.start];rowTot+=r?(r[key]||0):0;});
+      if(!rowTot)return;
+      h+='<tr style="background:#fff">';
+      h+='<td style="padding:5px 14px 5px 28px;font-size:11px;color:'+color+';position:sticky;left:0;background:#fff">'+label+'</td>';
+      ppdsWithData.forEach(function(pp){
+        var r=piv[prov]&&piv[prov][pp.start];
+        var v=r?(r[key]||0):0;
+        colTotals[pp.start]=(colTotals[pp.start]||0)+v;
+        h+='<td style="padding:5px 10px;text-align:right;font-size:11px;color:'+(v?color:'#ddd')+'">'+fmtV(v)+'</td>';
+      });
+      if(key==='sig')grandSig+=rowTot;
+      else if(key==='pdi')grandPDI+=rowTot;
+      else if(key==='psych')grandPsych+=rowTot;
+      else grandOther+=rowTot;
+      h+='<td style="padding:5px 10px;text-align:right;font-size:11px;color:'+color+';font-weight:600">'+fmtT(rowTot)+'</td></tr>';
+    }
+    if(hasSig)subRow('Signature Weekly','sig','#1B2A4A');
+    if(hasPDI)subRow('PDI Flat Stipend','pdi','#0369a1');
+    if(hasSess)subRow('Session Fees','sess','#6b5c45');
+    if(hasMan)subRow('Manual Adjustments','man','#7c3aed');
+    if(hasPsych)subRow('PDI Psych Testing','psych','#b45309');
   });
+
+  // Grand total row
+  var gTot=grandSig+grandPDI+grandPsych+grandOther;
   h+='<tr style="background:#1B2A4A;color:#fff;font-weight:700">';
-  h+='<td style="padding:8px 14px;position:sticky;left:0;background:#1B2A4A">TOTAL</td>';
+  h+='<td style="padding:9px 14px;position:sticky;left:0;background:#1B2A4A;font-size:12px">GRAND TOTAL</td>';
   ppdsWithData.forEach(function(pp){
-    var col=0;provs.forEach(function(p){col+=(piv[p][pp.start]||0);});
-    h+='<td style="padding:8px 10px;text-align:right">'+(col?fmtT(col):'—')+'</td>';
+    h+='<td style="padding:9px 10px;text-align:right">'+(colTotals[pp.start]?fmtT(colTotals[pp.start]):'—')+'</td>';
   });
-  h+='<td style="padding:8px 10px;text-align:right;color:#fbbf24;font-size:13px">'+fmtT(gTot)+'</td>';
-  h+='</tr></tbody></table></div>';
+  h+='<td style="padding:9px 10px;text-align:right;color:#fbbf24;font-size:13px">'+fmtT(gTot)+'</td></tr>';
+
+  // Subtotal summary footer
+  h+='</tbody></table></div>';
+  h+='<div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:12px;font-size:11px">';
+  if(grandSig)h+='<div style="background:#f0f4ff;border-radius:8px;padding:8px 14px"><div style="color:#888;font-size:10px">SIGNATURE WEEKLY</div><div style="font-weight:700;color:#1B2A4A;font-size:14px">'+fmtT(grandSig)+'</div></div>';
+  if(grandPDI)h+='<div style="background:#e0f2fe;border-radius:8px;padding:8px 14px"><div style="color:#888;font-size:10px">PDI FLAT STIPEND</div><div style="font-weight:700;color:#0369a1;font-size:14px">'+fmtT(grandPDI)+'</div></div>';
+  if(grandPsych)h+='<div style="background:#fef3c7;border-radius:8px;padding:8px 14px"><div style="color:#888;font-size:10px">PDI PSYCH TESTING</div><div style="font-weight:700;color:#b45309;font-size:14px">'+fmtT(grandPsych)+'</div></div>';
+  if(grandOther)h+='<div style="background:#f5f3ff;border-radius:8px;padding:8px 14px"><div style="color:#888;font-size:10px">OTHER / MANUAL</div><div style="font-weight:700;color:#7c3aed;font-size:14px">'+fmtT(grandOther)+'</div></div>';
+  h+='<div style="background:#1B2A4A;border-radius:8px;padding:8px 14px"><div style="color:rgba(255,255,255,.6);font-size:10px">PROTOCOL TOTAL</div><div style="font-weight:700;color:#fbbf24;font-size:14px">'+fmtT(gTot)+'</div></div>';
+  h+='</div>';
   wrap.innerHTML=h;
 }
+
 function _renderPPDSummaryInner(wrap){_drawPPDSummary(wrap);}
 
 
