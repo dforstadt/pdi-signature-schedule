@@ -1164,7 +1164,7 @@ function computeStipends(){
     d.setDate(d.getDate()-day); // go back to Sunday
     return d.toISOString().slice(0,10);
   }
-  function weekEnd(ws){var d=new Date(ws+'T12:00:00');d.setDate(d.getDate()+6);return d.toISOString().slice(0,10);}
+  function weekEnd(ws){if(!ws)return '';var d=new Date(ws+'T12:00:00');if(isNaN(d.getTime()))return '';d.setDate(d.getDate()+6);return d.toISOString().slice(0,10);}
 
   // ── Weeks derived from events + PDI discharge dates (Sat–Fri billing periods)
   var weekSet={};
