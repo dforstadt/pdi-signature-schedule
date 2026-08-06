@@ -1085,6 +1085,7 @@ function showTab(tab){
   if(tab==='leadtech')ltOnTabOpen();
   if(tab==='psychometric')psychOnTabOpen();
   if(tab==='ppdsummary')setTimeout(renderPPDSummary,0);
+  if(tab==='audit')document.getElementById('audit-content').innerHTML='<p style="color:#aaa;font-size:12px">Click Run Audit to analyze all stipend data.</p>';
   if(tab==='manual'){startManualListener();setTimeout(renderManualTable,400);}
 }
 
@@ -1872,6 +1873,144 @@ function _renderPPDSummaryInner(wrap){_drawPPDSummary(wrap);}
 
 
 
+
+function runStipendAudit(){
+  var wrap=document.getElementById('audit-content');
+  if(!wrap)return;
+  wrap.innerHTML='<p style="color:#aaa;font-size:12px">Running audit — computing all pay periods...</p>';
+  window._ppdSummaryLoading=true;
+  setTimeout(function(){
+    try{_runAuditInner(wrap);}
+    catch(e){window._ppdSummaryLoading=false;wrap.innerHTML='<div style="color:#dc2626;padding:12px">Error: '+e.message+'</div>';}
+  },50);
+}
+function _runAuditInner(wrap){
+  var today=new Date().toISOString().slice(0,10);
+  var mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function fmtT(v){return '$'+(+v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+  function fmtV(v){return v?fmtT(v):'<span style="color:#ccc">\u2014</span>';}
+  var feEl=document.getElementById('flt-from'),teEl=document.getElementById('flt-to'),trEl=document.getElementById('flt-track');
+  var oF=feEl?feEl.value:'',oT=teEl?teEl.value:'',oTr=trEl?trEl.value:'all';
+  var oPF=_ppdFrom,oPT=_ppdTo,oPIdx=_currentPPD;
+  var allItems=[];
+  PAY_PERIODS.forEach(function(pp){
+    if(pp.start>today)return;
+    if(feEl)feEl.value=pp.start;if(teEl)teEl.value=pp.end;if(trEl)trEl.value='all';
+    _ppdFrom=pp.start;_ppdTo=pp.end;_currentPPD=PAY_PERIODS.indexOf(pp);
+    try{var D=computeStipends();if(window.injectManualItems)window.injectManualItems(D);(D.lineItems||[]).forEach(function(li){allItems.push({pp:pp,li:li});});}catch(e){}
+  });
+  if(feEl)feEl.value=oF;if(teEl)teEl.value=oT;if(trEl)trEl.value=oTr;
+  _ppdFrom=oPF;_ppdTo=oPT;_currentPPD=oPIdx;
+  window._ppdSummaryLoading=false;
+  var calSessions={};
+  (DATA.events||[]).forEach(function(ev){
+    if(!ev.date||!ev.provider)return;
+    if(ev.group)return;
+    if(ev.status&&ev.status!=='completed')return;
+    var prov=displayName(ev.provider);
+    if(noStipend(prov))return;
+    if(!calSessions[prov])calSessions[prov]=0;
+    calSessions[prov]++;
+  });
+  var stipByProv={};
+  allItems.forEach(function(x){
+    var prov=x.li.staff;if(!prov||noStipend(prov))return;
+    if(!stipByProv[prov])stipByProv[prov]={sig:0,pdi:0,sess:0,man:0,total:0};
+    var r=stipByProv[prov],amt=x.li.amount||0;
+    if(x.li.type==='Weekly Stipend')r.sig+=amt;
+    else if(x.li.type==='Flat Stipend')r.pdi+=amt;
+    else if(x.li.type==='Session')r.sess+=amt;
+    else if(x.li.type==='Manual')r.man+=amt;
+    r.total+=amt;
+  });
+  var manByProv={};
+  manualEntries.forEach(function(e){
+    var prov=e.provider||e.prov||'';if(!prov)return;
+    if(!manByProv[prov])manByProv[prov]={count:0,total:0};
+    manByProv[prov].count++;manByProv[prov].total+=(e.amountPerWeek||e.amount||0);
+  });
+  var psychByProv={};
+  Object.values(_psychData||{}).forEach(function(e){
+    var prov=displayName(e.provider||'');if(!prov)return;
+    if(!psychByProv[prov])psychByProv[prov]={count:0,total:0};
+    psychByProv[prov].count++;psychByProv[prov].total+=(e.amount||0);
+  });
+  var allProvs={};
+  [calSessions,stipByProv,manByProv,psychByProv].forEach(function(o){Object.keys(o).forEach(function(p){allProvs[p]=1;});});
+  var provList=Object.keys(allProvs).filter(function(p){return!noStipend(p);}).sort();
+  var grandStip=Object.values(stipByProv).reduce(function(s,r){return s+r.total;},0);
+  var grandPsych=Object.values(psychByProv).reduce(function(s,r){return s+r.total;},0);
+  var grandAll=grandStip+grandPsych;
+  var totCal=Object.values(calSessions).reduce(function(s,v){return s+v;},0);
+  var h='<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px">';
+  h+='<div style="background:#f5f3f0;border-radius:8px;padding:10px 16px"><div style="font-size:10px;color:#888;font-weight:600">CALENDAR SESSIONS</div><div style="font-size:22px;font-weight:700;color:#1B2A4A">'+totCal+'</div></div>';
+  h+='<div style="background:#f0f4ff;border-radius:8px;padding:10px 16px"><div style="font-size:10px;color:#888;font-weight:600">COMPUTED STIPENDS</div><div style="font-size:22px;font-weight:700;color:#1B2A4A">'+fmtT(grandStip)+'</div></div>';
+  h+='<div style="background:#fef3c7;border-radius:8px;padding:10px 16px"><div style="font-size:10px;color:#888;font-weight:600">PDI PSYCH</div><div style="font-size:22px;font-weight:700;color:#b45309">'+fmtT(grandPsych)+'</div></div>';
+  h+='<div style="background:#1B2A4A;border-radius:8px;padding:10px 16px"><div style="font-size:10px;color:rgba(255,255,255,.6);font-weight:600">TOTAL OBLIGATION</div><div style="font-size:22px;font-weight:700;color:#fbbf24">'+fmtT(grandAll)+'</div></div>';
+  h+='</div>';
+  h+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">';
+  h+='<thead><tr style="background:#7a6a56;color:#fff">';
+  ['PROVIDER','CAL SESSIONS','SIG WEEKLY','PDI FLAT','SESSION FEES','MANUAL ENTRIES','PDI PSYCH','TOTAL','STATUS'].forEach(function(c,i){
+    h+='<th style="padding:8px 12px;text-align:'+(i===0?'left':'right')+(i===8?';text-align:center':'')+';font-size:10px">'+c+'</th>';
+  });
+  h+='</tr></thead><tbody>';
+  var auditGrand=0;
+  provList.forEach(function(prov,pi){
+    var stip=stipByProv[prov]||{sig:0,pdi:0,sess:0,man:0,total:0};
+    var man=manByProv[prov]||{count:0,total:0};
+    var psych=psychByProv[prov]||{count:0,total:0};
+    var cal=calSessions[prov]||0;
+    var rowTotal=stip.total+psych.total;
+    auditGrand+=rowTotal;
+    var flags=[];
+    if(cal>0&&stip.sess===0&&stip.sig===0&&stip.pdi===0)flags.push({c:'#dc2626',t:'Calendar sessions found but no computed stipend'});
+    if(man.count>0&&stip.man===0)flags.push({c:'#d97706',t:'Manual Firebase entries not in computed stipend'});
+    if(cal===0&&stip.total>0&&stip.man===0)flags.push({c:'#0369a1',t:'Stipend computed with no direct calendar sessions'});
+    var status=flags.length===0
+      ?'<span style="background:#dcfce7;color:#15803d;padding:2px 10px;border-radius:12px;font-weight:600;font-size:11px">&#10003; OK</span>'
+      :flags.map(function(f){return'<div style="color:'+f.c+';font-size:10px;white-space:nowrap">&#9888; '+f.t+'</div>';}).join('');
+    var bg=flags.length?'#fffbeb':(pi%2===0?'#fff':'#faf8f4');
+    h+='<tr style="background:'+bg+';border-bottom:.5px solid #f0ede8">';
+    h+='<td style="padding:7px 12px;font-weight:600;color:#1B2A4A">'+prov+'</td>';
+    h+='<td style="padding:7px 12px;text-align:right;color:#888">'+(cal||'\u2014')+'</td>';
+    h+='<td style="padding:7px 12px;text-align:right">'+fmtV(stip.sig)+'</td>';
+    h+='<td style="padding:7px 12px;text-align:right">'+fmtV(stip.pdi)+'</td>';
+    h+='<td style="padding:7px 12px;text-align:right">'+fmtV(stip.sess)+'</td>';
+    h+='<td style="padding:7px 12px;text-align:right">'+(man.count?'<span title="'+man.count+' entries">'+fmtT(man.total)+'</span>':'\u2014')+'</td>';
+    h+='<td style="padding:7px 12px;text-align:right">'+fmtV(psych.total)+'</td>';
+    h+='<td style="padding:7px 12px;text-align:right;font-weight:700;color:#1B2A4A">'+fmtV(rowTotal)+'</td>';
+    h+='<td style="padding:7px 12px;text-align:center">'+status+'</td>';
+    h+='</tr>';
+  });
+  h+='<tr style="background:#7a6a56;color:#fff;font-weight:700">';
+  h+='<td style="padding:8px 12px">GRAND TOTAL</td>';
+  h+='<td style="padding:8px 12px;text-align:right">'+totCal+'</td>';
+  h+='<td style="padding:8px 12px;text-align:right">'+fmtT(Object.values(stipByProv).reduce(function(s,r){return s+r.sig;},0))+'</td>';
+  h+='<td style="padding:8px 12px;text-align:right">'+fmtT(Object.values(stipByProv).reduce(function(s,r){return s+r.pdi;},0))+'</td>';
+  h+='<td style="padding:8px 12px;text-align:right">'+fmtT(Object.values(stipByProv).reduce(function(s,r){return s+r.sess;},0))+'</td>';
+  h+='<td style="padding:8px 12px;text-align:right">'+fmtT(Object.values(manByProv).reduce(function(s,r){return s+r.total;},0))+'</td>';
+  h+='<td style="padding:8px 12px;text-align:right">'+fmtT(grandPsych)+'</td>';
+  h+='<td style="padding:8px 12px;text-align:right;color:#fbbf24;font-size:13px">'+fmtT(auditGrand)+'</td>';
+  h+='<td></td></tr></tbody></table></div>';
+  if(manualEntries.length){
+    h+='<div style="margin-top:24px"><div style="font-size:13px;font-weight:700;color:#1B2A4A;margin-bottom:8px">Manual Stipend Entries (Firebase) \u2014 '+manualEntries.length+' entries</div>';
+    h+='<table style="width:100%;border-collapse:collapse;font-size:11px">';
+    h+='<thead><tr style="background:#f5f3f0"><th style="padding:6px 10px;text-align:left;font-size:10px;font-weight:700;color:#888">PROVIDER</th><th style="padding:6px 10px;font-size:10px;font-weight:700;color:#888">WEEK</th><th style="padding:6px 10px;text-align:right;font-size:10px;font-weight:700;color:#888">AMOUNT</th><th style="padding:6px 10px;font-size:10px;font-weight:700;color:#888">TYPE</th><th style="padding:6px 10px;font-size:10px;font-weight:700;color:#888">NOTES</th></tr></thead><tbody>';
+    manualEntries.slice().sort(function(a,b){return((b.startWeek||b.week||'')>(a.startWeek||a.week||''))?1:-1;}).forEach(function(e,i){
+      var bg=i%2===0?'#fff':'#faf8f4';
+      h+='<tr style="background:'+bg+';border-bottom:.5px solid #eee">';
+      h+='<td style="padding:6px 10px;font-weight:600">'+(e.provider||e.prov||'\u2014')+'</td>';
+      h+='<td style="padding:6px 10px;color:#888">'+(e.startWeek||e.week||'\u2014')+'</td>';
+      h+='<td style="padding:6px 10px;text-align:right;font-weight:600">$'+Number(e.amountPerWeek||e.amount||0).toFixed(2)+'</td>';
+      h+='<td style="padding:6px 10px;color:#888">'+(e.type||'Manual')+'</td>';
+      h+='<td style="padding:6px 10px;color:#aaa;font-size:10px">'+(e.notes||e.note||'\u2014')+'</td>';
+      h+='</tr>';
+    });
+    h+='</tbody></table></div>';
+  }
+  h+='<p style="font-size:10px;color:#aaa;margin-top:12px">Audit: '+(new Date().toLocaleString())+' \u00b7 '+allItems.length+' line items \u00b7 '+manualEntries.length+' manual entries</p>';
+  wrap.innerHTML=h;
+}
 
 function renderByStaff(D){
   var el=document.getElementById('bystaff-content');if(!el)return;
