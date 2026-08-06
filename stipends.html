@@ -373,6 +373,7 @@ window.onerror=function(msg,src,line,col,err){
   <div class="nav-tab" onclick="showTab('leadtech')" style="background:rgba(245,158,11,.12);color:#92400E;font-weight:700">Lead Tech &#9733;</div>
   <div class="nav-tab" onclick="showTab('psychometric')" style="background:rgba(99,102,241,.1);color:#4338ca;font-weight:700">PDI Psych &#10010;</div>
   <div class="nav-tab" onclick="showTab('ppdsummary')">PPD Summary</div>
+  <div class="nav-tab" onclick="runStipendAudit();showTab('audit')" style="background:rgba(220,38,38,.08);color:#b91c1c;font-weight:700">&#9656; Audit</div>
 </div>
 
 <!-- FILTERS -->
@@ -575,6 +576,21 @@ window.onerror=function(msg,src,line,col,err){
     <div id="ppd-summary-content" style="overflow-x:auto"><p style="color:#aaa;font-size:12px">Open this tab to generate the summary.</p></div>
   </div>
 </div>
+
+<!-- AUDIT TAB -->
+<div id="tab-audit" class="hidden" style="padding:20px">
+  <div style="max-width:980px">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+      <div>
+        <h3 style="margin-bottom:4px;color:#1B2A4A">Stipend Audit</h3>
+        <p style="font-size:12px;color:#888">Cross-references calendar sessions, Firebase manual entries, computed stipends, and psychometric data. Flags discrepancies.</p>
+      </div>
+      <button onclick="runStipendAudit()" style="background:#1B2A4A;color:#fff;border:none;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">&#9656; Run Audit</button>
+    </div>
+    <div id="audit-content"><p style="color:#aaa;font-size:12px">Click Run Audit to analyze all stipend data.</p></div>
+  </div>
+</div>
+
 
 
   </div>
