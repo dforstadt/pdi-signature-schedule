@@ -1757,10 +1757,10 @@ function _drawPPDSummary(wrap){
 
   // Header row
   h+='<thead><tr>';
-  h+='<th style="padding:8px 14px;background:#1B2A4A;color:#fff;text-align:left;position:sticky;left:0;z-index:2;min-width:180px">PROVIDER / CATEGORY</th>';
+  h+='<th style="padding:8px 14px;background:#7a6a56;color:#fff;text-align:left;position:sticky;left:0;z-index:2;min-width:180px">PROVIDER / CATEGORY</th>';
   ppdsWithData.forEach(function(pp){
     var lk=isPPDLocked(pp.start);
-    h+='<th style="padding:7px 10px;background:'+(lk?'#15803d':'#1B2A4A')+';color:#fff;text-align:right;font-size:10px;white-space:nowrap">'+(lk?'&#128274; ':'')+'PPD '+pp.ppd+'<br><span style="font-weight:400;opacity:.75">'+fds(pp.start)+'</span></th>';
+    h+='<th style="padding:7px 10px;background:'+(lk?'#15803d':'#7a6a56')+';color:#fff;text-align:right;font-size:10px;white-space:nowrap">'+(lk?'&#128274; ':'')+'PPD '+pp.ppd+'<br><span style="font-weight:400;opacity:.75">'+fds(pp.start)+'</span></th>';
   });
   h+='<th style="padding:8px 10px;background:#6b5c45;color:#fff;text-align:right;white-space:nowrap">TOTAL</th></tr></thead><tbody>';
 
@@ -1846,8 +1846,8 @@ function _drawPPDSummary(wrap){
     });
   });
   gTot=grandSig+grandPDI+grandPsych+grandOther;
-  h+='<tr style="background:#1B2A4A;color:#fff;font-weight:700">';
-  h+='<td style="padding:9px 14px;position:sticky;left:0;background:#1B2A4A;font-size:12px">GRAND TOTAL</td>';
+  h+='<tr style="background:#7a6a56;color:#fff;font-weight:700">';
+  h+='<td style="padding:9px 14px;position:sticky;left:0;background:#7a6a56;font-size:12px">GRAND TOTAL</td>';
   ppdsWithData.forEach(function(pp){
     h+='<td style="padding:9px 10px;text-align:right">'+(colTotals[pp.start]?fmtT(colTotals[pp.start]):'—')+'</td>';
   });
@@ -1859,7 +1859,6 @@ function _drawPPDSummary(wrap){
   if(grandSig)h+='<div style="background:#f0f4ff;border-radius:8px;padding:8px 14px"><div style="color:#888;font-size:10px">SIGNATURE WEEKLY</div><div style="font-weight:700;color:#1B2A4A;font-size:14px">'+fmtT(grandSig)+'</div></div>';
   if(grandPDI)h+='<div style="background:#e0f2fe;border-radius:8px;padding:8px 14px"><div style="color:#888;font-size:10px">PDI FLAT STIPEND</div><div style="font-weight:700;color:#0369a1;font-size:14px">'+fmtT(grandPDI)+'</div></div>';
   if(grandPsych)h+='<div style="background:#fef3c7;border-radius:8px;padding:8px 14px"><div style="color:#888;font-size:10px">PDI PSYCH TESTING</div><div style="font-weight:700;color:#b45309;font-size:14px">'+fmtT(grandPsych)+'</div></div>';
-  if(grandOther)h+='<div style="background:#f5f3ff;border-radius:8px;padding:8px 14px"><div style="color:#888;font-size:10px">OTHER / MANUAL</div><div style="font-weight:700;color:#7c3aed;font-size:14px">'+fmtT(grandOther)+'</div></div>';
   h+='<div style="background:#1B2A4A;border-radius:8px;padding:8px 14px"><div style="color:rgba(255,255,255,.6);font-size:10px">PROTOCOL TOTAL</div><div style="font-weight:700;color:#fbbf24;font-size:14px">'+fmtT(gTot)+'</div></div>';
   h+='</div>';
   wrap.innerHTML=h;
