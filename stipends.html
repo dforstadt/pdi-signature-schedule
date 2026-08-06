@@ -584,6 +584,7 @@ window.onerror=function(msg,src,line,col,err){
 
 var _noStipendOverrides = [];
 var _rosterCache = {}; // ppdStart -> lineItems[], populated by render()
+var _ppdSummaryLoading = false; // blocks render() during PPD summary load
 
 // ── Firebase ───────────────────────────────────────────────────────────────
 firebase.initializeApp({
@@ -610,7 +611,7 @@ var ppdLocks = {};
 var PPD_LOCK_CODE = '9963';
 firebase.database().ref('lifeskills_clinical/ppd_locks').on('value', function(s){
   ppdLocks = s.val() || {};
-  if(window._lastD) renderByStaff(window._lastD);
+  if(window._lastD&&!window._ppdSummaryLoading) renderByStaff(window._lastD);
 });
 function isPPDLocked(ppdStart){
   return !!(ppdLocks && ppdLocks[ppdStart.replace(/-/g,'_')]);
@@ -1657,6 +1658,7 @@ function renderPPDSummary(){
 }
 function _populateRosterCache(){renderPPDSummary();}
 function _loadAllPPDs(wrap){
+  window._ppdSummaryLoading=true;
   var today=new Date().toISOString().slice(0,10);
   var pastPPDs=PAY_PERIODS.filter(function(pp){return pp.start<=today;});
   var feEl=document.getElementById('flt-from'),teEl=document.getElementById('flt-to'),trEl=document.getElementById('flt-track');
@@ -1669,11 +1671,13 @@ function _loadAllPPDs(wrap){
     if(summaryTab&&summaryTab.classList.contains('hidden')){
       if(feEl)feEl.value=oF;if(teEl)teEl.value=oT;if(trEl)trEl.value=oTr;
       _ppdFrom=oPF;_ppdTo=oPT;_currentPPD=oPIdx;
+      window._ppdSummaryLoading=false;
       return;
     }
     if(idx>=pastPPDs.length){
       if(feEl)feEl.value=oF;if(teEl)teEl.value=oT;if(trEl)trEl.value=oTr;
       _ppdFrom=oPF;_ppdTo=oPT;_currentPPD=oPIdx;
+      window._ppdSummaryLoading=false;
       _drawPPDSummary(wrap);
       return;
     }
@@ -1969,6 +1973,7 @@ function toggleProvApproval(apvKey,btnId){
 }
 
 function render(){
+  if(window._ppdSummaryLoading)return;
   try{
     var D=computeStipends();
     // Inject manual adjustments into lineItems so they flow through all renders
