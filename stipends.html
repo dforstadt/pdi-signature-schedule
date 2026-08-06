@@ -1157,7 +1157,9 @@ function computeStipends(){
   // getSat returns the Saturday on or before a given date
   function getSat(date){
     // Billing period starts on SUNDAY (aligned to PPD schedule)
+    if(!date)return '';
     var d=new Date(date);
+    if(isNaN(d.getTime()))return '';
     var day=d.getDay(); // 0=Sun..6=Sat
     d.setDate(d.getDate()-day); // go back to Sunday
     return d.toISOString().slice(0,10);
@@ -1187,8 +1189,9 @@ function computeStipends(){
   });
   allWeeks=Object.keys(weekSet).sort().filter(function(w){return w>=PAY_PERIODS[0].start;});
   // Weeks now start on Sunday, aligned to PPD boundaries — simple date filter
-  if(fltFrom)allWeeks=allWeeks.filter(function(w){return w>=getSat(fromISO(fltFrom));});
-  if(fltTo)  allWeeks=allWeeks.filter(function(w){return w<=fltTo;});
+  var _fSat=fltFrom?getSat(fromISO(fltFrom)):'';
+  if(_fSat)allWeeks=allWeeks.filter(function(w){return w>=_fSat;});
+  if(fltTo)allWeeks=allWeeks.filter(function(w){return w<=fltTo;});
 
   // ── Weekly-type providers: Ockman, Nicole, Gus ──────────────────────────────
   // These three ALWAYS receive the weekly Signature stipend and PDI flat stipend.
@@ -1662,6 +1665,13 @@ function _loadAllPPDs(wrap){
   var oPF=_ppdFrom,oPT=_ppdTo,oPIdx=_currentPPD;
   var idx=0;
   function step(){
+    // Abort if user navigated away from PPD Summary tab
+    var summaryTab=document.getElementById('tab-ppdsummary');
+    if(summaryTab&&summaryTab.classList.contains('hidden')){
+      if(feEl)feEl.value=oF;if(teEl)teEl.value=oT;if(trEl)trEl.value=oTr;
+      _ppdFrom=oPF;_ppdTo=oPT;_currentPPD=oPIdx;
+      return;
+    }
     if(idx>=pastPPDs.length){
       if(feEl)feEl.value=oF;if(teEl)teEl.value=oT;if(trEl)trEl.value=oTr;
       _ppdFrom=oPF;_ppdTo=oPT;_currentPPD=oPIdx;
