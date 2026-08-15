@@ -375,19 +375,15 @@ function render(fbClients){
   });
 
   // 2. Start from ALL_EPISODES array — preserving ALL entries including
-  //    readmissions (same name, different dates). Build a lookup pointing
-  //    at the MOST RECENT episode per name for Firebase date updates.
+  //    readmissions (same name, different dates).
   // Assign to global so renderFlowSection (called from separate FB listener) can read it
   ALL_EPS_LIVE=ALL_EPISODES.map(function(ep){return Object.assign({},ep);});
-  var latestByName={};  // name → index of most recent episode in ALL_EPS_LIVE
-  ALL_EPS_LIVE.forEach(function(ep,i){
-    var k=ep.name.toLowerCase().trim();
-    var epDate=ep.pdiAdmit||ep.sigAdmit||'';
-    var prevDate=(latestByName[k]!==undefined)?(ALL_EPS_LIVE[latestByName[k]].pdiAdmit||ALL_EPS_LIVE[latestByName[k]].sigAdmit||''):'';
-    if(epDate>=prevDate)latestByName[k]=i;
-  });
 
-  // 3. Overlay Firebase dates onto the most recent episode per client.
+  // 3. Overlay Firebase discharge dates onto ALL episodes per client.
+  //    For clients with multiple episodes (e.g. Layla S readmission), apply
+  //    each Firebase discharge date to the episode whose admit precedes it —
+  //    never to an episode admitted AFTER the discharge date. This prevents
+  //    a first-episode discharge from being misapplied to a readmission.
   //    Add brand-new Firebase clients not in ALL_EPISODES at all.
   var namesInHardcoded={};
   ALL_EPS_LIVE.forEach(function(ep){namesInHardcoded[ep.name.toLowerCase().trim()]=true;});
@@ -397,11 +393,19 @@ function render(fbClients){
     if(namesInHardcoded[k]){
       // ALL_EPISODES is authoritative for program type and admit dates.
       // Firebase only supplies updated DISCHARGE dates — never admit dates.
-      // This prevents false PDI flags on Signature-only clients whose
-      // calendar fields were accidentally populated with pdiAdmit.
-      var ep=ALL_EPS_LIVE[latestByName[k]];
-      if(fb.pdiDisch  && ep.pdiAdmit) ep.pdiDisch=fb.pdiDisch;   // only if client IS PDI
-      if(fb.sigDisch  && ep.sigAdmit) ep.sigDisch=fb.sigDisch;   // only if client IS Sig
+      // Iterate ALL episodes for this client so multi-episode clients
+      // (readmissions) receive discharge dates on the correct episode.
+      ALL_EPS_LIVE.forEach(function(ep){
+        if(ep.name.toLowerCase().trim()!==k) return;
+        // Apply PDI discharge only to PDI episodes where discharge > admit
+        if(fb.pdiDisch && ep.pdiAdmit && !ep.pdiDisch && fb.pdiDisch>=ep.pdiAdmit)
+          ep.pdiDisch=fb.pdiDisch;
+        // Apply Sig discharge only to Sig episodes where discharge > admit.
+        // This ensures a first-episode discharge is never applied to a
+        // readmission whose sigAdmit falls AFTER that discharge date.
+        if(fb.sigDisch && ep.sigAdmit && !ep.sigDisch && fb.sigDisch>=ep.sigAdmit)
+          ep.sigDisch=fb.sigDisch;
+      });
     } else if(fb.pdiAdmit||fb.sigAdmit){
       // Brand-new client from Firebase not in ALL_EPISODES — add them
       ALL_EPS_LIVE.push(fb);
