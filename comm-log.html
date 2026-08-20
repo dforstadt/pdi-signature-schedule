@@ -776,11 +776,21 @@ function saveEntry(){
   var outcome=(document.getElementById('f-outcome').value||'').trim();
   if(!date){alert('Date required.');return;}
   if(!contact){alert('Contact name required.');return;}
+  if(!selectedClient||!selectedClient.id){alert('No client selected. Please re-select and try again.');return;}
+  var btn=document.querySelector('.btn-save');
+  if(btn){btn.disabled=true;btn.textContent='Saving…';}
   CLOG.push({clientId:selectedClient.id,clientName:selectedClient.name,
     date:date,contactName:contact,contactRole:role,method:selMethod,
     nature:selNature,outcome:outcome,contactedBy:provider,
-    endorsed:false,endorsedBy:'',endorsedAt:'',addedAt:new Date().toISOString()});
-  closeModal();
+    endorsed:false,endorsedBy:'',endorsedAt:'',addedAt:new Date().toISOString()})
+  .then(function(){
+    closeModal();
+  })
+  .catch(function(err){
+    if(btn){btn.disabled=false;btn.textContent='Save Entry';}
+    alert('Save failed: '+(err&&err.message?err.message:'Firebase write error. Check connection and try again.'));
+    console.error('CLOG.push error:',err);
+  });
 }
 function toggleNoReferent(){
   if(!selectedClient)return;
