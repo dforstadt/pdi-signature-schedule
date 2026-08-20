@@ -276,73 +276,6 @@ select:focus,input:focus{outline:none;border-color:var(--purple)}
 </div>
 </div>
 
-<!-- ═══ ADD ENTRY MODAL ══════════════════════════════════════════════ -->
-<div class="overlay" id="overlay">
-  <div class="modal">
-    <h3>Add Communication Entry</h3>
-    <div class="modal-sub" id="m-sub"></div>
-    <div class="row2 fg">
-      <div><label>Date</label><input type="date" id="f-date"></div>
-      <div><label>Contact Role</label>
-        <select id="f-role">
-          <option value="Referent">Referent</option>
-          <option value="No Referent">No Referent (N/A)</option>
-          <option value="Family">Family Member</option>
-          <option value="Insurance">Insurance / Payer</option>
-          <option value="Attorney">Attorney / Legal</option>
-          <option value="Guardian">Guardian / Conservator</option>
-          <option value="Facility">Referring Facility</option>
-          <option value="Physician">Referring Physician</option>
-          <option value="Other">Other</option>
-        </select>
-      </div>
-    </div>
-    <div class="row2 fg">
-      <div><label>Contact Name</label>
-        <input type="text" id="f-contact" placeholder="e.g. Dr. Smith / Jane Smith (sister)">
-      </div>
-      <div><label>Contacted By (Provider)</label>
-        <select id="f-provider">
-          <option value="">— Select provider —</option>
-        </select>
-      </div>
-    </div>
-    <div class="fg"><label>Method of Communication</label>
-      <div class="row3">
-        <button class="mb sel" data-m="Call" onclick="selM(this)">&#128222; Phone Call</button>
-        <button class="mb" data-m="Email" onclick="selM(this)">&#9993; Email</button>
-        <button class="mb" data-m="Text" onclick="selM(this)">&#128172; Text</button>
-        <button class="mb" data-m="Left Message" onclick="selM(this)">&#128232; Left Message</button>
-        <button class="mb" data-m="Portal" onclick="selM(this)">&#128274; Portal</button>
-        <button class="mb" data-m="Other" onclick="selM(this)">&#128203; Other</button>
-      </div>
-    </div>
-    <div class="fg"><label>Nature / Purpose of Contact</label>
-      <div class="row3" id="nature-grid">
-        <button class="nb" data-n="Treatment Update" onclick="selN(this)">Treatment Update</button>
-        <button class="nb" data-n="Discharge Planning" onclick="selN(this)">Discharge Planning</button>
-        <button class="nb" data-n="Clinical Concern" onclick="selN(this)">Clinical Concern</button>
-        <button class="nb" data-n="Insurance / Auth" onclick="selN(this)">Insurance / Auth</button>
-        <button class="nb" data-n="Family Support" onclick="selN(this)">Family Support</button>
-        <button class="nb" data-n="Intake / Admission" onclick="selN(this)">Intake / Admission</button>
-        <button class="nb" data-n="Safety Update" onclick="selN(this)">Safety Update</button>
-        <button class="nb" data-n="Medication Update" onclick="selN(this)">Medication Update</button>
-        <button class="nb" data-n="Legal / Court" onclick="selN(this)">Legal / Court</button>
-        <button class="nb" data-n="Aftercare Planning" onclick="selN(this)">Aftercare Planning</button>
-        <button class="nb" data-n="Referent Request" onclick="selN(this)">Referent Request</button>
-        <button class="nb" data-n="Other" onclick="selN(this)">Other</button>
-      </div>
-    </div>
-    <div class="fg"><label>Outcome / Resolution</label>
-      <textarea id="f-outcome" rows="3" placeholder="What was communicated, decided, agreed upon, or next steps…"></textarea>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
-      <button class="btn-save" onclick="saveEntry()">Save Entry</button>
-    </div>
-  </div>
-</div>
-
 <script>
 firebase.initializeApp({
   apiKey:'AIzaSyCERxntgytkfCHWN7EoAVYVmLBcfWyYZ5A',
@@ -821,5 +754,73 @@ function fmtTime(iso){if(!iso)return'';var d=new Date(iso);return d.toLocaleDate
 document.getElementById('overlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
 document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal();});
 </script>
+
+<!-- ═══ ADD ENTRY MODAL ══════════════════════════════════════════════ -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h3>Add Communication Entry</h3>
+    <div class="modal-sub" id="m-sub"></div>
+    <div class="row2 fg">
+      <div><label>Date</label><input type="date" id="f-date"></div>
+      <div><label>Contact Role</label>
+        <select id="f-role">
+          <option value="Referent">Referent</option>
+          <option value="No Referent">No Referent (N/A)</option>
+          <option value="Family">Family Member</option>
+          <option value="Insurance">Insurance / Payer</option>
+          <option value="Attorney">Attorney / Legal</option>
+          <option value="Guardian">Guardian / Conservator</option>
+          <option value="Facility">Referring Facility</option>
+          <option value="Physician">Referring Physician</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="row2 fg">
+      <div><label>Contact Name</label>
+        <input type="text" id="f-contact" placeholder="e.g. Dr. Smith / Jane Smith (sister)">
+      </div>
+      <div><label>Contacted By (Provider)</label>
+        <select id="f-provider">
+          <option value="">— Select provider —</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg"><label>Method of Communication</label>
+      <div class="row3">
+        <button class="mb sel" data-m="Call" onclick="selM(this)">&#128222; Phone Call</button>
+        <button class="mb" data-m="Email" onclick="selM(this)">&#9993; Email</button>
+        <button class="mb" data-m="Text" onclick="selM(this)">&#128172; Text</button>
+        <button class="mb" data-m="Left Message" onclick="selM(this)">&#128232; Left Message</button>
+        <button class="mb" data-m="Portal" onclick="selM(this)">&#128274; Portal</button>
+        <button class="mb" data-m="Other" onclick="selM(this)">&#128203; Other</button>
+      </div>
+    </div>
+    <div class="fg"><label>Nature / Purpose of Contact</label>
+      <div class="row3" id="nature-grid">
+        <button class="nb" data-n="Treatment Update" onclick="selN(this)">Treatment Update</button>
+        <button class="nb" data-n="Discharge Planning" onclick="selN(this)">Discharge Planning</button>
+        <button class="nb" data-n="Clinical Concern" onclick="selN(this)">Clinical Concern</button>
+        <button class="nb" data-n="Insurance / Auth" onclick="selN(this)">Insurance / Auth</button>
+        <button class="nb" data-n="Family Support" onclick="selN(this)">Family Support</button>
+        <button class="nb" data-n="Intake / Admission" onclick="selN(this)">Intake / Admission</button>
+        <button class="nb" data-n="Safety Update" onclick="selN(this)">Safety Update</button>
+        <button class="nb" data-n="Medication Update" onclick="selN(this)">Medication Update</button>
+        <button class="nb" data-n="Legal / Court" onclick="selN(this)">Legal / Court</button>
+        <button class="nb" data-n="Aftercare Planning" onclick="selN(this)">Aftercare Planning</button>
+        <button class="nb" data-n="Referent Request" onclick="selN(this)">Referent Request</button>
+        <button class="nb" data-n="Other" onclick="selN(this)">Other</button>
+      </div>
+    </div>
+    <div class="fg"><label>Outcome / Resolution</label>
+      <textarea id="f-outcome" rows="3" placeholder="What was communicated, decided, agreed upon, or next steps…"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveEntry()">Save Entry</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
