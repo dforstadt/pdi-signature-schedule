@@ -48,6 +48,7 @@ select:focus,input:focus{outline:none;border-color:var(--purple)}
 .add-btn{margin-left:auto;padding:9px 20px;background:var(--purple);color:#fff;border:none;
   border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
 .add-btn:hover{background:#6D28D9}
+.add-btn:disabled{background:#C4B8D4;cursor:not-allowed;opacity:.55}
 .add-btn:disabled{background:#ccc;cursor:default}
 
 /* Client banner */
@@ -350,10 +351,12 @@ function buildDropdown(){
     return true;
   });
   var prev=document.getElementById('client-select').value;
-  var html='<option value="">— Select a client ('+list.length+') —</option>';
+  var html='<option value="">'+(list.length===0&&allClients.length===0
+    ?'Loading clients…'
+    :'— Select a client ('+(list.length===0?'0 — try All or Discharged':list.length)+') —')+'</option>';
   html+=list.map(function(c){
     var cnt=Object.values(commEntries).filter(function(e){return e.clientId===c.id&&!e.isAuto;}).length;
-    return '<option value="'+c.id+'">'+esc(c.name)+' ['+c.program+']'+(cnt?' ('+cnt+')':'')+
+    return '<option value="'+String(c.id)+'">'+esc(c.name)+' ['+c.program+']'+(cnt?' ('+cnt+')':'')+
       (isActive(c)?'':' ✓ Discharged')+'</option>';
   }).join('');
   document.getElementById('client-select').innerHTML=html;
@@ -365,7 +368,7 @@ function buildProviderSelect(){
     providerList.map(function(p){return'<option>'+esc(p)+'</option>';}).join('');
 }
 function selectClient(id){
-  selectedClient=allClients.find(function(c){return c.id===id;})||null;
+  selectedClient=allClients.find(function(c){return String(c.id)===String(id);})||null;
   document.getElementById('add-btn').disabled=!selectedClient;
   if(!selectedClient){
     document.getElementById('client-banner').style.display='none';
