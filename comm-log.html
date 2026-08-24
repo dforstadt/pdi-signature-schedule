@@ -710,6 +710,8 @@ function openModal(){
   document.querySelectorAll('.mb').forEach(function(b){b.classList.toggle('sel',b.dataset.m==='Call');});
   document.querySelectorAll('.nb').forEach(function(b){b.classList.remove('sel');});
   ov.style.cssText='display:flex !important;position:fixed !important;inset:0 !important;z-index:9999999 !important;background:rgba(0,0,0,.45) !important;align-items:center !important;justify-content:center !important;';
+  var rect=ov.getBoundingClientRect();
+  dbg('overlay rect: top='+rect.top+' left='+rect.left+' w='+rect.width+' h='+rect.height);
   dbg('overlay style set to flex');
   setTimeout(function(){
     var fc=document.getElementById('f-contact');
