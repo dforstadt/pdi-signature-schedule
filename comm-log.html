@@ -283,6 +283,13 @@ firebase.initializeApp({
   projectId:'pdi-signature-schedule'
 });
 var DB=firebase.database(), CLOG=DB.ref('lifeskills_clinical/comm_log');
+function dbg(msg){
+  var p=document.getElementById('dbg');
+  if(!p)return;
+  p.style.display='block';
+  p.innerHTML+=msg+'<br>';
+  console.log('[DBG]',msg);
+}
 
 var NO_REF=DB.ref('lifeskills_clinical/comm_no_referent'); // clientId → true
 var noReferentClients={};
@@ -682,12 +689,17 @@ function fsToday(){
 
 // ── Modal ──────────────────────────────────────────────────────────────────────
 function openModal(){
+  dbg('openModal called | selectedClient='+(selectedClient?selectedClient.name:'null'));
   if(!selectedClient){
     var sel=document.getElementById('client-select');
     if(sel){sel.focus();sel.style.outline='2px solid red';}
+    dbg('No client - returning');
     return;
   }
   document.getElementById('client-select').style.outline='';
+  var ov=document.getElementById('overlay');
+  dbg('overlay el='+(ov?'FOUND':'NULL')+' | display='+( ov?ov.style.display:'n/a'));
+  if(!ov){dbg('ERROR: overlay not in DOM');return;}
   document.getElementById('m-sub').textContent=selectedClient.name+' — '+(selectedClient.program||'');
   document.getElementById('f-date').value=TODAY;
   document.getElementById('f-contact').value='';
@@ -697,9 +709,13 @@ function openModal(){
   selMethod='Call'; selNature='';
   document.querySelectorAll('.mb').forEach(function(b){b.classList.toggle('sel',b.dataset.m==='Call');});
   document.querySelectorAll('.nb').forEach(function(b){b.classList.remove('sel');});
-  var ov=document.getElementById('overlay');
-  ov.style.display='flex';
-  setTimeout(function(){document.getElementById('f-contact').focus();},60);
+  ov.style.cssText='display:flex !important;position:fixed !important;inset:0 !important;z-index:9999999 !important;background:rgba(0,0,0,.45) !important;align-items:center !important;justify-content:center !important;';
+  dbg('overlay style set to flex');
+  setTimeout(function(){
+    var fc=document.getElementById('f-contact');
+    if(fc)fc.focus();
+    dbg('overlay computed display='+window.getComputedStyle(ov).display);
+  },100);
 }
 function closeModal(){var ov=document.getElementById('overlay');if(ov)ov.style.display='none';}
 function selM(btn){selMethod=btn.dataset.m;document.querySelectorAll('.mb').forEach(function(b){b.classList.remove('sel');});btn.classList.add('sel');}
@@ -830,5 +846,7 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal()
   </div>
 </div>
 
+
+<div id="dbg" style="position:fixed;bottom:0;left:0;right:0;background:#000;color:#0f0;font-family:monospace;font-size:12px;padding:6px 10px;z-index:9999999;display:none;max-height:120px;overflow-y:auto;"></div>
 </body>
 </html>
