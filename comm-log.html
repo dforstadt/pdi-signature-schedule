@@ -706,8 +706,7 @@ function openModal(){
     overlay.classList.add('open');
     setTimeout(function(){if(fcon)fcon.focus();},60);
   } catch(err) {
-    alert('Add Entry error: '+err.message+'
-Please screenshot this and report it.');
+    alert('Add Entry error: '+err.message);
     console.error('openModal error:',err);
   }
 }
