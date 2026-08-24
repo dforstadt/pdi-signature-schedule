@@ -48,8 +48,7 @@ select:focus,input:focus{outline:none;border-color:var(--purple)}
 .add-btn{margin-left:auto;padding:9px 20px;background:var(--purple);color:#fff;border:none;
   border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
 .add-btn:hover{background:#6D28D9}
-.add-btn:disabled{background:#C4B8D4;cursor:not-allowed;opacity:.55}
-.add-btn:disabled{background:#fff;color:#c00;border:2px solid #c00;cursor:not-allowed;font-weight:700}
+.add-btn:disabled{background:#aaa;color:#fff;cursor:not-allowed;opacity:.7}
 
 /* Client banner */
 .client-banner{background:var(--white);border:1px solid var(--bd);border-radius:var(--r);
@@ -284,9 +283,7 @@ firebase.initializeApp({
   projectId:'pdi-signature-schedule'
 });
 var DB=firebase.database(), CLOG=DB.ref('lifeskills_clinical/comm_log');
-window.onerror=function(msg,src,line,col,err){
-  alert('JS Error: '+msg+' (line '+line+')');return false;
-};
+
 var NO_REF=DB.ref('lifeskills_clinical/comm_no_referent'); // clientId → true
 var noReferentClients={};
 NO_REF.on('value',function(s){noReferentClients=s.val()||{};updateNAToggle();if(document.getElementById('view-facesheet').style.display!=='none')renderFacesheet();});
@@ -355,9 +352,7 @@ function buildDropdown(){
     return true;
   });
   var prev=document.getElementById('client-select').value;
-  var html='<option value="">'+(list.length===0&&allClients.length===0
-    ?'Loading clients…'
-    :'— Select a client ('+(list.length===0?'0 — try All or Discharged':list.length)+') —')+'</option>';
+  var html='<option value="">— Select a client —</option>';
   html+=list.map(function(c){
     var cnt=Object.values(commEntries).filter(function(e){return e.clientId===c.id&&!e.isAuto;}).length;
     return '<option value="'+String(c.id)+'">'+esc(c.name)+' ['+c.program+']'+(cnt?' ('+cnt+')':'')+
@@ -365,9 +360,6 @@ function buildDropdown(){
   }).join('');
   document.getElementById('client-select').innerHTML=html;
   if(prev)document.getElementById('client-select').value=prev;
-  // Show client count in button so state is always visible
-  var btn=document.getElementById('add-btn');
-  if(btn&&btn.disabled)btn.textContent='+ Add Entry ('+list.length+' clients loaded)';
 }
 function buildProviderSelect(){
   var sel=document.getElementById('f-provider');
