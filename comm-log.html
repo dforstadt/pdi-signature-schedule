@@ -209,7 +209,7 @@ select:focus,input:focus{outline:none;border-color:var(--purple)}
         <option value="">— Select a client —</option>
       </select>
     </div>
-    <button class="add-btn" id="add-btn" onclick="openModal()" disabled>&#43; Add Entry</button>
+    <button class="add-btn" id="add-btn" onclick="openModal()">&#43; Add Entry</button>
   </div>
 
   <div class="client-banner" id="client-banner" style="display:none">
@@ -368,7 +368,7 @@ function buildProviderSelect(){
 }
 function selectClient(id){
   selectedClient=allClients.find(function(c){return String(c.id)===String(id);})||null;
-  document.getElementById('add-btn').disabled=!selectedClient;
+  // button always enabled - validation handled inside openModal
   if(!selectedClient){
     document.getElementById('client-banner').style.display='none';
     document.getElementById('compliance-bar').style.display='none';
@@ -531,7 +531,7 @@ function quickLog(iso){
   selMethod='Call'; selNature='';
   document.querySelectorAll('.mb').forEach(function(b){b.classList.toggle('sel',b.dataset.m==='Call');});
   document.querySelectorAll('.nb').forEach(function(b){b.classList.remove('sel');});
-  document.getElementById('overlay').classList.add('open');
+  document.getElementById('overlay').style.display='flex';
   setTimeout(function(){document.getElementById('f-contact').focus();},60);
 }
 
@@ -682,34 +682,26 @@ function fsToday(){
 
 // ── Modal ──────────────────────────────────────────────────────────────────────
 function openModal(){
-  try {
-    if(!selectedClient){alert('No client selected.');return;}
-    var sub=document.getElementById('m-sub');
-    if(!sub){alert('ERROR: m-sub element not found in DOM');return;}
-    sub.textContent=selectedClient.name+' — '+(selectedClient.program||'');
-    var overlay=document.getElementById('overlay');
-    if(!overlay){alert('ERROR: overlay element not found in DOM');return;}
-    var fdate=document.getElementById('f-date');
-    if(fdate)fdate.value=TODAY;
-    var fcon=document.getElementById('f-contact');
-    if(fcon)fcon.value='';
-    var fout=document.getElementById('f-outcome');
-    if(fout)fout.value='';
-    var frole=document.getElementById('f-role');
-    if(frole)frole.value='Referent';
-    var fprov=document.getElementById('f-provider');
-    if(fprov)fprov.value='';
-    selMethod='Call'; selNature='';
-    document.querySelectorAll('.mb').forEach(function(b){b.classList.toggle('sel',b.dataset.m==='Call');});
-    document.querySelectorAll('.nb').forEach(function(b){b.classList.remove('sel');});
-    overlay.classList.add('open');
-    setTimeout(function(){if(fcon)fcon.focus();},60);
-  } catch(err) {
-    alert('Add Entry error: '+err.message);
-    console.error('openModal error:',err);
+  if(!selectedClient){
+    var sel=document.getElementById('client-select');
+    if(sel){sel.focus();sel.style.outline='2px solid red';}
+    return;
   }
+  document.getElementById('client-select').style.outline='';
+  document.getElementById('m-sub').textContent=selectedClient.name+' — '+(selectedClient.program||'');
+  document.getElementById('f-date').value=TODAY;
+  document.getElementById('f-contact').value='';
+  document.getElementById('f-outcome').value='';
+  document.getElementById('f-role').value='Referent';
+  document.getElementById('f-provider').value='';
+  selMethod='Call'; selNature='';
+  document.querySelectorAll('.mb').forEach(function(b){b.classList.toggle('sel',b.dataset.m==='Call');});
+  document.querySelectorAll('.nb').forEach(function(b){b.classList.remove('sel');});
+  var ov=document.getElementById('overlay');
+  ov.style.display='flex';
+  setTimeout(function(){document.getElementById('f-contact').focus();},60);
 }
-function closeModal(){document.getElementById('overlay').classList.remove('open');}
+function closeModal(){var ov=document.getElementById('overlay');if(ov)ov.style.display='none';}
 function selM(btn){selMethod=btn.dataset.m;document.querySelectorAll('.mb').forEach(function(b){b.classList.remove('sel');});btn.classList.add('sel');}
 function selN(btn){
   var prev=selNature===btn.dataset.n;
