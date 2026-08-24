@@ -12,7 +12,7 @@
   --bd:#E0DDD8;--purple:#7C3AED;--green:#157A52;--amber:#B87A00;--red:#991F10;
   --sig:#6B5C45;--pdi:#4A6C8A;--r:8px;}
 body{font-family:Arial,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
-.hdr{background:var(--navy);padding:0 24px;height:50px;display:flex;align-items:center;gap:12px}
+.hdr{background:var(--navy);padding:0 24px;height:50px;display:flex;align-items:center;gap:12px;position:relative;z-index:10}
 .hdr-title{color:rgba(255,252,245,.9);font-size:15px;font-weight:700}
 .nav-link{color:rgba(255,252,245,.65);text-decoration:none;font-size:12px;padding:4px 10px;
   border-radius:5px;border:.5px solid rgba(255,252,245,.15)}
@@ -23,7 +23,7 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--tx);min-heigh
 
 /* View tabs */
 .view-tabs{background:var(--white);border-bottom:1px solid var(--bd);padding:0 24px;
-  display:flex;gap:0}
+  display:flex;gap:0;position:relative;z-index:10}
 .vtab{padding:12px 20px;font-size:13px;font-weight:600;color:var(--tx3);cursor:pointer;
   border-bottom:2.5px solid transparent;background:none;border-top:none;border-left:none;
   border-right:none;font-family:Arial,sans-serif;transition:all .15s}
@@ -137,7 +137,7 @@ select:focus,input:focus{outline:none;border-color:var(--purple)}
 .print-btn:hover{background:#F0EDE8}
 
 /* Modal */
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:999;align-items:center;justify-content:center}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99999;align-items:center;justify-content:center}
 .overlay.open{display:flex}
 .modal{background:var(--white);border-radius:12px;padding:24px;width:500px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 8px 48px rgba(0,0,0,.22)}
 .modal h3{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:2px}
@@ -328,6 +328,7 @@ CLOG.on('value',function(snap){
 
 // ── Views ────────────────────────────────────────────────────────────────────
 function showView(v){
+  closeModal();
   document.getElementById('view-log').style.display=v==='log'?'':'none';
   document.getElementById('view-facesheet').style.display=v==='facesheet'?'':'none';
   document.querySelectorAll('.vtab').forEach(function(t,i){
