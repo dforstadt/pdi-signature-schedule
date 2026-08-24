@@ -741,6 +741,7 @@ function saveEntry(){
     nature:selNature,outcome:outcome,contactedBy:provider,
     endorsed:false,endorsedBy:'',endorsedAt:'',addedAt:new Date().toISOString()})
   .then(function(){
+    if(btn){btn.disabled=false;btn.textContent='Save Entry';}
     closeModal();
   })
   .catch(function(err){
