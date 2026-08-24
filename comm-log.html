@@ -49,7 +49,7 @@ select:focus,input:focus{outline:none;border-color:var(--purple)}
   border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
 .add-btn:hover{background:#6D28D9}
 .add-btn:disabled{background:#C4B8D4;cursor:not-allowed;opacity:.55}
-.add-btn:disabled{background:#ccc;cursor:default}
+.add-btn:disabled{background:#fff;color:#c00;border:2px solid #c00;cursor:not-allowed;font-weight:700}
 
 /* Client banner */
 .client-banner{background:var(--white);border:1px solid var(--bd);border-radius:var(--r);
@@ -284,6 +284,9 @@ firebase.initializeApp({
   projectId:'pdi-signature-schedule'
 });
 var DB=firebase.database(), CLOG=DB.ref('lifeskills_clinical/comm_log');
+window.onerror=function(msg,src,line,col,err){
+  alert('JS Error: '+msg+' (line '+line+')');return false;
+};
 var NO_REF=DB.ref('lifeskills_clinical/comm_no_referent'); // clientId → true
 var noReferentClients={};
 NO_REF.on('value',function(s){noReferentClients=s.val()||{};updateNAToggle();if(document.getElementById('view-facesheet').style.display!=='none')renderFacesheet();});
@@ -361,6 +364,9 @@ function buildDropdown(){
   }).join('');
   document.getElementById('client-select').innerHTML=html;
   if(prev)document.getElementById('client-select').value=prev;
+  // Show client count in button so state is always visible
+  var btn=document.getElementById('add-btn');
+  if(btn&&btn.disabled)btn.textContent='+ Add Entry ('+list.length+' clients loaded)';
 }
 function buildProviderSelect(){
   var sel=document.getElementById('f-provider');
