@@ -1566,13 +1566,15 @@ function computeStipends(){
         provs.forEach(function(prov){
           // After pause date: PDI flat only for exempt providers
           if(wStart>=STIPEND_PAUSE&&EXEMPT_AFTER_PAUSE.indexOf(prov)===-1)return;
+          // Nicole's PDI flat also reduced to $100 post-pause
+          var pdiAmt=(wStart>=STIPEND_PAUSE&&prov==='Nicole')?NICOLE_PAUSE_RATE:250;
           lineItems.push({week:wLbl,wStart:wStart,client:cName,track:'PDI',
-            staff:displayName(prov),type:'Flat Stipend',sessHrs:'',rate:'',amount:250,counted:250,
-            notes:note});
+            staff:displayName(prov),type:'Flat Stipend',sessHrs:'',rate:'',
+            amount:pdiAmt,counted:pdiAmt,notes:note});
           if(!pdiStiByStaff[prov])pdiStiByStaff[prov]={};
-          pdiStiByStaff[prov][wStart]=(pdiStiByStaff[prov][wStart]||0)+250;
+          pdiStiByStaff[prov][wStart]=(pdiStiByStaff[prov][wStart]||0)+pdiAmt;
           pdiStaffSet[prov]=true;
-          byClientPDI[cid].staffAmt[prov]=(byClientPDI[cid].staffAmt[prov]||0)+250;
+          byClientPDI[cid].staffAmt[prov]=(byClientPDI[cid].staffAmt[prov]||0)+pdiAmt;
         });
       });
     }
