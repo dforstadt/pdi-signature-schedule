@@ -1361,6 +1361,13 @@ function computeStipends(){
   // Gus Hernandez last day: July 24, 2026 — exclude from weeks after that date
   // includeGus: true if the filter range starts before Gus's last day
   var includeGus = !fltFrom || fltFrom <= '2026-07-24';
+
+  // ── Stipend pause: effective Monday Aug 17 2026 ──────────────────────────
+  // Only Ockman and Nicole continue receiving stipends after this date.
+  // All session-based providers are paused. Nicole's rate is reduced.
+  var STIPEND_PAUSE     = '2026-08-17';
+  var NICOLE_PAUSE_RATE = 100;   // $100/wk per Signature client (was $250)
+  var EXEMPT_AFTER_PAUSE = ['David Ockman', 'Nicole'];  // continue post-pause
   // Providers who receive Signature session fees only — excluded from PDI flat stipend
   var PDI_EXCLUDED=['Rabbi Gaines','Rabbi Brandon Gaines','Rabbi'];
   var PDI_STIP_START='2025-12-12';
@@ -1480,20 +1487,28 @@ function computeStipends(){
         if(!byClientSig[cid])byClientSig[cid]={staffHrs:{},weeklyStaff:new Set(),sigHrs:0,sessAmt:0,wklyAmt:0};
 
         // ── Weekly stipend: $250/wk per active Sig client (Ockman/Nicole/Gus) ──
-        // Exclude Gus from weeks ending after July 24 2026
+        // Exclude Gus from weeks ending after July 24 2026.
+        // After Aug 17 2026: only Ockman and Nicole continue. Nicole's rate = $100/wk.
         weeklyProviders.filter(function(p){
-          return p!=='Gus Hernandez'||wStart<=GUS_CUTOFF;
+          if(p==='Gus Hernandez'&&wStart>GUS_CUTOFF)return false;
+          if(wStart>=STIPEND_PAUSE&&EXEMPT_AFTER_PAUSE.indexOf(p)===-1)return false;
+          return true;
         }).forEach(function(prov){
+          var wkAmt=(wStart>=STIPEND_PAUSE&&prov==='Nicole')?NICOLE_PAUSE_RATE:250;
+          var pauseNote=wStart>=STIPEND_PAUSE?' [Post-pause rate]':'';
           lineItems.push({week:wLbl,wStart:wStart,client:cName,track:'Signature',
-            staff:displayName(prov),type:'Weekly Stipend',sessHrs:'',rate:'',amount:250,counted:250,notes:''});
+            staff:displayName(prov),type:'Weekly Stipend',sessHrs:'',rate:'',
+            amount:wkAmt,counted:wkAmt,notes:pauseNote});
           if(!sigStiByStaff[prov])sigStiByStaff[prov]={};
-          sigStiByStaff[prov][wStart]=(sigStiByStaff[prov][wStart]||0)+250;
+          sigStiByStaff[prov][wStart]=(sigStiByStaff[prov][wStart]||0)+wkAmt;
           weekStiStaffSet[prov]=true;
           byClientSig[cid].weeklyStaff.add(prov);
-          byClientSig[cid].wklyAmt+=250;
+          byClientSig[cid].wklyAmt+=wkAmt;
         });
 
-        // ── Session fees: $150/completed session, ONLY within Signature episode dates ──
+        // ── Session fees: $150/completed session — PAUSED from Aug 17 2026 ──
+        // After STIPEND_PAUSE all session-based providers receive $0.
+        if(wStart<STIPEND_PAUSE){
         var sessMap={};
         var sessCount={}; // track event count separately from slot count
         wEvs.forEach(function(ev){
@@ -1522,6 +1537,7 @@ function computeStipends(){
           byClientSig[cid].sigHrs+=hrs;
           byClientSig[cid].sessAmt+=amt;
         });
+        } // end session fees (pre-pause only)
       });
     }
 
@@ -1548,6 +1564,8 @@ function computeStipends(){
         var note=disch?'PDI discharge: '+disch:'PDI episode active — stipend in latest event week';
 
         provs.forEach(function(prov){
+          // After pause date: PDI flat only for exempt providers
+          if(wStart>=STIPEND_PAUSE&&EXEMPT_AFTER_PAUSE.indexOf(prov)===-1)return;
           lineItems.push({week:wLbl,wStart:wStart,client:cName,track:'PDI',
             staff:displayName(prov),type:'Flat Stipend',sessHrs:'',rate:'',amount:250,counted:250,
             notes:note});
