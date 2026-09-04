@@ -1478,7 +1478,12 @@ function computeStipends(){
         if(!isSig&&c.sigAdmit&&!c.program) isSig=true;
         if(!isSig) return false;
         var admit=toISO(c.sigAdmit);
-        var disch=toISO(c.sigDischarge||c.sigDisch||c.endDate);
+        var sigDisch=toISO(c.sigDischarge||c.sigDisch);
+        // Use endDate only when it's clearly a discharge (>6 days before week start)
+        // endDate set to PPD billing week end (e.g. Aug 29 for week Aug 23-29)
+        // must not exclude the client from the following week (Aug 30+)
+        var endDt=toISO(c.endDate);
+        var disch=sigDisch||(endDt&&endDt<addDays(wStart,-6)?endDt:null);
         if(!admit||admit>wEnd)return false;
         if(disch&&disch<wStart)return false;
         return true;
@@ -2446,13 +2451,6 @@ function exportReconciliationXLSX(){
 function renderByStaff(D){
   var el=document.getElementById('bystaff-content');if(!el)return;
   renderOutstandingItems(D);
-  // DEBUG
-  var _dbgWks=D.sortedWeeks||[];
-  var _dbgN=(D.lineItems||[]).filter(function(li){return li.staff==='Nicole Williams';});
-  var _dbgDiv=document.createElement('div');
-  _dbgDiv.style.cssText='background:#fff3cd;padding:8px 12px;font-size:10px;font-family:monospace;margin:8px 0;border-radius:4px';
-  _dbgDiv.innerHTML='<b>Debug:</b> Weeks in PPD: ['+_dbgWks.join(', ')+']<br>Nicole line items: '+_dbgN.length+' — wStarts: ['+[...new Set(_dbgN.map(function(li){return li.wStart;}))].join(', ')+']';
-  el.appendChild(_dbgDiv);
   function fmt$(v){return v||v===0?'$'+(+v).toFixed(2):'-';}
   function fmtH(v){return v||v===0?(+v).toFixed(1)+' hr':'-';}
 
