@@ -1328,10 +1328,14 @@ function computeStipends(){
 
   // ── Weeks derived from events + PDI discharge dates (Sat–Fri billing periods)
   var weekSet={};
-  // Fixed Friday-Thursday grid: every Friday from launch through today
+  // Fixed Sunday-based grid: every week from PPD#1 start through the end of the active PPD
+  // Use fltTo (PPD end) as ceiling so the current partial week always appears
   var _gd=fromISO('2025-12-14'); // PPD#1 start — first Sunday
   var _today=getSat(new Date());
-  while(_gd.toISOString().slice(0,10)<=_today){
+  var _ceiling=fltTo&&fltTo>_today?getSat(fromISO(fltTo)):_today;
+  // Add one extra week to ensure the week containing fltTo is included
+  var _ceilDate=fromISO(_ceiling); _ceilDate.setDate(_ceilDate.getDate()+6); var _ceilEnd=_ceilDate.toISOString().slice(0,10);
+  while(_gd.toISOString().slice(0,10)<=_ceilEnd){
     weekSet[_gd.toISOString().slice(0,10)]=true;
     _gd.setDate(_gd.getDate()+7);
   }
