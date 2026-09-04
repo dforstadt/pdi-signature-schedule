@@ -1505,8 +1505,7 @@ function computeStipends(){
         return true;
       });
       weeklyClients.forEach(function(client){
-        var cid=client.id,cName=client.name;
-        if(!byClientSig[cid])byClientSig[cid]={staffHrs:{},weeklyStaff:new Set(),sigHrs:0,sessAmt:0,wklyAmt:0};
+        var cName=client.name;
         weeklyProviders.filter(function(p){
           if(p==='Gus Hernandez'&&wStart>GUS_CUTOFF)return false;
           if(wStart>=STIPEND_PAUSE&&EXEMPT_AFTER_PAUSE.indexOf(p)===-1)return false;
@@ -1520,8 +1519,6 @@ function computeStipends(){
           if(!sigStiByStaff[prov])sigStiByStaff[prov]={};
           sigStiByStaff[prov][wStart]=(sigStiByStaff[prov][wStart]||0)+wkAmt;
           weekStiStaffSet[prov]=true;
-          byClientSig[cid].weeklyStaff.add(prov);
-          byClientSig[cid].wklyAmt+=wkAmt;
         });
       });
 
