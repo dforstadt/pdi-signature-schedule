@@ -1478,7 +1478,7 @@ function computeStipends(){
         if(!isSig&&c.sigAdmit&&!c.program) isSig=true;
         if(!isSig) return false;
         var admit=toISO(c.sigAdmit);
-        var disch=toISO(c.sigDischarge||c.sigDisch||c.endDate);
+        var disch=toISO(c.sigDischarge||c.sigDisch); // endDate excluded — planning field, not actual discharge
         if(!admit||admit>wEnd)return false;
         if(disch&&disch<wStart)return false;
         return true;
