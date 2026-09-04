@@ -1064,7 +1064,7 @@ function renderManualTable(){
       +'<td style="padding:6px 10px;border-top:1px solid #eee;font-weight:600">$'+amt+'</td>'
       +'<td style="padding:6px 10px;border-top:1px solid #eee;color:#888">'+type+'</td>'
       +'<td style="padding:6px 10px;border-top:1px solid #eee;color:#aaa;font-size:11px">'+notes+'</td>'
-      +'<td style="padding:6px 10px"><button onclick="deleteManEntry(\''+e._key+'\')" style="background:none;border:none;color:#ccc;cursor:pointer;font-size:14px" title="Delete">&times;</button></td>'
+      +'<td style="padding:6px 10px"><button onclick="deleteManualEntry('"+e._key+"')" style="background:none;border:none;color:#ccc;cursor:pointer;font-size:14px" title="Delete">&times;</button></td>'
       +'</tr>';
   }).join('');
   wrap.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:12px">'
@@ -1074,6 +1074,7 @@ function renderManualTable(){
     +'<th style="text-align:left;padding:7px 10px;font-size:10px;font-weight:700;color:#888">AMOUNT</th>'
     +'<th style="text-align:left;padding:7px 10px;font-size:10px;font-weight:700;color:#888">TYPE</th>'
     +'<th style="text-align:left;padding:7px 10px;font-size:10px;font-weight:700;color:#888">NOTES</th>'
+    +'<th style="text-align:left;padding:7px 10px;font-size:10px;font-weight:700;color:#888">ADDED</th>'
     +'<th></th>'
     +'</tr></thead><tbody>'+rows+'</tbody></table>';
 }
