@@ -1484,15 +1484,24 @@ function computeStipends(){
         return true;
       });
 
-      activeSig.forEach(function(client){
+      // ── Weekly stipend: computed at week level using sigAdmit/sigDischarge only ──
+      // Ockman and Nicole follow the same structure — one line item per active client.
+      // sigAdmit/sigDischarge are the authoritative fields; endDate is not used here
+      // so billing-period boundary dates never drop either provider from a week.
+      var weeklyActiveSig=DATA.clients.filter(function(c){
+        var prog=(c.program||'').trim().toLowerCase();
+        var isSig=prog==='signature'||prog==='both'||prog==='sig';
+        if(!isSig&&c.sigAdmit&&!c.program)isSig=true;
+        if(!isSig)return false;
+        var admit=toISO(c.sigAdmit);
+        var disch=toISO(c.sigDischarge||c.sigDisch);
+        if(!admit||admit>wEnd)return false;
+        if(disch&&disch<wStart)return false;
+        return true;
+      });
+      weeklyActiveSig.forEach(function(client){
         var cid=client.id,cName=client.name;
-        var sigAdmit=toISO(client.sigAdmit);
-        var sigDisch =toISO(client.sigDischarge||client.sigDisch)||today();
         if(!byClientSig[cid])byClientSig[cid]={staffHrs:{},weeklyStaff:new Set(),sigHrs:0,sessAmt:0,wklyAmt:0};
-
-        // ── Weekly stipend: $250/wk per active Sig client (Ockman/Nicole/Gus) ──
-        // Exclude Gus from weeks ending after July 24 2026.
-        // After Aug 17 2026: only Ockman and Nicole continue. Nicole's rate = $100/wk.
         weeklyProviders.filter(function(p){
           if(p==='Gus Hernandez'&&wStart>GUS_CUTOFF)return false;
           if(wStart>=STIPEND_PAUSE&&EXEMPT_AFTER_PAUSE.indexOf(p)===-1)return false;
@@ -1509,6 +1518,15 @@ function computeStipends(){
           byClientSig[cid].weeklyStaff.add(prov);
           byClientSig[cid].wklyAmt+=wkAmt;
         });
+      });
+
+      activeSig.forEach(function(client){
+        var cid=client.id,cName=client.name;
+        var sigAdmit=toISO(client.sigAdmit);
+        var sigDisch =toISO(client.sigDischarge||client.sigDisch)||today();
+        if(!byClientSig[cid])byClientSig[cid]={staffHrs:{},weeklyStaff:new Set(),sigHrs:0,sessAmt:0,wklyAmt:0};
+
+
 
         // ── Session fees: $150/completed session — PAUSED from Aug 17 2026 ──
         // After STIPEND_PAUSE all session-based providers receive $0.
@@ -1543,43 +1561,6 @@ function computeStipends(){
         });
         } // end session fees (pre-pause only)
       });
-    }
-
-    // ── Post-pause: ensure Ockman & Nicole appear every week regardless of endDate ──
-    // Uses sigAdmit/sigDischarge only — endDate boundary issues don't affect this count.
-    if(wStart>=STIPEND_PAUSE){
-      var exemptSigCount=DATA.clients.filter(function(c){
-        var prog=(c.program||'').trim().toLowerCase();
-        var isSig=prog==='signature'||prog==='both'||prog==='sig';
-        if(!isSig&&c.sigAdmit&&!c.program)isSig=true;
-        if(!isSig)return false;
-        var admit=toISO(c.sigAdmit);
-        var disch=toISO(c.sigDischarge||c.sigDisch); // intentionally excludes endDate
-        if(!admit||admit>wEnd)return false;
-        if(disch&&disch<wStart)return false;
-        return true;
-      }).length;
-      if(exemptSigCount>0){
-        EXEMPT_AFTER_PAUSE.forEach(function(prov){
-          var wkAmt=prov==='Nicole'?NICOLE_PAUSE_RATE:250;
-          // Only add if not already added via activeSig loop above
-          var alreadyAdded=(sigStiByStaff[prov]&&sigStiByStaff[prov][wStart])||0;
-          var expected=exemptSigCount*wkAmt;
-          if(alreadyAdded<expected){
-            // Fill the gap between what was added and what should be
-            var gap=expected-alreadyAdded;
-            var gapCount=Math.round(gap/wkAmt);
-            for(var _g=0;_g<gapCount;_g++){
-              lineItems.push({week:wLbl,wStart:wStart,client:'[Auto]',track:'Signature',
-                staff:displayName(prov),type:'Weekly Stipend',sessHrs:'',rate:'',
-                amount:wkAmt,counted:wkAmt,notes:'[Post-pause rate]'});
-              if(!sigStiByStaff[prov])sigStiByStaff[prov]={};
-              sigStiByStaff[prov][wStart]=(sigStiByStaff[prov][wStart]||0)+wkAmt;
-            }
-          }
-          weekStiStaffSet[prov]=true;
-        });
-      }
     }
 
     // ════════════════════════════════════════════════════════════════
