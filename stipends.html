@@ -2269,38 +2269,19 @@ function renderByStaff(D){
   // Build staff -> week -> amounts
   var staffMap={};
   D.lineItems.forEach(function(li){
-    if(li.type==='Manual')return; // manual entries applied separately below
     var prov=li.staff;
     if(!staffMap[prov])staffMap[prov]={weeks:{}};
     var wk=li.wStart;
     if(!staffMap[prov].weeks[wk])staffMap[prov].weeks[wk]={sigHrs:0,sigSess:0,sigWkly:0,pdi:0,manual:0};
-    if(li.track==='Signature'){
+    if(li.type==='Manual'){
+      staffMap[prov].weeks[wk].manual+=(li.amount||0);
+    }else if(li.track==='Signature'){
       if(li.type==='Session'){staffMap[prov].weeks[wk].sigHrs+=li.sessHrs||0;staffMap[prov].weeks[wk].sigSess+=li.amount||0;}
       else{staffMap[prov].weeks[wk].sigWkly+=li.amount||0;}
     }else{
       staffMap[prov].weeks[wk].pdi+=li.counted||0;
     }
   });
-
-  // Apply manual entries directly against D.sortedWeeks — bypasses getFri() date mismatch
-  if(typeof manualEntries!=='undefined'){
-    manualEntries.forEach(function(e){
-      var prov=e.provider||e.prov||'';
-      var eAmt=(e.amountPerWeek!==undefined&&e.amountPerWeek!==null)?e.amountPerWeek:
-               (e.amount!==undefined&&e.amount!==null)?e.amount:0;
-      var eStart=e.startWeek||e.week||'';
-      var eEnd=e.endWeek||eStart;
-      if(!prov||!eStart||eAmt===0)return;
-      // Match against actual billing week dates in D.sortedWeeks
-      D.sortedWeeks.forEach(function(wk){
-        if(wk>=eStart&&wk<=(eEnd||eStart)){
-          if(!staffMap[prov])staffMap[prov]={weeks:{}};
-          if(!staffMap[prov].weeks[wk])staffMap[prov].weeks[wk]={sigHrs:0,sigSess:0,sigWkly:0,pdi:0,manual:0};
-          staffMap[prov].weeks[wk].manual+=eAmt;
-        }
-      });
-    });
-  }
 
   var weeks=D.sortedWeeks.slice().sort();
 
