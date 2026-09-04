@@ -1064,7 +1064,7 @@ function renderManualTable(){
       +'<td style="padding:6px 10px;border-top:1px solid #eee;font-weight:600">$'+amt+'</td>'
       +'<td style="padding:6px 10px;border-top:1px solid #eee;color:#888">'+type+'</td>'
       +'<td style="padding:6px 10px;border-top:1px solid #eee;color:#aaa;font-size:11px">'+notes+'</td>'
-      +'<td style="padding:6px 10px"><button onclick="deleteManualEntry('"+e._key+"')" style="background:none;border:none;color:#ccc;cursor:pointer;font-size:14px" title="Delete">&times;</button></td>'
+      +'<td style="padding:6px 10px;text-align:center"><button onclick="deleteManualEntry(e._key)" data-ekey="'+e._key+'" style="background:#fee2e2;border:1px solid #fca5a5;color:#dc2626;cursor:pointer;font-size:12px;font-weight:700;padding:3px 10px;border-radius:5px">&#10005; Delete</button></td>'
       +'</tr>';
   }).join('');
   wrap.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:12px">'
