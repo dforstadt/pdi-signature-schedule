@@ -3222,27 +3222,60 @@ window.openManualModal = function(staff, wk){
   document.getElementById('man-modal-sub').textContent='Billing week: '+wkLabel(wk);
   document.getElementById('man-modal-amt').value='';
   document.getElementById('man-modal-notes').value='';
-  // Show existing entries for this week
-  var existing=manualEntries.filter(function(e){
-    if(e.provider!==staff) return false;
-    function getFri(s){var d=new Date(s+'T12:00:00');d.setDate(d.getDate()-((d.getDay()+2)%7));return d.toISOString().slice(0,10);}
-    var s=getFri(e.startWeek), en=e.endWeek?getFri(e.endWeek):s;
-    return wk>=s&&wk<=en;
-  });
-  var existHtml=existing.length
-    ? '<div style="font-size:10px;font-weight:600;color:#888;margin-bottom:6px">EXISTING THIS WEEK</div>'
-      +existing.map(function(e){
-        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:#f7f5f2;border-radius:6px;margin-bottom:4px;font-size:11px">'
-          +'<span><b>$'+(e.amountPerWeek||0).toLocaleString()+'</b>'+(e.notes?' · '+e.notes:'')
-          +(e.endWeek&&e.endWeek!==e.startWeek?' <span style="color:#aaa">(recurring)</span>':'')+'</span>'
-          +'<button data-mkey="'+e._key+'" onclick="deleteManualEntryFromModal(this.dataset.mkey)"'
-          +' style="font-size:10px;color:#c00;background:none;border:none;cursor:pointer;padding:0 4px">✕</button>'
-          +'</div>';}).join('')
-    : '';
-  document.getElementById('man-modal-existing').innerHTML=existHtml;
-  ov.style.display='flex';
   var _ded=document.getElementById('man-modal-is-deduction');if(_ded)_ded.checked=false;
-  setTimeout(function(){var a=document.getElementById('man-modal-amt');if(a)a.focus();},50);
+  var existEl=document.getElementById('man-modal-existing');
+  if(existEl)existEl.innerHTML='<div style="color:#aaa;font-size:11px">Loading…</div>';
+  ov.style.display='flex';
+
+  // Load fresh from Firebase — no reliance on manualEntries cache
+  function _loadExisting(){
+    MANUAL_REF.once('value',function(snap){
+      var data=snap.val()||{};
+      var entries=Object.entries(data).map(function(kv){return Object.assign({_key:kv[0]},kv[1]);});
+      // Match: same provider, startWeek <= wk <= (endWeek or startWeek)
+      var matching=entries.filter(function(e){
+        if((e.provider||e.prov||'')!==staff)return false;
+        var s=e.startWeek||e.week||'';
+        var en=e.endWeek||s;
+        return s&&wk>=s&&wk<=(en||s);
+      });
+      if(!existEl)return;
+      if(!matching.length){
+        existEl.innerHTML='<div style="color:#aaa;font-size:11px;font-style:italic">No adjustments saved for this week yet.</div>';
+        return;
+      }
+      existEl.innerHTML='<div style="font-size:10px;font-weight:700;color:#555;margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">Existing Adjustments This Week</div>'
+        +matching.map(function(e){
+          var amt=(e.amountPerWeek!==undefined&&e.amountPerWeek!==null)?e.amountPerWeek:(e.amount||0);
+          var amtStr=amt<0?'−$'+Math.abs(amt).toFixed(2):'$'+amt.toFixed(2);
+          var amtColor=amt<0?'#dc2626':'#1B2A4A';
+          return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;'
+            +'background:'+(amt<0?'#fff5f5':'#f7f5f2')+';border-radius:8px;margin-bottom:6px;border:1px solid '+(amt<0?'#fca5a5':'#e5e2de')+'">'+
+            '<div>'+
+              '<span style="font-weight:700;color:'+amtColor+';font-size:13px">'+amtStr+'</span>'+
+              (e.type?'<span style="margin-left:8px;font-size:10px;color:#888;background:#eee;padding:1px 6px;border-radius:4px">'+e.type+'</span>':'')+
+              (e.notes?'<div style="font-size:11px;color:#888;margin-top:2px">'+e.notes+'</div>':'')+
+            '</div>'+
+            '<button data-mk="'+e._key+'" onclick="window._deleteAndRefreshModal(this.dataset.mk,''+staff+'',''+wk+'')"'
+              +' style="background:#fee2e2;border:1px solid #fca5a5;color:#dc2626;cursor:pointer;font-size:12px;font-weight:700;padding:4px 10px;border-radius:6px">Delete</button>'+
+          '</div>';
+        }).join('');
+    });
+  }
+  _loadExisting();
+  setTimeout(function(){var a=document.getElementById('man-modal-amt');if(a)a.focus();},100);
+};
+
+window._deleteAndRefreshModal=function(key,staff,wk){
+  if(!confirm('Delete this adjustment?'))return;
+  MANUAL_REF.child(key).remove().then(function(){
+    // Refresh the existing list in the modal
+    window.openManualModal(staff,wk);
+    // Also refresh the approval view
+    loadManualEntries(function(){
+      if(window._lastD){window.injectManualItems(window._lastD);renderByStaff(window._lastD);}
+    });
+  });
 };
 
 window.closeManualModal = function(){
