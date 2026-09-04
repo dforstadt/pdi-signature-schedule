@@ -2502,7 +2502,7 @@ function renderByStaff(D){
     var _isPinned=!!(staffMap[staff]&&staffMap[staff]._pinned);
     var wdata=staffMap[staff].weeks;
     var activeWeeks=weeks.filter(function(wk){
-      var r=wdata[wk];return r&&(r.sigSess+r.sigWkly+r.pdi+(r.manual||0))>0;
+      var r=wdata[wk];return r&&(r.sigSess+r.sigWkly+r.pdi)>0;
     });
     if(!activeWeeks.length&&!_isPinned)return;
 
