@@ -1486,15 +1486,20 @@ function computeStipends(){
       });
 
       // ── Weekly stipend for Ockman & Nicole ──────────────────────────────────
-      // Separate filter using sigAdmit/sigDischarge only — endDate never involved.
-      // Same structure for both providers. Runs every week regardless of sessions.
+      // Uses endDate only when it is at least 2 days before wStart.
+      // A billing-period end date (e.g. Aug 29 for week starting Aug 30) is
+      // treated as still active. An actual discharge date set days/weeks ago
+      // correctly excludes the client.
+      var _wsPrev=new Date(wStart+'T12:00:00');_wsPrev.setDate(_wsPrev.getDate()-2);
+      var _wsThresh=_wsPrev.toISOString().slice(0,10);
       var weeklyClients=DATA.clients.filter(function(c){
         var prog=(c.program||'').trim().toLowerCase();
         var isSig=prog==='signature'||prog==='both'||prog==='sig';
         if(!isSig&&c.sigAdmit&&!c.program)isSig=true;
         if(!isSig)return false;
         var admit=toISO(c.sigAdmit);
-        var disch=toISO(c.sigDischarge||c.sigDisch);
+        var disch=toISO(c.sigDischarge||c.sigDisch)||
+                  (toISO(c.endDate)&&toISO(c.endDate)<_wsThresh?toISO(c.endDate):null);
         if(!admit||admit>wEnd)return false;
         if(disch&&disch<wStart)return false;
         return true;
