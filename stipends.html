@@ -1479,11 +1479,13 @@ function computeStipends(){
         if(!isSig) return false;
         var admit=toISO(c.sigAdmit);
         var sigDisch=toISO(c.sigDischarge||c.sigDisch);
-        // Use endDate only when it's clearly a discharge (>6 days before week start)
-        // endDate set to PPD billing week end (e.g. Aug 29 for week Aug 23-29)
-        // must not exclude the client from the following week (Aug 30+)
+        // Use endDate only when clearly a discharge (>6 days before week start).
+        // Prevents billing-period end dates (e.g. Aug 29) from excluding clients
+        // from the following week (Aug 30+). Computed inline — no addDays().
         var endDt=toISO(c.endDate);
-        var disch=sigDisch||(endDt&&endDt<addDays(wStart,-6)?endDt:null);
+        var _wS6d=new Date(wStart+'T12:00:00');_wS6d.setDate(_wS6d.getDate()-6);
+        var _wS6=_wS6d.toISOString().slice(0,10);
+        var disch=sigDisch||(endDt&&endDt<_wS6?endDt:null);
         if(!admit||admit>wEnd)return false;
         if(disch&&disch<wStart)return false;
         return true;
