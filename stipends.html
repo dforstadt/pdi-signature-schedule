@@ -2306,7 +2306,7 @@ function renderByStaff(D){
     var _isPinned=!!(staffMap[staff]&&staffMap[staff]._pinned);
     var wdata=staffMap[staff].weeks;
     var activeWeeks=weeks.filter(function(wk){
-      var r=wdata[wk];return r&&(r.sigSess+r.sigWkly+r.pdi+(r.manual||0))>0;
+      var r=wdata[wk];return r&&(r.sigSess+r.sigWkly+r.pdi+(r.manual||0))!==0||r.sigHrs>0;
     });
     if(!activeWeeks.length&&!_isPinned)return;
 
@@ -2378,6 +2378,10 @@ function renderByStaff(D){
             ' onclick="window.openManualModal(decodeURIComponent(this.dataset.staff),this.dataset.wk)"'+
             ' title="Add manual adjustment"'+
             ' style="margin-left:4px;width:18px;height:18px;border-radius:50%;border:1px solid #D4537E44;background:#D4537E11;color:#D4537E;cursor:pointer;font-size:11px;font-weight:700;line-height:1;padding:0;vertical-align:middle">+</button>'+
+        '</td>'+
+        '<td style="padding:7px 10px;text-align:right;border-top:.5px solid var(--bd);background:#f0ede8">'+
+          '<span style="font-weight:700;color:'+(r.sigSess+r.sigWkly+r.pdi+(r.manual||0)<0?'#c00':'#1B2A4A')+'">'+
+          fmt$(r.sigSess+r.sigWkly+r.pdi+(r.manual||0))+'</span>'+
         '</td>'+
         '<td style="padding:7px 14px;text-align:center;border-top:.5px solid var(--bd)">'+
           '<button id="'+bid+'" onclick="toggleWeekApproval(\''+apvKey(staff,wk)+'\',\''+bid+'\')" '+
