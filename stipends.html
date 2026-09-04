@@ -1478,7 +1478,11 @@ function computeStipends(){
         if(!isSig&&c.sigAdmit&&!c.program) isSig=true;
         if(!isSig) return false;
         var admit=toISO(c.sigAdmit);
-        var disch=toISO(c.sigDischarge||c.sigDisch); // endDate excluded — planning field, not actual discharge
+        var _sigDisch=toISO(c.sigDischarge||c.sigDisch);
+        var _endDate=toISO(c.endDate);
+        // Use endDate as discharge only if it's at least 7 days before week start
+        // This prevents billing-period boundary coincidences (e.g. endDate=Aug29 vs wStart=Aug30)
+        var disch=_sigDisch||(_endDate&&_endDate<addDays(wStart,-6)?_endDate:null);
         if(!admit||admit>wEnd)return false;
         if(disch&&disch<wStart)return false;
         return true;
