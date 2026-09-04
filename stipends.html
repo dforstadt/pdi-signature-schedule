@@ -1582,6 +1582,41 @@ function computeStipends(){
     }
   });
 
+  // ── Nicole & Ockman fallback: ensure stipend appears every post-pause week ──
+  // If endDate on client records caused activeSig to be empty for a week,
+  // this recomputes using sigAdmit/sigDischarge only and fills the gap.
+  allWeeks.forEach(function(wStart){
+    if(wStart<STIPEND_PAUSE)return;
+    var wEnd=weekEnd(wStart);
+    var wLbl=wkLabel(wStart);
+    EXEMPT_AFTER_PAUSE.forEach(function(prov){
+      if(sigStiByStaff[prov]&&sigStiByStaff[prov][wStart])return; // already has entries
+      var fallback=DATA.clients.filter(function(c){
+        var prog=(c.program||'').trim().toLowerCase();
+        var isSig=prog==='signature'||prog==='both'||prog==='sig';
+        if(!isSig&&c.sigAdmit&&!c.program)isSig=true;
+        if(!isSig)return false;
+        var admit=toISO(c.sigAdmit);
+        var disch=toISO(c.sigDischarge||c.sigDisch);
+        if(!admit||admit>wEnd)return false;
+        if(disch&&disch<wStart)return false;
+        return true;
+      });
+      if(!fallback.length)return;
+      var wkAmt=prov==='Nicole'?NICOLE_PAUSE_RATE:250;
+      fallback.forEach(function(client){
+        var cid=client.id,cName=client.name;
+        if(!byClientSig[cid])byClientSig[cid]={staffHrs:{},weeklyStaff:new Set(),sigHrs:0,sessAmt:0,wklyAmt:0};
+        lineItems.push({week:wLbl,wStart:wStart,client:cName,track:'Signature',
+          staff:displayName(prov),type:'Weekly Stipend',sessHrs:'',rate:'',
+          amount:wkAmt,counted:wkAmt,notes:'[Post-pause rate]'});
+        if(!sigStiByStaff[prov])sigStiByStaff[prov]={};
+        sigStiByStaff[prov][wStart]=(sigStiByStaff[prov][wStart]||0)+wkAmt;
+        weekStiStaffSet[prov]=true;
+      });
+    });
+  });
+
   // ── Weekly summary ────────────────────────────────────────────────────────
   var sumMap={};
   lineItems.forEach(function(li){
