@@ -1047,7 +1047,7 @@ function renderManualTable(){
   var wrap=document.getElementById('man-table-wrap');
   if(!wrap)return;
   if(!manualEntries.length){
-    wrap.innerHTML='<p style="color:#999;font-size:12px;text-align:center;padding:20px">No manual entries found in Firebase.</p>';
+    wrap.innerHTML='<p style="color:#999;font-size:12px;text-align:center;padding:20px">No manual entries found. Use the + Add Manual Entry button on the Stipend Approval tab to add adjustments.</p>';
     return;
   }
   var rows=manualEntries.slice().sort(function(a,b){
@@ -1097,7 +1097,22 @@ function showTab(tab){
   if(tab==='psychometric')psychOnTabOpen();
   if(tab==='ppdsummary')setTimeout(renderPPDSummary,0);
   if(tab==='audit')document.getElementById('audit-content').innerHTML='<p style="color:#aaa;font-size:12px">Click Run Audit to analyze all stipend data.</p>';
-  if(tab==='manual'){startManualListener();setTimeout(renderManualTable,400);}
+  if(tab==='manual'){
+    // Direct Firebase read every time tab is opened — guarantees fresh data
+    var wrap=document.getElementById('man-table-wrap');
+    if(wrap)wrap.innerHTML='<p style="color:#999;font-size:12px;text-align:center;padding:20px">Loading entries…</p>';
+    var _nr=null,_or=null,_nd=false,_od=false;
+    function _doRender(){
+      if(!_nd||!_od)return;
+      var merged={};
+      if(_or)Object.entries(_or).forEach(function(kv){merged['legacy_'+kv[0]]=kv[1];});
+      if(_nr)Object.entries(_nr).forEach(function(kv){merged[kv[0]]=kv[1];});
+      manualEntries=Object.entries(merged).map(function(kv){return Object.assign({_key:kv[0]},kv[1]);});
+      renderManualTable();
+    }
+    MANUAL_REF.once('value',function(s){_nr=s.val();_nd=true;_doRender();});
+    firebase.database().ref('schedule_v3/manual_stipends').once('value',function(s){_or=s.val();_od=true;_doRender();});
+  }
 }
 
 // ── COMPUTE STIPENDS ────────────────────────────────────────────────────────
