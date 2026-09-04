@@ -3188,6 +3188,7 @@ window.openManualModal = function(staff, wk){
     : '';
   document.getElementById('man-modal-existing').innerHTML=existHtml;
   ov.style.display='flex';
+  var _ded=document.getElementById('man-modal-is-deduction');if(_ded)_ded.checked=false;
   setTimeout(function(){var a=document.getElementById('man-modal-amt');if(a)a.focus();},50);
 };
 
@@ -3205,13 +3206,17 @@ window.deleteManualEntryFromModal = function(key){
 
 window.saveManualModal = function(){
   if(!_manModalStaff||!_manModalWk){window.closeManualModal();return;}
-  var amt  =parseFloat(document.getElementById('man-modal-amt').value);
+  var rawAmt=parseFloat(document.getElementById('man-modal-amt').value);
   var type =document.getElementById('man-modal-type').value;
   var notes=(document.getElementById('man-modal-notes').value||'').trim();
-  if(isNaN(amt)||amt===0){alert('Amount cannot be zero.');return;}
+  var isDeduction=document.getElementById('man-modal-is-deduction')&&document.getElementById('man-modal-is-deduction').checked;
+  if(isNaN(rawAmt)||rawAmt===0){alert('Amount cannot be zero.');return;}
+  var amt=isDeduction?-Math.abs(rawAmt):Math.abs(rawAmt);
+  var noteWithTag=notes+(isDeduction?' [deduction — coverage by other staff]':'');
   MANUAL_REF.push({provider:_manModalStaff,startWeek:_manModalWk,endWeek:null,
-    amountPerWeek:amt,type:type,notes:notes,addedAt:new Date().toISOString()});
-  window.closeManualModal();
+    amountPerWeek:amt,type:type,notes:noteWithTag,addedAt:new Date().toISOString()})
+  .then(function(){window.closeManualModal();})
+  .catch(function(err){alert('Save failed: '+(err&&err.message?err.message:'Firebase error'));});
 };
 
 document.addEventListener('click',function(e){
@@ -3262,9 +3267,12 @@ window.saveStandaloneManual = function(){
   if(!prov){alert('Provider name required.');return;}
   if(!start){alert('Start week required.');return;}
   if(isNaN(amt)||amt===0){alert('Amount cannot be zero.');return;}
+  var saIsDeduction=document.getElementById('man-sa-is-deduction')&&document.getElementById('man-sa-is-deduction').checked;
+  var finalAmt=saIsDeduction?-Math.abs(amt):Math.abs(amt);
+  var finalNotes=notes+(saIsDeduction?' [deduction — coverage by other staff]':'');
   MANUAL_REF.push({
     provider:prov, startWeek:start, endWeek:end,
-    amountPerWeek:amt, type:type, notes:notes,
+    amountPerWeek:finalAmt, type:type, notes:finalNotes,
     addedAt:new Date().toISOString()
   }).then(function(){
     document.getElementById('man-standalone-overlay').style.display='none';
@@ -3301,8 +3309,12 @@ document.addEventListener('click',function(e){
       </div>
       <div>
         <div style="font-size:10px;font-weight:600;color:#888;margin-bottom:3px">AMOUNT ($)</div>
-        <input id="man-modal-amt" type="number" placeholder="0.00" step="0.01"
+        <input id="man-modal-amt" type="number" placeholder="0.00" step="0.01" min="0"
           style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:12px;box-sizing:border-box">
+        <label style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:11px;cursor:pointer;color:#c00;font-weight:600">
+          <input type="checkbox" id="man-modal-is-deduction" style="accent-color:#c00">
+          This reduces the stipend (deduction)
+        </label>
       </div>
     </div>
     <div style="margin-bottom:16px">
