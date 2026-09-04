@@ -3105,9 +3105,20 @@ function startManualListener(){
 }
 
 function loadManualEntries(cb){
-  // Just start the real-time listener; entries are already up-to-date
-  startManualListener();
-  if(cb) cb();
+  // Do a fresh one-time read to get latest entries (including just-saved ones)
+  var oldRef=firebase.database().ref('schedule_v3/manual_stipends');
+  var newRef=MANUAL_REF;
+  var _n=null,_o=null,_nd=false,_od=false;
+  function tryMerge(){
+    if(!_nd||!_od)return;
+    var merged={};
+    if(_o)Object.entries(_o).forEach(function(kv){merged['legacy_'+kv[0]]=kv[1];});
+    if(_n)Object.entries(_n).forEach(function(kv){merged[kv[0]]=kv[1];});
+    manualEntries=Object.entries(merged).map(function(kv){return Object.assign({_key:kv[0]},kv[1]);});
+    if(cb)cb();
+  }
+  newRef.once('value',function(s){_n=s.val();_nd=true;tryMerge();});
+  oldRef.once('value',function(s){_o=s.val();_od=true;tryMerge();});
 }
 
 // Inject manual line items into D.lineItems (called before every render)
@@ -3120,9 +3131,11 @@ window.injectManualItems = function(D){
     // Support both old field names (week, amount) and new (startWeek, amountPerWeek)
     var eProv = e.provider||e.prov||'';
     var eStart = e.startWeek||e.week||e.weekFri||'';
-    var eAmt   = e.amountPerWeek||e.amount||e.amt||0;
+    var eAmt   = (e.amountPerWeek!==undefined&&e.amountPerWeek!==null)?e.amountPerWeek:
+               (e.amount!==undefined&&e.amount!==null)?e.amount:
+               (e.amt!==undefined&&e.amt!==null)?e.amt:0;
     var eEnd   = e.endWeek||e.week||eStart;
-    if(!eProv||!eStart||!eAmt) return;
+    if(!eProv||!eStart||eAmt===undefined||eAmt===null||eAmt===0) return;
     var start=getFri(eStart), end=getFri(eEnd);
     var wk=start, safety=0;
     while(wk<=end&&safety++<52){
@@ -3219,7 +3232,17 @@ window.saveManualModal = function(){
   var noteWithTag=notes+(isDeduction?' [deduction — coverage by other staff]':'');
   MANUAL_REF.push({provider:_manModalStaff,startWeek:_manModalWk,endWeek:null,
     amountPerWeek:amt,type:type,notes:noteWithTag,addedAt:new Date().toISOString()})
-  .then(function(){window.closeManualModal();})
+  .then(function(){
+    window.closeManualModal();
+    // Force explicit reload and re-render so adjustment shows immediately
+    loadManualEntries(function(){
+      if(window._lastD){
+        window.injectManualItems(window._lastD);
+        renderByStaff(window._lastD);
+        renderSummary(window._lastD);
+      }
+    });
+  })
   .catch(function(err){alert('Save failed: '+(err&&err.message?err.message:'Firebase error'));});
 };
 
