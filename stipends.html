@@ -1472,32 +1472,36 @@ function computeStipends(){
     if(fltTrack!=='PDI'){
 
       // Active Signature clients this week: sigAdmit ≤ wEnd AND (no sigDisch OR sigDisch ≥ wStart)
+      // activeSig: used for session fees only (post-pause = empty, pre-pause = sessions)
       var activeSig=DATA.clients.filter(function(c){
         var prog=(c.program||'').trim().toLowerCase();
         var isSig=prog==='signature'||prog==='both'||prog==='sig';
-        if(!isSig&&c.sigAdmit&&!c.program) isSig=true;
-        if(!isSig) return false;
+        if(!isSig&&c.sigAdmit&&!c.program)isSig=true;
+        if(!isSig)return false;
         var admit=toISO(c.sigAdmit);
-        var sigDisch=toISO(c.sigDischarge||c.sigDisch);
-        // Use endDate only when clearly a discharge (>6 days before week start).
-        // Prevents billing-period end dates (e.g. Aug 29) from excluding clients
-        // from the following week (Aug 30+). Computed inline — no addDays().
-        var endDt=toISO(c.endDate);
-        var _wS6d=new Date(wStart+'T12:00:00');_wS6d.setDate(_wS6d.getDate()-6);
-        var _wS6=_wS6d.toISOString().slice(0,10);
-        var disch=sigDisch||(endDt&&endDt<_wS6?endDt:null);
+        var disch=toISO(c.sigDischarge||c.sigDisch||c.endDate);
         if(!admit||admit>wEnd)return false;
         if(disch&&disch<wStart)return false;
         return true;
       });
 
-      activeSig.forEach(function(client){
+      // ── Weekly stipend for Ockman & Nicole ──────────────────────────────────
+      // Separate filter using sigAdmit/sigDischarge only — endDate never involved.
+      // Same structure for both providers. Runs every week regardless of sessions.
+      var weeklyClients=DATA.clients.filter(function(c){
+        var prog=(c.program||'').trim().toLowerCase();
+        var isSig=prog==='signature'||prog==='both'||prog==='sig';
+        if(!isSig&&c.sigAdmit&&!c.program)isSig=true;
+        if(!isSig)return false;
+        var admit=toISO(c.sigAdmit);
+        var disch=toISO(c.sigDischarge||c.sigDisch);
+        if(!admit||admit>wEnd)return false;
+        if(disch&&disch<wStart)return false;
+        return true;
+      });
+      weeklyClients.forEach(function(client){
         var cid=client.id,cName=client.name;
-        var sigAdmit=toISO(client.sigAdmit);
-        var sigDisch =toISO(client.sigDischarge||client.sigDisch)||today();
         if(!byClientSig[cid])byClientSig[cid]={staffHrs:{},weeklyStaff:new Set(),sigHrs:0,sessAmt:0,wklyAmt:0};
-
-        // ── Weekly stipend: $250/wk per active Sig client (Ockman/Nicole/Gus) ──
         weeklyProviders.filter(function(p){
           if(p==='Gus Hernandez'&&wStart>GUS_CUTOFF)return false;
           if(wStart>=STIPEND_PAUSE&&EXEMPT_AFTER_PAUSE.indexOf(p)===-1)return false;
@@ -1514,6 +1518,13 @@ function computeStipends(){
           byClientSig[cid].weeklyStaff.add(prov);
           byClientSig[cid].wklyAmt+=wkAmt;
         });
+      });
+
+      activeSig.forEach(function(client){
+        var cid=client.id,cName=client.name;
+        var sigAdmit=toISO(client.sigAdmit);
+        var sigDisch =toISO(client.sigDischarge||client.sigDisch)||today();
+        if(!byClientSig[cid])byClientSig[cid]={staffHrs:{},weeklyStaff:new Set(),sigHrs:0,sessAmt:0,wklyAmt:0};
 
         // ── Session fees: $150/completed session — PAUSED from Aug 17 2026 ──
         // After STIPEND_PAUSE all session-based providers receive $0.
@@ -1589,40 +1600,6 @@ function computeStipends(){
     }
   });
 
-  // ── Nicole & Ockman fallback: ensure stipend appears every post-pause week ──
-  // If endDate on client records caused activeSig to be empty for a week,
-  // this recomputes using sigAdmit/sigDischarge only and fills the gap.
-  allWeeks.forEach(function(wStart){
-    if(wStart<STIPEND_PAUSE)return;
-    var wEnd=weekEnd(wStart);
-    var wLbl=wkLabel(wStart);
-    EXEMPT_AFTER_PAUSE.forEach(function(prov){
-      if(sigStiByStaff[prov]&&sigStiByStaff[prov][wStart])return; // already has entries
-      var fallback=DATA.clients.filter(function(c){
-        var prog=(c.program||'').trim().toLowerCase();
-        var isSig=prog==='signature'||prog==='both'||prog==='sig';
-        if(!isSig&&c.sigAdmit&&!c.program)isSig=true;
-        if(!isSig)return false;
-        var admit=toISO(c.sigAdmit);
-        var disch=toISO(c.sigDischarge||c.sigDisch);
-        if(!admit||admit>wEnd)return false;
-        if(disch&&disch<wStart)return false;
-        return true;
-      });
-      if(!fallback.length)return;
-      var wkAmt=prov==='Nicole'?NICOLE_PAUSE_RATE:250;
-      fallback.forEach(function(client){
-        var cid=client.id,cName=client.name;
-        if(!byClientSig[cid])byClientSig[cid]={staffHrs:{},weeklyStaff:new Set(),sigHrs:0,sessAmt:0,wklyAmt:0};
-        lineItems.push({week:wLbl,wStart:wStart,client:cName,track:'Signature',
-          staff:displayName(prov),type:'Weekly Stipend',sessHrs:'',rate:'',
-          amount:wkAmt,counted:wkAmt,notes:'[Post-pause rate]'});
-        if(!sigStiByStaff[prov])sigStiByStaff[prov]={};
-        sigStiByStaff[prov][wStart]=(sigStiByStaff[prov][wStart]||0)+wkAmt;
-        weekStiStaffSet[prov]=true;
-      });
-    });
-  });
 
   // ── Weekly summary ────────────────────────────────────────────────────────
   var sumMap={};
