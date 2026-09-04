@@ -1484,42 +1484,6 @@ function computeStipends(){
         return true;
       });
 
-      // ── Weekly stipend: computed at week level using sigAdmit/sigDischarge only ──
-      // Ockman and Nicole follow the same structure — one line item per active client.
-      // sigAdmit/sigDischarge are the authoritative fields; endDate is not used here
-      // so billing-period boundary dates never drop either provider from a week.
-      var weeklyActiveSig=DATA.clients.filter(function(c){
-        var prog=(c.program||'').trim().toLowerCase();
-        var isSig=prog==='signature'||prog==='both'||prog==='sig';
-        if(!isSig&&c.sigAdmit&&!c.program)isSig=true;
-        if(!isSig)return false;
-        var admit=toISO(c.sigAdmit);
-        var disch=toISO(c.sigDischarge||c.sigDisch);
-        if(!admit||admit>wEnd)return false;
-        if(disch&&disch<wStart)return false;
-        return true;
-      });
-      weeklyActiveSig.forEach(function(client){
-        var cid=client.id,cName=client.name;
-        if(!byClientSig[cid])byClientSig[cid]={staffHrs:{},weeklyStaff:new Set(),sigHrs:0,sessAmt:0,wklyAmt:0};
-        weeklyProviders.filter(function(p){
-          if(p==='Gus Hernandez'&&wStart>GUS_CUTOFF)return false;
-          if(wStart>=STIPEND_PAUSE&&EXEMPT_AFTER_PAUSE.indexOf(p)===-1)return false;
-          return true;
-        }).forEach(function(prov){
-          var wkAmt=(wStart>=STIPEND_PAUSE&&prov==='Nicole')?NICOLE_PAUSE_RATE:250;
-          var pauseNote=wStart>=STIPEND_PAUSE?' [Post-pause rate]':'';
-          lineItems.push({week:wLbl,wStart:wStart,client:cName,track:'Signature',
-            staff:displayName(prov),type:'Weekly Stipend',sessHrs:'',rate:'',
-            amount:wkAmt,counted:wkAmt,notes:pauseNote});
-          if(!sigStiByStaff[prov])sigStiByStaff[prov]={};
-          sigStiByStaff[prov][wStart]=(sigStiByStaff[prov][wStart]||0)+wkAmt;
-          weekStiStaffSet[prov]=true;
-          byClientSig[cid].weeklyStaff.add(prov);
-          byClientSig[cid].wklyAmt+=wkAmt;
-        });
-      });
-
       activeSig.forEach(function(client){
         var cid=client.id,cName=client.name;
         var sigAdmit=toISO(client.sigAdmit);
