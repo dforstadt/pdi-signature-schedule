@@ -1545,6 +1545,43 @@ function computeStipends(){
       });
     }
 
+    // ── Post-pause: ensure Ockman & Nicole appear every week regardless of endDate ──
+    // Uses sigAdmit/sigDischarge only — endDate boundary issues don't affect this count.
+    if(wStart>=STIPEND_PAUSE){
+      var exemptSigCount=DATA.clients.filter(function(c){
+        var prog=(c.program||'').trim().toLowerCase();
+        var isSig=prog==='signature'||prog==='both'||prog==='sig';
+        if(!isSig&&c.sigAdmit&&!c.program)isSig=true;
+        if(!isSig)return false;
+        var admit=toISO(c.sigAdmit);
+        var disch=toISO(c.sigDischarge||c.sigDisch); // intentionally excludes endDate
+        if(!admit||admit>wEnd)return false;
+        if(disch&&disch<wStart)return false;
+        return true;
+      }).length;
+      if(exemptSigCount>0){
+        EXEMPT_AFTER_PAUSE.forEach(function(prov){
+          var wkAmt=prov==='Nicole'?NICOLE_PAUSE_RATE:250;
+          // Only add if not already added via activeSig loop above
+          var alreadyAdded=(sigStiByStaff[prov]&&sigStiByStaff[prov][wStart])||0;
+          var expected=exemptSigCount*wkAmt;
+          if(alreadyAdded<expected){
+            // Fill the gap between what was added and what should be
+            var gap=expected-alreadyAdded;
+            var gapCount=Math.round(gap/wkAmt);
+            for(var _g=0;_g<gapCount;_g++){
+              lineItems.push({week:wLbl,wStart:wStart,client:'[Auto]',track:'Signature',
+                staff:displayName(prov),type:'Weekly Stipend',sessHrs:'',rate:'',
+                amount:wkAmt,counted:wkAmt,notes:'[Post-pause rate]'});
+              if(!sigStiByStaff[prov])sigStiByStaff[prov]={};
+              sigStiByStaff[prov][wStart]=(sigStiByStaff[prov][wStart]||0)+wkAmt;
+            }
+          }
+          weekStiStaffSet[prov]=true;
+        });
+      }
+    }
+
     // ════════════════════════════════════════════════════════════════
     // PDI — $250 flat per provider per episode, triggered on discharge week
     // The stipend fires ONCE in the week that contains pdiDischarge.
