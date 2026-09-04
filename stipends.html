@@ -1471,25 +1471,23 @@ function computeStipends(){
     // ════════════════════════════════════════════════════════════════
     if(fltTrack!=='PDI'){
 
-      // Active Signature clients this week: startDate ≤ wEnd AND (no endDate OR endDate ≥ wStart)
-      // Uses calendar startDate/endDate as primary fields — these reflect the actual
-      // admission and discharge dates as recorded in the calendar system.
+      // Active Signature clients this week: sigAdmit ≤ wEnd AND (no sigDisch OR sigDisch ≥ wStart)
       var activeSig=DATA.clients.filter(function(c){
         var prog=(c.program||'').trim().toLowerCase();
         var isSig=prog==='signature'||prog==='both'||prog==='sig';
-        if(!isSig&&(c.sigAdmit||c.startDate)&&!c.program) isSig=true;
+        if(!isSig&&c.sigAdmit&&!c.program) isSig=true;
         if(!isSig) return false;
-        var admit=toISO(c.startDate||c.sigAdmit);
-        var disch=toISO(c.endDate||c.sigDischarge||c.sigDisch);
-        if(!admit||admit>wEnd) return false;
-        if(disch&&disch<wStart) return false;
+        var admit=toISO(c.sigAdmit);
+        var disch=toISO(c.sigDischarge||c.sigDisch||c.endDate);
+        if(!admit||admit>wEnd)return false;
+        if(disch&&disch<wStart)return false;
         return true;
       });
 
       activeSig.forEach(function(client){
         var cid=client.id,cName=client.name;
-        var sigAdmit=toISO(client.startDate||client.sigAdmit);
-        var sigDisch =toISO(client.endDate||client.sigDischarge||client.sigDisch)||today();
+        var sigAdmit=toISO(client.sigAdmit);
+        var sigDisch =toISO(client.sigDischarge||client.sigDisch)||today();
         if(!byClientSig[cid])byClientSig[cid]={staffHrs:{},weeklyStaff:new Set(),sigHrs:0,sessAmt:0,wklyAmt:0};
 
         // ── Weekly stipend: $250/wk per active Sig client (Ockman/Nicole/Gus) ──
