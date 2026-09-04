@@ -3141,28 +3141,25 @@ function loadManualEntries(cb){
 window.injectManualItems = function(D){
   D.lineItems = D.lineItems.filter(function(li){ return li.type !== 'Manual'; });
   if(!manualEntries.length) return;
-  function getFri(s){ var d=new Date(s+'T12:00:00'); d.setDate(d.getDate()-((d.getDay()+2)%7)); return d.toISOString().slice(0,10); }
-  function nextFri(s){ var d=new Date(s+'T12:00:00'); d.setDate(d.getDate()+7); return d.toISOString().slice(0,10); }
+  var sortedWks = D.sortedWeeks||[];
   manualEntries.forEach(function(e){
-    // Support both old field names (week, amount) and new (startWeek, amountPerWeek)
     var eProv = e.provider||e.prov||'';
     var eStart = e.startWeek||e.week||e.weekFri||'';
     var eAmt   = (e.amountPerWeek!==undefined&&e.amountPerWeek!==null)?e.amountPerWeek:
-               (e.amount!==undefined&&e.amount!==null)?e.amount:
-               (e.amt!==undefined&&e.amt!==null)?e.amt:0;
-    var eEnd   = e.endWeek||e.week||eStart;
-    if(!eProv||!eStart||eAmt===undefined||eAmt===null||eAmt===0) return;
-    var start=getFri(eStart), end=getFri(eEnd);
-    var wk=start, safety=0;
-    while(wk<=end&&safety++<52){
-      D.lineItems.push({
-        week:wkLabel(wk), wStart:wk, client:'Manual',
-        track:'Signature', staff:eProv, type:'Manual',
-        sessHrs:'', rate:'', amount:eAmt,
-        counted:eAmt, notes:e.notes||e.note||'', _manKey:e._key
-      });
-      wk=nextFri(wk);
-    }
+               (e.amount!==undefined&&e.amount!==null)?e.amount:0;
+    var eEnd   = e.endWeek||eStart;
+    if(!eProv||!eStart||eAmt===0) return;
+    // Match against actual billing week dates — no getFri() conversion needed
+    sortedWks.forEach(function(wk){
+      if(wk>=eStart&&wk<=eEnd){
+        D.lineItems.push({
+          week:wkLabel(wk), wStart:wk, client:'Manual',
+          track:'Signature', staff:eProv, type:'Manual',
+          sessHrs:'', rate:'', amount:eAmt,
+          counted:eAmt, notes:e.notes||e.note||'', _manKey:e._key
+        });
+      }
+    });
   });
 };
 
