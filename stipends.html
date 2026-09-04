@@ -331,7 +331,6 @@ td.money.zero{color:var(--tx3);}
 </script>
 
 <script>
-window.onerror=function(msg,src,line,col,err){
   var e=document.getElementById('_err');
   if(!e){e=document.createElement('div');e.id='_err';e.style.cssText='position:fixed;top:60px;left:0;right:0;background:#fff0f0;border:2px solid #c00;padding:16px;z-index:9999;font-size:12px;font-family:monospace;white-space:pre-wrap';document.body.appendChild(e);}
   e.innerHTML='<b>JS Error line '+line+':</b> '+msg+'\n'+(err&&err.stack?err.stack.slice(0,400):'');
