@@ -1490,7 +1490,23 @@ function computeStipends(){
         var sigDisch =toISO(client.sigDischarge||client.sigDisch)||today();
         if(!byClientSig[cid])byClientSig[cid]={staffHrs:{},weeklyStaff:new Set(),sigHrs:0,sessAmt:0,wklyAmt:0};
 
-
+        // ── Weekly stipend: $250/wk per active Sig client (Ockman/Nicole/Gus) ──
+        weeklyProviders.filter(function(p){
+          if(p==='Gus Hernandez'&&wStart>GUS_CUTOFF)return false;
+          if(wStart>=STIPEND_PAUSE&&EXEMPT_AFTER_PAUSE.indexOf(p)===-1)return false;
+          return true;
+        }).forEach(function(prov){
+          var wkAmt=(wStart>=STIPEND_PAUSE&&prov==='Nicole')?NICOLE_PAUSE_RATE:250;
+          var pauseNote=wStart>=STIPEND_PAUSE?' [Post-pause rate]':'';
+          lineItems.push({week:wLbl,wStart:wStart,client:cName,track:'Signature',
+            staff:displayName(prov),type:'Weekly Stipend',sessHrs:'',rate:'',
+            amount:wkAmt,counted:wkAmt,notes:pauseNote});
+          if(!sigStiByStaff[prov])sigStiByStaff[prov]={};
+          sigStiByStaff[prov][wStart]=(sigStiByStaff[prov][wStart]||0)+wkAmt;
+          weekStiStaffSet[prov]=true;
+          byClientSig[cid].weeklyStaff.add(prov);
+          byClientSig[cid].wklyAmt+=wkAmt;
+        });
 
         // ── Session fees: $150/completed session — PAUSED from Aug 17 2026 ──
         // After STIPEND_PAUSE all session-based providers receive $0.
