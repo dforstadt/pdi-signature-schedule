@@ -129,7 +129,22 @@ const PW='ClinicalHours2026', TARGET=5;
 var DATA={events:[],clients:[]}, _ok=false, _tab='monthly';
 
 /* Classification */
-var CLIN_KW=['individual','family','therapy','testing','assessment','psychometric','neuropsych','evaluation','spiritual','psychiatric','nursing','medical'];
+var CLIN_KW=[
+  // Therapy types
+  'individual','family','therapy','spiritual','dbt','trauma','anger','relapse','caseload',
+  // Clinical assessment & evaluation
+  'testing','assessment','psychometric','neuropsych','evaluation','interview','psych',
+  // Medical & nursing
+  'psychiatric','nursing','medical',
+  // Behavioral & legal
+  'debriefing','court','prevention',
+  // Nutritional counseling (Alice, nutrition providers)
+  'nutrition','lunch',
+  // Catch-all: any session with "group" in the name is a direct service hour
+  'group',
+  // Brandy
+  'touching'
+];
 var FORCE_ANC=['anthony','heather']; // Flannery removed — direct service provider (contracted)
 var SKIP=['luis guillermo','keisha foster','lead tech','tech team','none','tbd','family','n/a',''];
 
