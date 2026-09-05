@@ -136,13 +136,34 @@ tr.totrow td{background:#F5F0E8;font-weight:700}
 const PW = 'ClinicalHours2026';
 const DAILY_TARGET = 5; // direct service hours per client per day
 // Clinician = individual or family therapy; everything else = ancillary
+// Providers excluded from clinical hours entirely
+var EXCLUDED_PROVIDERS=[
+  'Luis Guillermo','Keisha Foster','Lead Tech','Lead Tech (Luis)','Lead Tech (Keisha)',
+  'None','none','TBD','tbd','Family','family','N/A','n/a',''
+];
+function isExcluded(ev){
+  var p=(ev.provider||'').trim();
+  if(!p) return true;
+  if(EXCLUDED_PROVIDERS.indexOf(p)>-1) return true;
+  var pl=p.toLowerCase();
+  if(pl==='tech'||pl.indexOf('lead tech')>-1) return true;
+  if(pl==='none'||pl==='tbd'||pl==='n/a'||pl==='family'||pl==='na') return true;
+  return false;
+}
+// Clinician = Individual Therapy or Family Therapy (service type, not provider name)
+// Dr. Flannery, Anthony, Heather → ancillary regardless of service name
+var FORCE_ANCILLARY_PROVS=['Flannery','Anthony','Heather'];
 function isClinician(ev){
+  var prov=(ev.provider||'').toLowerCase();
+  for(var i=0;i<FORCE_ANCILLARY_PROVS.length;i++){
+    if(prov.indexOf(FORCE_ANCILLARY_PROVS[i].toLowerCase())>-1) return false;
+  }
   var s=(ev.service||'').toLowerCase();
   return s.indexOf('individual')>-1 || s.indexOf('family')>-1;
 }
 function isCompleted(ev){ return (ev.status||'').toLowerCase()==='completed'; }
 function isGroup(ev){ return (ev.service||'').toLowerCase().indexOf('group')>-1; }
-function isBillable(ev){ return isCompleted(ev) && !isGroup(ev); }
+function isBillable(ev){ return isCompleted(ev) && !isGroup(ev) && !isExcluded(ev); }
 
 var DATA={events:[],clients:[],providers:{}}; var _loaded=false;
 
