@@ -102,7 +102,6 @@ tr.tot td{background:#F5F0E8;font-weight:700}
     <div class="tab" data-t="client-audit">Client Daily Audit</div>
     <div class="tab" data-t="provider-audit">Provider Daily Audit</div>
     <div class="tab" data-t="roster">Provider Roster</div>
-    <div class="tab" data-t="lookup">Session Lookup</div>
   </div>
 
   <div class="frow">
@@ -118,7 +117,6 @@ tr.tot td{background:#F5F0E8;font-weight:700}
     </div>
     <div style="margin-left:auto;display:flex;gap:8px">
       <button onclick="exportCSV()" style="padding:6px 14px;border:1px solid #1B2A4A;background:#fff;color:#1B2A4A;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer">↓ CSV</button>
-      <button onclick="exportRawJSON()" style="padding:6px 14px;border:1px solid #7A6A56;background:#fff;color:#7A6A56;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer" title="Download all raw Firebase data for auditing">↓ Raw JSON</button>
     </div>
   </div>
 
@@ -300,7 +298,6 @@ function render(){
   else if(_tab==='provider')renderProvider(wrap,evs);
   else if(_tab==='client-audit')renderClientAudit(wrap,evs);
   else if(_tab==='provider-audit')renderProviderAudit(wrap,evs);
-  else if(_tab==='lookup') renderLookup(wrap);
   else renderRoster(wrap,evs);
   el.appendChild(wrap);
 }
@@ -707,28 +704,6 @@ function renderRoster(el,evs){
   el.appendChild(tbl);
 }
 
-/* ═══ SESSION LOOKUP ════════════════════════ */
-function renderLookup(el){
-  el.innerHTML=
-    '<div style="background:#fff;border-radius:10px;border:1px solid #E5E2DE;padding:16px;margin-bottom:12px">'+
-    '<div style="font-size:10px;font-weight:700;color:#7A6A56;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Session Lookup — Audit Any Client or Provider</div>'+
-    '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">'+
-    '<div><div style="font-size:9px;font-weight:700;color:#999;text-transform:uppercase;margin-bottom:3px">Search (client name, provider, or service)</div>'+
-    '<input id="lk-q" style="padding:7px 12px;border:1px solid #ddd;border-radius:6px;font-size:12px;width:280px" placeholder="e.g. Tristan, Marullo, testing…">'+
-    '</div>'+
-    '<div><div style="font-size:9px;font-weight:700;color:#999;text-transform:uppercase;margin-bottom:3px">Date</div>'+
-    '<input id="lk-date" type="date" style="padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:12px">'+
-    '</div>'+
-    '<button onclick="doLookup()" style="padding:7px 16px;background:#1B2A4A;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">Search</button>'+
-    '</div></div>'+
-    '<div id="lk-results"></div>';
-}
-
-function doLookup(){
-  var q=(document.getElementById('lk-q').value||'').trim().toLowerCase();
-  var dt=(document.getElementById('lk-date').value||'').trim();
-  var el=document.getElementById('lk-results');
-  if(!q&&!dt){el.innerHTML='<div style="color:#888;font-size:12px;padding:12px">Enter a name or date to search.</div>';return;}
 
   // Search ALL events — not just filtered
   var matches=DATA.events.filter(function(ev){
@@ -795,23 +770,6 @@ function exportCSV(){
   a.download='ClinicalHours_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
 }
 
-/* Raw JSON export for external audit */
-function exportRawJSON(){
-  var out={
-    exported: new Date().toISOString(),
-    total_events: DATA.events.length,
-    total_clients: DATA.clients.length,
-    events: DATA.events,
-    clients: DATA.clients.map(function(c){
-      return {id:c.id, name:c.name, program:c.program,
-        sigAdmit:c.sigAdmit, sigDischarge:c.sigDischarge,
-        startDate:c.startDate, endDate:c.endDate};
-    })
-  };
-  var a=document.createElement('a');
-  a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(out,null,2));
-  a.download='Firebase_Raw_'+new Date().toISOString().slice(0,10)+'.json';
-  a.click();
 }
 </script>
 </body>
