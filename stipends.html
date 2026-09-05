@@ -2495,7 +2495,11 @@ function renderByStaff(D){
     var _isPinned=!!(staffMap[staff]&&staffMap[staff]._pinned);
     var wdata=staffMap[staff].weeks;
     var activeWeeks=weeks.filter(function(wk){
-      var r=wdata[wk];return r&&(r.sigSess+r.sigWkly+r.pdi)>0;
+      var r=wdata[wk];
+      if(!r)return false;
+      var computed=r.sigSess+r.sigWkly+r.pdi;
+      // Pinned providers (e.g. Nichole) may only have manual entries — show those weeks too
+      return computed>0||(_isPinned&&(r.manual||0)!==0);
     });
     if(!activeWeeks.length&&!_isPinned)return;
 
@@ -2517,16 +2521,14 @@ function renderByStaff(D){
         '</div>'+
       '</div>';  // close html+= chain
     if(!activeWeeks.length&&_isPinned){
-      var _btn1='<button data-pstaff="'+encodeURIComponent(staff)+'" ';
-      _btn1+='onclick="window.openAddManualStandalone(decodeURIComponent(this.dataset.pstaff))" ';
-      _btn1+='style="padding:5px 16px;border:1px solid #D4537E66;background:#D4537E11;';
-      _btn1+='color:#D4537E;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">';
-      _btn1+='+ Add Line Item</button>';
-      html+='<div style="padding:14px 20px">';
-      html+='<div style="color:#888;font-size:12px;font-style:italic;margin-bottom:10px">No entries for selected period.</div>';
-      html+=_btn1;
-      html+='</div></div></div>';
-      return;
+      // Show PPD weeks so the + button is available for each week
+      var _pinnedWeeks=weeks.slice(0,4); // show up to 4 most recent weeks
+      if(_pinnedWeeks.length){
+        activeWeeks=_pinnedWeeks;
+      } else {
+        html+='<div style="padding:14px 20px"><div style="color:#888;font-size:12px;font-style:italic">No weeks in selected period.</div></div></div></div>';
+        return;
+      }
     }
     html+='<div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">'+
         '<thead><tr style="background:#f8f7f5">'+
