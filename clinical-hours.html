@@ -116,8 +116,9 @@ tr.tot td{background:#F5F0E8;font-weight:700}
         <option value="pdi">PDI</option>
       </select>
     </div>
-    <div style="margin-left:auto">
-      <button onclick="exportCSV()" style="padding:6px 14px;border:1px solid #1B2A4A;background:#fff;color:#1B2A4A;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer">↓ Export</button>
+    <div style="margin-left:auto;display:flex;gap:8px">
+      <button onclick="exportCSV()" style="padding:6px 14px;border:1px solid #1B2A4A;background:#fff;color:#1B2A4A;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer">↓ CSV</button>
+      <button onclick="exportRawJSON()" style="padding:6px 14px;border:1px solid #7A6A56;background:#fff;color:#7A6A56;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer" title="Download all raw Firebase data for auditing">↓ Raw JSON</button>
     </div>
   </div>
 
@@ -695,6 +696,25 @@ function exportCSV(){
   var csv=rows.map(function(r){return r.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
   var a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
   a.download='ClinicalHours_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+}
+
+/* Raw JSON export for external audit */
+function exportRawJSON(){
+  var out={
+    exported: new Date().toISOString(),
+    total_events: DATA.events.length,
+    total_clients: DATA.clients.length,
+    events: DATA.events,
+    clients: DATA.clients.map(function(c){
+      return {id:c.id, name:c.name, program:c.program,
+        sigAdmit:c.sigAdmit, sigDischarge:c.sigDischarge,
+        startDate:c.startDate, endDate:c.endDate};
+    })
+  };
+  var a=document.createElement('a');
+  a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(out,null,2));
+  a.download='Firebase_Raw_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
 }
 </script>
 </body>
