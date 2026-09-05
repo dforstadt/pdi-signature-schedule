@@ -169,6 +169,7 @@ function getEvs(){
     if(!ev.date||!ev.provider||!ev.status) return false;
     if(ev.status.toLowerCase()!=='completed') return false;
     if(isSkip(ev.provider)) return false;
+    // Note: group sessions intentionally included — direct service hours per clinical model
     var mo=ev.date.slice(0,7);
     if(from&&mo<from) return false;
     if(to&&mo>to) return false;
