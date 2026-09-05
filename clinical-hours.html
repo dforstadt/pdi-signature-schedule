@@ -173,6 +173,8 @@ function isClin(ev){
   if(FORCE_ANC.some(function(f){return pl.indexOf(f)>-1;}))return false;
   return CLIN_KW.some(function(k){return sl.indexOf(k)>-1;});
 }
+function getHrs(ev){return((ev.duration||2)/2);}
+
 function emp(p){
   var pl=(p||'').trim().toLowerCase();
   if(W2.some(function(w){return pl===w;}))return 'W2';
@@ -281,19 +283,20 @@ function renderMonthly(el,evs){
   evs.forEach(function(ev){
     var mo=moKey(ev.date);mos.add(mo);
     if(!byMo[mo])byMo[mo]={clin:0,anc:0,w2:0,ctr:0};
-    if(isClin(ev))byMo[mo].clin++;else byMo[mo].anc++;
+    var _h=getHrs(ev);if(isClin(ev))byMo[mo].clin+=_h;else byMo[mo].anc+=_h;
     var e=emp(ev.provider);
-    if(e==='W2')byMo[mo].w2++;else if(e==='Contractor')byMo[mo].ctr++;
+    if(e==='W2')byMo[mo].w2+=_h;else if(e==='Contractor')byMo[mo].ctr+=_h;
   });
   var months=[...mos].sort();
-  var tc=evs.filter(isClin).length, ta=evs.length-tc;
-  var tw=evs.filter(function(e){return emp(e.provider)==='W2';}).length;
-  var tctr=evs.filter(function(e){return emp(e.provider)==='Contractor';}).length;
+  var tc=evs.reduce(function(s,e){return s+(isClin(e)?getHrs(e):0);},0);
+  var ta=evs.reduce(function(s,e){return s+(isClin(e)?0:getHrs(e));},0);
+  var tw=evs.reduce(function(s,e){return s+(emp(e.provider)==='W2'?getHrs(e):0);},0);
+  var tctr=evs.reduce(function(s,e){return s+(emp(e.provider)==='Contractor'?getHrs(e):0);},0);
 
   el.innerHTML='<div class="krow k4">'+
-    kpi(evs.length,'Total Direct Service Sessions',months.length+' months')+
-    kpi(tc,'Clinician Sessions','Therapy · Testing','')+
-    kpi(ta,'Ancillary Sessions','All other services','')+
+    kpi(Math.round(evs.reduce(function(s,e){return s+getHrs(e);},0)*10)/10+' hrs','Total Direct Service Hours',months.length+' months')+
+    kpi(Math.round(tc*10)/10+' hrs','Clinician Hours','Therapy · Testing','')+
+    kpi(Math.round(ta*10)/10+' hrs','Ancillary Hours','All other services','')+
     kpi(months.length,'Months','In selected range','')+
   '</div>';
 
@@ -342,8 +345,8 @@ function renderProvider(el,evs){
   evs.forEach(function(ev){
     var p=ev.provider;
     if(!byP[p])byP[p]={clin:0,anc:0,mos:new Set(),clients:new Set(),ancSvcs:{}};
-    if(isClin(ev))byP[p].clin++;
-    else{byP[p].anc++;var s=ev.service||'—';byP[p].ancSvcs[s]=(byP[p].ancSvcs[s]||0)+1;}
+    var _ph=getHrs(ev);if(isClin(ev))byP[p].clin+=_ph;
+    else{byP[p].anc+=_ph;var s=ev.service||'—';byP[p].ancSvcs[s]=(byP[p].ancSvcs[s]||0)+_ph;}
     byP[p].mos.add(moKey(ev.date));
     if(ev.clientId)byP[p].clients.add(ev.clientId);
   });
@@ -357,9 +360,9 @@ function renderProvider(el,evs){
 
   el.innerHTML='<div class="krow k4">'+
     kpi(clinPs.length,'Clinician Providers','')+
-    kpi(evs.filter(isClin).length,'Clinician Sessions','')+
+    kpi(Math.round(evs.reduce(function(s,e){return s+(isClin(e)?getHrs(e):0);},0)*10)/10+' hrs','Clinician Hours','')+
     kpi(ancPs.length,'Ancillary Providers','')+
-    kpi(evs.length-evs.filter(isClin).length,'Ancillary Sessions','')+
+    kpi(Math.round(evs.reduce(function(s,e){return s+(isClin(e)?0:getHrs(e));},0)*10)/10+' hrs','Ancillary Hours','')+
   '</div>';
 
   var c=document.createElement('div');c.className='r2';
@@ -420,7 +423,7 @@ function renderClientAudit(el,evs){
     if(!ev.clientId||!ev.date)return;
     var k=ev.clientId+'|'+ev.date.slice(0,10);
     if(!byCD[k])byCD[k]={id:ev.clientId,date:ev.date.slice(0,10),clin:0,anc:0,svcs:[]};
-    if(isClin(ev))byCD[k].clin++;else byCD[k].anc++;
+    var _ch=getHrs(ev);if(isClin(ev))byCD[k].clin+=_ch;else byCD[k].anc+=_ch;
     byCD[k].svcs.push(ev.service||'?');
     if(!cnames[ev.clientId]){var cl=DATA.clients.find(function(c){return c.id===ev.clientId;});cnames[ev.clientId]=cl?cl.name||ev.clientId:ev.clientId;}
   });
@@ -482,8 +485,9 @@ function renderProviderAudit(el,evs){
   var byPD={};
   clinEvs.forEach(function(ev){
     var k=ev.provider+'|'+ev.date.slice(0,10);
+    var _pah=getHrs(ev);
     if(!byPD[k])byPD[k]={provider:ev.provider,date:ev.date.slice(0,10),sessions:0,clients:new Set()};
-    byPD[k].sessions++;
+    byPD[k].sessions+=_pah;
     if(ev.clientId)byPD[k].clients.add(ev.clientId);
   });
   var rows=Object.values(byPD).sort(function(a,b){return a.date<b.date?1:-1;});
@@ -570,7 +574,7 @@ function renderRoster(el,evs){
   evs.forEach(function(ev){
     var p=ev.provider;
     if(!byP[p])byP[p]={clin:0,anc:0,mos:new Set(),clients:new Set(),svcs:new Set()};
-    if(isClin(ev))byP[p].clin++;else byP[p].anc++;
+    var _ph=getHrs(ev);if(isClin(ev))byP[p].clin+=_ph;else byP[p].anc++;
     byP[p].mos.add(moKey(ev.date));
     if(ev.clientId)byP[p].clients.add(ev.clientId);
     if(ev.service)byP[p].svcs.add(ev.service);
@@ -677,7 +681,7 @@ function doLookup(){
             '<span class="badge ba">Ancillary</span>';
     var counted=!skipped&&completed?'✓':'<span style="color:#ccc">✗</span>';
     return '<tr style="background:'+(skipped||!completed?'#FAFAFA':'#fff')+'">'
-      +'<td>'+(ev.date||'—').slice(0,10)+'</td>'
+      +'<td>'+(ev.date||'—').slice(0,10)+'  '+( ev.duration?'['+ev.duration*30+'m]':'')+'</td>'
       +'<td><b>'+(ev.provider||'—')+'</b></td>'
       +'<td>'+cname+'</td>'
       +'<td>'+(ev.service||'—')+'</td>'
