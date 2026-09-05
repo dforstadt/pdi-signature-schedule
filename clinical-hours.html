@@ -152,13 +152,42 @@ var FORCE_CLIN=['nursing','brian'];
 var SKIP=['luis guillermo','keisha foster','lead tech','tech team','brandy','none','tbd','family','n/a',''];
 
 // W2 salaried — determines who gets tracked in Provider Audit
-var W2=['mirella ezeta','tara alhadeff','rabbi brandon gaines','rabbi gaines',
-  'anisha hume','sandra bernstein','tamas biro','thomas young','paul lazar',
-  'gregory fortune','greg fortune','esther entin','alexandra marullo',
-  'despina karfis','robert bruno','david ockman','nicole williams','gus hernandez',
-  'dr. spaedy','spaedy','brandy','nursing','dr. flavia','flavia',
-  'dr. shaeffer','shaeffer','dr. bober','bober','nichole bessent','gina bonfigli'];
-var CTR=['david forstadt','dr. forstadt','forstadt','anthony','heather','alice','dr. flannery','flannery','pbwi','brian'];
+var W2=[
+  // Confirmed salaried employees (updated roster)
+  'nicole williams','nicole',
+  'tara alhadeff','tara',
+  'mirella ezeta','dr. mirella',
+  'rabbi brandon gaines','rabbi gaines','rabbi',
+  'anisha hume','dr. hume',
+  'sandra bernstein','sandy',
+  'despina karfis','dr. despina',
+  'alexandra marullo','dr. alex',
+  'robert bruno','dr. bruno',
+  'tamas biro','tamas',
+  'paul lazar','dr. paul',
+  't.d.','td',
+  'esther entin','esther',
+  'miguel',
+  'nichole bessent','nichole bessent',
+  'gina bonfigli','gina'
+];
+var CTR=[
+  // Contractors / 1099
+  'david forstadt','dr. forstadt','forstadt',
+  'anthony','heather','alice',
+  'dr. flannery','flannery','pbwi',
+  'brian',
+  // Previously listed as salaried — now confirmed contractor
+  'david ockman','ockman',
+  'gus hernandez','gus',
+  'dr. spaedy','spaedy',
+  'nursing',
+  'dr. flavia','flavia',
+  'dr. shaeffer','shaeffer',
+  'dr. bober','bober',
+  'gregory fortune','greg fortune',
+  'thomas young'
+];
 
 function isSkip(p){var pl=(p||'').trim().toLowerCase();return !pl||SKIP.indexOf(pl)>-1||pl.indexOf('lead tech')>-1;}
 function isClin(ev){
