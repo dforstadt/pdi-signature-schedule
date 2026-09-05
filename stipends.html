@@ -3397,7 +3397,7 @@ window.openManualModal = function(staff, wk){
           +(e.notes?'<div style="font-size:10px;color:#888;margin-top:2px">'+e.notes+'</div>':'')
           +'</div>'
           +'<button data-mk="'+e._key+'" data-rf="'+e._ref+'" data-s="'+staff+'" data-w="'+wk+'"'
-          +' onclick="window._manDel(this.dataset.mk,this.dataset.rf,this.dataset.s,this.dataset.w)"'
+          +' onclick="window._manDel(this.dataset.mk,this.dataset.rf,this.dataset.s,this.dataset.w,this)"'
           +' style="background:#fee2e2;border:1px solid #fca5a5;color:#dc2626;cursor:pointer;'
           +'font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px;white-space:nowrap">Delete</button>'
           +'</div>';
@@ -3408,8 +3408,23 @@ window.openManualModal = function(staff, wk){
   setTimeout(function(){var a=document.getElementById('man-modal-amt');if(a)a.focus();},120);
 };
 
-window._manDel=function(key,ref,staff,wk){
-  if(!confirm('Delete this adjustment?'))return;
+window._manDel=function(key,ref,staff,wk,btn){
+  // No confirm() — use two-tap: first tap shows "Confirm?", second tap deletes
+  if(btn&&btn.dataset.confirming!=='1'){
+    btn.dataset.confirming='1';
+    btn.textContent='Confirm?';
+    btn.style.background='#dc2626';
+    btn.style.color='#fff';
+    setTimeout(function(){
+      if(btn&&btn.dataset.confirming==='1'){
+        btn.dataset.confirming='0';
+        btn.textContent='Delete';
+        btn.style.background='#fee2e2';
+        btn.style.color='#dc2626';
+      }
+    },3000);
+    return;
+  }
   var targetRef=ref==='old'
     ?firebase.database().ref('schedule_v3/manual_stipends')
     :MANUAL_REF;
@@ -3426,7 +3441,6 @@ window.closeManualModal = function(){
 };
 
 window.deleteManualEntryFromModal = function(key){
-  if(!confirm('Delete this entry?')) return;
   MANUAL_REF.child(key).remove().then(function(){
     if(_manModalStaff&&_manModalWk) window.openManualModal(_manModalStaff,_manModalWk);
     else window.closeManualModal();
