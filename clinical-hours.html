@@ -399,65 +399,102 @@ function renderProvider(){
     if(ev.clientId)byProv[p].clients.add(ev.clientId);
     byProv[p].months.add(moKey(ev.date));
   });
-  var provs=Object.entries(byProv).sort(function(a,b){return b[1].total-a[1].total;});
-  var labels=provs.map(function(p){return p[0];});
 
-  var html='<div class="note-box">Clinician = Individual &amp; Family Therapy only. Ancillary = all other completed services (personal training, wellness, culinary, nutritional, specialist, etc.).</div>';
+  // Separate into clinicians (any clin sessions) and ancillary-only
+  var clinProvs=Object.entries(byProv)
+    .filter(function(kv){return kv[1].clin>0;})
+    .sort(function(a,b){return b[1].clin-a[1].clin;});
+  var ancProvs=Object.entries(byProv)
+    .filter(function(kv){return kv[1].clin===0&&kv[1].anc>0;})
+    .sort(function(a,b){return b[1].anc-a[1].anc;});
+  var allProvs=Object.entries(byProv).sort(function(a,b){return b[1].total-a[1].total;});
+
+  var totalClin=evs.filter(isClinician).length;
+  var totalAnc=evs.length-totalClin;
+
+  var html='<div class="note-box">Clinician = Individual &amp; Family Therapy. Ancillary = all other completed services (Dr. Flannery, personal training, wellness, culinary, nutritional, etc.).</div>';
   html+='<div class="kpi-row">'+
-    kpi(provs.length,'Providers','With sessions in period')+
-    kpi(evs.length.toLocaleString(),'Total Sessions','')+
-    kpi(evs.filter(isClinician).length,'Clinician Sessions','','clin')+
-    kpi(evs.length-evs.filter(isClinician).length,'Ancillary Sessions','','anc')+
-    kpi(provs.length?provs[0][0]:'—','Top Provider',provs.length?provs[0][1].total+' sessions':'')+
+    kpi(clinProvs.length,'Clinician Providers','Deliver Individual or Family Therapy','clin')+
+    kpi(totalClin,'Clinician Sessions','','clin')+
+    kpi(ancProvs.length,'Ancillary Providers','All other service providers','anc')+
+    kpi(totalAnc,'Ancillary Sessions','','anc')+
+    kpi(evs.length,'Total Sessions','')+
   '</div>';
 
+  // Two charts side by side — same layout, one per category
+  var clinH=Math.max(220,clinProvs.length*30);
+  var ancH=Math.max(220,ancProvs.length*30);
   html+='<div class="row2">'+
-    '<div class="card"><div class="card-title">Total Sessions by Provider</div>'+
-    '<div class="chart-wrap" style="height:'+(Math.max(260,provs.length*26))+'px"><canvas id="ch-prov-bar"></canvas></div></div>'+
-    '<div class="card"><div class="card-title">Clinician vs Ancillary by Provider</div>'+
-    '<div class="chart-wrap" style="height:'+(Math.max(260,provs.length*26))+'px"><canvas id="ch-prov-split"></canvas></div></div>'+
+    '<div class="card">'+
+      '<div class="card-title" style="color:#1B2A4A">▮ Direct Service — Clinician Providers</div>'+
+      '<div style="font-size:10px;color:#888;margin-bottom:10px">Individual Therapy + Family Therapy</div>'+
+      '<div class="chart-wrap" style="height:'+clinH+'px"><canvas id="ch-clin-bar"></canvas></div>'+
+    '</div>'+
+    '<div class="card">'+
+      '<div class="card-title" style="color:#2D6A4F">▮ Direct Service — Ancillary Providers</div>'+
+      '<div style="font-size:10px;color:#888;margin-bottom:10px">All other completed services</div>'+
+      '<div class="chart-wrap" style="height:'+ancH+'px"><canvas id="ch-anc-bar"></canvas></div>'+
+    '</div>'+
   '</div>';
 
-  html+='<div class="card"><div class="card-title">Provider Detail</div>'+
+  // Combined detail table
+  html+='<div class="card"><div class="card-title">All Provider Detail</div>'+
     '<div style="overflow-x:auto"><table><thead><tr>'+
-    '<th>Provider</th><th class="r">Total Sess</th>'+
-    '<th class="r">Clinician</th><th class="r">Ancillary</th>'+
-    '<th class="r">Role Split</th>'+
+    '<th>Provider</th><th>Category</th><th class="r">Sessions</th>'+
     '<th class="r">Active Months</th><th class="r">Unique Clients</th></tr></thead><tbody>'+
-    provs.map(function(kv){
+    '<tr><td colspan="5" class="month-header" style="background:#EEF2FF;color:#1B2A4A;font-size:10px;font-weight:700;padding:6px 10px;letter-spacing:.04em">CLINICIAN PROVIDERS — Individual &amp; Family Therapy</td></tr>'+
+    clinProvs.map(function(kv){
       var r=kv[1];
-      var clinPct=r.total?Math.round(r.clin/r.total*100):0;
-      var role=r.clin>0&&r.anc===0?'<span class="badge badge-clin">Clinician only</span>':
-               r.anc>0&&r.clin===0?'<span class="badge badge-anc">Ancillary only</span>':
-               '<span class="badge" style="background:#F5F0E8;color:#555">'+clinPct+'% Clin / '+(100-clinPct)+'% Anc</span>';
       return '<tr>'+
         '<td><b>'+kv[0]+'</b></td>'+
-        '<td class="r"><b>'+r.total+'</b></td>'+
-        '<td class="r"><span style="color:#1B2A4A;font-weight:600">'+r.clin+'</span></td>'+
-        '<td class="r"><span style="color:#2D6A4F;font-weight:600">'+r.anc+'</span></td>'+
-        '<td class="r">'+role+'</td>'+
+        '<td><span class="badge badge-clin">Clinician</span></td>'+
+        '<td class="r"><b style="color:#1B2A4A">'+r.clin+'</b></td>'+
         '<td class="r">'+r.months.size+'</td>'+
         '<td class="r">'+r.clients.size+'</td></tr>';
-    }).join('')+'</tbody></table></div></div>';
+    }).join('')+
+    '<tr><td colspan="5" class="month-header" style="background:#E8F5E9;color:#2D4A3E;font-size:10px;font-weight:700;padding:6px 10px;letter-spacing:.04em">ANCILLARY PROVIDERS — All Other Services</td></tr>'+
+    ancProvs.map(function(kv){
+      var r=kv[1];
+      return '<tr>'+
+        '<td><b>'+kv[0]+'</b></td>'+
+        '<td><span class="badge badge-anc">Ancillary</span></td>'+
+        '<td class="r"><b style="color:#2D6A4F">'+r.anc+'</b></td>'+
+        '<td class="r">'+r.months.size+'</td>'+
+        '<td class="r">'+r.clients.size+'</td></tr>';
+    }).join('')+
+    '</tbody></table></div></div>';
 
   document.getElementById('content').innerHTML=html;
+
   setTimeout(function(){
-    _charts.push(new Chart(document.getElementById('ch-prov-bar'),{
-      type:'bar',
-      data:{labels:labels,datasets:[{label:'Total Sessions',data:provs.map(function(p){return p[1].total;}),backgroundColor:PALETTE_MIX.slice(0,provs.length),borderRadius:3}]},
-      options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},
-        scales:{x:{beginAtZero:true,title:{display:true,text:'Sessions'}},y:{grid:{display:false}}}}
-    }));
-    _charts.push(new Chart(document.getElementById('ch-prov-split'),{
-      type:'bar',
-      data:{labels:labels,datasets:[
-        {label:'Clinician',data:provs.map(function(p){return p[1].clin;}),backgroundColor:'#1B2A4A',borderRadius:2},
-        {label:'Ancillary',data:provs.map(function(p){return p[1].anc;}),backgroundColor:'#2D6A4F',borderRadius:2}
-      ]},
-      options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
-        plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:12}}},
-        scales:{x:{stacked:true,beginAtZero:true},y:{stacked:true,grid:{display:false}}}}
-    }));
+    // Clinician chart
+    if(clinProvs.length){
+      _charts.push(new Chart(document.getElementById('ch-clin-bar'),{
+        type:'bar',
+        data:{labels:clinProvs.map(function(p){return p[0];}),
+          datasets:[{label:'Clinician Sessions',
+            data:clinProvs.map(function(p){return p[1].clin;}),
+            backgroundColor:'#1B2A4A',borderRadius:4}]},
+        options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+          plugins:{legend:{display:false}},
+          scales:{x:{beginAtZero:true,title:{display:true,text:'Sessions (Individual + Family Therapy)'},grid:{color:'#F0EDE8'}},
+            y:{grid:{display:false}}}}
+      }));
+    }
+    // Ancillary chart
+    if(ancProvs.length){
+      _charts.push(new Chart(document.getElementById('ch-anc-bar'),{
+        type:'bar',
+        data:{labels:ancProvs.map(function(p){return p[0];}),
+          datasets:[{label:'Ancillary Sessions',
+            data:ancProvs.map(function(p){return p[1].anc;}),
+            backgroundColor:'#2D6A4F',borderRadius:4}]},
+        options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+          plugins:{legend:{display:false}},
+          scales:{x:{beginAtZero:true,title:{display:true,text:'Sessions (Ancillary Services)'},grid:{color:'#F0EDE8'}},
+            y:{grid:{display:false}}}}
+      }));
+    }
   },60);
 }
 
