@@ -1472,34 +1472,30 @@ function computeStipends(){
     if(fltTrack!=='PDI'){
 
       // Active Signature clients this week: sigAdmit ≤ wEnd AND (no sigDisch OR sigDisch ≥ wStart)
-      // activeSig: used for session fees only (post-pause = empty, pre-pause = sessions)
+      // activeSig: session fees and census — Signature episode of care only.
+      // Uses sigAdmit/sigDischarge exclusively. endDate is not a clinical field.
       var activeSig=DATA.clients.filter(function(c){
         var prog=(c.program||'').trim().toLowerCase();
         var isSig=prog==='signature'||prog==='both'||prog==='sig';
         if(!isSig&&c.sigAdmit&&!c.program)isSig=true;
         if(!isSig)return false;
         var admit=toISO(c.sigAdmit);
-        var disch=toISO(c.sigDischarge||c.sigDisch||c.endDate);
+        var disch=toISO(c.sigDischarge||c.sigDisch);
         if(!admit||admit>wEnd)return false;
         if(disch&&disch<wStart)return false;
         return true;
       });
 
       // ── Weekly stipend for Ockman & Nicole ──────────────────────────────────
-      // Uses endDate only when it is at least 2 days before wStart.
-      // A billing-period end date (e.g. Aug 29 for week starting Aug 30) is
-      // treated as still active. An actual discharge date set days/weeks ago
-      // correctly excludes the client.
-      var _wsPrev=new Date(wStart+'T12:00:00');_wsPrev.setDate(_wsPrev.getDate()-2);
-      var _wsThresh=_wsPrev.toISOString().slice(0,10);
+      // Census based on Signature episode of care: sigAdmit → sigDischarge.
+      // endDate is a calendar scheduling field — not used for clinical discharge.
       var weeklyClients=DATA.clients.filter(function(c){
         var prog=(c.program||'').trim().toLowerCase();
         var isSig=prog==='signature'||prog==='both'||prog==='sig';
         if(!isSig&&c.sigAdmit&&!c.program)isSig=true;
         if(!isSig)return false;
         var admit=toISO(c.sigAdmit);
-        var disch=toISO(c.sigDischarge||c.sigDisch)||
-                  (toISO(c.endDate)&&toISO(c.endDate)<_wsThresh?toISO(c.endDate):null);
+        var disch=toISO(c.sigDischarge||c.sigDisch);
         if(!admit||admit>wEnd)return false;
         if(disch&&disch<wStart)return false;
         return true;
