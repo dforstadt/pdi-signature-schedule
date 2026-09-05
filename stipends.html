@@ -3365,11 +3365,15 @@ window.openManualModal = function(staff, wk){
   var existEl=document.getElementById('man-modal-existing');
   if(existEl)existEl.innerHTML='<div style="color:#aaa;font-size:11px;padding:4px 0">Loading…</div>';
   ov.style.display='flex';
-  // Load fresh from Firebase — direct date match, no getFri() conversion
-  MANUAL_REF.once('value',function(snap){
-    var all=snap.val()||{};
-    var entries=Object.entries(all).map(function(kv){return Object.assign({_key:kv[0]},kv[1]);});
-    var matching=entries.filter(function(e){
+  // Load from BOTH Firebase paths — new ref and legacy ref
+  var _OLD_REF=firebase.database().ref('schedule_v3/manual_stipends');
+  var _nData=null,_oData=null,_nDone=false,_oDone=false;
+  function _renderEntries(){
+    if(!_nDone||!_oDone)return;
+    var allEntries=[];
+    if(_nData)Object.entries(_nData).forEach(function(kv){allEntries.push(Object.assign({_key:kv[0],_ref:'new'},kv[1]));});
+    if(_oData)Object.entries(_oData).forEach(function(kv){allEntries.push(Object.assign({_key:kv[0],_ref:'old'},kv[1]));});
+    var matching=allEntries.filter(function(e){
       if((e.provider||e.prov||'')!==staff)return false;
       var s=e.startWeek||e.week||'';
       var en=e.endWeek||s;
@@ -3392,19 +3396,24 @@ window.openManualModal = function(staff, wk){
           +(e.type?'<span style="margin-left:6px;font-size:10px;color:#888;background:#eee;padding:1px 5px;border-radius:3px">'+e.type+'</span>':'')
           +(e.notes?'<div style="font-size:10px;color:#888;margin-top:2px">'+e.notes+'</div>':'')
           +'</div>'
-          +'<button data-mk="'+e._key+'" data-s="'+staff+'" data-w="'+wk+'"'
-          +' onclick="window._manDel(this.dataset.mk,this.dataset.s,this.dataset.w)"'
+          +'<button data-mk="'+e._key+'" data-rf="'+e._ref+'" data-s="'+staff+'" data-w="'+wk+'"'
+          +' onclick="window._manDel(this.dataset.mk,this.dataset.rf,this.dataset.s,this.dataset.w)"'
           +' style="background:#fee2e2;border:1px solid #fca5a5;color:#dc2626;cursor:pointer;'
           +'font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px;white-space:nowrap">Delete</button>'
           +'</div>';
       }).join('');
-  });
+  }
+  MANUAL_REF.once('value',function(s){_nData=s.val()||{};_nDone=true;_renderEntries();});
+  _OLD_REF.once('value',function(s){_oData=s.val()||{};_oDone=true;_renderEntries();});
   setTimeout(function(){var a=document.getElementById('man-modal-amt');if(a)a.focus();},120);
 };
 
-window._manDel=function(key,staff,wk){
+window._manDel=function(key,ref,staff,wk){
   if(!confirm('Delete this adjustment?'))return;
-  MANUAL_REF.child(key).remove().then(function(){
+  var targetRef=ref==='old'
+    ?firebase.database().ref('schedule_v3/manual_stipends')
+    :MANUAL_REF;
+  targetRef.child(key).remove().then(function(){
     window.openManualModal(staff,wk);
     if(window._lastD){window.injectManualItems(window._lastD);renderByStaff(window._lastD);}
   });
