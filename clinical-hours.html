@@ -145,7 +145,7 @@ var CLIN_KW=[
 ];
 // Service labels that are always Ancillary regardless of other keywords
 // e.g. "Spirituality Group" contains "group" but should be ancillary
-var FORCE_ANC_SVCS=['spirituality','spiritual','lunch','photomodulation','cognitive remediation','orientation'];
+var FORCE_ANC_SVCS=['lunch','photomodulation','cognitive remediation','orientation'];
 var FORCE_ANC=['anthony','heather','alice','flavia','rabbi','nicole']; // Always ancillary regardless of service label
 // Providers always classified as Clinician regardless of service label
 var FORCE_CLIN=['nursing','brian'];
@@ -164,7 +164,9 @@ function isSkip(p){var pl=(p||'').trim().toLowerCase();return !pl||SKIP.indexOf(
 function isClin(ev){
   var pl=(ev.provider||'').toLowerCase();
   var sl=(ev.service||'').toLowerCase();
-  // Service-level overrides checked first
+  // Spirituality without "group" = ancillary; Spirituality Group = clinician
+  if((sl.indexOf('spiritual')>-1)&&sl.indexOf('group')<0)return false;
+  // Other service-level overrides
   if(FORCE_ANC_SVCS.some(function(s){return sl.indexOf(s)>-1;}))return false;
   // Provider-level overrides
   if(FORCE_CLIN.some(function(f){return pl.indexOf(f)>-1;}))return true;
