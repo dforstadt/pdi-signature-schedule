@@ -140,10 +140,12 @@ var CLIN_KW=[
   'psychiatric','nursing','medical',
   // Behavioral & legal
   'debriefing','court','prevention',
-  // All groups = direct service
+  // All groups = direct service (unless overridden by FORCE_ANC_SVCS)
   'group'
-  // Note: photomodulation, cognitive remediation, orientation, spirituality → ancillary by default
 ];
+// Service labels that are always Ancillary regardless of other keywords
+// e.g. "Spirituality Group" contains "group" but should be ancillary
+var FORCE_ANC_SVCS=['spirituality','spiritual','lunch','photomodulation','cognitive remediation','orientation'];
 var FORCE_ANC=['anthony','heather','alice','flavia','rabbi','nicole']; // Always ancillary regardless of service label
 // Providers always classified as Clinician regardless of service label
 var FORCE_CLIN=['nursing','brian'];
@@ -161,9 +163,12 @@ var CTR=['david forstadt','dr. forstadt','forstadt','anthony','heather','alice',
 function isSkip(p){var pl=(p||'').trim().toLowerCase();return !pl||SKIP.indexOf(pl)>-1||pl.indexOf('lead tech')>-1;}
 function isClin(ev){
   var pl=(ev.provider||'').toLowerCase();
+  var sl=(ev.service||'').toLowerCase();
+  // Service-level overrides checked first
+  if(FORCE_ANC_SVCS.some(function(s){return sl.indexOf(s)>-1;}))return false;
+  // Provider-level overrides
   if(FORCE_CLIN.some(function(f){return pl.indexOf(f)>-1;}))return true;
   if(FORCE_ANC.some(function(f){return pl.indexOf(f)>-1;}))return false;
-  var sl=(ev.service||'').toLowerCase();
   return CLIN_KW.some(function(k){return sl.indexOf(k)>-1;});
 }
 function emp(p){
