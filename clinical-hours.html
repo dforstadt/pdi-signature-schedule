@@ -8,492 +8,564 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Arial',sans-serif;background:#F5F0E8;color:#1E1E1E;min-height:100vh}
-  #login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#1B2A4A}
-  .login-box{background:#fff;border-radius:16px;padding:40px;width:360px;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.3)}
-  .login-box h1{font-size:20px;color:#1B2A4A;margin-bottom:6px}
-  .login-box p{font-size:12px;color:#888;margin-bottom:24px}
-  .login-box input{width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:12px}
-  .login-box button{width:100%;padding:11px;background:#1B2A4A;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
-  .login-box button:hover{background:#2A3F5C}
-  #err-msg{color:#c00;font-size:12px;margin-top:8px;min-height:16px}
-  #app{display:none}
-  .top-bar{background:#1B2A4A;color:#fff;padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
-  .top-bar h1{font-size:16px;font-weight:700}
-  .top-bar .sub{font-size:11px;color:#A0B0C8;margin-top:2px}
-  .top-bar .dot{width:8px;height:8px;border-radius:50%;background:#ccc;display:inline-block;margin-right:6px;transition:background .3s}
-  .top-bar .dot.on{background:#4ade80}
-  .controls{background:#fff;border-bottom:1px solid #E5E2DE;padding:12px 24px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-  .controls select,.controls input{padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:12px;background:#fff}
-  .controls label{font-size:11px;font-weight:600;color:#666}
-  .btn-sm{padding:7px 16px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer}
-  .btn-primary{background:#1B2A4A;color:#fff}
-  .btn-outline{background:#fff;border:1px solid #ddd;color:#555}
-  .main{padding:20px 24px}
-  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
-  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px}
-  @media(max-width:900px){.grid-2,.grid-3{grid-template-columns:1fr}}
-  .card{background:#fff;border-radius:12px;border:1px solid #E5E2DE;padding:20px}
-  .card h2{font-size:13px;font-weight:700;color:#7A6A56;text-transform:uppercase;letter-spacing:.05em;margin-bottom:16px}
-  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
-  @media(max-width:900px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
-  .kpi{background:#fff;border-radius:10px;border:1px solid #E5E2DE;padding:16px;text-align:center}
-  .kpi .val{font-size:28px;font-weight:700;color:#1B2A4A;line-height:1}
-  .kpi .lbl{font-size:10px;color:#888;margin-top:4px;text-transform:uppercase;letter-spacing:.04em}
-  .kpi .sub{font-size:11px;color:#7A6A56;margin-top:2px}
-  table{width:100%;border-collapse:collapse;font-size:12px}
-  th{background:#1B2A4A;color:#fff;padding:8px 10px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
-  th.num{text-align:right}
-  td{padding:7px 10px;border-bottom:.5px solid #F0EDE8}
-  td.num{text-align:right;font-variant-numeric:tabular-nums}
-  tr:hover td{background:#FAFAF8}
-  .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600}
-  .badge-blue{background:#EEF4FB;color:#1A3A5C}
-  .badge-green{background:#E8F5E9;color:#2D4A3E}
-  .badge-amber{background:#FEF9E7;color:#784212}
-  .chart-wrap{position:relative;height:280px}
-  .loading{text-align:center;padding:60px;color:#888;font-size:13px}
-  .month-header{font-size:11px;font-weight:700;color:#1B2A4A;background:#F5F0E8;padding:6px 10px;text-transform:uppercase;letter-spacing:.05em}
-  .prog-row td{background:#FAFAF8;font-weight:600}
-  select#view-mode{min-width:140px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#F5F0E8;color:#1E1E1E;min-height:100vh}
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#1B2A4A}
+.login-box{background:#fff;border-radius:16px;padding:40px;width:360px;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.3)}
+.login-box h1{font-size:20px;color:#1B2A4A;margin-bottom:6px}
+.login-box p{font-size:12px;color:#888;margin-bottom:24px}
+.login-box input{width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:12px}
+.login-box button{width:100%;padding:11px;background:#1B2A4A;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
+#err-msg{color:#c00;font-size:12px;margin-top:8px;min-height:16px}
+#app{display:none}
+.top-bar{background:#1B2A4A;color:#fff;padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
+.top-bar h1{font-size:16px;font-weight:700}
+.top-bar .sub{font-size:11px;color:#A0B0C8;margin-top:2px}
+.dot{width:8px;height:8px;border-radius:50%;background:#555;display:inline-block;margin-right:6px}
+.dot.on{background:#4ade80}
+.controls{background:#fff;border-bottom:1px solid #E5E2DE;padding:12px 24px;display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap}
+.ctrl-group label{display:block;font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+.controls select,.controls input[type=month]{padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:12px;background:#fff;min-width:130px}
+.btn-sm{padding:7px 16px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer}
+.btn-primary{background:#1B2A4A;color:#fff}
+.btn-outline{background:#fff;border:1px solid #C8C4BE;color:#555}
+.main{padding:20px 24px}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+@media(max-width:800px){.kpi-row{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:#fff;border-radius:10px;border:1px solid #E5E2DE;padding:16px 14px;text-align:center}
+.kpi .num{font-size:32px;font-weight:700;color:#1B2A4A;line-height:1.1}
+.kpi .lbl{font-size:10px;font-weight:700;color:#7A6A56;text-transform:uppercase;letter-spacing:.05em;margin-top:5px}
+.kpi .note{font-size:10px;color:#AAA;margin-top:3px}
+.card{background:#fff;border-radius:12px;border:1px solid #E5E2DE;padding:20px;margin-bottom:16px}
+.card-title{font-size:11px;font-weight:700;color:#7A6A56;text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px}
+.chart-wrap{position:relative}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+@media(max-width:900px){.row2{grid-template-columns:1fr}}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#fff;background:#1B2A4A;text-transform:uppercase;letter-spacing:.04em}
+th.r{text-align:right}
+td{padding:7px 10px;border-bottom:.5px solid #F0EDE8;vertical-align:middle}
+td.r{text-align:right;font-variant-numeric:tabular-nums;font-family:monospace}
+tr:last-child td{border-bottom:none}
+tr.sub td{background:#FAFAF8}
+.pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;background:#EEF4FB;color:#1A3A5C}
+.zero{color:#DDD}
 </style>
 </head>
 <body>
 
-<!-- LOGIN -->
 <div id="login-screen">
   <div class="login-box">
-    <div style="font-size:32px;margin-bottom:12px">⏱️</div>
+    <div style="font-size:36px;margin-bottom:12px">⏱</div>
     <h1>Clinical Hours</h1>
     <p>Premier Signature Program · Lifeskills Behavioral Health<br>Leadership access only</p>
-    <input type="password" id="pw-input" placeholder="Access code" autocomplete="off" onkeydown="if(event.key==='Enter')tryLogin()">
+    <input type="password" id="pw" placeholder="Access code" autocomplete="off"
+      onkeydown="if(event.key==='Enter')tryLogin()">
     <button onclick="tryLogin()">Access Report</button>
     <div id="err-msg"></div>
   </div>
 </div>
 
-<!-- APP -->
 <div id="app">
   <div class="top-bar">
     <div>
-      <h1>Clinical Hours Report — Premier Signature Program</h1>
-      <div class="sub"><span class="dot" id="live-dot"></span><span id="live-lbl">Connecting…</span> · Lifeskills Behavioral Health · Leadership</div>
+      <h1>Clinical Hours — Premier Signature Program</h1>
+      <div class="sub">
+        <span class="dot" id="live-dot"></span>
+        <span id="live-lbl">Connecting…</span>
+        &nbsp;·&nbsp;Completed sessions only — all programs from launch
+      </div>
     </div>
     <a href="/index.html" style="color:#A0B0C8;font-size:12px;text-decoration:none">← Calendar</a>
   </div>
 
   <div class="controls">
-    <div>
-      <label>View</label><br>
-      <select id="view-mode" onchange="render()">
-        <option value="monthly">Monthly Summary</option>
+    <div class="ctrl-group">
+      <label>View</label>
+      <select id="view" onchange="render()">
+        <option value="monthly">Monthly</option>
+        <option value="weekly">Weekly</option>
         <option value="provider">By Provider</option>
-        <option value="program">By Program (Sig / PDI)</option>
       </select>
     </div>
-    <div>
-      <label>From</label><br>
-      <input type="month" id="flt-from" value="2026-01" onchange="render()">
+    <div class="ctrl-group">
+      <label>From</label>
+      <input type="month" id="flt-from" value="2026-04" onchange="render()">
     </div>
-    <div>
-      <label>To</label><br>
+    <div class="ctrl-group">
+      <label>To</label>
       <input type="month" id="flt-to" onchange="render()">
     </div>
-    <div>
-      <label>Program</label><br>
+    <div class="ctrl-group">
+      <label>Program</label>
       <select id="flt-prog" onchange="render()">
         <option value="">All Programs</option>
         <option value="Signature">Signature</option>
         <option value="PDI">PDI</option>
       </select>
     </div>
-    <div style="margin-top:16px">
-      <button class="btn-sm btn-outline" onclick="render()">↻ Refresh</button>
+    <div class="ctrl-group">
+      <label>Provider</label>
+      <select id="flt-prov" onchange="render()">
+        <option value="">All Providers</option>
+      </select>
     </div>
-    <div style="margin-left:auto;margin-top:16px">
-      <button class="btn-sm btn-primary" onclick="exportCSV()">↓ Export CSV</button>
+    <div style="margin-left:auto">
+      <button class="btn-sm btn-primary" onclick="exportCSV()">↓ CSV</button>
     </div>
   </div>
 
-  <div class="main" id="loading-div">
-    <div class="loading">Loading clinical data from Firebase…</div>
+  <div class="main" id="loading-div" style="text-align:center;padding:60px;color:#888">
+    Loading data from Firebase…
   </div>
-  <div class="main" id="main-content" style="display:none"></div>
+  <div class="main" id="content" style="display:none"></div>
 </div>
 
 <script>
-const PW = 'ClinicalHours2026';
-const INDIRECT_RATIO = 3.75 / 5; // per Forstadt model: 3.75 indirect per 5 direct hrs
+const PW_HASH = 'ClinicalHours2026';
+var DATA = {events:[], clients:[], providers:{}};
+var _loaded = false;
 
-// ── Auth ─────────────────────────────────────────────────────────────────────
+/* ── Auth ─────────────────────────────────────────────── */
 function tryLogin(){
-  var v=(document.getElementById('pw-input').value||'').trim();
-  if(v===PW){document.getElementById('login-screen').style.display='none';document.getElementById('app').style.display='block';initFirebase();}
-  else{document.getElementById('err-msg').textContent='Incorrect access code.';setTimeout(function(){document.getElementById('err-msg').textContent='';},2500);}
+  var v = (document.getElementById('pw').value||'').trim();
+  if(v === PW_HASH){
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app').style.display='block';
+    initFB();
+  } else {
+    document.getElementById('err-msg').textContent='Incorrect access code.';
+    setTimeout(function(){document.getElementById('err-msg').textContent='';}, 2500);
+  }
 }
 
-// ── Firebase ──────────────────────────────────────────────────────────────────
-var DATA={events:[],clients:[],providers:{}};
-var _fbLoaded=false;
-
-function initFirebase(){
+/* ── Firebase ─────────────────────────────────────────── */
+function initFB(){
   firebase.initializeApp({
-    apiKey:"AIzaSyD-placeholder",
-    databaseURL:"https://pdi-signature-schedule-default-rtdb.firebaseio.com"
+    databaseURL:'https://pdi-signature-schedule-default-rtdb.firebaseio.com'
   });
-  var FB=firebase.database().ref('schedule_v3');
-  FB.on('value',function(snap){
-    var raw=snap.val();
-    if(raw&&raw.blob){
+  firebase.database().ref('schedule_v3').on('value', function(snap){
+    var raw = snap.val();
+    if(raw && raw.blob){
       try{
-        var d=JSON.parse(raw.blob);
-        if(Array.isArray(d.events))DATA.events=d.events;
-        if(Array.isArray(d.clients))DATA.clients=d.clients;
-        if(d.providers&&typeof d.providers==='object')DATA.providers=d.providers;
-      }catch(e){console.error(e);}
+        var d = JSON.parse(raw.blob);
+        if(Array.isArray(d.events))   DATA.events    = d.events;
+        if(Array.isArray(d.clients))  DATA.clients   = d.clients;
+        if(d.providers)               DATA.providers = d.providers;
+      }catch(e){ console.error(e); }
     }
-    document.getElementById('live-dot').className='dot on';
-    document.getElementById('live-lbl').textContent='Live';
-    _fbLoaded=true;
-    document.getElementById('loading-div').style.display='none';
-    document.getElementById('main-content').style.display='block';
-    // Default to-month = current month
-    var now=new Date();
-    document.getElementById('flt-to').value=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+    document.getElementById('live-dot').className = 'dot on';
+    document.getElementById('live-lbl').textContent = 'Live';
+    _loaded = true;
+
+    // Set default to-month = now
+    var now = new Date();
+    document.getElementById('flt-to').value =
+      now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+
+    // Populate provider filter
+    var provs = [...new Set(DATA.events.map(function(e){return e.provider||'';}).filter(Boolean))].sort();
+    var sel = document.getElementById('flt-prov');
+    provs.forEach(function(p){
+      var o = document.createElement('option'); o.value=o.textContent=p; sel.appendChild(o);
+    });
+
+    document.getElementById('loading-div').style.display = 'none';
+    document.getElementById('content').style.display = 'block';
     render();
   });
 }
 
-// ── Core calculation ──────────────────────────────────────────────────────────
-function getMonthKey(dateStr){return (dateStr||'').slice(0,7);}
-function monthLabel(key){
-  var p=key.split('-');
+/* ── Helpers ──────────────────────────────────────────── */
+function isCompleted(ev){ return (ev.status||'').toLowerCase()==='completed'; }
+function isGroup(ev){ return (ev.service||'').toLowerCase().indexOf('group')>-1; }
+function isBillable(ev){ return isCompleted(ev) && !isGroup(ev); }
+function moKey(d){ return (d||'').slice(0,7); }
+function wkKey(d){
+  // Sunday-based week key
+  var dt = new Date((d||'').slice(0,10)+'T12:00:00');
+  if(isNaN(dt)) return '';
+  dt.setDate(dt.getDate() - dt.getDay());
+  return dt.toISOString().slice(0,10);
+}
+function moLabel(k){
   var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var p = k.split('-');
   return months[parseInt(p[1],10)-1]+' '+p[0];
 }
-function isCompleted(ev){return(ev.status||'').toLowerCase()==='completed';}
-function isGroup(ev){return (ev.service||'').toLowerCase().indexOf('group')>-1;}
-
-function calcHours(){
-  var fltFrom=document.getElementById('flt-from').value; // "2026-01"
-  var fltTo=document.getElementById('flt-to').value;
-  var fltProg=document.getElementById('flt-prog').value;
-
-  // Build: { month: { provider: { direct, indirect, sessions, clients:Set } } }
-  var byMonth={};
-  var allMonths=new Set();
-  var allProviders=new Set();
-
-  DATA.events.forEach(function(ev){
-    if(!ev.date||!ev.provider)return;
-    var mo=getMonthKey(ev.date);
-    if(fltFrom&&mo<fltFrom)return;
-    if(fltTo&&mo>fltTo)return;
-    // Program filter
-    if(fltProg){
-      var prog=(ev.program||'').toLowerCase();
-      if(fltProg==='Signature'&&prog!=='signature'&&prog!=='sig'&&prog!=='both')return;
-      if(fltProg==='PDI'&&prog!=='pdi'&&prog!=='both')return;
-    }
-    var prov=(ev.provider||'').trim();
-    if(!prov)return;
-    allMonths.add(mo);
-    allProviders.add(prov);
-    if(!byMonth[mo])byMonth[mo]={};
-    if(!byMonth[mo][prov])byMonth[mo][prov]={direct:0,indirect:0,sessions:0,groups:0,clients:new Set()};
-    var isComp=isCompleted(ev);
-    var isGrp=isGroup(ev);
-    if(isComp&&!isGrp){
-      byMonth[mo][prov].direct+=1; // 1 hr per completed individual session
-      byMonth[mo][prov].indirect+=INDIRECT_RATIO;
-      byMonth[mo][prov].sessions+=1;
-    } else if(isComp&&isGrp){
-      byMonth[mo][prov].groups+=1;
-      // Groups counted as 1 hr direct, shared across participants
-      byMonth[mo][prov].direct+=1;
-    }
-    if(ev.clientId)byMonth[mo][prov].clients.add(ev.clientId);
-  });
-
-  return {byMonth:byMonth, months:[...allMonths].sort(), providers:[...allProviders].sort()};
+function wkLabel(k){
+  var dt = new Date(k+'T12:00:00');
+  var end = new Date(k+'T12:00:00'); end.setDate(end.getDate()+6);
+  return (dt.getMonth()+1)+'/'+dt.getDate()+' – '+(end.getMonth()+1)+'/'+end.getDate();
 }
 
-// ── Render ────────────────────────────────────────────────────────────────────
+/* ── Filter events ────────────────────────────────────── */
+function filteredEvents(){
+  var from = document.getElementById('flt-from').value;
+  var to   = document.getElementById('flt-to').value;
+  var prog = document.getElementById('flt-prog').value;
+  var prov = document.getElementById('flt-prov').value;
+  return DATA.events.filter(function(ev){
+    if(!ev.date || !ev.provider) return false;
+    if(!isBillable(ev)) return false;
+    var mo = moKey(ev.date);
+    if(from && mo < from) return false;
+    if(to   && mo > to)   return false;
+    if(prov && ev.provider !== prov) return false;
+    if(prog){
+      var p = (ev.program||'').toLowerCase();
+      if(prog==='Signature' && p!=='signature' && p!=='sig' && p!=='both') return false;
+      if(prog==='PDI'       && p!=='pdi'       && p!=='both') return false;
+    }
+    return true;
+  });
+}
+
+/* ── Chart palette ────────────────────────────────────── */
+var PALETTE = [
+  '#1B2A4A','#7A6A56','#2D6A4F','#6B2737','#4A235A',
+  '#0A4F6E','#78350F','#1E3A5F','#3D1A6F','#065F46',
+  '#831843','#1C4532','#374151','#7C3AED','#B45309'
+];
+
+/* ── KPI row ──────────────────────────────────────────── */
+function kpi(val, lbl, note){
+  return '<div class="kpi"><div class="num">'+val+'</div><div class="lbl">'+lbl+'</div>'+
+    (note?'<div class="note">'+note+'</div>':'')+
+  '</div>';
+}
+
+/* ── Render ───────────────────────────────────────────── */
+var _charts = [];
+function destroyCharts(){ _charts.forEach(function(c){try{c.destroy();}catch(e){}}); _charts=[]; }
+
 function render(){
-  if(!_fbLoaded)return;
-  var mode=document.getElementById('view-mode').value;
-  var data=calcHours();
-  var el=document.getElementById('main-content');
-  el.innerHTML='';
+  if(!_loaded) return;
+  destroyCharts();
+  var view = document.getElementById('view').value;
+  if(view==='monthly')  renderMonthly();
+  else if(view==='weekly') renderWeekly();
+  else renderProvider();
+}
+
+/* ══════════════════════════════════════════════════════
+   MONTHLY VIEW
+══════════════════════════════════════════════════════ */
+function renderMonthly(){
+  var evs = filteredEvents();
+  var byMo={}, allMo=new Set(), allProv=new Set();
+  evs.forEach(function(ev){
+    var mo=moKey(ev.date), p=ev.provider;
+    allMo.add(mo); allProv.add(p);
+    if(!byMo[mo])byMo[mo]={total:0, provs:{}};
+    byMo[mo].total++;
+    byMo[mo].provs[p]=(byMo[mo].provs[p]||0)+1;
+  });
+  var months=[...allMo].sort();
+  var provs=[...allProv].sort(function(a,b){
+    var ta=months.reduce(function(s,m){return s+(byMo[m]&&byMo[m].provs[a]?byMo[m].provs[a]:0);},0);
+    var tb=months.reduce(function(s,m){return s+(byMo[m]&&byMo[m].provs[b]?byMo[m].provs[b]:0);},0);
+    return tb-ta;
+  });
 
   // KPIs
-  var totalDirect=0,totalSessions=0,totalProviders=new Set(),totalClients=new Set();
-  data.months.forEach(function(mo){
-    Object.entries(data.byMonth[mo]||{}).forEach(function(kv){
-      totalDirect+=kv[1].direct;
-      totalSessions+=kv[1].sessions;
-      totalProviders.add(kv[0]);
-      kv[1].clients.forEach(function(c){totalClients.add(c);});
-    });
-  });
-  var totalIndirect=Math.round(totalDirect*INDIRECT_RATIO);
+  var totalSess=evs.length;
+  var uniqueClients=new Set(evs.filter(function(e){return e.clientId;}).map(function(e){return e.clientId;})).size;
+  var topProv=provs[0]||'—';
+  var topProvSess=provs.length?months.reduce(function(s,m){return s+(byMo[m]&&byMo[m].provs[provs[0]]?byMo[m].provs[provs[0]]:0);},0):0;
 
-  el.innerHTML+='<div class="kpi-grid">'+
-    kpiCard(totalSessions,'Direct Sessions','Individual completed sessions')+
-    kpiCard(Math.round(totalDirect)+'h','Direct Hrs','@1 hr/session')+
-    kpiCard(Math.round(totalIndirect)+'h','Est. Indirect Hrs','Documentation, coordination, meetings')+
-    kpiCard(totalProviders.size,'Active Providers','Providers with ≥1 session in range')+
+  var html='<div class="kpi-row">'+
+    kpi(totalSess.toLocaleString(),'Completed Sessions','All providers · filtered period')+
+    kpi(months.length,'Months','In selected range')+
+    kpi(provs.length,'Providers','With ≥1 completed session')+
+    kpi(uniqueClients,'Unique Clients','Across all sessions')+
   '</div>';
 
-  if(mode==='monthly') renderMonthly(el, data);
-  else if(mode==='provider') renderByProvider(el, data);
-  else renderByProgram(el, data);
-}
+  // Chart 1: stacked bar by provider per month
+  html+='<div class="card"><div class="card-title">Sessions per Month — by Provider (stacked)</div>'+
+    '<div class="chart-wrap" style="height:300px"><canvas id="ch-mo-stacked"></canvas></div></div>';
 
-function kpiCard(val,lbl,sub){
-  return '<div class="kpi"><div class="val">'+val+'</div><div class="lbl">'+lbl+'</div><div class="sub">'+sub+'</div></div>';
-}
+  // Chart 2: row of two — total line + top providers
+  html+='<div class="row2">'+
+    '<div class="card"><div class="card-title">Total Sessions per Month</div>'+
+    '<div class="chart-wrap" style="height:220px"><canvas id="ch-mo-line"></canvas></div></div>'+
+    '<div class="card"><div class="card-title">Sessions by Provider — Full Period</div>'+
+    '<div class="chart-wrap" style="height:220px"><canvas id="ch-prov-doughnut"></canvas></div></div>'+
+  '</div>';
 
-// ── Monthly view ──────────────────────────────────────────────────────────────
-function renderMonthly(el, data){
-  // Chart
-  var chartDiv=document.createElement('div');
-  chartDiv.className='card';
-  chartDiv.style.marginBottom='16px';
-  chartDiv.innerHTML='<h2>Monthly Direct Service Hours — All Providers</h2><div class="chart-wrap"><canvas id="chart-monthly"></canvas></div>';
-  el.appendChild(chartDiv);
-
-  var labels=data.months.map(monthLabel);
-  var directData=data.months.map(function(mo){
-    return Object.values(data.byMonth[mo]||{}).reduce(function(s,v){return s+v.direct;},0);
+  // Table
+  html+='<div class="card"><div class="card-title">Monthly Detail — Completed Sessions by Provider</div>'+
+    '<div style="overflow-x:auto"><table><thead><tr><th>Provider</th>'+
+    months.map(function(m){return '<th class="r">'+moLabel(m)+'</th>';}).join('')+
+    '<th class="r">Total</th></tr></thead><tbody>';
+  provs.forEach(function(p){
+    var tot=0;
+    html+='<tr><td>'+p+'</td>'+months.map(function(m){
+      var v=(byMo[m]&&byMo[m].provs[p])||0;
+      tot+=v;
+      return '<td class="r">'+(v?v:'<span class="zero">—</span>')+'</td>';
+    }).join('')+'<td class="r"><b>'+tot+'</b></td></tr>';
   });
-  var indirectData=data.months.map(function(mo){
-    return Math.round(Object.values(data.byMonth[mo]||{}).reduce(function(s,v){return s+v.indirect;},0));
-  });
+  // Totals row
+  html+='<tr class="sub"><td><b>Total</b></td>'+months.map(function(m){
+    return '<td class="r"><b>'+((byMo[m]&&byMo[m].total)||0)+'</b></td>';
+  }).join('')+'<td class="r"><b>'+totalSess+'</b></td></tr>';
+  html+='</tbody></table></div></div>';
 
+  document.getElementById('content').innerHTML=html;
+
+  // Build charts
   setTimeout(function(){
-    new Chart(document.getElementById('chart-monthly'),{
+    // Stacked bar
+    var datasets=provs.slice(0,12).map(function(p,pi){
+      return{
+        label:p,
+        data:months.map(function(m){return(byMo[m]&&byMo[m].provs[p])||0;}),
+        backgroundColor:PALETTE[pi%PALETTE.length],
+        borderRadius:2, borderSkipped:false
+      };
+    });
+    _charts.push(new Chart(document.getElementById('ch-mo-stacked'),{
       type:'bar',
-      data:{labels:labels,datasets:[
-        {label:'Direct Hrs',data:directData,backgroundColor:'#1B2A4A',borderRadius:4},
-        {label:'Est. Indirect Hrs',data:indirectData,backgroundColor:'#7A6A56',borderRadius:4}
-      ]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{x:{stacked:false},y:{beginAtZero:true,title:{display:true,text:'Hours'}}}}
-    });
-  },50);
+      data:{labels:months.map(moLabel), datasets:datasets},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{position:'right',labels:{font:{size:10},boxWidth:12}}},
+        scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true,title:{display:true,text:'Sessions'}}}}
+    }));
 
-  // Provider breakdown chart
-  var pChartDiv=document.createElement('div');
-  pChartDiv.className='grid-2';
-  pChartDiv.innerHTML=
-    '<div class="card"><h2>Hours by Provider (Total Period)</h2><div class="chart-wrap"><canvas id="chart-prov"></canvas></div></div>'+
-    '<div class="card"><h2>Sessions Trend by Month</h2><div class="chart-wrap"><canvas id="chart-trend"></canvas></div></div>';
-  el.appendChild(pChartDiv);
-
-  // Total per provider
-  var provTotals={};
-  data.months.forEach(function(mo){
-    Object.entries(data.byMonth[mo]||{}).forEach(function(kv){
-      if(!provTotals[kv[0]])provTotals[kv[0]]=0;
-      provTotals[kv[0]]+=kv[1].direct;
-    });
-  });
-  var sortedProvs=Object.entries(provTotals).sort(function(a,b){return b[1]-a[1];});
-  var colors=['#1B2A4A','#7A6A56','#2D4A3E','#4A235A','#784212','#1A3A5C','#922B21','#145A32','#0E5A38','#1A5276','#6B2737','#4A4A00'];
-
-  setTimeout(function(){
-    new Chart(document.getElementById('chart-prov'),{
-      type:'doughnut',
-      data:{
-        labels:sortedProvs.map(function(p){return p[0];}),
-        datasets:[{data:sortedProvs.map(function(p){return Math.round(p[1]);}),backgroundColor:colors,borderWidth:2}]
-      },
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:10},boxWidth:12}}}}
-    });
-    // Trend line per top-5 providers
-    var top5=sortedProvs.slice(0,5).map(function(p){return p[0];});
-    new Chart(document.getElementById('chart-trend'),{
+    // Total line
+    _charts.push(new Chart(document.getElementById('ch-mo-line'),{
       type:'line',
-      data:{labels:labels,datasets:top5.map(function(prov,pi){
-        return{label:prov,data:data.months.map(function(mo){return(data.byMonth[mo]&&data.byMonth[mo][prov])?Math.round(data.byMonth[mo][prov].direct):0;}),
-          borderColor:colors[pi],backgroundColor:colors[pi]+'22',tension:.3,pointRadius:3,fill:false};
+      data:{labels:months.map(moLabel),datasets:[{
+        label:'Sessions',data:months.map(function(m){return(byMo[m]&&byMo[m].total)||0;}),
+        borderColor:'#1B2A4A',backgroundColor:'#1B2A4A22',tension:.3,pointRadius:4,fill:true
+      }]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+        scales:{y:{beginAtZero:true,title:{display:true,text:'Sessions'}},x:{grid:{display:false}}}}
+    }));
+
+    // Doughnut
+    var provTotals=provs.map(function(p){
+      return months.reduce(function(s,m){return s+(byMo[m]&&byMo[m].provs[p]?byMo[m].provs[p]:0);},0);
+    });
+    _charts.push(new Chart(document.getElementById('ch-prov-doughnut'),{
+      type:'doughnut',
+      data:{labels:provs,datasets:[{
+        data:provTotals,backgroundColor:PALETTE.slice(0,provs.length),borderWidth:2,borderColor:'#fff'
+      }]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{position:'right',labels:{font:{size:10},boxWidth:12,padding:6}}}}
+    }));
+  },60);
+}
+
+/* ══════════════════════════════════════════════════════
+   WEEKLY VIEW
+══════════════════════════════════════════════════════ */
+function renderWeekly(){
+  var evs = filteredEvents();
+  var byWk={}, allWk=new Set(), allProv=new Set();
+  evs.forEach(function(ev){
+    var wk=wkKey(ev.date), p=ev.provider;
+    if(!wk) return;
+    allWk.add(wk); allProv.add(p);
+    if(!byWk[wk])byWk[wk]={total:0,provs:{}};
+    byWk[wk].total++;
+    byWk[wk].provs[p]=(byWk[wk].provs[p]||0)+1;
+  });
+  var weeks=[...allWk].sort();
+  var provs=[...allProv].sort(function(a,b){
+    var ta=weeks.reduce(function(s,w){return s+(byWk[w]&&byWk[w].provs[a]?byWk[w].provs[a]:0);},0);
+    var tb=weeks.reduce(function(s,w){return s+(byWk[w]&&byWk[w].provs[b]?byWk[w].provs[b]:0);},0);
+    return tb-ta;
+  });
+
+  var totalSess=evs.length;
+  var avgWk=weeks.length?Math.round(totalSess/weeks.length):0;
+
+  var html='<div class="kpi-row">'+
+    kpi(totalSess.toLocaleString(),'Completed Sessions','Filtered period')+
+    kpi(weeks.length,'Billing Weeks','In selected range')+
+    kpi(avgWk,'Avg Sessions/Week','')+
+    kpi(provs.length,'Active Providers','')+
+  '</div>';
+
+  // Chart: weekly totals bar
+  html+='<div class="card"><div class="card-title">Weekly Session Count — All Providers</div>'+
+    '<div class="chart-wrap" style="height:260px"><canvas id="ch-wk-bar"></canvas></div></div>';
+
+  // Chart 2: top providers weekly heatmap-style line
+  html+='<div class="card"><div class="card-title">Weekly Sessions — Top Providers</div>'+
+    '<div class="chart-wrap" style="height:260px"><canvas id="ch-wk-line"></canvas></div></div>';
+
+  // Weekly table (most recent 12 weeks)
+  var recentWks=weeks.slice(-12);
+  html+='<div class="card"><div class="card-title">Weekly Detail — Most Recent 12 Weeks</div>'+
+    '<div style="overflow-x:auto"><table><thead><tr><th>Provider</th>'+
+    recentWks.map(function(w){return '<th class="r">'+wkLabel(w)+'</th>';}).join('')+
+    '<th class="r">Total</th></tr></thead><tbody>';
+  provs.forEach(function(p){
+    var rowTotal=0;
+    var cells=recentWks.map(function(w){
+      var v=(byWk[w]&&byWk[w].provs[p])||0; rowTotal+=v;
+      return '<td class="r">'+(v?v:'<span class="zero">—</span>')+'</td>';
+    }).join('');
+    if(rowTotal>0)
+      html+='<tr><td>'+p+'</td>'+cells+'<td class="r"><b>'+rowTotal+'</b></td></tr>';
+  });
+  html+='</tbody></table></div></div>';
+
+  document.getElementById('content').innerHTML=html;
+
+  setTimeout(function(){
+    // Weekly bar
+    var labels=weeks.map(wkLabel);
+    _charts.push(new Chart(document.getElementById('ch-wk-bar'),{
+      type:'bar',
+      data:{labels:labels,datasets:[{
+        label:'Sessions',data:weeks.map(function(w){return(byWk[w]&&byWk[w].total)||0;}),
+        backgroundColor:'#1B2A4A',borderRadius:3
+      }]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+        scales:{x:{grid:{display:false},ticks:{maxRotation:45,font:{size:9}}},
+          y:{beginAtZero:true,title:{display:true,text:'Sessions'}}}}
+    }));
+
+    // Top 6 providers line
+    var top6=provs.slice(0,6);
+    _charts.push(new Chart(document.getElementById('ch-wk-line'),{
+      type:'line',
+      data:{labels:labels,datasets:top6.map(function(p,pi){
+        return{label:p,
+          data:weeks.map(function(w){return(byWk[w]&&byWk[w].provs[p])||0;}),
+          borderColor:PALETTE[pi],backgroundColor:'transparent',tension:.2,pointRadius:2,borderWidth:2};
       })},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:12}}},scales:{y:{beginAtZero:true}}}
-    });
-  },100);
-
-  // Table
-  var tableDiv=document.createElement('div');
-  tableDiv.className='card';
-  var thead='<thead><tr><th>Month</th><th class="num">Sessions</th><th class="num">Direct Hrs</th><th class="num">Est. Indirect Hrs</th><th class="num">Total Est. Hrs</th><th class="num">Providers Active</th><th class="num">Unique Clients</th></tr></thead>';
-  var tbody='<tbody>';
-  data.months.forEach(function(mo){
-    var rows=Object.values(data.byMonth[mo]||{});
-    var sess=rows.reduce(function(s,v){return s+v.sessions;},0);
-    var dir=rows.reduce(function(s,v){return s+v.direct;},0);
-    var ind=Math.round(dir*INDIRECT_RATIO);
-    var clients=new Set();rows.forEach(function(r){r.clients.forEach(function(c){clients.add(c);});});
-    tbody+='<tr><td><b>'+monthLabel(mo)+'</b></td>'+
-      '<td class="num">'+sess+'</td>'+
-      '<td class="num">'+Math.round(dir)+' hrs</td>'+
-      '<td class="num">'+ind+' hrs</td>'+
-      '<td class="num"><b>'+(Math.round(dir)+ind)+' hrs</b></td>'+
-      '<td class="num">'+Object.keys(data.byMonth[mo]||{}).length+'</td>'+
-      '<td class="num">'+clients.size+'</td>'+
-    '</tr>';
-  });
-  tbody+='</tbody>';
-  tableDiv.innerHTML='<h2>Monthly Detail</h2><div style="overflow-x:auto"><table>'+thead+tbody+'</table></div>';
-  el.appendChild(tableDiv);
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{position:'right',labels:{font:{size:10},boxWidth:12}}},
+        scales:{x:{grid:{display:false},ticks:{maxRotation:45,font:{size:9}}},
+          y:{beginAtZero:true,title:{display:true,text:'Sessions'}}}}
+    }));
+  },60);
 }
 
-// ── By Provider view ──────────────────────────────────────────────────────────
-function renderByProvider(el, data){
-  var provTotals={};
-  data.months.forEach(function(mo){
-    Object.entries(data.byMonth[mo]||{}).forEach(function(kv){
-      if(!provTotals[kv[0]])provTotals[kv[0]]={direct:0,indirect:0,sessions:0,months:new Set(),clients:new Set()};
-      provTotals[kv[0]].direct+=kv[1].direct;
-      provTotals[kv[0]].indirect+=kv[1].indirect;
-      provTotals[kv[0]].sessions+=kv[1].sessions;
-      provTotals[kv[0]].months.add(mo);
-      kv[1].clients.forEach(function(c){provTotals[kv[0]].clients.add(c);});
-    });
-  });
-
-  // Bar chart
-  var sortedProvs=Object.entries(provTotals).sort(function(a,b){return b[1].direct-a[1].direct;});
-  var chartDiv=document.createElement('div');
-  chartDiv.className='card'; chartDiv.style.marginBottom='16px';
-  chartDiv.innerHTML='<h2>Direct Service Hours by Provider — Full Period</h2><div class="chart-wrap" style="height:320px"><canvas id="chart-by-prov"></canvas></div>';
-  el.appendChild(chartDiv);
-
-  setTimeout(function(){
-    new Chart(document.getElementById('chart-by-prov'),{
-      type:'bar',
-      data:{
-        labels:sortedProvs.map(function(p){return p[0];}),
-        datasets:[
-          {label:'Direct Hrs',data:sortedProvs.map(function(p){return Math.round(p[1].direct);}),backgroundColor:'#1B2A4A',borderRadius:4},
-          {label:'Est. Indirect Hrs',data:sortedProvs.map(function(p){return Math.round(p[1].indirect);}),backgroundColor:'#7A6A56',borderRadius:4}
-        ]
-      },
-      options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{position:'bottom'}},scales:{x:{stacked:false,beginAtZero:true,title:{display:true,text:'Hours'}}}}
-    });
-  },50);
-
-  // Table
-  var tableDiv=document.createElement('div');
-  tableDiv.className='card';
-  var thead='<thead><tr><th>Provider</th><th class="num">Sessions</th><th class="num">Direct Hrs</th><th class="num">Est. Indirect Hrs</th><th class="num">Total Est. Hrs</th><th class="num">Active Months</th><th class="num">Unique Clients</th><th>Type</th></tr></thead>';
-  var tbody='<tbody>';
-  sortedProvs.forEach(function(kv){
-    var pr=DATA.providers[kv[0]]||{};
-    var type=pr.stipendType||'Session';
-    tbody+='<tr>'+
-      '<td><b>'+kv[0]+'</b></td>'+
-      '<td class="num">'+kv[1].sessions+'</td>'+
-      '<td class="num">'+Math.round(kv[1].direct)+' hrs</td>'+
-      '<td class="num">'+Math.round(kv[1].indirect)+' hrs</td>'+
-      '<td class="num"><b>'+(Math.round(kv[1].direct)+Math.round(kv[1].indirect))+' hrs</b></td>'+
-      '<td class="num">'+kv[1].months.size+'</td>'+
-      '<td class="num">'+kv[1].clients.size+'</td>'+
-      '<td><span class="badge badge-blue">'+type+'</span></td>'+
-    '</tr>';
-  });
-  tbody+='</tbody>';
-  tableDiv.innerHTML='<h2>Provider Detail — Full Period</h2><div style="overflow-x:auto"><table>'+thead+tbody+'</table></div>';
-  el.appendChild(tableDiv);
-
-  // Per-provider monthly breakdown
-  var detailDiv=document.createElement('div');
-  detailDiv.className='card'; detailDiv.style.marginTop='16px';
-  var dHtml='<h2>Provider Monthly Breakdown</h2><div style="overflow-x:auto"><table><thead><tr><th>Provider</th>'+
-    data.months.map(function(mo){return '<th class="num">'+monthLabel(mo)+'<br><span style="font-weight:400;font-size:9px">Direct / Sessions</span></th>';}).join('')+
-    '<th class="num">Total</th></tr></thead><tbody>';
-  sortedProvs.forEach(function(kv){
-    dHtml+='<tr><td><b>'+kv[0]+'</b></td>'+
-      data.months.map(function(mo){
-        var r=data.byMonth[mo]&&data.byMonth[mo][kv[0]];
-        if(!r||!r.sessions)return '<td class="num" style="color:#ccc">—</td>';
-        return '<td class="num">'+Math.round(r.direct)+'h / '+r.sessions+'</td>';
-      }).join('')+
-      '<td class="num"><b>'+Math.round(kv[1].direct)+'h</b></td></tr>';
-  });
-  dHtml+='</tbody></table></div>';
-  detailDiv.innerHTML=dHtml;
-  el.appendChild(detailDiv);
-}
-
-// ── By Program view ───────────────────────────────────────────────────────────
-function renderByProgram(el, data){
-  var sigData={},pdiData={},allData={};
-  DATA.events.forEach(function(ev){
-    if(!ev.date||!ev.provider||!isCompleted(ev)||isGroup(ev))return;
-    var mo=getMonthKey(ev.date);
-    var fltFrom=document.getElementById('flt-from').value;
-    var fltTo=document.getElementById('flt-to').value;
-    if(fltFrom&&mo<fltFrom)return;
-    if(fltTo&&mo>fltTo)return;
+/* ══════════════════════════════════════════════════════
+   BY PROVIDER VIEW
+══════════════════════════════════════════════════════ */
+function renderProvider(){
+  var evs = filteredEvents();
+  var byProv={};
+  evs.forEach(function(ev){
+    var p=ev.provider;
+    if(!byProv[p])byProv[p]={sessions:0,months:new Set(),clients:new Set(),weeks:new Set(),
+      bySig:0,byPDI:0,moData:{}};
+    byProv[p].sessions++;
+    var mo=moKey(ev.date);
+    byProv[p].months.add(mo);
+    byProv[p].weeks.add(wkKey(ev.date));
+    if(ev.clientId)byProv[p].clients.add(ev.clientId);
     var prog=(ev.program||'').toLowerCase();
-    var isSig=prog==='signature'||prog==='sig';
-    var isPDI=prog==='pdi';
-    [allData,isSig?sigData:null,isPDI?pdiData:null].forEach(function(d){
-      if(!d)return;
-      if(!d[mo])d[mo]={direct:0,sessions:0};
-      d[mo].direct+=1; d[mo].sessions+=1;
-    });
+    if(prog==='signature'||prog==='sig')byProv[p].bySig++;
+    else if(prog==='pdi')byProv[p].byPDI++;
+    byProv[p].moData[mo]=(byProv[p].moData[mo]||0)+1;
   });
 
-  var months=data.months;
-  var chartDiv=document.createElement('div');
-  chartDiv.className='card'; chartDiv.style.marginBottom='16px';
-  chartDiv.innerHTML='<h2>Monthly Sessions by Program</h2><div class="chart-wrap"><canvas id="chart-prog"></canvas></div>';
-  el.appendChild(chartDiv);
+  var provs=Object.entries(byProv).sort(function(a,b){return b[1].sessions-a[1].sessions;});
 
-  setTimeout(function(){
-    new Chart(document.getElementById('chart-prog'),{
-      type:'bar',
-      data:{labels:months.map(monthLabel),datasets:[
-        {label:'Signature',data:months.map(function(mo){return sigData[mo]?sigData[mo].sessions:0;}),backgroundColor:'#4A235A',borderRadius:4},
-        {label:'PDI',data:months.map(function(mo){return pdiData[mo]?pdiData[mo].sessions:0;}),backgroundColor:'#7A6A56',borderRadius:4}
-      ]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true}}}
-    });
-  },50);
+  var html='<div class="kpi-row">'+
+    kpi(provs.length,'Providers','With sessions in period')+
+    kpi(evs.length.toLocaleString(),'Total Sessions','')+
+    kpi(provs.length?provs[0][0]:'—','Top Provider',provs.length?provs[0][1].sessions+' sessions':'')+
+    kpi(provs.length?Math.round(evs.length/provs.length):0,'Avg Sessions/Provider','')+
+  '</div>';
 
-  var tableDiv=document.createElement('div');
-  tableDiv.className='card';
-  tableDiv.innerHTML='<h2>Program Detail by Month</h2><div style="overflow-x:auto"><table><thead><tr>'+
-    '<th>Month</th><th class="num">Sig Sessions</th><th class="num">Sig Direct Hrs</th>'+
-    '<th class="num">PDI Sessions</th><th class="num">PDI Direct Hrs</th>'+
-    '<th class="num">Total Sessions</th><th class="num">Total Direct Hrs</th></tr></thead><tbody>'+
-    months.map(function(mo){
-      var s=sigData[mo]||{direct:0,sessions:0};
-      var p=pdiData[mo]||{direct:0,sessions:0};
-      var a=allData[mo]||{direct:0,sessions:0};
-      return '<tr><td><b>'+monthLabel(mo)+'</b></td>'+
-        '<td class="num">'+s.sessions+'</td><td class="num">'+Math.round(s.direct)+' hrs</td>'+
-        '<td class="num">'+p.sessions+'</td><td class="num">'+Math.round(p.direct)+' hrs</td>'+
-        '<td class="num"><b>'+a.sessions+'</b></td><td class="num"><b>'+Math.round(a.direct)+' hrs</b></td>'+
+  // Horizontal bar
+  html+='<div class="card"><div class="card-title">Total Completed Sessions by Provider</div>'+
+    '<div class="chart-wrap" style="height:'+(Math.max(280,provs.length*28))+'px">'+
+    '<canvas id="ch-prov-bar"></canvas></div></div>';
+
+  // Sig vs PDI split
+  html+='<div class="row2">'+
+    '<div class="card"><div class="card-title">Signature vs PDI Sessions by Provider</div>'+
+    '<div class="chart-wrap" style="height:260px"><canvas id="ch-prov-split"></canvas></div></div>'+
+    '<div class="card"><div class="card-title">Sessions per Active Month — Provider Average</div>'+
+    '<div class="chart-wrap" style="height:260px"><canvas id="ch-prov-rate"></canvas></div></div>'+
+  '</div>';
+
+  // Table
+  html+='<div class="card"><div class="card-title">Provider Detail — Full Period</div>'+
+    '<div style="overflow-x:auto"><table><thead><tr>'+
+    '<th>Provider</th><th class="r">Sessions</th><th class="r">Sig</th><th class="r">PDI</th>'+
+    '<th class="r">Active Months</th><th class="r">Active Weeks</th>'+
+    '<th class="r">Unique Clients</th><th class="r">Avg/Month</th></tr></thead><tbody>'+
+    provs.map(function(kv){
+      var r=kv[1];
+      return '<tr>'+
+        '<td><b>'+kv[0]+'</b></td>'+
+        '<td class="r"><b>'+r.sessions+'</b></td>'+
+        '<td class="r">'+(r.bySig||'—')+'</td>'+
+        '<td class="r">'+(r.byPDI||'—')+'</td>'+
+        '<td class="r">'+r.months.size+'</td>'+
+        '<td class="r">'+r.weeks.size+'</td>'+
+        '<td class="r">'+r.clients.size+'</td>'+
+        '<td class="r">'+(r.months.size?Math.round(r.sessions/r.months.size):r.sessions)+'</td>'+
       '</tr>';
     }).join('')+
-    '</tbody></table></div>';
-  el.appendChild(tableDiv);
+    '</tbody></table></div></div>';
+
+  document.getElementById('content').innerHTML=html;
+
+  setTimeout(function(){
+    var labels=provs.map(function(p){return p[0];});
+    var vals=provs.map(function(p){return p[1].sessions;});
+
+    // Horizontal bar
+    _charts.push(new Chart(document.getElementById('ch-prov-bar'),{
+      type:'bar',
+      data:{labels:labels,datasets:[{
+        label:'Sessions',data:vals,backgroundColor:'#1B2A4A',borderRadius:3
+      }]},
+      options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+        plugins:{legend:{display:false}},
+        scales:{x:{beginAtZero:true,title:{display:true,text:'Completed Sessions'}},
+          y:{grid:{display:false}}}}
+    }));
+
+    // Stacked Sig/PDI
+    _charts.push(new Chart(document.getElementById('ch-prov-split'),{
+      type:'bar',
+      data:{labels:labels,datasets:[
+        {label:'Signature',data:provs.map(function(p){return p[1].bySig||0;}),backgroundColor:'#1B2A4A',borderRadius:2},
+        {label:'PDI',data:provs.map(function(p){return p[1].byPDI||0;}),backgroundColor:'#7A6A56',borderRadius:2}
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+        plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:12}}},
+        scales:{x:{stacked:true,beginAtZero:true},y:{stacked:true,grid:{display:false}}}}
+    }));
+
+    // Rate
+    var rates=provs.map(function(p){
+      return p[1].months.size?Math.round(p[1].sessions/p[1].months.size):p[1].sessions;
+    });
+    _charts.push(new Chart(document.getElementById('ch-prov-rate'),{
+      type:'bar',
+      data:{labels:labels,datasets:[{
+        label:'Avg sessions/month',data:rates,backgroundColor:'#2D6A4F',borderRadius:3
+      }]},
+      options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+        plugins:{legend:{display:false}},
+        scales:{x:{beginAtZero:true,title:{display:true,text:'Sessions/Month'}},y:{grid:{display:false}}}}
+    }));
+  },60);
 }
 
-// ── Export ────────────────────────────────────────────────────────────────────
+/* ── Export ───────────────────────────────────────────── */
 function exportCSV(){
-  var data=calcHours();
-  var rows=[['Month','Provider','Sessions','Direct Hrs','Est Indirect Hrs','Total Est Hrs','Unique Clients']];
-  data.months.forEach(function(mo){
-    Object.entries(data.byMonth[mo]||{}).forEach(function(kv){
-      var r=kv[1];
-      rows.push([monthLabel(mo),kv[0],r.sessions,Math.round(r.direct),Math.round(r.indirect),Math.round(r.direct+r.indirect),r.clients.size]);
-    });
+  var evs=filteredEvents();
+  var rows=[['Date','Week','Month','Provider','Client ID','Program','Service','Status']];
+  evs.forEach(function(ev){
+    rows.push([ev.date,wkKey(ev.date),moKey(ev.date),ev.provider||'',ev.clientId||'',ev.program||'',ev.service||'',ev.status||'']);
   });
-  var csv=rows.map(function(r){return r.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var csv=rows.map(function(r){return r.map(function(v){return'"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
   var a=document.createElement('a');
   a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
   a.download='Clinical_Hours_'+new Date().toISOString().slice(0,10)+'.csv';
