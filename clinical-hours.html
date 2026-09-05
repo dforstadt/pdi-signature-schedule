@@ -565,6 +565,36 @@ function renderProvider(){
     }).join('')+
     '</tbody></table></div></div>';
 
+  // Build ancillary-in-clinician breakdown
+  var clinWithAnc=Object.entries(byProv).filter(function(kv){return kv[1].clin>0&&kv[1].anc>0;});
+  if(clinWithAnc.length){
+    html+='<div class="card"><div class="card-title" style="color:#92400E">⚠ Ancillary Sessions on Clinician Providers — Service Type Audit</div>'+
+      '<div style="font-size:11px;color:#888;margin-bottom:12px">These providers are classified as Clinicians but have sessions with service labels that did not match a clinician keyword. Review to confirm correct classification or add keywords.</div>'+
+      '<div style="overflow-x:auto"><table><thead><tr>'+
+      '<th>Provider</th><th class="r">Clinician Sess</th><th class="r">Ancillary Sess</th>'+
+      '<th>Ancillary Service Labels (from calendar)</th></tr></thead><tbody>'+
+      clinWithAnc.sort(function(a,b){return b[1].anc-a[1].anc;}).map(function(kv){
+        // Get ancillary service types for this provider
+        var ancServices={};
+        evs.forEach(function(ev){
+          if(ev.provider!==kv[0])return;
+          if(!isClinician(ev)){
+            var s=ev.service||'(unlabeled)';
+            ancServices[s]=(ancServices[s]||0)+1;
+          }
+        });
+        var svcHtml=Object.entries(ancServices).sort(function(a,b){return b[1]-a[1];}).map(function(sv){
+          return '<span style="display:inline-block;margin:2px;padding:2px 8px;background:#FEF3C7;color:#92400E;border-radius:10px;font-size:10px;font-weight:600">'+sv[0]+' ('+sv[1]+')</span>';
+        }).join('');
+        return '<tr>'+
+          '<td><b>'+kv[0]+'</b></td>'+
+          '<td class="r"><span style="color:#1B2A4A;font-weight:600">'+kv[1].clin+'</span></td>'+
+          '<td class="r"><span style="color:#92400E;font-weight:600">'+kv[1].anc+'</span></td>'+
+          '<td>'+svcHtml+'</td></tr>';
+      }).join('')+
+    '</tbody></table></div></div>';
+  }
+
   document.getElementById('content').innerHTML=html;
 
   setTimeout(function(){
