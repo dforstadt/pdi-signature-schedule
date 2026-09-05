@@ -161,7 +161,10 @@ function isClinician(ev){
     if(prov.indexOf(FORCE_ANCILLARY_PROVS[i].toLowerCase())>-1) return false;
   }
   var s=(ev.service||'').toLowerCase();
-  return s.indexOf('individual')>-1 || s.indexOf('family')>-1 || s.indexOf('therapy')>-1;
+  return s.indexOf('individual')>-1 || s.indexOf('family')>-1 ||
+         s.indexOf('therapy')>-1 || s.indexOf('testing')>-1 ||
+         s.indexOf('assessment')>-1 || s.indexOf('psychometric')>-1 ||
+         s.indexOf('neuropsych')>-1 || s.indexOf('evaluation')>-1;
 }
 function isCompleted(ev){ return (ev.status||'').toLowerCase()==='completed'; }
 function isGroup(ev){ return (ev.service||'').toLowerCase().indexOf('group')>-1; }
