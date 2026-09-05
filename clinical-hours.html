@@ -416,66 +416,122 @@ function renderProvider(el,evs){
   },60);
 }
 
-/* ═══ CLIENT DAILY AUDIT ═════════════════════ */
+/* ═══ CLIENT DAILY AUDIT — WEEK CAROUSEL ══════ */
+var _auditWkIdx=0;
 function renderClientAudit(el,evs){
-  var byCD={};var cnames={};
+  var byCD={};var cnames={};var allWks=new Set();
   evs.forEach(function(ev){
     if(!ev.clientId||!ev.date)return;
-    var k=ev.clientId+'|'+ev.date.slice(0,10);
-    if(!byCD[k])byCD[k]={id:ev.clientId,date:ev.date.slice(0,10),clin:0,anc:0,svcs:[]};
-    var _ch=getHrs(ev);if(isClin(ev))byCD[k].clin+=_ch;else byCD[k].anc+=_ch;
-    byCD[k].svcs.push(ev.service||'?');
-    if(!cnames[ev.clientId]){var cl=DATA.clients.find(function(c){return c.id===ev.clientId;});cnames[ev.clientId]=cl?cl.name||ev.clientId:ev.clientId;}
+    var day=ev.date.slice(0,10);
+    var wk=wkSun(day);
+    var k=ev.clientId+'|'+day;
+    var h=getHrs(ev);
+    if(!byCD[k])byCD[k]={id:ev.clientId,date:day,wk:wk,total:0};
+    byCD[k].total+=h;
+    allWks.add(wk);
+    if(!cnames[ev.clientId]){
+      var cl=DATA.clients.find(function(c){return c.id===ev.clientId;});
+      cnames[ev.clientId]=cl?cl.name||ev.clientId:ev.clientId;
+    }
   });
-  var rows=Object.values(byCD).sort(function(a,b){return a.date<b.date?1:-1;});
-  rows.forEach(function(r){r.total=r.clin+r.anc;});
-  var met=rows.filter(function(r){return r.total===TARGET;}).length;
-  var over=rows.filter(function(r){return r.total>TARGET;}).length;
-  var under=rows.filter(function(r){return r.total<TARGET;}).length;
-  var pct=rows.length?Math.round((met+over)/rows.length*100):0;
+  var weeks=[...allWks].sort();
+  if(!weeks.length){
+    el.innerHTML='<div class="card" style="color:#888;text-align:center;padding:40px">No session data.</div>';
+    return;
+  }
+  if(_auditWkIdx>=weeks.length)_auditWkIdx=weeks.length-1;
+  if(_auditWkIdx<0)_auditWkIdx=0;
 
-  var byDate={};rows.forEach(function(r){if(!byDate[r.date])byDate[r.date]={met:0,over:0,under:0};
-    if(r.total===TARGET)byDate[r.date].met++;else if(r.total>TARGET)byDate[r.date].over++;else byDate[r.date].under++;});
-  var dates=Object.keys(byDate).sort();
-
+  // Overall KPIs
+  var allRows=Object.values(byCD);
+  var totDays=allRows.length;
+  var totMet=allRows.filter(function(r){return r.total>=TARGET;}).length;
+  var totPct=totDays?Math.round(totMet/totDays*100):0;
   el.innerHTML='<div class="krow k4">'+
-    kpi(rows.length,'Total Client-Days','')+
-    kpi(met,'Met ('+TARGET+' hrs)','','ck')+
-    kpi(over,'Exceeding (>'+TARGET+' hrs)','Review scheduling','co')+
-    kpi(under,'Under (<'+TARGET+' hrs)','','cw')+
+    kpi(totDays,'Total Client-Days','All weeks in range')+
+    kpi(totMet,'Met Target (≥'+TARGET+' hrs)','','ck')+
+    kpi(totDays-totMet,'Under Target','','cw')+
+    kpi(totPct+'%','Overall Compliance','',totPct>=80?'ck':'cw')+
   '</div>';
 
-  var c1=document.createElement('div');c1.className='card';
-  c1.innerHTML='<div class="ct">Daily Client Compliance — '+TARGET+' Hours Target</div>'+
-    '<div class="cw" style="height:240px"><canvas id="ch-ca1"></canvas></div>';
-  el.appendChild(c1);
+  var wkStart=weeks[_auditWkIdx];
+  var days=[],dayLabels=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  for(var d=0;d<7;d++){
+    var dt=new Date(wkStart+'T12:00:00');dt.setDate(dt.getDate()+d);
+    days.push(dt.toISOString().slice(0,10));
+  }
+  var wkEnd=days[6];
 
-  var tbl='<div class="card"><div class="ct">Client-Day Detail — Most Recent 60 Days</div>'+
-    '<div style="overflow-x:auto"><table><thead><tr>'+
-    '<th>Date</th><th>Client</th><th class="r">Clinician</th><th class="r">Ancillary</th>'+
-    '<th class="r">Total</th><th>Status</th></tr></thead><tbody>'+
-    rows.slice(0,80).map(function(r){
-      var cls=r.total===TARGET?'rg':r.total>TARGET?'ro':'rw';
-      var b=r.total===TARGET?'<span class="badge bk">✓ '+TARGET+' hrs</span>':
-        r.total>TARGET?'<span class="badge bb">⬆ '+r.total+' hrs</span>':
-        '<span class="badge bam">⬇ '+r.total+'/'+TARGET+' hrs</span>';
-      return '<tr class="'+cls+'"><td>'+dayLbl(r.date)+'</td><td><b>'+cnames[r.id]+'</b></td>'+
-        '<td class="r">'+r.clin+'</td><td class="r">'+r.anc+'</td>'+
-        '<td class="r"><b>'+r.total+'</b></td><td>'+b+'</td></tr>';}).join('')+
-    '</tbody></table></div></div>';
-  el.innerHTML+=tbl;
+  // Clients this week
+  var wkEntries=Object.values(byCD).filter(function(r){return r.wk===wkStart;});
+  var lookup={};
+  wkEntries.forEach(function(r){lookup[r.id+'|'+r.date]=r.total;});
+  var clientIds=[...new Set(wkEntries.map(function(r){return r.id;}))];
+  clientIds.sort(function(a,b){return (cnames[a]||'').localeCompare(cnames[b]||'');});
 
-  setTimeout(function(){
-    _ch.push(new Chart(document.getElementById('ch-ca1'),{type:'bar',
-      data:{labels:dates.map(dayLbl),datasets:[
-        {label:'Met',data:dates.map(function(d){return byDate[d].met;}),backgroundColor:'#2D6A4F',borderRadius:2},
-        {label:'Exceeding',data:dates.map(function(d){return byDate[d].over;}),backgroundColor:'#1A56DB',borderRadius:2},
-        {label:'Under',data:dates.map(function(d){return byDate[d].under;}),backgroundColor:'#D97706',borderRadius:2}]},
-      options:{responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:12}}},
-        scales:{x:{stacked:true,grid:{display:false},ticks:{maxRotation:45,font:{size:9}}},
-          y:{stacked:true,beginAtZero:true,title:{display:true,text:'Client-Days'}}}}}));
-  },60);
+  var wkMet=wkEntries.filter(function(r){return r.total>=TARGET;}).length;
+  var wkPct=wkEntries.length?Math.round(wkMet/wkEntries.length*100):0;
+
+  var wkLbl=moLbl(wkStart.slice(0,7))+' '+parseInt(wkStart.slice(8),10)+
+    ' – '+moLbl(wkEnd.slice(0,7))+' '+parseInt(wkEnd.slice(8),10)+', '+wkEnd.slice(0,4);
+
+  var card=document.createElement('div');card.className='card';
+  var prevDis=_auditWkIdx===0?'opacity:.3;pointer-events:none;':'cursor:pointer;';
+  var nextDis=_auditWkIdx===weeks.length-1?'opacity:.3;pointer-events:none;':'cursor:pointer;';
+  card.innerHTML=
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'+
+    '<button onclick="_auditWkIdx--;render()" style="padding:6px 18px;border:1.5px solid #E5E2DE;border-radius:6px;background:#fff;font-size:14px;font-weight:700;'+prevDis+'">←</button>'+
+    '<div style="text-align:center">'+
+      '<div style="font-size:14px;font-weight:700;color:#1B2A4A">'+wkLbl+'</div>'+
+      '<div style="font-size:11px;color:#888;margin-top:3px">Week '+(_auditWkIdx+1)+' of '+weeks.length+' &nbsp;·&nbsp; '+wkMet+'/'+wkEntries.length+' client-days met target &nbsp;·&nbsp; '+wkPct+'% compliance</div>'+
+    '</div>'+
+    '<button onclick="_auditWkIdx++;render()" style="padding:6px 18px;border:1.5px solid #E5E2DE;border-radius:6px;background:#fff;font-size:14px;font-weight:700;'+nextDis+'">→</button>'+
+    '</div>';
+
+  if(!clientIds.length){
+    card.innerHTML+='<div style="text-align:center;color:#888;padding:20px">No sessions this week.</div>';
+    el.appendChild(card);return;
+  }
+
+  var tbl='<div style="overflow-x:auto"><table><thead><tr>'+
+    '<th style="min-width:150px">Client</th>'+
+    days.map(function(day,di){
+      var dt=new Date(day+'T12:00:00');
+      return '<th class="r" style="min-width:72px">'+dayLabels[di]+'<br><span style="font-size:9px;font-weight:400">'+(dt.getMonth()+1)+'/'+dt.getDate()+'</span></th>';
+    }).join('')+
+    '<th class="r">Week Total</th><th>Status</th></tr></thead><tbody>';
+
+  clientIds.forEach(function(cid){
+    var name=cnames[cid]||cid;
+    var wkTotal=0;var under=0;var hasSess=false;
+    var cells=days.map(function(day){
+      var h=Math.round((lookup[cid+'|'+day]||0)*10)/10;
+      wkTotal+=h;
+      if(h>0)hasSess=true;
+      if(h>0&&h<TARGET)under++;
+      var bg=h===0?'':(h>=TARGET?'#E8F5E9':h>TARGET?'#EFF6FF':'#FFFBEB');
+      var col=h===0?'#CCC':(h>=TARGET?'#2D6A4F':h>TARGET?'#1A56DB':'#D97706');
+      return '<td class="r" style="background:'+bg+'">'+
+        (h===0?'<span style="color:#CCC">—</span>':'<b style="color:'+col+'">'+h+'h</b>')+'</td>';
+    });
+    var status=!hasSess?'<span style="color:#ccc;font-size:11px">No sessions</span>':
+      under===0?'<span class="badge bk">✓ All met</span>':
+      '<span class="badge bam">'+under+' day'+(under>1?'s':'')+' under</span>';
+    tbl+='<tr><td><b>'+name+'</b></td>'+cells.join('')+
+      '<td class="r"><b>'+Math.round(wkTotal*10)/10+'h</b></td>'+
+      '<td>'+status+'</td></tr>';
+  });
+
+  // Daily totals row
+  tbl+='<tr style="background:#F5F0E8"><td><b>Day Total</b></td>'+
+    days.map(function(day){
+      var t=clientIds.reduce(function(s,cid){return s+(lookup[cid+'|'+day]||0);},0);
+      return '<td class="r"><b>'+Math.round(t*10)/10+'h</b></td>';
+    }).join('')+'<td></td><td></td></tr>';
+
+  tbl+='</tbody></table></div>';
+  card.innerHTML+=tbl;
+  el.appendChild(card);
 }
 
 /* ═══ PROVIDER DAILY AUDIT ═══════════════════ */
