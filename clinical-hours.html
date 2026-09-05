@@ -96,6 +96,8 @@ tr.totrow td{background:#F5F0E8;font-weight:700}
     <div class="leg"><div class="leg-dot" style="background:#1B2A4A"></div>Clinician (Individual &amp; Family Therapy)</div>
     <div class="leg"><div class="leg-dot" style="background:#2D6A4F"></div>Ancillary (all other completed services)</div>
     <div class="leg"><div class="leg-dot" style="background:#D97706"></div>Daily target: 5 direct service hours / client</div>
+    <div class="leg"><div class="leg-dot" style="background:#1B2A4A"></div>W2 / Salaried employee</div>
+    <div class="leg"><div class="leg-dot" style="background:#C4924A"></div>Contractor / 1099</div>
   </div>
 
   <div class="controls">
@@ -121,6 +123,13 @@ tr.totrow td{background:#F5F0E8;font-weight:700}
     <div class="cg"><label>Provider</label>
       <select id="flt-prov" onchange="render()">
         <option value="">All Providers</option>
+      </select>
+    </div>
+    <div class="cg"><label>Employment</label>
+      <select id="flt-emp" onchange="render()">
+        <option value="">W2 + Contractors</option>
+        <option value="W2">W2 / Salaried</option>
+        <option value="Contractor">Contractor / 1099</option>
       </select>
     </div>
     <div style="margin-left:auto">
@@ -153,6 +162,42 @@ function isExcluded(ev){
 // Clinician = Individual Therapy or Family Therapy (service type, not provider name)
 // Dr. Flannery, Anthony, Heather → ancillary regardless of service name
 var FORCE_ANCILLARY_PROVS=['Flannery','Anthony','Heather'];
+
+/* ── Employment type lookup ─────────────────────────── */
+var W2_PROVIDERS=[
+  // Therapists / clinicians
+  'Mirella Ezeta','Tara Alhadeff','Rabbi Brandon Gaines','Rabbi Gaines',
+  'Anisha Hume','Sandra Bernstein','Tamas Biro','Thomas Young',
+  'Paul Lazar','Gregory Fortune','Greg Fortune','Esther Entin',
+  'Alexandra Marullo','Despina Karfis','Robert Bruno',
+  // Weekly flat / oversight
+  'David Ockman','Nicole Williams','Gus Hernandez',
+  // Medical / clinical support
+  'Dr. Spaedy','Spaedy','Brandy','Nursing','Alice',
+  'Dr. Flavia','Flavia','Dr. Shaeffer','Shaeffer','Dr. Bober','Bober',
+  // Nichole Bessent coverage
+  'Nichole Bessent'
+];
+var CONTRACTOR_PROVIDERS=[
+  'David Forstadt','Dr. Forstadt','Forstadt',
+  'Anthony','Heather',
+  'Dr. Flannery','Flannery',
+  'PBWI','Dr. Flavia','Alice','Dr. Schaeffer'
+];
+// Returns 'W2', 'Contractor', or 'Unknown'
+function empType(providerName){
+  var p=(providerName||'').trim();
+  for(var i=0;i<W2_PROVIDERS.length;i++){
+    if(p===W2_PROVIDERS[i]||p.toLowerCase()===W2_PROVIDERS[i].toLowerCase())return 'W2';
+  }
+  for(var j=0;j<CONTRACTOR_PROVIDERS.length;j++){
+    if(p===CONTRACTOR_PROVIDERS[j]||p.toLowerCase()===CONTRACTOR_PROVIDERS[j].toLowerCase())return 'Contractor';
+  }
+  // Partial match fallback
+  var pl=p.toLowerCase();
+  if(FORCE_ANCILLARY_PROVS.some(function(f){return pl.indexOf(f.toLowerCase())>-1;}))return 'Contractor';
+  return 'Unknown';
+}
 // Dr. Forstadt delivers clinical therapy sessions — classify by service name
 // His calendar entries may be labeled 'Therapy', 'Individual', 'Session', etc.
 function isClinician(ev){
@@ -221,6 +266,7 @@ function filteredEvents(){
   var to=document.getElementById('flt-to').value;
   var prog=document.getElementById('flt-prog').value;
   var prov=document.getElementById('flt-prov').value;
+  var emp=document.getElementById('flt-emp')?document.getElementById('flt-emp').value:'';
   return DATA.events.filter(function(ev){
     if(!ev.date||!ev.provider) return false;
     if(!isBillable(ev)) return false;
@@ -228,6 +274,7 @@ function filteredEvents(){
     if(from&&mo<from) return false;
     if(to&&mo>to) return false;
     if(prov&&ev.provider!==prov) return false;
+    if(emp&&empType(ev.provider)!==emp) return false;
     if(prog){
       var p=(ev.program||'').toLowerCase().trim();
       // Some events may not have program — try to infer from client
@@ -285,18 +332,24 @@ function renderMonthly(){
   var totalClin=evs.filter(isClinician).length;
   var totalAnc=evs.length-totalClin;
 
-  var html='<div class="note-box">Each completed session = 1 direct service hour. Clinician = Individual Therapy + Family Therapy. Ancillary = all other completed services.</div>';
+  var w2Sess=evs.filter(function(e){return empType(e.provider)==='W2';}).length;
+  var ctrSess=evs.filter(function(e){return empType(e.provider)==='Contractor';}).length;
+  var html='<div class="note-box">Each completed session = 1 direct service hour. Clinician = Individual Therapy, Family Therapy, Testing/Assessment. Ancillary = all other completed services.</div>';
   html+='<div class="kpi-row">'+
     kpi(evs.length.toLocaleString(),'Total Sessions','Completed · all types')+
-    kpi(totalClin,'Clinician Sessions','Individual + Family Therapy','clin')+
+    kpi(totalClin,'Clinician Sessions','Individual + Family Therapy + Testing','clin')+
     kpi(totalAnc,'Ancillary Sessions','All other services','anc')+
-    kpi(months.length,'Months','')+
-    kpi(Object.keys(evs.reduce(function(a,e){a[e.provider]=1;return a;},{})).length,'Active Providers','')+
+    kpi(w2Sess,'W2 / Salaried Sessions','<span style="color:#1B2A4A">●</span> Employee hours')+
+    kpi(ctrSess,'Contractor Sessions','<span style="color:#7A6A56">●</span> 1099 hours')+
   '</div>';
 
   // Chart 1: grouped bar clin vs anc per month
   html+='<div class="card"><div class="card-title">Clinician vs Ancillary Sessions — by Month</div>'+
     '<div class="chart-wrap" style="height:270px"><canvas id="ch-mo-grouped"></canvas></div></div>';
+  // W2 vs Contractor by month chart
+  html+='<div class="card" style="margin-bottom:14px"><div class="card-title">W2 Salaried vs Contractor Sessions — by Month</div>'+
+    '<div class="chart-wrap" style="height:220px"><canvas id="ch-mo-emp"></canvas></div></div>';
+
   // Chart row
   html+='<div class="row2">'+
     '<div class="card"><div class="card-title">Monthly Total Sessions (trend)</div>'+
@@ -349,6 +402,25 @@ function renderMonthly(){
       data:{labels:['Clinician','Ancillary'],datasets:[{data:[totalClin,totalAnc],backgroundColor:['#1B2A4A','#2D6A4F'],borderWidth:3,borderColor:'#fff'}]},
       options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:14}}}}
     }));
+    // W2 vs Contractor monthly chart
+    if(document.getElementById('ch-mo-emp')){
+      var w2Data=months.map(function(m){
+        return Object.entries(byMo[m]&&byMo[m].provs||{}).reduce(function(s,kv){return s+(empType(kv[0])==='W2'?kv[1]:0);},0);
+      });
+      var ctrData=months.map(function(m){
+        return Object.entries(byMo[m]&&byMo[m].provs||{}).reduce(function(s,kv){return s+(empType(kv[0])==='Contractor'?kv[1]:0);},0);
+      });
+      _charts.push(new Chart(document.getElementById('ch-mo-emp'),{
+        type:'bar',
+        data:{labels:months.map(moLabel),datasets:[
+          {label:'W2 / Salaried',data:w2Data,backgroundColor:'#1B2A4A',borderRadius:3},
+          {label:'Contractor / 1099',data:ctrData,backgroundColor:'#C4924A',borderRadius:3}
+        ]},
+        options:{responsive:true,maintainAspectRatio:false,
+          plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:12}}},
+          scales:{x:{grid:{display:false}},y:{beginAtZero:true,title:{display:true,text:'Sessions'}}}}
+      }));
+    }
   },60);
 }
 
@@ -463,8 +535,11 @@ function renderProvider(){
     clinProvs.map(function(kv){
       var r=kv[1];
       var svcs=[...r.services].slice(0,4).join(', ')+(r.services.size>4?' +more':'');
+      var et=empType(kv[0]);
+      var etBadge=et==='W2'?'<span class="badge" style="background:#EEF2FF;color:#3730A3;margin-left:4px">W2</span>':
+                  et==='Contractor'?'<span class="badge" style="background:#FEF3C7;color:#92400E;margin-left:4px">1099</span>':'';
       return '<tr>'+
-        '<td><b>'+kv[0]+'</b></td>'+
+        '<td><b>'+kv[0]+'</b>'+etBadge+'</td>'+
         '<td><span class="badge badge-clin">Clinician</span></td>'+
         '<td class="r"><b style="color:#1B2A4A">'+r.clin+'</b></td>'+
         '<td class="r">'+r.months.size+'</td>'+
@@ -475,8 +550,11 @@ function renderProvider(){
     ancProvs.map(function(kv){
       var r=kv[1];
       var svcs=[...r.services].slice(0,4).join(', ')+(r.services.size>4?' +more':'');
+      var et2=empType(kv[0]);
+      var etBadge2=et2==='W2'?'<span class="badge" style="background:#EEF2FF;color:#3730A3;margin-left:4px">W2</span>':
+                   et2==='Contractor'?'<span class="badge" style="background:#FEF3C7;color:#92400E;margin-left:4px">1099</span>':'';
       return '<tr>'+
-        '<td><b>'+kv[0]+'</b></td>'+
+        '<td><b>'+kv[0]+'</b>'+etBadge2+'</td>'+
         '<td><span class="badge badge-anc">Ancillary</span></td>'+
         '<td class="r"><b style="color:#2D6A4F">'+r.anc+'</b></td>'+
         '<td class="r">'+r.months.size+'</td>'+
@@ -631,9 +709,9 @@ function renderAudit(){
 /* ── Export ── */
 function exportCSV(){
   var evs=filteredEvents();
-  var rows=[['Date','Provider','Client ID','Program','Service','Type','Status']];
+  var rows=[['Date','Provider','Client ID','Program','Service','Type','Employment','Status']];
   evs.forEach(function(ev){
-    rows.push([ev.date,ev.provider||'',ev.clientId||'',ev.program||'',ev.service||'',isClinician(ev)?'Clinician':'Ancillary',ev.status||'']);
+    rows.push([ev.date,ev.provider||'',ev.clientId||'',ev.program||'',ev.service||'',isClinician(ev)?'Clinician':'Ancillary',empType(ev.provider),ev.status||'']);
   });
   var csv=rows.map(function(r){return r.map(function(v){return'"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
   var a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
