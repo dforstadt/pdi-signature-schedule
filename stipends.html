@@ -3360,26 +3360,54 @@ window.openManualModal = function(staff, wk){
   document.getElementById('man-modal-sub').textContent='Billing week: '+wkLabel(wk);
   document.getElementById('man-modal-amt').value='';
   document.getElementById('man-modal-notes').value='';
-  // Show existing entries for this week
-  var existing=manualEntries.filter(function(e){
-    if(e.provider!==staff) return false;
-    function getFri(s){var d=new Date(s+'T12:00:00');d.setDate(d.getDate()-((d.getDay()+2)%7));return d.toISOString().slice(0,10);}
-    var s=getFri(e.startWeek), en=e.endWeek?getFri(e.endWeek):s;
-    return wk>=s&&wk<=en;
-  });
-  var existHtml=existing.length
-    ? '<div style="font-size:10px;font-weight:600;color:#888;margin-bottom:6px">EXISTING THIS WEEK</div>'
-      +existing.map(function(e){
-        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:#f7f5f2;border-radius:6px;margin-bottom:4px;font-size:11px">'
-          +'<span><b>$'+(e.amountPerWeek||0).toLocaleString()+'</b>'+(e.notes?' · '+e.notes:'')
-          +(e.endWeek&&e.endWeek!==e.startWeek?' <span style="color:#aaa">(recurring)</span>':'')+'</span>'
-          +'<button data-mkey="'+e._key+'" onclick="deleteManualEntryFromModal(this.dataset.mkey)"'
-          +' style="font-size:10px;color:#c00;background:none;border:none;cursor:pointer;padding:0 4px">✕</button>'
-          +'</div>';}).join('')
-    : '';
-  document.getElementById('man-modal-existing').innerHTML=existHtml;
+  var isDedEl=document.getElementById('man-modal-is-deduction');
+  if(isDedEl)isDedEl.checked=false;
+  var existEl=document.getElementById('man-modal-existing');
+  if(existEl)existEl.innerHTML='<div style="color:#aaa;font-size:11px;padding:4px 0">Loading…</div>';
   ov.style.display='flex';
-  setTimeout(function(){var a=document.getElementById('man-modal-amt');if(a)a.focus();},50);
+  // Load fresh from Firebase — direct date match, no getFri() conversion
+  MANUAL_REF.once('value',function(snap){
+    var all=snap.val()||{};
+    var entries=Object.entries(all).map(function(kv){return Object.assign({_key:kv[0]},kv[1]);});
+    var matching=entries.filter(function(e){
+      if((e.provider||e.prov||'')!==staff)return false;
+      var s=e.startWeek||e.week||'';
+      var en=e.endWeek||s;
+      return s&&wk>=s&&wk<=en;
+    });
+    if(!existEl)return;
+    if(!matching.length){
+      existEl.innerHTML='<div style="color:#aaa;font-size:11px;font-style:italic;padding:4px 0">No adjustments for this week.</div>';
+      return;
+    }
+    existEl.innerHTML='<div style="font-size:10px;font-weight:700;color:#555;margin-bottom:8px;letter-spacing:.03em">EXISTING ADJUSTMENTS</div>'
+      +matching.map(function(e){
+        var amt=(e.amountPerWeek!==undefined&&e.amountPerWeek!==null)?e.amountPerWeek:(e.amount||0);
+        var isNeg=amt<0;
+        var amtStr=isNeg?'−$'+Math.abs(amt).toFixed(2):'$'+amt.toFixed(2);
+        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;'
+          +'background:'+(isNeg?'#fff5f5':'#f7f5f2')+';border-radius:8px;margin-bottom:6px;'
+          +'border:1px solid '+(isNeg?'#fca5a5':'#e5e2de')+'">'
+          +'<div><b style="color:'+(isNeg?'#dc2626':'#1B2A4A')+'">'+amtStr+'</b>'
+          +(e.type?'<span style="margin-left:6px;font-size:10px;color:#888;background:#eee;padding:1px 5px;border-radius:3px">'+e.type+'</span>':'')
+          +(e.notes?'<div style="font-size:10px;color:#888;margin-top:2px">'+e.notes+'</div>':'')
+          +'</div>'
+          +'<button data-mk="'+e._key+'" data-s="'+staff+'" data-w="'+wk+'"'
+          +' onclick="window._manDel(this.dataset.mk,this.dataset.s,this.dataset.w)"'
+          +' style="background:#fee2e2;border:1px solid #fca5a5;color:#dc2626;cursor:pointer;'
+          +'font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px;white-space:nowrap">Delete</button>'
+          +'</div>';
+      }).join('');
+  });
+  setTimeout(function(){var a=document.getElementById('man-modal-amt');if(a)a.focus();},120);
+};
+
+window._manDel=function(key,staff,wk){
+  if(!confirm('Delete this adjustment?'))return;
+  MANUAL_REF.child(key).remove().then(function(){
+    window.openManualModal(staff,wk);
+    if(window._lastD){window.injectManualItems(window._lastD);renderByStaff(window._lastD);}
+  });
 };
 
 window.closeManualModal = function(){
@@ -3391,7 +3419,8 @@ window.closeManualModal = function(){
 window.deleteManualEntryFromModal = function(key){
   if(!confirm('Delete this entry?')) return;
   MANUAL_REF.child(key).remove().then(function(){
-    window.closeManualModal();
+    if(_manModalStaff&&_manModalWk) window.openManualModal(_manModalStaff,_manModalWk);
+    else window.closeManualModal();
     if(window._lastD){window.injectManualItems(window._lastD);renderByStaff(window._lastD);}
   });
 };
