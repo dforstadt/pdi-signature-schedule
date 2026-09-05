@@ -56,6 +56,9 @@ td.r{text-align:right;font-variant-numeric:tabular-nums}
 tr:last-child td{border-bottom:none}
 tr.totrow td{background:#F5F0E8;font-weight:700}
 .zero{color:#DDD}
+.kpi.audit-over .num{color:#1A56DB}
+.audit-day-over{background:#EFF6FF}
+.badge-over{background:#DBEAFE;color:#1E40AF}
 /* Audit-specific */
 .audit-day-ok{background:#E8F5E9}
 .audit-day-warn{background:#FFF8E1}
@@ -623,17 +626,19 @@ function renderAudit(){
     return a.date<b.date?1:a.date>b.date?-1:0; // newest first
   });
 
-  var metTarget=entries.filter(function(e){return e.total>=DAILY_TARGET;}).length;
+  var metTarget=entries.filter(function(e){return e.total===DAILY_TARGET;}).length;
+  var overTarget=entries.filter(function(e){return e.total>DAILY_TARGET;}).length;
   var underTarget=entries.filter(function(e){return e.total>0&&e.total<DAILY_TARGET;}).length;
   var totalDays=entries.length;
-  var compliancePct=totalDays?Math.round(metTarget/totalDays*100):0;
+  var compliancePct=totalDays?Math.round((metTarget+overTarget)/totalDays*100):0;
 
   // Date range for chart
   var byDate={};
   entries.forEach(function(e){
-    if(!byDate[e.date])byDate[e.date]={met:0,under:0,total:0};
+    if(!byDate[e.date])byDate[e.date]={met:0,over:0,under:0,total:0};
     byDate[e.date].total++;
-    if(e.total>=DAILY_TARGET)byDate[e.date].met++;
+    if(e.total===DAILY_TARGET)byDate[e.date].met++;
+    else if(e.total>DAILY_TARGET)byDate[e.date].over++;
     else byDate[e.date].under++;
   });
   var dates=Object.keys(byDate).sort();
@@ -645,10 +650,10 @@ function renderAudit(){
 
   html+='<div class="kpi-row">'+
     kpi(totalDays,'Client-Days','Total days with ≥1 session')+
-    kpi(metTarget,'Met Target','≥'+DAILY_TARGET+' sessions/day','audit-ok')+
-    kpi(underTarget,'Under Target','<'+DAILY_TARGET+' sessions/day','audit-warn')+
-    kpi(compliancePct+'%','Compliance Rate','Days meeting '+DAILY_TARGET+'-hr target',compliancePct>=80?'audit-ok':'audit-warn')+
-    kpi([...new Set(entries.map(function(e){return e.clientId;}))].length,'Clients','With session data')+
+    kpi(metTarget,'Met Target (='+DAILY_TARGET+')','Exactly '+DAILY_TARGET+' sessions','audit-ok')+
+    kpi(overTarget,'Exceeding Target (>'+DAILY_TARGET+')','Review for over-scheduling','audit-over')+
+    kpi(underTarget,'Under Target (<'+DAILY_TARGET+')','Below '+DAILY_TARGET+' sessions','audit-warn')+
+    kpi(compliancePct+'%','At/Above Target',compliancePct>=80?'Met ≥80% threshold':'Below 80% threshold',compliancePct>=80?'audit-ok':'audit-warn')+
   '</div>';
 
   html+='<div class="row2">'+
@@ -664,10 +669,12 @@ function renderAudit(){
     '<th>Date</th><th>Client</th><th class="r">Clinician</th><th class="r">Ancillary</th>'+
     '<th class="r">Total</th><th>Status</th><th>Services</th></tr></thead><tbody>'+
     entries.slice(0,60).map(function(e){
-      var met=e.total>=DAILY_TARGET;
-      var rowCls=met?'audit-day-ok':'audit-day-warn';
-      var badge=met?'<span class="badge badge-ok">✓ Met target</span>':
-        '<span class="badge badge-warn">'+e.total+'/'+DAILY_TARGET+'</span>';
+      var met=e.total===DAILY_TARGET;
+      var over=e.total>DAILY_TARGET;
+      var rowCls=met?'audit-day-ok':over?'audit-day-over':'audit-day-warn';
+      var badge=met?'<span class="badge badge-ok">✓ '+DAILY_TARGET+' hrs</span>':
+        over?'<span class="badge badge-over">⬆ '+e.total+' hrs</span>':
+        '<span class="badge badge-warn">⬇ '+e.total+'/'+DAILY_TARGET+' hrs</span>';
       var uniq=[...new Set(e.services)].join(', ');
       return '<tr class="'+rowCls+'">'+
         '<td>'+dateLabel(e.date)+'</td>'+
@@ -686,7 +693,8 @@ function renderAudit(){
     _charts.push(new Chart(document.getElementById('ch-audit-bar'),{
       type:'bar',
       data:{labels:dates.map(dateLabel),datasets:[
-        {label:'Met target (≥'+DAILY_TARGET+')',data:dates.map(function(d){return byDate[d].met;}),backgroundColor:'#2D6A4F',borderRadius:2},
+        {label:'Met target (='+DAILY_TARGET+')',data:dates.map(function(d){return byDate[d].met;}),backgroundColor:'#2D6A4F',borderRadius:2},
+        {label:'Exceeding target (>'+DAILY_TARGET+')',data:dates.map(function(d){return byDate[d].over;}),backgroundColor:'#1A56DB',borderRadius:2},
         {label:'Under target (<'+DAILY_TARGET+')',data:dates.map(function(d){return byDate[d].under;}),backgroundColor:'#D97706',borderRadius:2}
       ]},
       options:{responsive:true,maintainAspectRatio:false,
@@ -696,9 +704,9 @@ function renderAudit(){
     }));
     _charts.push(new Chart(document.getElementById('ch-audit-pie'),{
       type:'doughnut',
-      data:{labels:['Met target','Under target'],datasets:[{
-        data:[metTarget,underTarget],
-        backgroundColor:['#2D6A4F','#D97706'],borderWidth:3,borderColor:'#fff'
+      data:{labels:['Met target (='+DAILY_TARGET+')','Exceeding (>'+DAILY_TARGET+')','Under target (<'+DAILY_TARGET+')'],datasets:[{
+        data:[metTarget,overTarget,underTarget],
+        backgroundColor:['#2D6A4F','#1A56DB','#D97706'],borderWidth:3,borderColor:'#fff'
       }]},
       options:{responsive:true,maintainAspectRatio:false,
         plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:14}}}}
