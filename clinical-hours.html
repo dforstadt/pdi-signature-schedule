@@ -131,24 +131,20 @@ var DATA={events:[],clients:[]}, _ok=false, _tab='monthly';
 /* Classification */
 var CLIN_KW=[
   // Therapy types
-  'individual','family','therapy','spiritual','dbt','trauma','anger','relapse','caseload',
+  'individual','family','therapy','dbt','trauma','anger','relapse','caseload',
   // Clinical assessment & evaluation
   'testing','assessment','psychometric','neuropsych','evaluation','interview','psych',
   // Medical & nursing
   'psychiatric','nursing','medical',
   // Behavioral & legal
   'debriefing','court','prevention',
-  // Nutritional counseling (Alice, nutrition providers)
-  'nutrition','lunch',
-  // Catch-all: any session with "group" in the name is a direct service hour
-  'group',
-  // Brandy
-  'touching'
+  // All groups = direct service
+  'group'
 ];
-var FORCE_ANC=['anthony','heather']; // Personal trainers — ancillary regardless of service label
+var FORCE_ANC=['anthony','heather','alice','flavia','rabbi']; // Always ancillary regardless of service label
 // Providers always classified as Clinician regardless of service label
 var FORCE_CLIN=['nursing','brian'];
-var SKIP=['luis guillermo','keisha foster','lead tech','tech team','none','tbd','family','n/a',''];
+var SKIP=['luis guillermo','keisha foster','lead tech','tech team','nicole williams','nicole','brandy','none','tbd','family','n/a',''];
 
 // W2 salaried — determines who gets tracked in Provider Audit
 var W2=['mirella ezeta','tara alhadeff','rabbi brandon gaines','rabbi gaines',
