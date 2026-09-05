@@ -1472,30 +1472,30 @@ function computeStipends(){
     if(fltTrack!=='PDI'){
 
       // Active Signature clients this week: sigAdmit ≤ wEnd AND (no sigDisch OR sigDisch ≥ wStart)
-      // activeSig: session fees and census — Signature episode of care only.
-      // Uses sigAdmit/sigDischarge exclusively. endDate is not a clinical field.
+      // activeSig: session fees and census.
+      // Active if sigAdmit ≤ wEnd and not discharged before wStart.
       var activeSig=DATA.clients.filter(function(c){
         var prog=(c.program||'').trim().toLowerCase();
         var isSig=prog==='signature'||prog==='both'||prog==='sig';
         if(!isSig&&c.sigAdmit&&!c.program)isSig=true;
         if(!isSig)return false;
         var admit=toISO(c.sigAdmit);
-        var disch=toISO(c.sigDischarge||c.sigDisch);
+        var disch=toISO(c.sigDischarge||c.sigDisch||c.endDate);
         if(!admit||admit>wEnd)return false;
         if(disch&&disch<wStart)return false;
         return true;
       });
 
       // ── Weekly stipend for Ockman & Nicole ──────────────────────────────────
-      // Census based on Signature episode of care: sigAdmit → sigDischarge.
-      // endDate is a calendar scheduling field — not used for clinical discharge.
+      // Active Signature clients: sigAdmit ≤ wEnd AND not discharged before wStart.
+      // Uses sigDischarge / sigDisch / endDate — all are valid discharge indicators.
       var weeklyClients=DATA.clients.filter(function(c){
         var prog=(c.program||'').trim().toLowerCase();
         var isSig=prog==='signature'||prog==='both'||prog==='sig';
         if(!isSig&&c.sigAdmit&&!c.program)isSig=true;
         if(!isSig)return false;
         var admit=toISO(c.sigAdmit);
-        var disch=toISO(c.sigDischarge||c.sigDisch);
+        var disch=toISO(c.sigDischarge||c.sigDisch||c.endDate);
         if(!admit||admit>wEnd)return false;
         if(disch&&disch<wStart)return false;
         return true;
