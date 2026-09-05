@@ -153,13 +153,15 @@ function isExcluded(ev){
 // Clinician = Individual Therapy or Family Therapy (service type, not provider name)
 // Dr. Flannery, Anthony, Heather → ancillary regardless of service name
 var FORCE_ANCILLARY_PROVS=['Flannery','Anthony','Heather'];
+// Dr. Forstadt delivers clinical therapy sessions — classify by service name
+// His calendar entries may be labeled 'Therapy', 'Individual', 'Session', etc.
 function isClinician(ev){
   var prov=(ev.provider||'').toLowerCase();
   for(var i=0;i<FORCE_ANCILLARY_PROVS.length;i++){
     if(prov.indexOf(FORCE_ANCILLARY_PROVS[i].toLowerCase())>-1) return false;
   }
   var s=(ev.service||'').toLowerCase();
-  return s.indexOf('individual')>-1 || s.indexOf('family')>-1;
+  return s.indexOf('individual')>-1 || s.indexOf('family')>-1 || s.indexOf('therapy')>-1;
 }
 function isCompleted(ev){ return (ev.status||'').toLowerCase()==='completed'; }
 function isGroup(ev){ return (ev.service||'').toLowerCase().indexOf('group')>-1; }
@@ -223,9 +225,20 @@ function filteredEvents(){
     if(from&&mo<from) return false;
     if(to&&mo>to) return false;
     if(prov&&ev.provider!==prov) return false;
-    if(prog){var p=(ev.program||'').toLowerCase();
-      if(prog==='Signature'&&p!=='signature'&&p!=='sig'&&p!=='both') return false;
-      if(prog==='PDI'&&p!=='pdi'&&p!=='both') return false;
+    if(prog){
+      var p=(ev.program||'').toLowerCase().trim();
+      // Some events may not have program — try to infer from client
+      if(!p&&ev.clientId){
+        var cl=DATA.clients.find(function(c){return c.id===ev.clientId;});
+        if(cl)p=(cl.program||'').toLowerCase().trim();
+      }
+      if(prog==='Signature'){
+        // Keep if signature, sig, both, or program not set (include unknown)
+        if(p&&p!=='signature'&&p!=='sig'&&p!=='both') return false;
+      }
+      if(prog==='PDI'){
+        if(p&&p!=='pdi'&&p!=='both') return false;
+      }
     }
     return true;
   });
@@ -393,11 +406,12 @@ function renderProvider(){
   var byProv={};
   evs.forEach(function(ev){
     var p=ev.provider;
-    if(!byProv[p])byProv[p]={clin:0,anc:0,total:0,clients:new Set(),months:new Set()};
+    if(!byProv[p])byProv[p]={clin:0,anc:0,total:0,clients:new Set(),months:new Set(),services:new Set()};
     byProv[p].total++;
     if(isClinician(ev))byProv[p].clin++;else byProv[p].anc++;
     if(ev.clientId)byProv[p].clients.add(ev.clientId);
     byProv[p].months.add(moKey(ev.date));
+    if(ev.service)byProv[p].services.add(ev.service);
   });
 
   // Separate into clinicians (any clin sessions) and ancillary-only
@@ -441,26 +455,30 @@ function renderProvider(){
   html+='<div class="card"><div class="card-title">All Provider Detail</div>'+
     '<div style="overflow-x:auto"><table><thead><tr>'+
     '<th>Provider</th><th>Category</th><th class="r">Sessions</th>'+
-    '<th class="r">Active Months</th><th class="r">Unique Clients</th></tr></thead><tbody>'+
+    '<th class="r">Active Months</th><th class="r">Unique Clients</th><th>Service Types in Calendar</th></tr></thead><tbody>'+
     '<tr><td colspan="5" class="month-header" style="background:#EEF2FF;color:#1B2A4A;font-size:10px;font-weight:700;padding:6px 10px;letter-spacing:.04em">CLINICIAN PROVIDERS — Individual &amp; Family Therapy</td></tr>'+
     clinProvs.map(function(kv){
       var r=kv[1];
+      var svcs=[...r.services].slice(0,4).join(', ')+(r.services.size>4?' +more':'');
       return '<tr>'+
         '<td><b>'+kv[0]+'</b></td>'+
         '<td><span class="badge badge-clin">Clinician</span></td>'+
         '<td class="r"><b style="color:#1B2A4A">'+r.clin+'</b></td>'+
         '<td class="r">'+r.months.size+'</td>'+
-        '<td class="r">'+r.clients.size+'</td></tr>';
+        '<td class="r">'+r.clients.size+'</td>'+
+        '<td style="font-size:10px;color:#888">'+svcs+'</td></tr>';
     }).join('')+
     '<tr><td colspan="5" class="month-header" style="background:#E8F5E9;color:#2D4A3E;font-size:10px;font-weight:700;padding:6px 10px;letter-spacing:.04em">ANCILLARY PROVIDERS — All Other Services</td></tr>'+
     ancProvs.map(function(kv){
       var r=kv[1];
+      var svcs=[...r.services].slice(0,4).join(', ')+(r.services.size>4?' +more':'');
       return '<tr>'+
         '<td><b>'+kv[0]+'</b></td>'+
         '<td><span class="badge badge-anc">Ancillary</span></td>'+
         '<td class="r"><b style="color:#2D6A4F">'+r.anc+'</b></td>'+
         '<td class="r">'+r.months.size+'</td>'+
-        '<td class="r">'+r.clients.size+'</td></tr>';
+        '<td class="r">'+r.clients.size+'</td>'+
+        '<td style="font-size:10px;color:#888">'+svcs+'</td></tr>';
     }).join('')+
     '</tbody></table></div></div>';
 
