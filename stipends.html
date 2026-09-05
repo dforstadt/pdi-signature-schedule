@@ -3554,9 +3554,18 @@ document.addEventListener('click',function(e){
       </div>
       <div>
         <div style="font-size:10px;font-weight:600;color:#888;margin-bottom:3px">AMOUNT ($)</div>
-        <input id="man-modal-amt" type="number" placeholder="0.00" step="0.01"
+        <input id="man-modal-amt" type="number" placeholder="0.00" step="0.01" min="0"
           style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:12px;box-sizing:border-box">
       </div>
+    </div>
+    <div style="margin-bottom:12px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 12px;border-radius:8px;border:1px solid #ddd;background:#f9f7f5">
+        <input type="checkbox" id="man-modal-is-deduction" style="accent-color:#dc2626;width:15px;height:15px">
+        <div>
+          <div style="font-size:12px;font-weight:600;color:#dc2626">Deduction — reduces stipend</div>
+          <div style="font-size:10px;color:#888">Check this to subtract from the total (e.g. another staff covered)</div>
+        </div>
+      </label>
     </div>
     <div style="margin-bottom:16px">
       <div style="font-size:10px;font-weight:600;color:#888;margin-bottom:3px">NOTES</div>
