@@ -10,75 +10,106 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Arial,sans-serif;background:#F5F0E8;color:#1E1E1E;min-height:100vh}
+
+/* Login */
 #login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#1B2A4A}
 .login-box{background:#fff;border-radius:16px;padding:40px;width:360px;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.3)}
 .login-box h1{font-size:20px;color:#1B2A4A;margin-bottom:6px}
-.login-box p{font-size:12px;color:#888;margin-bottom:24px}
+.login-box p{font-size:12px;color:#888;margin-bottom:24px;line-height:1.6}
 .login-box input{width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:12px}
 .login-box button{width:100%;padding:11px;background:#1B2A4A;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
 #err-msg{color:#c00;font-size:12px;margin-top:8px;min-height:16px}
 #app{display:none}
-.top-bar{background:#1B2A4A;color:#fff;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
-.top-bar h1{font-size:16px;font-weight:700}
-.sub{font-size:11px;color:#A0B0C8;margin-top:2px}
-.dot{width:8px;height:8px;border-radius:50%;background:#555;display:inline-block;margin-right:6px}
+
+/* Top bar */
+.top-bar{background:#1B2A4A;color:#fff;padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
+.top-bar h1{font-size:16px;font-weight:700;letter-spacing:.01em}
+.top-bar .sub{font-size:11px;color:#A0B0C8;margin-top:3px}
+.dot{width:8px;height:8px;border-radius:50%;background:#555;display:inline-block;margin-right:5px;transition:background .3s}
 .dot.on{background:#4ade80}
-.legend-bar{display:flex;gap:20px;padding:10px 24px;background:#1B2A4A;border-top:1px solid rgba(255,255,255,.1)}
-.leg{display:flex;align-items:center;gap:6px;font-size:11px;color:#A0B0C8}
-.leg-dot{width:10px;height:10px;border-radius:3px}
-.controls{background:#fff;border-bottom:1px solid #E5E2DE;padding:10px 24px;display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
-.cg label{display:block;font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px}
-.controls select,.controls input[type=month]{padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:12px;min-width:120px}
-.btn-sm{padding:7px 16px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer}
-.btn-primary{background:#1B2A4A;color:#fff}
+
+/* Filter bar */
+.filter-bar{background:#fff;border-bottom:1px solid #E5E2DE;padding:14px 24px;display:flex;flex-wrap:wrap;gap:20px;align-items:center}
+.filter-group{display:flex;flex-direction:column;gap:6px}
+.filter-label{font-size:9px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.07em}
+.btn-group{display:flex;gap:4px}
+.btn-filter{padding:5px 14px;border-radius:20px;border:1.5px solid #E5E2DE;background:#fff;font-size:11px;font-weight:600;color:#666;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-filter:hover{border-color:#1B2A4A;color:#1B2A4A}
+.btn-filter.active{background:#1B2A4A;color:#fff;border-color:#1B2A4A}
+.btn-filter.active-green{background:#2D6A4F;color:#fff;border-color:#2D6A4F}
+.btn-filter.active-amber{background:#92400E;color:#fff;border-color:#92400E}
+.date-inputs{display:flex;gap:8px;align-items:center}
+.date-inputs input{padding:5px 10px;border:1.5px solid #E5E2DE;border-radius:20px;font-size:11px;font-weight:600;color:#555;background:#fff;min-width:110px}
+.date-inputs span{font-size:11px;color:#aaa}
+.ml-auto{margin-left:auto}
+.btn-export{padding:6px 16px;border-radius:20px;border:1.5px solid #1B2A4A;background:#fff;color:#1B2A4A;font-size:11px;font-weight:700;cursor:pointer}
+.btn-export:hover{background:#1B2A4A;color:#fff}
+
+/* View tabs */
+.view-tabs{background:#F5F0E8;padding:16px 24px 0;display:flex;gap:4px;border-bottom:2px solid #E5E2DE}
+.view-tab{padding:10px 22px;border-radius:8px 8px 0 0;border:1.5px solid transparent;font-size:12px;font-weight:700;color:#888;cursor:pointer;background:#EDE8DF;transition:all .15s;margin-bottom:-2px}
+.view-tab:hover{color:#1B2A4A;background:#E5E0D5}
+.view-tab.active{background:#fff;color:#1B2A4A;border-color:#E5E2DE;border-bottom-color:#fff}
+
+/* Content */
 .main{padding:20px 24px}
-.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:18px}
-@media(max-width:900px){.kpi-row{grid-template-columns:repeat(2,1fr)}}
-.kpi{background:#fff;border-radius:10px;border:1px solid #E5E2DE;padding:14px 12px;text-align:center}
-.kpi .num{font-size:26px;font-weight:700;color:#1B2A4A;line-height:1.1}
-.kpi .lbl{font-size:10px;font-weight:700;color:#7A6A56;text-transform:uppercase;letter-spacing:.05em;margin-top:4px}
-.kpi .note{font-size:10px;color:#AAA;margin-top:2px}
-.kpi.clin .num{color:#1B2A4A}
-.kpi.anc .num{color:#2D6A4F}
-.kpi.audit-ok .num{color:#2D6A4F}
-.kpi.audit-warn .num{color:#D97706}
+.kpi-row{display:grid;gap:12px;margin-bottom:18px}
+.kpi-row.cols-4{grid-template-columns:repeat(4,1fr)}
+.kpi-row.cols-5{grid-template-columns:repeat(5,1fr)}
+@media(max-width:900px){.kpi-row.cols-4,.kpi-row.cols-5{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:#fff;border-radius:10px;border:1px solid #E5E2DE;padding:16px 12px;text-align:center}
+.kpi .num{font-size:28px;font-weight:700;color:#1B2A4A;line-height:1.1}
+.kpi .lbl{font-size:10px;font-weight:700;color:#7A6A56;text-transform:uppercase;letter-spacing:.05em;margin-top:5px}
+.kpi .note{font-size:10px;color:#AAA;margin-top:3px}
+.kpi.c-clin .num{color:#1B2A4A}
+.kpi.c-anc .num{color:#2D6A4F}
+.kpi.c-ok .num{color:#2D6A4F}
+.kpi.c-over .num{color:#1A56DB}
+.kpi.c-warn .num{color:#D97706}
+
 .card{background:#fff;border-radius:12px;border:1px solid #E5E2DE;padding:18px;margin-bottom:14px}
-.card-title{font-size:11px;font-weight:700;color:#7A6A56;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.card-title{font-size:11px;font-weight:700;color:#7A6A56;text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
-.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
-@media(max-width:900px){.row2,.row3{grid-template-columns:1fr}}
+@media(max-width:900px){.row2{grid-template-columns:1fr}}
 .chart-wrap{position:relative}
+
 table{width:100%;border-collapse:collapse;font-size:12px}
-th{padding:7px 10px;text-align:left;font-size:10px;font-weight:700;color:#fff;background:#1B2A4A;text-transform:uppercase;letter-spacing:.04em}
+th{padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#fff;background:#1B2A4A;text-transform:uppercase;letter-spacing:.04em}
 th.r{text-align:right}
-td{padding:6px 10px;border-bottom:.5px solid #F0EDE8;vertical-align:middle}
+td{padding:7px 10px;border-bottom:.5px solid #F0EDE8;vertical-align:middle}
 td.r{text-align:right;font-variant-numeric:tabular-nums}
 tr:last-child td{border-bottom:none}
 tr.totrow td{background:#F5F0E8;font-weight:700}
-.zero{color:#DDD}
-.kpi.audit-over .num{color:#1A56DB}
-.audit-day-over{background:#EFF6FF}
-.badge-over{background:#DBEAFE;color:#1E40AF}
-/* Audit-specific */
-.audit-day-ok{background:#E8F5E9}
-.audit-day-warn{background:#FFF8E1}
-.audit-day-fail{background:#FFEBEE}
-.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600}
-.badge-clin{background:#EEF2FF;color:#1B2A4A}
-.badge-anc{background:#E8F5E9;color:#2D4A3E}
-.badge-ok{background:#E8F5E9;color:#2D4A3E}
-.badge-warn{background:#FFF3E0;color:#92400E}
-.badge-fail{background:#FFEBEE;color:#922B21}
-.note-box{background:#EEF4FB;border-left:3px solid #1B2A4A;padding:10px 14px;border-radius:0 6px 6px 0;font-size:11px;color:#1A3A5C;margin-bottom:14px}
+.zero{color:#CCC}
+
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600}
+.b-clin{background:#EEF2FF;color:#1B2A4A}
+.b-anc{background:#E8F5E9;color:#2D4A3E}
+.b-w2{background:#EEF2FF;color:#3730A3}
+.b-ctr{background:#FEF3C7;color:#92400E}
+.b-ok{background:#E8F5E9;color:#2D4A3E}
+.b-over{background:#DBEAFE;color:#1E40AF}
+.b-warn{background:#FEF3C7;color:#92400E}
+
+/* Audit row colors */
+.r-ok{background:#F0FDF4}
+.r-over{background:#EFF6FF}
+.r-warn{background:#FFFBEB}
+
+.sec-label{font-size:10px;font-weight:700;padding:6px 10px;text-transform:uppercase;letter-spacing:.05em}
+
+.info-box{background:#EEF4FB;border-left:3px solid #1B2A4A;padding:10px 14px;border-radius:0 6px 6px 0;font-size:11px;color:#1A3A5C;margin-bottom:14px;line-height:1.6}
+.warn-box{background:#FFFBEB;border-left:3px solid #D97706;padding:10px 14px;border-radius:0 6px 6px 0;font-size:11px;color:#92400E;margin-bottom:14px;line-height:1.6}
 </style>
 </head>
 <body>
 
+<!-- LOGIN -->
 <div id="login-screen">
   <div class="login-box">
     <div style="font-size:36px;margin-bottom:12px">⏱</div>
     <h1>Clinical Hours</h1>
-    <p>Premier Signature Program · Lifeskills Behavioral Health<br>Leadership access only</p>
+    <p>Premier Signature Program<br>Lifeskills Behavioral Health · Leadership</p>
     <input type="password" id="pw" placeholder="Access code" autocomplete="off"
       onkeydown="if(event.key==='Enter')tryLogin()">
     <button onclick="tryLogin()">Access Report</button>
@@ -86,143 +117,163 @@ tr.totrow td{background:#F5F0E8;font-weight:700}
   </div>
 </div>
 
+<!-- APP -->
 <div id="app">
   <div class="top-bar">
     <div>
       <h1>Clinical Hours — Premier Signature Program</h1>
       <div class="sub"><span class="dot" id="live-dot"></span><span id="live-lbl">Connecting…</span>
-        · Completed sessions only · Clinician = Individual &amp; Family Therapy · Ancillary = all other services</div>
+        &nbsp;·&nbsp; Completed sessions only · Lifeskills Behavioral Health</div>
     </div>
     <a href="/index.html" style="color:#A0B0C8;font-size:12px;text-decoration:none">← Calendar</a>
   </div>
-  <div class="legend-bar">
-    <div class="leg"><div class="leg-dot" style="background:#1B2A4A"></div>Clinician (Individual &amp; Family Therapy)</div>
-    <div class="leg"><div class="leg-dot" style="background:#2D6A4F"></div>Ancillary (all other completed services)</div>
-    <div class="leg"><div class="leg-dot" style="background:#D97706"></div>Daily target: 5 direct service hours / client</div>
-    <div class="leg"><div class="leg-dot" style="background:#1B2A4A"></div>W2 / Salaried employee</div>
-    <div class="leg"><div class="leg-dot" style="background:#C4924A"></div>Contractor / 1099</div>
+
+  <!-- FILTER BAR -->
+  <div class="filter-bar">
+
+    <div class="filter-group">
+      <div class="filter-label">Program</div>
+      <div class="btn-group" id="grp-prog">
+        <button class="btn-filter active" data-val="">All Programs</button>
+        <button class="btn-filter" data-val="Signature">Signature</button>
+        <button class="btn-filter" data-val="PDI">PDI</button>
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <div class="filter-label">Service Type</div>
+      <div class="btn-group" id="grp-svc">
+        <button class="btn-filter active" data-val="">All Services</button>
+        <button class="btn-filter" data-val="Clinician">Clinician</button>
+        <button class="btn-filter" data-val="Ancillary">Ancillary</button>
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <div class="filter-label">Employment</div>
+      <div class="btn-group" id="grp-emp">
+        <button class="btn-filter active" data-val="">All Staff</button>
+        <button class="btn-filter" data-val="W2">W2 Salaried</button>
+        <button class="btn-filter" data-val="Contractor">Contractor</button>
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <div class="filter-label">Date Range</div>
+      <div class="date-inputs">
+        <input type="month" id="flt-from" value="2026-04">
+        <span>→</span>
+        <input type="month" id="flt-to">
+      </div>
+    </div>
+
+    <div class="filter-group ml-auto">
+      <div class="filter-label">&nbsp;</div>
+      <button class="btn-export" onclick="exportCSV()">↓ Export CSV</button>
+    </div>
+
   </div>
 
-  <div class="controls">
-    <div class="cg"><label>View</label>
-      <select id="view" onchange="render()">
-        <option value="monthly">Monthly</option>
-        <option value="weekly">Weekly</option>
-        <option value="provider">By Provider</option>
-        <option value="audit">Daily Audit</option>
-      </select>
-    </div>
-    <div class="cg"><label>From</label>
-      <input type="month" id="flt-from" value="2026-04" onchange="render()"></div>
-    <div class="cg"><label>To</label>
-      <input type="month" id="flt-to" onchange="render()"></div>
-    <div class="cg"><label>Program</label>
-      <select id="flt-prog" onchange="render()">
-        <option value="">All</option>
-        <option value="Signature">Signature</option>
-        <option value="PDI">PDI</option>
-      </select>
-    </div>
-    <div class="cg"><label>Provider</label>
-      <select id="flt-prov" onchange="render()">
-        <option value="">All Providers</option>
-      </select>
-    </div>
-    <div class="cg"><label>Employment</label>
-      <select id="flt-emp" onchange="render()">
-        <option value="">W2 + Contractors</option>
-        <option value="W2">W2 / Salaried</option>
-        <option value="Contractor">Contractor / 1099</option>
-      </select>
-    </div>
-    <div style="margin-left:auto">
-      <button class="btn-sm btn-primary" onclick="exportCSV()">↓ CSV</button>
-    </div>
+  <!-- VIEW TABS -->
+  <div class="view-tabs">
+    <div class="view-tab active" data-view="monthly">Monthly</div>
+    <div class="view-tab" data-view="weekly">Weekly</div>
+    <div class="view-tab" data-view="provider">By Provider</div>
+    <div class="view-tab" data-view="audit">Daily Audit</div>
   </div>
 
-  <div class="main" id="loading-div" style="text-align:center;padding:60px;color:#888">Loading…</div>
+  <div class="main" id="loading-div" style="text-align:center;padding:60px;color:#888;font-size:13px">
+    Loading clinical data from Firebase…
+  </div>
   <div class="main" id="content" style="display:none"></div>
 </div>
 
 <script>
+/* ─── Constants ────────────────────────────────────────── */
 const PW = 'ClinicalHours2026';
-const DAILY_TARGET = 5; // direct service hours per client per day
-// Clinician = individual or family therapy; everything else = ancillary
-// Providers excluded from clinical hours entirely
-var EXCLUDED_PROVIDERS=[
-  'Luis Guillermo','Keisha Foster','Lead Tech','Lead Tech (Luis)','Lead Tech (Keisha)',
-  'None','none','TBD','tbd','Family','family','N/A','n/a',''
-];
-function isExcluded(ev){
-  var p=(ev.provider||'').trim();
-  if(!p) return true;
-  if(EXCLUDED_PROVIDERS.indexOf(p)>-1) return true;
-  var pl=p.toLowerCase();
-  if(pl==='tech'||pl.indexOf('lead tech')>-1) return true;
-  if(pl==='none'||pl==='tbd'||pl==='n/a'||pl==='family'||pl==='na') return true;
-  return false;
-}
-// Clinician = Individual Therapy or Family Therapy (service type, not provider name)
-// Dr. Flannery, Anthony, Heather → ancillary regardless of service name
-var FORCE_ANCILLARY_PROVS=['Flannery','Anthony','Heather'];
+const DAILY_TARGET = 5;
 
-/* ── Employment type lookup ─────────────────────────── */
-var W2_PROVIDERS=[
-  // Therapists / clinicians
+var CLINICIAN_KEYWORDS = ['individual','family','therapy','testing','assessment','psychometric','neuropsych','evaluation'];
+var FORCE_ANCILLARY_PROVS = ['Flannery','Anthony','Heather'];
+var EXCLUDED_PROVIDERS = ['Luis Guillermo','Keisha Foster','Lead Tech','None','none','TBD','tbd','Family','family','N/A','n/a',''];
+
+var W2_PROVIDERS = [
   'Mirella Ezeta','Tara Alhadeff','Rabbi Brandon Gaines','Rabbi Gaines',
   'Anisha Hume','Sandra Bernstein','Tamas Biro','Thomas Young',
   'Paul Lazar','Gregory Fortune','Greg Fortune','Esther Entin',
   'Alexandra Marullo','Despina Karfis','Robert Bruno',
-  // Weekly flat / oversight
   'David Ockman','Nicole Williams','Gus Hernandez',
-  // Medical / clinical support
-  'Dr. Spaedy','Spaedy','Brandy','Nursing','Dr. Flavia','Flavia','Dr. Shaeffer','Shaeffer','Dr. Bober','Bober',
-  // Additional salaried staff
+  'Dr. Spaedy','Spaedy','Brandy','Nursing',
+  'Dr. Flavia','Flavia','Dr. Shaeffer','Shaeffer','Dr. Bober','Bober',
   'Nichole Bessent','Gina Bonfigli'
 ];
-var CONTRACTOR_PROVIDERS=[
+var CONTRACTOR_PROVIDERS = [
   'David Forstadt','Dr. Forstadt','Forstadt',
-  'Anthony','Heather',
-  'Dr. Flannery','Flannery',
-  'PBWI','Alice'
+  'Anthony','Heather','Alice',
+  'Dr. Flannery','Flannery','PBWI'
 ];
-// Returns 'W2', 'Contractor', or 'Unknown'
-function empType(providerName){
-  var p=(providerName||'').trim();
-  for(var i=0;i<W2_PROVIDERS.length;i++){
-    if(p===W2_PROVIDERS[i]||p.toLowerCase()===W2_PROVIDERS[i].toLowerCase())return 'W2';
-  }
-  for(var j=0;j<CONTRACTOR_PROVIDERS.length;j++){
-    if(p===CONTRACTOR_PROVIDERS[j]||p.toLowerCase()===CONTRACTOR_PROVIDERS[j].toLowerCase())return 'Contractor';
-  }
-  // Partial match fallback
-  var pl=p.toLowerCase();
-  if(FORCE_ANCILLARY_PROVS.some(function(f){return pl.indexOf(f.toLowerCase())>-1;}))return 'Contractor';
-  return 'Unknown';
-}
-// Dr. Forstadt delivers clinical therapy sessions — classify by service name
-// His calendar entries may be labeled 'Therapy', 'Individual', 'Session', etc.
-function isClinician(ev){
-  var prov=(ev.provider||'').toLowerCase();
-  for(var i=0;i<FORCE_ANCILLARY_PROVS.length;i++){
-    if(prov.indexOf(FORCE_ANCILLARY_PROVS[i].toLowerCase())>-1) return false;
-  }
-  var s=(ev.service||'').toLowerCase();
-  return s.indexOf('individual')>-1 || s.indexOf('family')>-1 ||
-         s.indexOf('therapy')>-1 || s.indexOf('testing')>-1 ||
-         s.indexOf('assessment')>-1 || s.indexOf('psychometric')>-1 ||
-         s.indexOf('neuropsych')>-1 || s.indexOf('evaluation')>-1;
+
+/* ─── State ─────────────────────────────────────────────── */
+var DATA = {events:[],clients:[],providers:{}};
+var _loaded = false;
+var _filters = {prog:'', svc:'', emp:'', view:'monthly'};
+
+/* ─── Classification ────────────────────────────────────── */
+function isExcluded(ev){
+  var p = (ev.provider||'').trim();
+  if(!p) return true;
+  if(EXCLUDED_PROVIDERS.indexOf(p)>-1) return true;
+  var pl = p.toLowerCase();
+  return pl==='tech'||pl.indexOf('lead tech')>-1||pl==='none'||pl==='tbd'||pl==='n/a'||pl==='family';
 }
 function isCompleted(ev){ return (ev.status||'').toLowerCase()==='completed'; }
 function isGroup(ev){ return (ev.service||'').toLowerCase().indexOf('group')>-1; }
-function isBillable(ev){ return isCompleted(ev) && !isGroup(ev) && !isExcluded(ev); }
+function isClinician(ev){
+  var pl = (ev.provider||'').toLowerCase();
+  if(FORCE_ANCILLARY_PROVS.some(function(f){return pl.indexOf(f.toLowerCase())>-1;})) return false;
+  var sl = (ev.service||'').toLowerCase();
+  return CLINICIAN_KEYWORDS.some(function(k){return sl.indexOf(k)>-1;});
+}
+function empType(p){
+  var t = (p||'').trim();
+  for(var i=0;i<W2_PROVIDERS.length;i++) if(t.toLowerCase()===W2_PROVIDERS[i].toLowerCase()) return 'W2';
+  for(var j=0;j<CONTRACTOR_PROVIDERS.length;j++) if(t.toLowerCase()===CONTRACTOR_PROVIDERS[j].toLowerCase()) return 'Contractor';
+  return 'Unknown';
+}
+function inferProg(ev){
+  var p = (ev.program||'').toLowerCase().trim();
+  if(!p && ev.clientId){
+    var cl=DATA.clients.find(function(c){return c.id===ev.clientId;});
+    if(cl) p=(cl.program||'').toLowerCase().trim();
+  }
+  return p;
+}
 
-var DATA={events:[],clients:[],providers:{}}; var _loaded=false;
+/* ─── Core filter ───────────────────────────────────────── */
+function filteredEvents(){
+  var from=document.getElementById('flt-from').value;
+  var to=document.getElementById('flt-to').value;
+  return DATA.events.filter(function(ev){
+    if(!ev.date||!ev.provider) return false;
+    if(!isCompleted(ev)||isGroup(ev)||isExcluded(ev)) return false;
+    var mo=(ev.date||'').slice(0,7);
+    if(from&&mo<from) return false;
+    if(to&&mo>to) return false;
+    if(_filters.prog){
+      var p=inferProg(ev);
+      if(_filters.prog==='Signature'&&p&&p!=='signature'&&p!=='sig'&&p!=='both') return false;
+      if(_filters.prog==='PDI'&&p&&p!=='pdi'&&p!=='both') return false;
+    }
+    if(_filters.svc==='Clinician'&&!isClinician(ev)) return false;
+    if(_filters.svc==='Ancillary'&&isClinician(ev)) return false;
+    if(_filters.emp&&empType(ev.provider)!==_filters.emp) return false;
+    return true;
+  });
+}
 
-/* ── Auth ── */
+/* ─── Auth ──────────────────────────────────────────────── */
 function tryLogin(){
-  var v=(document.getElementById('pw').value||'').trim();
-  if(v===PW){
+  if((document.getElementById('pw').value||'').trim()===PW){
     document.getElementById('login-screen').style.display='none';
     document.getElementById('app').style.display='block';
     initFB();
@@ -232,203 +283,166 @@ function tryLogin(){
   }
 }
 
-/* ── Firebase ── */
+/* ─── Firebase ──────────────────────────────────────────── */
 function initFB(){
   firebase.initializeApp({databaseURL:'https://pdi-signature-schedule-default-rtdb.firebaseio.com'});
   firebase.database().ref('schedule_v3').on('value',function(snap){
     var raw=snap.val();
-    if(raw&&raw.blob){try{var d=JSON.parse(raw.blob);
-      if(Array.isArray(d.events))DATA.events=d.events;
-      if(Array.isArray(d.clients))DATA.clients=d.clients;
-      if(d.providers)DATA.providers=d.providers;
+    if(raw&&raw.blob){try{
+      var d=JSON.parse(raw.blob);
+      if(Array.isArray(d.events)) DATA.events=d.events;
+      if(Array.isArray(d.clients)) DATA.clients=d.clients;
+      if(d.providers) DATA.providers=d.providers;
     }catch(e){console.error(e);}}
     document.getElementById('live-dot').className='dot on';
     document.getElementById('live-lbl').textContent='Live';
     _loaded=true;
     var now=new Date();
     document.getElementById('flt-to').value=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
-    var provs=[...new Set(DATA.events.map(function(e){return e.provider||'';}).filter(Boolean))].sort();
-    var sel=document.getElementById('flt-prov');
-    provs.forEach(function(p){var o=document.createElement('option');o.value=o.textContent=p;sel.appendChild(o);});
     document.getElementById('loading-div').style.display='none';
     document.getElementById('content').style.display='block';
     render();
   });
 }
 
-/* ── Helpers ── */
+/* ─── UI event binding ──────────────────────────────────── */
+document.addEventListener('DOMContentLoaded',function(){
+  // Button group filters
+  ['grp-prog','grp-svc','grp-emp'].forEach(function(id){
+    var grp=document.getElementById(id);
+    if(!grp) return;
+    grp.querySelectorAll('.btn-filter').forEach(function(btn){
+      btn.addEventListener('click',function(){
+        grp.querySelectorAll('.btn-filter').forEach(function(b){b.className='btn-filter';});
+        btn.className='btn-filter active';
+        var key=id==='grp-prog'?'prog':id==='grp-svc'?'svc':'emp';
+        _filters[key]=btn.dataset.val;
+        if(_loaded) render();
+      });
+    });
+  });
+  // View tabs
+  document.querySelectorAll('.view-tab').forEach(function(tab){
+    tab.addEventListener('click',function(){
+      document.querySelectorAll('.view-tab').forEach(function(t){t.className='view-tab';});
+      tab.className='view-tab active';
+      _filters.view=tab.dataset.view;
+      if(_loaded) render();
+    });
+  });
+  // Date inputs
+  ['flt-from','flt-to'].forEach(function(id){
+    document.getElementById(id).addEventListener('change',function(){if(_loaded)render();});
+  });
+});
+
+/* ─── Helpers ───────────────────────────────────────────── */
 function moKey(d){return (d||'').slice(0,7);}
 function wkKey(d){var dt=new Date((d||'').slice(0,10)+'T12:00:00');if(isNaN(dt))return '';dt.setDate(dt.getDate()-dt.getDay());return dt.toISOString().slice(0,10);}
 function moLabel(k){var m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];var p=k.split('-');return m[parseInt(p[1],10)-1]+' '+p[0];}
-function wkLabel(k){var dt=new Date(k+'T12:00:00');var en=new Date(k+'T12:00:00');en.setDate(en.getDate()+6);return (dt.getMonth()+1)+'/'+dt.getDate()+' – '+(en.getMonth()+1)+'/'+en.getDate();}
-function dateLabel(d){var dt=new Date((d||'').slice(0,10)+'T12:00:00');if(isNaN(dt))return d;var days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];return days[dt.getDay()]+' '+(dt.getMonth()+1)+'/'+dt.getDate();}
+function wkLabel(k){var dt=new Date(k+'T12:00:00');var en=new Date(k+'T12:00:00');en.setDate(en.getDate()+6);return (dt.getMonth()+1)+'/'+dt.getDate()+'–'+(en.getMonth()+1)+'/'+en.getDate();}
+function dayLabel(d){var dt=new Date((d||'').slice(0,10)+'T12:00:00');if(isNaN(dt))return d;return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][dt.getDay()]+' '+(dt.getMonth()+1)+'/'+dt.getDate();}
+function kpi(val,lbl,note,cls){return '<div class="kpi'+(cls?' '+cls:'')+'"><div class="num">'+val+'</div><div class="lbl">'+lbl+'</div>'+(note?'<div class="note">'+note+'</div>':'')+
+'</div>';}
 
-function filteredEvents(){
-  var from=document.getElementById('flt-from').value;
-  var to=document.getElementById('flt-to').value;
-  var prog=document.getElementById('flt-prog').value;
-  var prov=document.getElementById('flt-prov').value;
-  var emp=document.getElementById('flt-emp')?document.getElementById('flt-emp').value:'';
-  return DATA.events.filter(function(ev){
-    if(!ev.date||!ev.provider) return false;
-    if(!isBillable(ev)) return false;
-    var mo=moKey(ev.date);
-    if(from&&mo<from) return false;
-    if(to&&mo>to) return false;
-    if(prov&&ev.provider!==prov) return false;
-    if(emp&&empType(ev.provider)!==emp) return false;
-    if(prog){
-      var p=(ev.program||'').toLowerCase().trim();
-      // Some events may not have program — try to infer from client
-      if(!p&&ev.clientId){
-        var cl=DATA.clients.find(function(c){return c.id===ev.clientId;});
-        if(cl)p=(cl.program||'').toLowerCase().trim();
-      }
-      if(prog==='Signature'){
-        // Keep if signature, sig, both, or program not set (include unknown)
-        if(p&&p!=='signature'&&p!=='sig'&&p!=='both') return false;
-      }
-      if(prog==='PDI'){
-        if(p&&p!=='pdi'&&p!=='both') return false;
-      }
-    }
-    return true;
-  });
-}
-
-var PALETTE_CLIN=['#1B2A4A','#2A3F5C','#3A5470','#4A6A84'];
-var PALETTE_ANC=['#2D6A4F','#3D8A6F','#4DAA8F','#6DC8AC'];
-var PALETTE_MIX=['#1B2A4A','#2D6A4F','#7A6A56','#6B2737','#4A235A','#0A4F6E','#78350F','#831843','#065F46','#374151'];
+var PALETTE=['#1B2A4A','#2D6A4F','#7A6A56','#6B2737','#4A235A','#0A4F6E','#78350F','#065F46','#374151','#92400E','#1E3A5F','#831843','#145A32','#3D1A6F','#1A5276'];
 
 var _charts=[];
 function destroyCharts(){_charts.forEach(function(c){try{c.destroy();}catch(e){}});_charts=[];}
 
-function kpi(val,lbl,note,cls){
-  return '<div class="kpi'+(cls?' '+cls:'')+'"><div class="num">'+val+'</div><div class="lbl">'+lbl+'</div>'+(note?'<div class="note">'+note+'</div>':'')+
-  '</div>';
-}
-
+/* ══════════════════════════════════════════════════════
+   RENDER DISPATCHER
+══════════════════════════════════════════════════════ */
 function render(){
-  if(!_loaded)return;
+  if(!_loaded) return;
   destroyCharts();
-  var view=document.getElementById('view').value;
-  if(view==='monthly')     renderMonthly();
-  else if(view==='weekly') renderWeekly();
-  else if(view==='provider') renderProvider();
-  else renderAudit();
+  var evs=filteredEvents();
+  var view=_filters.view;
+  if(view==='monthly')     renderMonthly(evs);
+  else if(view==='weekly') renderWeekly(evs);
+  else if(view==='provider') renderProvider(evs);
+  else renderAudit(evs);
 }
 
 /* ══ MONTHLY ══════════════════════════════════════════ */
-function renderMonthly(){
-  var evs=filteredEvents();
+function renderMonthly(evs){
   var byMo={};var allMo=new Set();
   evs.forEach(function(ev){
     var mo=moKey(ev.date);allMo.add(mo);
-    if(!byMo[mo])byMo[mo]={clin:0,anc:0,total:0,provs:{}};
-    var c=isClinician(ev);
-    byMo[mo].total++;
-    if(c)byMo[mo].clin++;else byMo[mo].anc++;
+    if(!byMo[mo])byMo[mo]={clin:0,anc:0,w2:0,ctr:0,provs:{}};
+    if(isClinician(ev))byMo[mo].clin++;else byMo[mo].anc++;
+    if(empType(ev.provider)==='W2')byMo[mo].w2++;
+    else if(empType(ev.provider)==='Contractor')byMo[mo].ctr++;
     byMo[mo].provs[ev.provider]=(byMo[mo].provs[ev.provider]||0)+1;
   });
   var months=[...allMo].sort();
   var totalClin=evs.filter(isClinician).length;
   var totalAnc=evs.length-totalClin;
+  var w2Tot=evs.filter(function(e){return empType(e.provider)==='W2';}).length;
+  var ctrTot=evs.filter(function(e){return empType(e.provider)==='Contractor';}).length;
+  var uniqProvs=new Set(evs.map(function(e){return e.provider;})).size;
 
-  var w2Sess=evs.filter(function(e){return empType(e.provider)==='W2';}).length;
-  var ctrSess=evs.filter(function(e){return empType(e.provider)==='Contractor';}).length;
-  var html='<div class="note-box">Each completed session = 1 direct service hour. Clinician = Individual Therapy, Family Therapy, Testing/Assessment. Ancillary = all other completed services.</div>';
-  html+='<div class="kpi-row">'+
-    kpi(evs.length.toLocaleString(),'Total Sessions','Completed · all types')+
-    kpi(totalClin,'Clinician Sessions','Individual + Family Therapy + Testing','clin')+
-    kpi(totalAnc,'Ancillary Sessions','All other services','anc')+
-    kpi(w2Sess,'W2 / Salaried Sessions','<span style="color:#1B2A4A">●</span> Employee hours')+
-    kpi(ctrSess,'Contractor Sessions','<span style="color:#7A6A56">●</span> 1099 hours')+
+  var html='<div class="kpi-row cols-5">'+
+    kpi(evs.length.toLocaleString(),'Total Sessions',months.length+' months · '+uniqProvs+' providers')+
+    kpi(totalClin,'Clinician Sessions','Individual · Family · Testing','c-clin')+
+    kpi(totalAnc,'Ancillary Sessions','All other services','c-anc')+
+    kpi(w2Tot,'W2 Salaried Sessions','')+
+    kpi(ctrTot,'Contractor Sessions','')+
   '</div>';
 
-  // Chart 1: grouped bar clin vs anc per month
-  html+='<div class="card"><div class="card-title">Clinician vs Ancillary Sessions — by Month</div>'+
-    '<div class="chart-wrap" style="height:270px"><canvas id="ch-mo-grouped"></canvas></div></div>';
-  // W2 vs Contractor by month chart
-  html+='<div class="card" style="margin-bottom:14px"><div class="card-title">W2 Salaried vs Contractor Sessions — by Month</div>'+
-    '<div class="chart-wrap" style="height:220px"><canvas id="ch-mo-emp"></canvas></div></div>';
+  html+='<div class="card"><div class="card-title">Clinician vs Ancillary — by Month</div>'+
+    '<div class="chart-wrap" style="height:260px"><canvas id="ch-mo-clin"></canvas></div></div>';
 
-  // Chart row
   html+='<div class="row2">'+
-    '<div class="card"><div class="card-title">Monthly Total Sessions (trend)</div>'+
-    '<div class="chart-wrap" style="height:220px"><canvas id="ch-mo-line"></canvas></div></div>'+
-    '<div class="card"><div class="card-title">Clinician vs Ancillary — Full Period</div>'+
-    '<div class="chart-wrap" style="height:220px"><canvas id="ch-split-pie"></canvas></div></div>'+
+    '<div class="card"><div class="card-title">W2 vs Contractor — by Month</div>'+
+    '<div class="chart-wrap" style="height:220px"><canvas id="ch-mo-emp"></canvas></div></div>'+
+    '<div class="card"><div class="card-title">Session Mix — Full Period</div>'+
+    '<div class="chart-wrap" style="height:220px"><canvas id="ch-mo-pie"></canvas></div></div>'+
   '</div>';
 
-  // Table
-  html+='<div class="card"><div class="card-title">Monthly Breakdown</div>'+
+  html+='<div class="card"><div class="card-title">Monthly Summary</div>'+
     '<div style="overflow-x:auto"><table><thead><tr>'+
-    '<th>Month</th><th class="r">Clinician Sess</th><th class="r">Ancillary Sess</th>'+
-    '<th class="r">Total Sessions</th><th class="r">Providers</th></tr></thead><tbody>'+
+    '<th>Month</th><th class="r">Total</th><th class="r">Clinician</th>'+
+    '<th class="r">Ancillary</th><th class="r">W2</th><th class="r">Contractor</th><th class="r">Providers</th></tr></thead><tbody>'+
     months.map(function(mo){
-      var r=byMo[mo]||{clin:0,anc:0,total:0,provs:{}};
+      var r=byMo[mo];
       return '<tr><td><b>'+moLabel(mo)+'</b></td>'+
-        '<td class="r"><span style="color:#1B2A4A;font-weight:600">'+r.clin+'</span></td>'+
-        '<td class="r"><span style="color:#2D6A4F;font-weight:600">'+r.anc+'</span></td>'+
-        '<td class="r"><b>'+r.total+'</b></td>'+
+        '<td class="r"><b>'+(r.clin+r.anc)+'</b></td>'+
+        '<td class="r" style="color:#1B2A4A;font-weight:600">'+r.clin+'</td>'+
+        '<td class="r" style="color:#2D6A4F;font-weight:600">'+r.anc+'</td>'+
+        '<td class="r">'+r.w2+'</td><td class="r">'+r.ctr+'</td>'+
         '<td class="r">'+Object.keys(r.provs).length+'</td></tr>';
     }).join('')+
     '<tr class="totrow"><td>Total</td>'+
+      '<td class="r">'+evs.length+'</td>'+
       '<td class="r">'+totalClin+'</td><td class="r">'+totalAnc+'</td>'+
-      '<td class="r">'+evs.length+'</td><td class="r">—</td></tr>'+
+      '<td class="r">'+w2Tot+'</td><td class="r">'+ctrTot+'</td><td class="r">—</td></tr>'+
     '</tbody></table></div></div>';
 
   document.getElementById('content').innerHTML=html;
   setTimeout(function(){
-    _charts.push(new Chart(document.getElementById('ch-mo-grouped'),{
-      type:'bar',
+    _charts.push(new Chart(document.getElementById('ch-mo-clin'),{type:'bar',
       data:{labels:months.map(moLabel),datasets:[
-        {label:'Clinician',data:months.map(function(m){return(byMo[m]&&byMo[m].clin)||0;}),backgroundColor:'#1B2A4A',borderRadius:3},
-        {label:'Ancillary',data:months.map(function(m){return(byMo[m]&&byMo[m].anc)||0;}),backgroundColor:'#2D6A4F',borderRadius:3}
-      ]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},
-        scales:{x:{grid:{display:false}},y:{beginAtZero:true,title:{display:true,text:'Sessions'}}}}
-    }));
-    _charts.push(new Chart(document.getElementById('ch-mo-line'),{
-      type:'line',
+        {label:'Clinician',data:months.map(function(m){return byMo[m].clin;}),backgroundColor:'#1B2A4A',borderRadius:3},
+        {label:'Ancillary',data:months.map(function(m){return byMo[m].anc;}),backgroundColor:'#2D6A4F',borderRadius:3}
+      ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12}}},
+        scales:{x:{grid:{display:false}},y:{beginAtZero:true,title:{display:true,text:'Sessions'}}}}}));
+    _charts.push(new Chart(document.getElementById('ch-mo-emp'),{type:'bar',
       data:{labels:months.map(moLabel),datasets:[
-        {label:'Total',data:months.map(function(m){return(byMo[m]&&byMo[m].total)||0;}),borderColor:'#1B2A4A',backgroundColor:'#1B2A4A18',tension:.3,fill:true,pointRadius:4},
-        {label:'Clinician',data:months.map(function(m){return(byMo[m]&&byMo[m].clin)||0;}),borderColor:'#4A6A84',backgroundColor:'transparent',tension:.3,borderDash:[4,3],pointRadius:3},
-        {label:'Ancillary',data:months.map(function(m){return(byMo[m]&&byMo[m].anc)||0;}),borderColor:'#2D6A4F',backgroundColor:'transparent',tension:.3,borderDash:[4,3],pointRadius:3}
-      ]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:12}}},
-        scales:{y:{beginAtZero:true},x:{grid:{display:false}}}}
-    }));
-    _charts.push(new Chart(document.getElementById('ch-split-pie'),{
-      type:'doughnut',
-      data:{labels:['Clinician','Ancillary'],datasets:[{data:[totalClin,totalAnc],backgroundColor:['#1B2A4A','#2D6A4F'],borderWidth:3,borderColor:'#fff'}]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:14}}}}
-    }));
-    // W2 vs Contractor monthly chart
-    if(document.getElementById('ch-mo-emp')){
-      var w2Data=months.map(function(m){
-        return Object.entries(byMo[m]&&byMo[m].provs||{}).reduce(function(s,kv){return s+(empType(kv[0])==='W2'?kv[1]:0);},0);
-      });
-      var ctrData=months.map(function(m){
-        return Object.entries(byMo[m]&&byMo[m].provs||{}).reduce(function(s,kv){return s+(empType(kv[0])==='Contractor'?kv[1]:0);},0);
-      });
-      _charts.push(new Chart(document.getElementById('ch-mo-emp'),{
-        type:'bar',
-        data:{labels:months.map(moLabel),datasets:[
-          {label:'W2 / Salaried',data:w2Data,backgroundColor:'#1B2A4A',borderRadius:3},
-          {label:'Contractor / 1099',data:ctrData,backgroundColor:'#C4924A',borderRadius:3}
-        ]},
-        options:{responsive:true,maintainAspectRatio:false,
-          plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:12}}},
-          scales:{x:{grid:{display:false}},y:{beginAtZero:true,title:{display:true,text:'Sessions'}}}}
-      }));
-    }
+        {label:'W2 Salaried',data:months.map(function(m){return byMo[m].w2;}),backgroundColor:'#1B2A4A',borderRadius:3},
+        {label:'Contractor',data:months.map(function(m){return byMo[m].ctr;}),backgroundColor:'#C4924A',borderRadius:3}
+      ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12}}},
+        scales:{x:{grid:{display:false}},y:{beginAtZero:true}}}}));
+    _charts.push(new Chart(document.getElementById('ch-mo-pie'),{type:'doughnut',
+      data:{labels:['Clinician','Ancillary','W2','Contractor'],
+        datasets:[{data:[totalClin,totalAnc],backgroundColor:['#1B2A4A','#2D6A4F'],borderWidth:3,borderColor:'#fff'},
+                  {data:[w2Tot,ctrTot],backgroundColor:['#3730A3','#C4924A'],borderWidth:3,borderColor:'#fff'}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:10},boxWidth:12}}}}}));
   },60);
 }
 
 /* ══ WEEKLY ═══════════════════════════════════════════ */
-function renderWeekly(){
-  var evs=filteredEvents();
+function renderWeekly(evs){
   var byWk={};var allWk=new Set();
   evs.forEach(function(ev){
     var wk=wkKey(ev.date);if(!wk)return;allWk.add(wk);
@@ -437,322 +451,245 @@ function renderWeekly(){
     if(isClinician(ev))byWk[wk].clin++;else byWk[wk].anc++;
   });
   var weeks=[...allWk].sort();
-  var totalClin=evs.filter(isClinician).length, totalAnc=evs.length-totalClin;
-  var avgWk=weeks.length?Math.round(evs.length/weeks.length):0;
+  var totalClin=evs.filter(isClinician).length;
 
-  var html='<div class="note-box">Week = Sunday – Saturday (aligned to billing period). Each completed session = 1 direct service hour.</div>';
-  html+='<div class="kpi-row">'+
-    kpi(evs.length.toLocaleString(),'Total Sessions','')+
-    kpi(totalClin,'Clinician Sessions','Individual + Family','clin')+
-    kpi(totalAnc,'Ancillary Sessions','All other services','anc')+
-    kpi(weeks.length,'Weeks','')+
-    kpi(avgWk,'Avg/Week','')+
+  var html='<div class="kpi-row cols-4">'+
+    kpi(evs.length,'Total Sessions',weeks.length+' billing weeks')+
+    kpi(totalClin,'Clinician Sessions','','c-clin')+
+    kpi(evs.length-totalClin,'Ancillary Sessions','','c-anc')+
+    kpi(weeks.length?Math.round(evs.length/weeks.length):0,'Avg Sessions/Week','')+
   '</div>';
 
   html+='<div class="card"><div class="card-title">Weekly Sessions — Clinician vs Ancillary</div>'+
-    '<div class="chart-wrap" style="height:270px"><canvas id="ch-wk-stacked"></canvas></div></div>';
-  html+='<div class="card"><div class="card-title">Weekly Detail</div><div style="overflow-x:auto"><table><thead><tr>'+
-    '<th>Week</th><th class="r">Clinician</th><th class="r">Ancillary</th><th class="r">Total</th></tr></thead><tbody>'+
+    '<div class="chart-wrap" style="height:260px"><canvas id="ch-wk"></canvas></div></div>';
+
+  html+='<div class="card"><div class="card-title">Weekly Detail — Most Recent 16 Weeks</div>'+
+    '<div style="overflow-x:auto"><table><thead><tr>'+
+    '<th>Billing Week</th><th class="r">Total</th><th class="r">Clinician</th><th class="r">Ancillary</th></tr></thead><tbody>'+
     [...weeks].reverse().slice(0,16).map(function(wk){
-      var r=byWk[wk]||{clin:0,anc:0,total:0};
+      var r=byWk[wk];
       return '<tr><td>'+wkLabel(wk)+'</td>'+
-        '<td class="r"><b style="color:#1B2A4A">'+r.clin+'</b></td>'+
-        '<td class="r"><b style="color:#2D6A4F">'+r.anc+'</b></td>'+
-        '<td class="r">'+r.total+'</td></tr>';
+        '<td class="r"><b>'+r.total+'</b></td>'+
+        '<td class="r" style="color:#1B2A4A;font-weight:600">'+r.clin+'</td>'+
+        '<td class="r" style="color:#2D6A4F;font-weight:600">'+r.anc+'</td></tr>';
     }).join('')+'</tbody></table></div></div>';
 
   document.getElementById('content').innerHTML=html;
   setTimeout(function(){
-    _charts.push(new Chart(document.getElementById('ch-wk-stacked'),{
-      type:'bar',
+    _charts.push(new Chart(document.getElementById('ch-wk'),{type:'bar',
       data:{labels:weeks.map(wkLabel),datasets:[
-        {label:'Clinician',data:weeks.map(function(w){return(byWk[w]&&byWk[w].clin)||0;}),backgroundColor:'#1B2A4A',borderRadius:2},
-        {label:'Ancillary',data:weeks.map(function(w){return(byWk[w]&&byWk[w].anc)||0;}),backgroundColor:'#2D6A4F',borderRadius:2}
-      ]},
-      options:{responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{position:'bottom'}},
+        {label:'Clinician',data:weeks.map(function(w){return byWk[w].clin;}),backgroundColor:'#1B2A4A',borderRadius:2},
+        {label:'Ancillary',data:weeks.map(function(w){return byWk[w].anc;}),backgroundColor:'#2D6A4F',borderRadius:2}
+      ]},options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12}}},
         scales:{x:{stacked:true,grid:{display:false},ticks:{maxRotation:45,font:{size:9}}},
-          y:{stacked:true,beginAtZero:true,title:{display:true,text:'Sessions'}}}}
-    }));
+          y:{stacked:true,beginAtZero:true,title:{display:true,text:'Sessions'}}}}}));
   },60);
 }
 
 /* ══ BY PROVIDER ══════════════════════════════════════ */
-function renderProvider(){
-  var evs=filteredEvents();
+function renderProvider(evs){
   var byProv={};
   evs.forEach(function(ev){
     var p=ev.provider;
-    if(!byProv[p])byProv[p]={clin:0,anc:0,total:0,clients:new Set(),months:new Set(),services:new Set()};
+    if(!byProv[p])byProv[p]={clin:0,anc:0,total:0,clients:new Set(),months:new Set(),ancSvcs:{}};
     byProv[p].total++;
-    if(isClinician(ev))byProv[p].clin++;else byProv[p].anc++;
+    if(isClinician(ev))byProv[p].clin++;
+    else{byProv[p].anc++;var s=ev.service||'(unlabeled)';byProv[p].ancSvcs[s]=(byProv[p].ancSvcs[s]||0)+1;}
     if(ev.clientId)byProv[p].clients.add(ev.clientId);
     byProv[p].months.add(moKey(ev.date));
-    if(ev.service)byProv[p].services.add(ev.service);
   });
 
-  // Separate into clinicians (any clin sessions) and ancillary-only
-  var clinProvs=Object.entries(byProv)
-    .filter(function(kv){return kv[1].clin>0;})
-    .sort(function(a,b){return b[1].clin-a[1].clin;});
-  var ancProvs=Object.entries(byProv)
-    .filter(function(kv){return kv[1].clin===0&&kv[1].anc>0;})
-    .sort(function(a,b){return b[1].anc-a[1].anc;});
-  var allProvs=Object.entries(byProv).sort(function(a,b){return b[1].total-a[1].total;});
+  var clinProvs=Object.entries(byProv).filter(function(kv){return kv[1].clin>0;}).sort(function(a,b){return b[1].clin-a[1].clin;});
+  var ancProvs=Object.entries(byProv).filter(function(kv){return kv[1].clin===0&&kv[1].anc>0;}).sort(function(a,b){return b[1].anc-a[1].anc;});
+  var mixProvs=Object.entries(byProv).filter(function(kv){return kv[1].clin>0&&kv[1].anc>0;});
 
   var totalClin=evs.filter(isClinician).length;
   var totalAnc=evs.length-totalClin;
 
-  var html='<div class="note-box">Clinician = Individual &amp; Family Therapy. Ancillary = all other completed services (Dr. Flannery, personal training, wellness, culinary, nutritional, etc.).</div>';
-  html+='<div class="kpi-row">'+
-    kpi(clinProvs.length,'Clinician Providers','Deliver Individual or Family Therapy','clin')+
-    kpi(totalClin,'Clinician Sessions','','clin')+
-    kpi(ancProvs.length,'Ancillary Providers','All other service providers','anc')+
-    kpi(totalAnc,'Ancillary Sessions','','anc')+
+  var html='<div class="kpi-row cols-5">'+
+    kpi(clinProvs.length,'Clinician Providers','Deliver therapy or testing','c-clin')+
+    kpi(totalClin,'Clinician Sessions','','c-clin')+
+    kpi(ancProvs.length,'Ancillary Providers','All other services','c-anc')+
+    kpi(totalAnc,'Ancillary Sessions','','c-anc')+
     kpi(evs.length,'Total Sessions','')+
   '</div>';
 
-  // Two charts side by side — same layout, one per category
-  var clinH=Math.max(220,clinProvs.length*30);
-  var ancH=Math.max(220,ancProvs.length*30);
+  var clinH=Math.max(200,clinProvs.length*28);
+  var ancH=Math.max(200,ancProvs.length*28);
+
   html+='<div class="row2">'+
-    '<div class="card">'+
-      '<div class="card-title" style="color:#1B2A4A">▮ Direct Service — Clinician Providers</div>'+
-      '<div style="font-size:10px;color:#888;margin-bottom:10px">Individual Therapy + Family Therapy</div>'+
-      '<div class="chart-wrap" style="height:'+clinH+'px"><canvas id="ch-clin-bar"></canvas></div>'+
-    '</div>'+
-    '<div class="card">'+
-      '<div class="card-title" style="color:#2D6A4F">▮ Direct Service — Ancillary Providers</div>'+
-      '<div style="font-size:10px;color:#888;margin-bottom:10px">All other completed services</div>'+
-      '<div class="chart-wrap" style="height:'+ancH+'px"><canvas id="ch-anc-bar"></canvas></div>'+
-    '</div>'+
+    '<div class="card"><div class="card-title" style="color:#1B2A4A">Clinician Providers — Direct Service</div>'+
+      '<div style="font-size:10px;color:#888;margin-bottom:10px">Individual Therapy · Family Therapy · Testing &amp; Assessment</div>'+
+      '<div class="chart-wrap" style="height:'+clinH+'px"><canvas id="ch-clin"></canvas></div></div>'+
+    '<div class="card"><div class="card-title" style="color:#2D6A4F">Ancillary Providers — All Other Services</div>'+
+      '<div style="font-size:10px;color:#888;margin-bottom:10px">Personal Training · Wellness · Culinary · Nutritional · PBWI · Other</div>'+
+      '<div class="chart-wrap" style="height:'+ancH+'px"><canvas id="ch-anc"></canvas></div></div>'+
   '</div>';
 
-  // Combined detail table
-  html+='<div class="card"><div class="card-title">All Provider Detail</div>'+
+  // Clinician table
+  html+='<div class="card"><div class="card-title" style="color:#1B2A4A">Clinician Provider Detail</div>'+
     '<div style="overflow-x:auto"><table><thead><tr>'+
-    '<th>Provider</th><th>Category</th><th class="r">Sessions</th>'+
-    '<th class="r">Active Months</th><th class="r">Unique Clients</th><th>Service Types in Calendar</th></tr></thead><tbody>'+
-    '<tr><td colspan="5" class="month-header" style="background:#EEF2FF;color:#1B2A4A;font-size:10px;font-weight:700;padding:6px 10px;letter-spacing:.04em">CLINICIAN PROVIDERS — Individual &amp; Family Therapy</td></tr>'+
+    '<th>Provider</th><th>Employment</th><th class="r">Sessions</th>'+
+    '<th class="r">Active Months</th><th class="r">Unique Clients</th></tr></thead><tbody>'+
     clinProvs.map(function(kv){
-      var r=kv[1];
-      var svcs=[...r.services].slice(0,4).join(', ')+(r.services.size>4?' +more':'');
-      var et=empType(kv[0]);
-      var etBadge=et==='W2'?'<span class="badge" style="background:#EEF2FF;color:#3730A3;margin-left:4px">W2</span>':
-                  et==='Contractor'?'<span class="badge" style="background:#FEF3C7;color:#92400E;margin-left:4px">1099</span>':'';
-      return '<tr>'+
-        '<td><b>'+kv[0]+'</b>'+etBadge+'</td>'+
-        '<td><span class="badge badge-clin">Clinician</span></td>'+
+      var r=kv[1]; var et=empType(kv[0]);
+      return '<tr><td><b>'+kv[0]+'</b></td>'+
+        '<td><span class="badge '+(et==='W2'?'b-w2':et==='Contractor'?'b-ctr':'')+'">'+et+'</span></td>'+
         '<td class="r"><b style="color:#1B2A4A">'+r.clin+'</b></td>'+
-        '<td class="r">'+r.months.size+'</td>'+
-        '<td class="r">'+r.clients.size+'</td>'+
-        '<td style="font-size:10px;color:#888">'+svcs+'</td></tr>';
-    }).join('')+
-    '<tr><td colspan="5" class="month-header" style="background:#E8F5E9;color:#2D4A3E;font-size:10px;font-weight:700;padding:6px 10px;letter-spacing:.04em">ANCILLARY PROVIDERS — All Other Services</td></tr>'+
-    ancProvs.map(function(kv){
-      var r=kv[1];
-      var svcs=[...r.services].slice(0,4).join(', ')+(r.services.size>4?' +more':'');
-      var et2=empType(kv[0]);
-      var etBadge2=et2==='W2'?'<span class="badge" style="background:#EEF2FF;color:#3730A3;margin-left:4px">W2</span>':
-                   et2==='Contractor'?'<span class="badge" style="background:#FEF3C7;color:#92400E;margin-left:4px">1099</span>':'';
-      return '<tr>'+
-        '<td><b>'+kv[0]+'</b>'+etBadge2+'</td>'+
-        '<td><span class="badge badge-anc">Ancillary</span></td>'+
-        '<td class="r"><b style="color:#2D6A4F">'+r.anc+'</b></td>'+
-        '<td class="r">'+r.months.size+'</td>'+
-        '<td class="r">'+r.clients.size+'</td>'+
-        '<td style="font-size:10px;color:#888">'+svcs+'</td></tr>';
-    }).join('')+
-    '</tbody></table></div></div>';
+        '<td class="r">'+r.months.size+'</td><td class="r">'+r.clients.size+'</td></tr>';
+    }).join('')+'</tbody></table></div></div>';
 
-  // Build ancillary-in-clinician breakdown
-  var clinWithAnc=Object.entries(byProv).filter(function(kv){return kv[1].clin>0&&kv[1].anc>0;});
-  if(clinWithAnc.length){
-    html+='<div class="card"><div class="card-title" style="color:#92400E">⚠ Ancillary Sessions on Clinician Providers — Service Type Audit</div>'+
-      '<div style="font-size:11px;color:#888;margin-bottom:12px">These providers are classified as Clinicians but have sessions with service labels that did not match a clinician keyword. Review to confirm correct classification or add keywords.</div>'+
+  // Ancillary table
+  html+='<div class="card"><div class="card-title" style="color:#2D6A4F">Ancillary Provider Detail</div>'+
+    '<div style="overflow-x:auto"><table><thead><tr>'+
+    '<th>Provider</th><th>Employment</th><th class="r">Sessions</th>'+
+    '<th class="r">Active Months</th><th class="r">Unique Clients</th><th>Services</th></tr></thead><tbody>'+
+    ancProvs.map(function(kv){
+      var r=kv[1]; var et=empType(kv[0]);
+      var svcs=Object.entries(r.ancSvcs).sort(function(a,b){return b[1]-a[1];}).slice(0,4)
+        .map(function(s){return '<span class="badge b-anc" style="margin:1px">'+s[0]+'</span>';}).join('');
+      return '<tr><td><b>'+kv[0]+'</b></td>'+
+        '<td><span class="badge '+(et==='W2'?'b-w2':et==='Contractor'?'b-ctr':'')+'">'+et+'</span></td>'+
+        '<td class="r"><b style="color:#2D6A4F">'+r.anc+'</b></td>'+
+        '<td class="r">'+r.months.size+'</td><td class="r">'+r.clients.size+'</td>'+
+        '<td>'+svcs+'</td></tr>';
+    }).join('')+'</tbody></table></div></div>';
+
+  // Mixed providers audit
+  if(mixProvs.length){
+    html+='<div class="card"><div class="warn-box" style="margin:0 0 12px">'+
+      'These clinician providers also have sessions classified as Ancillary. '+
+      'The service labels below are what the calendar logged — review to confirm correct classification.</div>'+
+      '<div class="card-title" style="color:#92400E">Service Label Audit — Clinician Providers with Ancillary Sessions</div>'+
       '<div style="overflow-x:auto"><table><thead><tr>'+
-      '<th>Provider</th><th class="r">Clinician Sess</th><th class="r">Ancillary Sess</th>'+
-      '<th>Ancillary Service Labels (from calendar)</th></tr></thead><tbody>'+
-      clinWithAnc.sort(function(a,b){return b[1].anc-a[1].anc;}).map(function(kv){
-        // Get ancillary service types for this provider
-        var ancServices={};
-        evs.forEach(function(ev){
-          if(ev.provider!==kv[0])return;
-          if(!isClinician(ev)){
-            var s=ev.service||'(unlabeled)';
-            ancServices[s]=(ancServices[s]||0)+1;
-          }
-        });
-        var svcHtml=Object.entries(ancServices).sort(function(a,b){return b[1]-a[1];}).map(function(sv){
-          return '<span style="display:inline-block;margin:2px;padding:2px 8px;background:#FEF3C7;color:#92400E;border-radius:10px;font-size:10px;font-weight:600">'+sv[0]+' ('+sv[1]+')</span>';
-        }).join('');
-        return '<tr>'+
-          '<td><b>'+kv[0]+'</b></td>'+
-          '<td class="r"><span style="color:#1B2A4A;font-weight:600">'+kv[1].clin+'</span></td>'+
-          '<td class="r"><span style="color:#92400E;font-weight:600">'+kv[1].anc+'</span></td>'+
-          '<td>'+svcHtml+'</td></tr>';
-      }).join('')+
-    '</tbody></table></div></div>';
+      '<th>Provider</th><th class="r">Clinician</th><th class="r">Ancillary</th>'+
+      '<th>Ancillary Service Labels in Calendar</th></tr></thead><tbody>'+
+      mixProvs.sort(function(a,b){return b[1].anc-a[1].anc;}).map(function(kv){
+        var r=kv[1];
+        var tags=Object.entries(r.ancSvcs).sort(function(a,b){return b[1]-a[1];})
+          .map(function(s){return '<span class="badge b-warn" style="margin:2px">'+s[0]+' ('+s[1]+')</span>';}).join('');
+        return '<tr><td><b>'+kv[0]+'</b></td>'+
+          '<td class="r" style="color:#1B2A4A;font-weight:600">'+r.clin+'</td>'+
+          '<td class="r" style="color:#92400E;font-weight:600">'+r.anc+'</td>'+
+          '<td>'+tags+'</td></tr>';
+      }).join('')+'</tbody></table></div>';
   }
 
   document.getElementById('content').innerHTML=html;
-
   setTimeout(function(){
-    // Clinician chart
-    if(clinProvs.length){
-      _charts.push(new Chart(document.getElementById('ch-clin-bar'),{
-        type:'bar',
-        data:{labels:clinProvs.map(function(p){return p[0];}),
-          datasets:[{label:'Clinician Sessions',
-            data:clinProvs.map(function(p){return p[1].clin;}),
-            backgroundColor:'#1B2A4A',borderRadius:4}]},
-        options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
-          plugins:{legend:{display:false}},
-          scales:{x:{beginAtZero:true,title:{display:true,text:'Sessions (Individual + Family Therapy)'},grid:{color:'#F0EDE8'}},
-            y:{grid:{display:false}}}}
-      }));
-    }
-    // Ancillary chart
-    if(ancProvs.length){
-      _charts.push(new Chart(document.getElementById('ch-anc-bar'),{
-        type:'bar',
-        data:{labels:ancProvs.map(function(p){return p[0];}),
-          datasets:[{label:'Ancillary Sessions',
-            data:ancProvs.map(function(p){return p[1].anc;}),
-            backgroundColor:'#2D6A4F',borderRadius:4}]},
-        options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
-          plugins:{legend:{display:false}},
-          scales:{x:{beginAtZero:true,title:{display:true,text:'Sessions (Ancillary Services)'},grid:{color:'#F0EDE8'}},
-            y:{grid:{display:false}}}}
-      }));
-    }
+    if(clinProvs.length) _charts.push(new Chart(document.getElementById('ch-clin'),{type:'bar',
+      data:{labels:clinProvs.map(function(p){return p[0];}),
+        datasets:[{label:'Sessions',data:clinProvs.map(function(p){return p[1].clin;}),backgroundColor:'#1B2A4A',borderRadius:4}]},
+      options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},
+        scales:{x:{beginAtZero:true,title:{display:true,text:'Sessions'},grid:{color:'#F0EDE8'}},y:{grid:{display:false}}}}}));
+    if(ancProvs.length) _charts.push(new Chart(document.getElementById('ch-anc'),{type:'bar',
+      data:{labels:ancProvs.map(function(p){return p[0];}),
+        datasets:[{label:'Sessions',data:ancProvs.map(function(p){return p[1].anc;}),backgroundColor:'#2D6A4F',borderRadius:4}]},
+      options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},
+        scales:{x:{beginAtZero:true,title:{display:true,text:'Sessions'},grid:{color:'#F0EDE8'}},y:{grid:{display:false}}}}}));
   },60);
 }
 
 /* ══ DAILY AUDIT ══════════════════════════════════════ */
-function renderAudit(){
-  var evs=filteredEvents();
-  // Group by clientId + date
-  var byClientDay={};
-  var clientNames={};
+function renderAudit(evs){
+  var byClientDay={};var clientNames={};
   evs.forEach(function(ev){
-    if(!ev.clientId||!ev.date)return;
+    if(!ev.clientId||!ev.date) return;
     var day=ev.date.slice(0,10);
     var key=ev.clientId+'|'+day;
-    if(!byClientDay[key])byClientDay[key]={clientId:ev.clientId,date:day,clin:0,anc:0,total:0,services:[]};
+    if(!byClientDay[key])byClientDay[key]={clientId:ev.clientId,date:day,clin:0,anc:0,total:0,svcs:[]};
     byClientDay[key].total++;
     if(isClinician(ev))byClientDay[key].clin++;else byClientDay[key].anc++;
-    byClientDay[key].services.push(ev.service||'?');
-    // Try to get client name
+    byClientDay[key].svcs.push(ev.service||'?');
     if(!clientNames[ev.clientId]){
       var cl=DATA.clients.find(function(c){return c.id===ev.clientId;});
-      if(cl)clientNames[ev.clientId]=cl.name||ev.clientId;
-      else clientNames[ev.clientId]=ev.clientId;
+      clientNames[ev.clientId]=cl?cl.name||ev.clientId:ev.clientId;
     }
   });
 
-  var entries=Object.values(byClientDay).sort(function(a,b){
-    return a.date<b.date?1:a.date>b.date?-1:0; // newest first
-  });
+  var entries=Object.values(byClientDay).sort(function(a,b){return a.date<b.date?1:-1;});
+  var met=entries.filter(function(e){return e.total===DAILY_TARGET;}).length;
+  var over=entries.filter(function(e){return e.total>DAILY_TARGET;}).length;
+  var under=entries.filter(function(e){return e.total<DAILY_TARGET;}).length;
+  var total=entries.length;
+  var pct=total?Math.round((met+over)/total*100):0;
 
-  var metTarget=entries.filter(function(e){return e.total===DAILY_TARGET;}).length;
-  var overTarget=entries.filter(function(e){return e.total>DAILY_TARGET;}).length;
-  var underTarget=entries.filter(function(e){return e.total>0&&e.total<DAILY_TARGET;}).length;
-  var totalDays=entries.length;
-  var compliancePct=totalDays?Math.round((metTarget+overTarget)/totalDays*100):0;
-
-  // Date range for chart
   var byDate={};
   entries.forEach(function(e){
-    if(!byDate[e.date])byDate[e.date]={met:0,over:0,under:0,total:0};
-    byDate[e.date].total++;
+    if(!byDate[e.date])byDate[e.date]={met:0,over:0,under:0};
     if(e.total===DAILY_TARGET)byDate[e.date].met++;
     else if(e.total>DAILY_TARGET)byDate[e.date].over++;
     else byDate[e.date].under++;
   });
   var dates=Object.keys(byDate).sort();
 
-  var html='<div class="note-box">'+
-    'Target: <b>'+DAILY_TARGET+' direct service hours per client per day</b> (1 session = 1 hour). '+
-    'Clinician (Individual + Family Therapy) + Ancillary (all other services) combined toward the daily target. '+
-    'This audit shows whether each client-day met the target.</div>';
-
-  html+='<div class="kpi-row">'+
-    kpi(totalDays,'Client-Days','Total days with ≥1 session')+
-    kpi(metTarget,'Met Target (='+DAILY_TARGET+')','Exactly '+DAILY_TARGET+' sessions','audit-ok')+
-    kpi(overTarget,'Exceeding Target (>'+DAILY_TARGET+')','Review for over-scheduling','audit-over')+
-    kpi(underTarget,'Under Target (<'+DAILY_TARGET+')','Below '+DAILY_TARGET+' sessions','audit-warn')+
-    kpi(compliancePct+'%','At/Above Target',compliancePct>=80?'Met ≥80% threshold':'Below 80% threshold',compliancePct>=80?'audit-ok':'audit-warn')+
+  var html='<div class="kpi-row cols-5">'+
+    kpi(total,'Client-Days','Days with ≥1 session')+
+    kpi(met,'Met Target','Exactly '+DAILY_TARGET+' sessions','c-ok')+
+    kpi(over,'Exceeding Target','>'+DAILY_TARGET+' — review scheduling','c-over')+
+    kpi(under,'Under Target','<'+DAILY_TARGET+' sessions','c-warn')+
+    kpi(pct+'%','At/Above Target',pct>=80?'≥80% threshold met':'Below 80% threshold',pct>=80?'c-ok':'c-warn')+
   '</div>';
 
   html+='<div class="row2">'+
-    '<div class="card"><div class="card-title">Daily Compliance — Sessions per Client-Day</div>'+
+    '<div class="card"><div class="card-title">Daily Compliance by Date</div>'+
     '<div class="chart-wrap" style="height:240px"><canvas id="ch-audit-bar"></canvas></div></div>'+
-    '<div class="card"><div class="card-title">Met vs Under Target — Client-Days</div>'+
+    '<div class="card"><div class="card-title">Compliance Distribution</div>'+
     '<div class="chart-wrap" style="height:240px"><canvas id="ch-audit-pie"></canvas></div></div>'+
   '</div>';
 
-  html+='<div class="card"><div class="card-title">Daily Detail — '+
-    (entries.length>60?'Most Recent 60 Days Shown':'All '+entries.length+' Client-Days')+'</div>'+
+  html+='<div class="card"><div class="card-title">Client-Day Detail</div>'+
     '<div style="overflow-x:auto"><table><thead><tr>'+
     '<th>Date</th><th>Client</th><th class="r">Clinician</th><th class="r">Ancillary</th>'+
     '<th class="r">Total</th><th>Status</th><th>Services</th></tr></thead><tbody>'+
-    entries.slice(0,60).map(function(e){
-      var met=e.total===DAILY_TARGET;
-      var over=e.total>DAILY_TARGET;
-      var rowCls=met?'audit-day-ok':over?'audit-day-over':'audit-day-warn';
-      var badge=met?'<span class="badge badge-ok">✓ '+DAILY_TARGET+' hrs</span>':
-        over?'<span class="badge badge-over">⬆ '+e.total+' hrs</span>':
-        '<span class="badge badge-warn">⬇ '+e.total+'/'+DAILY_TARGET+' hrs</span>';
-      var uniq=[...new Set(e.services)].join(', ');
-      return '<tr class="'+rowCls+'">'+
-        '<td>'+dateLabel(e.date)+'</td>'+
+    entries.slice(0,80).map(function(e){
+      var cls=e.total===DAILY_TARGET?'r-ok':e.total>DAILY_TARGET?'r-over':'r-warn';
+      var badge=e.total===DAILY_TARGET?'<span class="badge b-ok">✓ '+DAILY_TARGET+' hrs</span>':
+        e.total>DAILY_TARGET?'<span class="badge b-over">⬆ '+e.total+' hrs</span>':
+        '<span class="badge b-warn">⬇ '+e.total+'/'+DAILY_TARGET+' hrs</span>';
+      return '<tr class="'+cls+'">'+
+        '<td>'+dayLabel(e.date)+'</td>'+
         '<td><b>'+clientNames[e.clientId]+'</b></td>'+
-        '<td class="r"><span style="color:#1B2A4A;font-weight:600">'+e.clin+'</span></td>'+
-        '<td class="r"><span style="color:#2D6A4F;font-weight:600">'+e.anc+'</span></td>'+
+        '<td class="r" style="color:#1B2A4A;font-weight:600">'+e.clin+'</td>'+
+        '<td class="r" style="color:#2D6A4F;font-weight:600">'+e.anc+'</td>'+
         '<td class="r"><b>'+e.total+'</b></td>'+
         '<td>'+badge+'</td>'+
-        '<td style="font-size:10px;color:#888;max-width:200px">'+uniq+'</td>'+
-      '</tr>';
+        '<td style="font-size:10px;color:#888">'+(e.svcs.length?[...new Set(e.svcs)].join(', '):'')+'</td></tr>';
     }).join('')+'</tbody></table></div></div>';
 
   document.getElementById('content').innerHTML=html;
   setTimeout(function(){
-    // Compliance over time (stacked met/under per day)
-    _charts.push(new Chart(document.getElementById('ch-audit-bar'),{
-      type:'bar',
-      data:{labels:dates.map(dateLabel),datasets:[
-        {label:'Met target (='+DAILY_TARGET+')',data:dates.map(function(d){return byDate[d].met;}),backgroundColor:'#2D6A4F',borderRadius:2},
-        {label:'Exceeding target (>'+DAILY_TARGET+')',data:dates.map(function(d){return byDate[d].over;}),backgroundColor:'#1A56DB',borderRadius:2},
-        {label:'Under target (<'+DAILY_TARGET+')',data:dates.map(function(d){return byDate[d].under;}),backgroundColor:'#D97706',borderRadius:2}
-      ]},
-      options:{responsive:true,maintainAspectRatio:false,
+    _charts.push(new Chart(document.getElementById('ch-audit-bar'),{type:'bar',
+      data:{labels:dates.map(dayLabel),datasets:[
+        {label:'Met (='+DAILY_TARGET+')',data:dates.map(function(d){return byDate[d].met;}),backgroundColor:'#2D6A4F',borderRadius:2},
+        {label:'Exceeding (>'+DAILY_TARGET+')',data:dates.map(function(d){return byDate[d].over;}),backgroundColor:'#1A56DB',borderRadius:2},
+        {label:'Under (<'+DAILY_TARGET+')',data:dates.map(function(d){return byDate[d].under;}),backgroundColor:'#D97706',borderRadius:2}
+      ]},options:{responsive:true,maintainAspectRatio:false,
         plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:12}}},
         scales:{x:{stacked:true,grid:{display:false},ticks:{maxRotation:45,font:{size:9}}},
-          y:{stacked:true,beginAtZero:true,title:{display:true,text:'Client-Days'}}}}
-    }));
-    _charts.push(new Chart(document.getElementById('ch-audit-pie'),{
-      type:'doughnut',
-      data:{labels:['Met target (='+DAILY_TARGET+')','Exceeding (>'+DAILY_TARGET+')','Under target (<'+DAILY_TARGET+')'],datasets:[{
-        data:[metTarget,overTarget,underTarget],
-        backgroundColor:['#2D6A4F','#1A56DB','#D97706'],borderWidth:3,borderColor:'#fff'
-      }]},
+          y:{stacked:true,beginAtZero:true,title:{display:true,text:'Client-Days'}}}}}));
+    _charts.push(new Chart(document.getElementById('ch-audit-pie'),{type:'doughnut',
+      data:{labels:['Met (='+DAILY_TARGET+')','Exceeding (>'+DAILY_TARGET+')','Under (<'+DAILY_TARGET+')'],
+        datasets:[{data:[met,over,under],backgroundColor:['#2D6A4F','#1A56DB','#D97706'],borderWidth:3,borderColor:'#fff'}]},
       options:{responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:14}}}}
-    }));
+        plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:14}}}}}));
   },60);
 }
 
-/* ── Export ── */
+/* ── Export ─────────────────────────────────────────── */
 function exportCSV(){
   var evs=filteredEvents();
-  var rows=[['Date','Provider','Client ID','Program','Service','Type','Employment','Status']];
+  var rows=[['Date','Provider','Employment','Client ID','Program','Service','Category','Status']];
   evs.forEach(function(ev){
-    rows.push([ev.date,ev.provider||'',ev.clientId||'',ev.program||'',ev.service||'',isClinician(ev)?'Clinician':'Ancillary',empType(ev.provider),ev.status||'']);
+    rows.push([ev.date,ev.provider||'',empType(ev.provider),ev.clientId||'',
+      inferProg(ev),ev.service||'',isClinician(ev)?'Clinician':'Ancillary',ev.status||'']);
   });
-  var csv=rows.map(function(r){return r.map(function(v){return'"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
-  var a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
-  a.download='Clinical_Hours_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+  var csv=rows.map(function(r){return r.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='Clinical_Hours_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
 }
 </script>
 </body>
