@@ -466,6 +466,8 @@ function renderClientAudit(el,evs){
     el.innerHTML='<div class="card" style="color:#888;text-align:center;padding:40px">No session data.</div>';
     return;
   }
+  // Start at most recent week on first load
+  if(_auditWkIdx===0)_auditWkIdx=weeks.length-1;
   if(_auditWkIdx>=weeks.length)_auditWkIdx=weeks.length-1;
   if(_auditWkIdx<0)_auditWkIdx=0;
 
