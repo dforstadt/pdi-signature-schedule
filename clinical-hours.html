@@ -188,7 +188,15 @@ var CTR=[
   'dr. smith','smith'
 ];
 
-function isSkip(p){var pl=(p||'').trim().toLowerCase();return !pl||SKIP.indexOf(pl)>-1||pl.indexOf('lead tech')>-1;}
+function isSkip(p,svc){
+  var pl=(p||'').trim().toLowerCase();
+  var sl=(svc||'').toLowerCase();
+  if(!pl||SKIP.indexOf(pl)>-1||pl.indexOf('lead tech')>-1) return true;
+  // Data entry errors — exclude specific provider+service combos
+  if((pl.indexOf('paul')>-1||pl.indexOf('lazar')>-1)&&sl.indexOf('lunch')>-1) return true;
+  if((pl.indexOf('sandy')>-1||pl.indexOf('sandra')>-1||pl.indexOf('bernstein')>-1)&&(sl.indexOf('cognitive')>-1||sl.indexOf('remediation')>-1)) return true;
+  return false;
+}
 function isClin(ev){
   var pl=(ev.provider||'').toLowerCase();
   var sl=(ev.service||'').toLowerCase();
@@ -230,7 +238,7 @@ function getEvs(){
   return DATA.events.filter(function(ev){
     if(!ev.date||!ev.provider||!ev.status) return false;
     if(ev.status.toLowerCase()!=='completed') return false;
-    if(isSkip(ev.provider)) return false;
+    if(isSkip(ev.provider,ev.service)) return false;
     // Note: group sessions intentionally included — direct service hours per clinical model
     var mo=ev.date.slice(0,7);
     if(from&&mo<from) return false;
