@@ -1078,7 +1078,18 @@ function calcSig(){
   var rev=parseFloat(document.getElementById('sig-a-rev').value)||0;
   var census=parseInt(document.getElementById('sig-a-census').value)||0;
   var goal=(parseFloat(document.getElementById('sig-a-goal').value)||44)/100;
-  var costPerClient=lines.sig.reduce(function(s,l){return s+(l.amt||0);},0);
+
+  var wk1OnlyAmt=lines.sig.filter(function(l){return l.cat==='PBWI (Wk 1 only)';})
+    .reduce(function(s,l){return s+(l.amt||0);},0);
+  var wk2OnlyAmt=lines.sig.filter(function(l){return l.cat==='PBWI (Wk 2+ only)';})
+    .reduce(function(s,l){return s+(l.amt||0);},0);
+  var baseAmt=lines.sig.filter(function(l){
+    return l.cat!=='PBWI (Wk 1 only)'&&l.cat!=='PBWI (Wk 2+ only)';
+  }).reduce(function(s,l){return s+(l.amt||0);},0);
+
+  var wk1Cost=baseAmt+wk1OnlyAmt;
+  var wk2Cost=baseAmt+wk2OnlyAmt;
+  var costPerClient=wk2Cost;
   var totalCost=costPerClient*census;
   var totalRev=rev*census;
   var profit=totalRev-totalCost;
@@ -1086,33 +1097,38 @@ function calcSig(){
   var pct=Math.round(margin*100);
   var pc=profitColor(margin,goal);
   var breakEvenCost=rev*(1-goal);
+  var wk1Margin=rev>0?(rev-wk1Cost)/rev*100:0;
+  var wk2Margin=rev>0?(rev-wk2Cost)/rev*100:0;
 
   document.getElementById('sig-kpi-rev').textContent=fmt$(rev);
-  document.getElementById('sig-kpi-rev-sub').textContent='$'+Math.round(rev/7).toLocaleString()+'/day · '+census+' clients → '+fmt$(totalRev)+'/wk';
-  document.getElementById('sig-kpi-cost').textContent=fmt$(costPerClient);
-  document.getElementById('sig-kpi-cost-sub').textContent=fmt$(totalCost)+'/wk program total';
-  document.getElementById('sig-kpi-profit').textContent=fmt$(rev-costPerClient)+'/client';
+  document.getElementById('sig-kpi-rev-sub').textContent='$'+Math.round(rev/7).toLocaleString()+'/day · '+census+' clients';
+  document.getElementById('sig-kpi-cost').textContent=fmt$(wk2Cost);
+  document.getElementById('sig-kpi-cost-sub').textContent='Wk1: '+fmt$(wk1Cost)+' · Wk2+: '+fmt$(wk2Cost)+'/wk';
+  document.getElementById('sig-kpi-profit').textContent=fmt$(rev-wk2Cost)+'/client (Wk2+)';
   document.getElementById('sig-kpi-profit').style.color=pc;
-  document.getElementById('sig-kpi-pct').textContent=fmtPct(pct);
+  document.getElementById('sig-kpi-pct').textContent=fmtPct(Math.round(wk2Margin));
   document.getElementById('sig-kpi-pct').style.color=pc;
-  document.getElementById('sig-cost-badge').textContent=fmt$(costPerClient)+'/client/wk';
-  document.getElementById('sig-cost-per').textContent=fmt$(costPerClient);
+  document.getElementById('sig-cost-badge').textContent='Wk1: '+fmt$(wk1Cost)+' · Wk2+: '+fmt$(wk2Cost);
+  document.getElementById('sig-cost-per').textContent=fmt$(wk2Cost);
   document.getElementById('sig-cost-total').textContent=fmt$(totalCost);
   document.getElementById('sig-census-lbl').textContent=census;
   setGauge('sig-gauge',pct,goal);
 
   document.getElementById('sig-pl-rows').innerHTML=
-    plRow('Gross Revenue ('+census+' clients)','+ '+fmt$(totalRev))+
-    plRow('Total Service Costs','( '+fmt$(totalCost)+' )')+
+    '<div style="padding:10px 16px 4px;font-size:11px;font-weight:700;color:var(--tx3)">Week 1 — Brain Mapping Intake</div>'+
+    plRow('Revenue','+ '+fmt$(rev))+
+    plRow('Week 1 Cost (base + brain mapping)','( '+fmt$(wk1Cost)+' )')+
     '<div style="height:.5px;background:var(--bd);margin:0 20px"></div>'+
-    plRow('Net Weekly Profit',(profit>=0?'+ ':'')+fmt$(profit),'profit')+
-    '<div style="padding:10px 20px 14px;font-size:10px;color:var(--tx3);line-height:1.8">'+
-    'Margin: <b style="color:'+pc+'">'+fmtPct(pct)+'%</b> · Goal: <b>'+fmtPct(Math.round(goal*100))+'%</b><br>'+
-    'To hit '+fmtPct(Math.round(goal*100))+'% at $'+Math.round(rev/1000)+'K/wk: max cost = <b>'+fmt$(Math.round(breakEvenCost))+'/client/wk</b><br>'+
-    'Current gap to goal: <b style="color:'+(costPerClient<=breakEvenCost?'var(--green)':'var(--red)')+'">'+
-    (costPerClient<=breakEvenCost?'On target ✓':'+'+fmt$(Math.round(costPerClient-breakEvenCost))+' over')+'</b>'+
-    '</div>';
-  document.getElementById('sig-pl-badge').textContent=fmtPct(pct)+' margin';
+    plRow('Week 1 Profit',(rev-wk1Cost>=0?'+ ':'')+fmt$(rev-wk1Cost),'profit')+
+    '<div style="padding:4px 20px 10px;font-size:10px;color:var(--tx3)">Week 1 Margin: <b style="color:'+profitColor(wk1Margin/100,goal)+'">'+Math.round(wk1Margin)+'%</b></div>'+
+    '<div style="padding:6px 16px 4px;font-size:11px;font-weight:700;color:var(--tx3)">Week 2+ — Neurofeedback Ongoing</div>'+
+    plRow('Revenue','+ '+fmt$(rev))+
+    plRow('Wk2+ Cost (base + neurofeedback)','( '+fmt$(wk2Cost)+' )')+
+    '<div style="height:.5px;background:var(--bd);margin:0 20px"></div>'+
+    plRow('Wk2+ Profit',(rev-wk2Cost>=0?'+ ':'')+fmt$(rev-wk2Cost),'profit')+
+    '<div style="padding:4px 20px 12px;font-size:10px;color:var(--tx3)">Week 2+ Margin: <b style="color:'+pc+'">'+Math.round(wk2Margin)+'%</b>'+
+    ' · Brain mapping ($'+fmt$(wk1OnlyAmt)+') billed once at intake · Neurofeedback ($'+fmt$(wk2OnlyAmt)+'/wk) from Week 2</div>';
+  document.getElementById('sig-pl-badge').textContent='Wk1: '+Math.round(wk1Margin)+'% · Wk2+: '+Math.round(wk2Margin)+'%';
 }
 
 function renderAll(){
