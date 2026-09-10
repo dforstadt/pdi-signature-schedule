@@ -100,7 +100,6 @@ tr.tot td{background:#F5F0E8;font-weight:700}
     <div class="tab on" data-t="monthly">Monthly Summary</div>
     <div class="tab" data-t="provider">By Provider</div>
     <div class="tab" data-t="client-audit">Client Daily Audit</div>
-    <div class="tab" data-t="provider-audit">Provider Daily Audit</div>
     <div class="tab" data-t="roster">Provider Roster</div>
   </div>
 
@@ -312,7 +311,6 @@ function render(){
   if(_tab==='monthly')     renderMonthly(wrap,evs);
   else if(_tab==='provider')renderProvider(wrap,evs);
   else if(_tab==='client-audit')renderClientAudit(wrap,evs);
-  else if(_tab==='provider-audit')renderProviderAudit(wrap,evs);
   else renderRoster(wrap,evs);
   el.appendChild(wrap);
 }
@@ -576,96 +574,6 @@ function renderClientAudit(el,evs){
   tbl+='</tbody></table></div>';
   card.innerHTML+=tbl;
   el.appendChild(card);
-}
-
-/* ═══ PROVIDER DAILY AUDIT ═══════════════════ */
-function renderProviderAudit(el,evs){
-  // Only clinician sessions for W2 salaried therapists
-  var clinEvs=evs.filter(function(ev){return isClin(ev)&&emp(ev.provider)==='W2';});
-  var byPD={};
-  clinEvs.forEach(function(ev){
-    var k=ev.provider+'|'+ev.date.slice(0,10);
-    var _pah=getHrs(ev);
-    if(!byPD[k])byPD[k]={provider:ev.provider,date:ev.date.slice(0,10),sessions:0,clients:new Set()};
-    byPD[k].sessions+=_pah;
-    if(ev.clientId)byPD[k].clients.add(ev.clientId);
-  });
-  var rows=Object.values(byPD).sort(function(a,b){return a.date<b.date?1:-1;});
-  var met=rows.filter(function(r){return r.sessions===TARGET;}).length;
-  var over=rows.filter(function(r){return r.sessions>TARGET;}).length;
-  var under=rows.filter(function(r){return r.sessions<TARGET;}).length;
-  var pct=rows.length?Math.round((met+over)/rows.length*100):0;
-
-  var byDate={};rows.forEach(function(r){if(!byDate[r.date])byDate[r.date]={met:0,over:0,under:0};
-    if(r.sessions===TARGET)byDate[r.date].met++;else if(r.sessions>TARGET)byDate[r.date].over++;else byDate[r.date].under++;});
-  var dates=Object.keys(byDate).sort();
-
-  // Per-provider summary
-  var byProv={};rows.forEach(function(r){
-    if(!byProv[r.provider])byProv[r.provider]={met:0,over:0,under:0,total:0};
-    byProv[r.provider].total++;
-    if(r.sessions===TARGET)byProv[r.provider].met++;
-    else if(r.sessions>TARGET)byProv[r.provider].over++;
-    else byProv[r.provider].under++;
-  });
-
-  el.innerHTML='<div class="krow k4">'+
-    kpi(Object.keys(byProv).length,'Salaried Clinicians Tracked','W2 therapists with sessions')+
-    kpi(met,'Days Met ('+TARGET+' hrs)','Exactly 5 client sessions','ck')+
-    kpi(over,'Days Exceeding (>'+TARGET+')','Above 5 client sessions','co')+
-    kpi(under,'Days Under (<'+TARGET+')','Below 5 client sessions','cw')+
-  '</div>';
-
-  var note=document.createElement('div');
-  note.style.cssText='background:#EEF4FB;border-left:3px solid #1B2A4A;padding:10px 14px;border-radius:0 6px 6px 0;font-size:11px;color:#1A3A5C;margin-bottom:12px;line-height:1.6';
-  note.textContent='Tracking salaried (W2) clinicians only — each should deliver '+TARGET+' individual/family therapy or testing sessions per working day. Each completed session = 1 service hour.';
-  el.appendChild(note);
-
-  var c1=document.createElement('div');c1.className='card';
-  c1.innerHTML='<div class="ct">Provider Daily Session Count — vs '+TARGET+' Hour Target</div>'+
-    '<div class="cw" style="height:240px"><canvas id="ch-pa1"></canvas></div>';
-  el.appendChild(c1);
-
-  // Per-provider summary table
-  var provRows=Object.entries(byProv).sort(function(a,b){return b[1].under-a[1].under;});
-  var pt='<div class="card"><div class="ct">Provider Compliance Summary</div>'+
-    '<div style="overflow-x:auto"><table><thead><tr>'+
-    '<th>Provider</th><th class="r">Working Days</th><th class="r">Met (=5)</th>'+
-    '<th class="r">Exceeding (>5)</th><th class="r">Under (<5)</th><th class="r">At/Above %</th></tr></thead><tbody>'+
-    provRows.map(function(kv){var r=kv[1];var pct2=Math.round((r.met+r.over)/r.total*100);
-      return '<tr><td><b>'+kv[0]+'</b></td><td class="r">'+r.total+'</td>'+
-        '<td class="r" style="color:#2D6A4F;font-weight:600">'+r.met+'</td>'+
-        '<td class="r" style="color:#1A56DB;font-weight:600">'+r.over+'</td>'+
-        '<td class="r" style="color:#D97706;font-weight:600">'+r.under+'</td>'+
-        '<td class="r"><b style="color:'+(pct2>=80?'#2D6A4F':'#D97706')+'">'+pct2+'%</b></td></tr>';}).join('')+
-    '</tbody></table></div></div>';
-  el.innerHTML+=pt;
-
-  // Detail table
-  var dt='<div class="card"><div class="ct">Provider Day Detail — Most Recent 60 Days</div>'+
-    '<div style="overflow-x:auto"><table><thead><tr>'+
-    '<th>Date</th><th>Provider</th><th class="r">Sessions</th><th class="r">Unique Clients</th><th>Status</th></tr></thead><tbody>'+
-    rows.slice(0,80).map(function(r){
-      var cls=r.sessions===TARGET?'rg':r.sessions>TARGET?'ro':'rw';
-      var b=r.sessions===TARGET?'<span class="badge bk">✓ '+TARGET+' hrs</span>':
-        r.sessions>TARGET?'<span class="badge bb">⬆ '+r.sessions+' hrs</span>':
-        '<span class="badge bam">⬇ '+r.sessions+'/'+TARGET+' hrs</span>';
-      return '<tr class="'+cls+'"><td>'+dayLbl(r.date)+'</td><td><b>'+r.provider+'</b></td>'+
-        '<td class="r"><b>'+r.sessions+'</b></td><td class="r">'+r.clients.size+'</td><td>'+b+'</td></tr>';}).join('')+
-    '</tbody></table></div></div>';
-  el.innerHTML+=dt;
-
-  setTimeout(function(){
-    _ch.push(new Chart(document.getElementById('ch-pa1'),{type:'bar',
-      data:{labels:dates.map(dayLbl),datasets:[
-        {label:'Met',data:dates.map(function(d){return byDate[d].met;}),backgroundColor:'#2D6A4F',borderRadius:2},
-        {label:'Exceeding',data:dates.map(function(d){return byDate[d].over;}),backgroundColor:'#1A56DB',borderRadius:2},
-        {label:'Under',data:dates.map(function(d){return byDate[d].under;}),backgroundColor:'#D97706',borderRadius:2}]},
-      options:{responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:12}}},
-        scales:{x:{stacked:true,grid:{display:false},ticks:{maxRotation:45,font:{size:9}}},
-          y:{stacked:true,beginAtZero:true,title:{display:true,text:'Provider-Days'}}}}}));
-  },60);
 }
 
 /* ═══ PROVIDER ROSTER (all providers with any session) ══ */
