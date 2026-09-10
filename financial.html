@@ -1139,8 +1139,7 @@ firebase.database().ref('schedule_v3').on('value',function(snap){
                      'Thomas W','Norman P','Miguel'].map(normName);
     var STEP_HARD = ['Carlos L','Jessica C','George W','Marc C','Michael F',
                      'Kevin C','Layla S','Blake P','Angela T'].map(normName);
-    var STEP_DYN_ONLY = ['Andrew C','Noah G','Cassie W','Nicholas W'].map(normName);
-    var ALL_HARD  = SIG_HARD.concat(PDI_HARD).concat(STEP_HARD).concat(STEP_DYN_ONLY);
+    var ALL_HARD  = SIG_HARD.concat(PDI_HARD).concat(STEP_HARD);
 
     function isHardcoded(name, list){ var n=normName(name); return list.indexOf(n)>=0; }
     function losD(a,b){
@@ -1205,11 +1204,9 @@ firebase.database().ref('schedule_v3').on('value',function(snap){
     // ── PDI-only dynamic rows ────────────────────────────────────────────
     var pdiDyn = clients.filter(function(c){
       var pp=(c.program||'').trim().toLowerCase();
-      // Include: program=pdi OR has pdiAdmit but no sigAdmit (pure PDI clients)
-      var isPDI = pp==='pdi' || pp==='pdi only' || pp==='diagnostic'
-                  || (c.pdiAdmit && !c.sigAdmit && pp!=='signature' && pp!=='sig');
-      if(!isPDI) return false;
+      // Include ANY client who had a PDI episode (regardless of step-down to Sig)
       if(!c.pdiAdmit) return false;
+      if(pp==='signature'||pp==='sig') return false; // pure Sig only — no PDI
       return !isHardcoded(c.name, ALL_HARD);
     }).sort(function(a,b){ return a.pdiAdmit>b.pdiAdmit?1:-1; });
 
@@ -1224,11 +1221,13 @@ firebase.database().ref('schedule_v3').on('value',function(snap){
       var tot   = varC+fixC;
       var profit= rev-tot;
       var margin= profit/rev*100;
+      var hasSig=c.sigAdmit;
       var badge = isAct
         ? '<span style="color:var(--pdi);font-size:10px">&#9679;</span>'
         : '<span style="font-size:9px;color:var(--tx3)">&#10003;</span>';
+      var sigBadge=hasSig?'<span style="font-size:9px;color:var(--step)"> → Sig</span>':'';
       return '<tr>'
-        +'<td><b>'+c.name+'</b> '+badge+'</td>'
+        +'<td><b>'+c.name+'</b>'+sigBadge+' '+badge+'</td>'
         +'<td style="color:var(--tx3)">'+days+'</td>'
         +'<td style="text-align:right">'+money(rev)+'</td>'
         +'<td style="text-align:right">'+money(varC)+'</td>'
