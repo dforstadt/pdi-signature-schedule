@@ -205,8 +205,12 @@ function destroyCharts(){}
 function drawBar(canvasId,labels,datasets,opts){
   var cv=document.getElementById(canvasId);if(!cv)return;
   var ctx=cv.getContext('2d');
-  var W=cv.offsetWidth||cv.parentElement.offsetWidth||400,H=cv.offsetHeight||260;
-  cv.width=W;cv.height=H;
+  var parent=cv.parentElement;
+  var W=parent.offsetWidth||parent.parentElement.offsetWidth||600;
+  var H=opts&&opts.horiz?Math.max(180,labels.length*28+60):260;
+  cv.style.width=W+'px';cv.style.height=H+'px';
+  cv.width=W*window.devicePixelRatio;cv.height=H*window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio,window.devicePixelRatio);
   var horiz=opts&&opts.horiz,stacked=opts&&opts.stacked;
   var pad={t:20,r:20,b:50,l:horiz?120:40};
   var allVals=[];
@@ -349,10 +353,10 @@ function renderProvider(el,evs){
   var c=document.createElement('div');c.className='r2';
   c.innerHTML='<div class="card"><div class="ct" style="color:#1B2A4A">Clinician Providers</div>'+
     '<div style="font-size:10px;color:#999;margin-bottom:8px">Therapy · Testing · Assessment</div>'+
-    '<div style="position:relative;height:'+h1+'"><canvas id="ch-clin"></canvas></div></div>'+
+    '<div style="position:relative;min-height:'+h1+'"><canvas id="ch-clin" style="width:100%"></canvas></div></div>'+
     '<div class="card"><div class="ct" style="color:#2D6A4F">Ancillary Providers</div>'+
     '<div style="font-size:10px;color:#999;margin-bottom:8px">All other completed services</div>'+
-    '<div style="position:relative;height:'+h2+'"><canvas id="ch-anc"></canvas></div></div>';
+    '<div style="position:relative;min-height:'+h2+'"><canvas id="ch-anc" style="width:100%"></canvas></div></div>';
   el.appendChild(c);
 
   // Detail table — no unique clients, no active months
@@ -393,12 +397,20 @@ function renderProvider(el,evs){
 function renderAudit(el,evs){
   var byCD={},cnames={},allWks=new Set();
   evs.forEach(function(ev){
-    if(!ev.clientId||!ev.date) return;
-    var day=ev.date.slice(0,10),wk=wkSun(day),h=getHrs(ev),k=ev.clientId+'|'+day;
-    if(!byCD[k])byCD[k]={id:ev.clientId,date:day,wk:wk,clin:0,anc:0};
-    if(isClin(ev))byCD[k].clin+=h;else byCD[k].anc+=h;
+    if(!ev.date) return;
+    var day=ev.date.slice(0,10),wk=wkSun(day),h=getHrs(ev);
+    // Support both clientId (single) and clientIds (array for group sessions)
+    var ids=[];
+    if(ev.clientId) ids.push(ev.clientId);
+    if(ev.clientIds&&Array.isArray(ev.clientIds)) ev.clientIds.forEach(function(id){if(ids.indexOf(id)<0)ids.push(id);});
+    if(!ids.length) return;
     allWks.add(wk);
-    if(!cnames[ev.clientId]){var cl=DATA.clients.find(function(c){return c.id===ev.clientId;});cnames[ev.clientId]=cl?cl.name||ev.clientId:ev.clientId;}
+    ids.forEach(function(cid){
+      var k=cid+'|'+day;
+      if(!byCD[k])byCD[k]={id:cid,date:day,wk:wk,clin:0,anc:0};
+      if(isClin(ev))byCD[k].clin+=h;else byCD[k].anc+=h;
+      if(!cnames[cid]){var cl=DATA.clients.find(function(c){return c.id===cid;});cnames[cid]=cl?cl.name||cid:cid;}
+    });
   });
   Object.values(byCD).forEach(function(r){r.total=Math.round((r.clin+r.anc)*10)/10;r.clin=Math.round(r.clin*10)/10;r.anc=Math.round(r.anc*10)/10;});
 
