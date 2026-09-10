@@ -395,6 +395,31 @@ function renderProvider(el,evs){
 
 /* ══ CLIENT DAILY AUDIT ═════════════════════════════════════ */
 function renderAudit(el,evs){
+  // Visible diagnostic panel
+  var rawEvs=DATA.events;
+  var dbgTotal=rawEvs.length;
+  var dbgNoDate=rawEvs.filter(function(e){return !e.date;}).length;
+  var dbgNoProvider=rawEvs.filter(function(e){return e.date&&!e.provider;}).length;
+  var dbgNotComplete=rawEvs.filter(function(e){return e.date&&e.provider&&e.status&&e.status.toLowerCase()!=='completed';}).length;
+  var dbgNoStatus=rawEvs.filter(function(e){return e.date&&e.provider&&!e.status;}).length;
+  var dbgSkipped=rawEvs.filter(function(e){return e.date&&e.provider&&isSkip(e.provider,e.service);}).length;
+  var dbgPassed=evs.length;
+  var dbgNoClient=evs.filter(function(e){return !e.clientId&&(!e.clientIds||!e.clientIds.length);}).length;
+  var statuses={};rawEvs.forEach(function(e){var s=e.status||'(none)';statuses[s]=(statuses[s]||0)+1;});
+  var statusStr=Object.entries(statuses).map(function(kv){return kv[0]+': '+kv[1];}).join(' · ');
+
+  var dbg=document.createElement('div');
+  dbg.style.cssText='background:#F0F4FF;border:1px solid #C7D2FE;border-radius:8px;padding:12px 16px;margin-bottom:14px;font-size:11px;line-height:2';
+  dbg.innerHTML='<b style="color:#1B2A4A">Session Filter Diagnostic</b><br>'+
+    'Total events in Firebase: <b>'+dbgTotal+'</b> · '+
+    'Passed filter: <b style="color:#2D6A4F">'+dbgPassed+'</b> · '+
+    'Skipped (exclusion list): <b style="color:#D97706">'+dbgSkipped+'</b> · '+
+    'Not completed: <b style="color:#D97706">'+dbgNotComplete+'</b> · '+
+    'No status: <b style="color:#888">'+dbgNoStatus+'</b><br>'+
+    'Status values found: <span style="color:#555">'+statusStr+'</span><br>'+
+    'Of passed events — no client linked: <b style="color:#c00">'+dbgNoClient+'</b> (excluded from audit grid)';
+  el.appendChild(dbg);
+
   var byCD={},cnames={},allWks=new Set();
   evs.forEach(function(ev){
     if(!ev.date) return;
