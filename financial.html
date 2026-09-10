@@ -224,49 +224,6 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
   </div>
 
 
-  <div class="two-col">
-    <!-- PDI Assumptions -->
-    <div class="glass">
-      <div class="sec-h">
-        <div class="sec-h-left"><div class="sec-title">PDI Assumptions</div><div class="sec-sub">Episode-level inputs — pre-filled from actual schedules</div></div>
-        <button class="reset-btn" onclick="resetPDI()" title="Restore original values">↺ Reset</button>
-      </div>
-      <div class="assumptions">
-        <div class="inp-group"><label>Episode Fee (Revenue)</label><input type="number" id="pdi-a-rev" value="80000" step="1000" oninput="calcPDI()"></div>
-        <div class="inp-group"><label>Avg Episode Length (days)</label><input type="number" id="pdi-a-days" value="12" step="1" min="1" oninput="calcPDI()"></div>
-        <div class="inp-group"><label>Active PDI Episodes</label><input type="number" id="pdi-a-eps" value="1" step="1" min="0" oninput="calcPDI()"></div>
-        <div class="inp-group"><label>Profit Goal (%)</label><input type="number" id="pdi-a-goal" value="44" step="1" min="0" max="100" oninput="calcPDI()"></div>
-      </div>
-    </div>
-
-    <!-- PDI P&L -->
-    <div class="glass">
-      <div class="sec-h">
-        <div class="sec-h-left"><div class="sec-title">Episode P&amp;L</div><div class="sec-sub">Per PDI episode</div></div>
-        <span class="sec-badge" id="pdi-pl-badge" style="background:rgba(55,138,221,.1);color:var(--pdi)">—</span>
-      </div>
-      <div id="pdi-pl-rows"></div>
-    </div>
-  </div>
-
-  <!-- PDI Cost Line Items -->
-  <div class="glass full-col">
-    <div class="sec-h">
-      <div class="sec-h-left"><div class="sec-title">PDI Episode Cost Structure</div><div class="sec-sub">All costs for one full PDI protocol — editable</div></div>
-      <span class="sec-badge" id="pdi-cost-badge" style="background:rgba(55,138,221,.1);color:var(--pdi)">$0</span>
-    </div>
-    <table class="cost-tbl">
-      <thead><tr><th>Line Item</th><th>Category</th><th>Notes</th><th style="text-align:right">Amount</th><th></th></tr></thead>
-      <tbody id="pdi-cost-body"></tbody>
-      <tfoot>
-        <tr class="subtotal"><td colspan="2" style="color:var(--tx3);font-size:10px">Fixed costs + est. weekly costs × avg episode length (adjust Daily lines for actual duration)</td><td></td><td style="text-align:right" id="pdi-cost-total">$0</td><td></td></tr>
-        <tr class="grand-total"><td colspan="3">Total Episode Cost</td><td style="text-align:right" id="pdi-cost-total-2">$0</td><td></td></tr>
-      </tfoot>
-    </table>
-    <div class="add-row"><button class="add-btn" onclick="addLine('pdi')">+ Add Line Item</button></div>
-  </div>
-
-
   <!-- Actual Per-Client Margins -->
   <div class="glass full-col">
     <div class="sec-h">
