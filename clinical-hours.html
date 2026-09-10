@@ -70,7 +70,7 @@ tr:hover td{background:#FAFAF8}.totrow td{background:#F5F0E8;font-weight:700}
       <h1>Clinical Hours — Premier Signature Program</h1>
       <div class="sub"><span class="dot" id="ldot"></span><span id="llbl">Connecting…</span> · Completed direct service sessions</div>
     </div>
-    <span style="font-size:9px;color:#4A6A84;margin-right:10px">v Sep 10 23:19 UTC</span><a href="/index.html" style="color:#A0B0C8;font-size:11px;text-decoration:none">← Calendar</a>
+    <span style="font-size:9px;color:#4A6A84;margin-right:10px">v Sep 10 23:22 UTC</span><a href="/index.html" style="color:#A0B0C8;font-size:11px;text-decoration:none">← Calendar</a>
   </div>
   <div class="tabs">
     <div class="tab on" data-t="monthly">Monthly Summary</div>
@@ -211,7 +211,7 @@ function initFB(){
     _ok=true;
     var now=new Date();document.getElementById('f-to').value=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
     document.getElementById('pg-load').style.display='none';document.getElementById('pg').style.display='block';
-    render();
+    loadRosterOverrides(function(){render();});
   });
 }
 
@@ -569,6 +569,23 @@ function renderAudit(el,evs){
 }
 
 /* ══ PROVIDER ROSTER ════════════════════════════════════════ */
+var _rosterOverrides={};
+function loadRosterOverrides(cb){
+  firebase.database().ref('lifeskills_clinical/roster_overrides').once('value',function(snap){
+    _rosterOverrides=snap.val()||{};cb();
+  });
+}
+function saveOverride(provider,val){
+  var key=provider.replace(/[.#$\[\]]/g,'_');
+  firebase.database().ref('lifeskills_clinical/roster_overrides/'+key).set(val);
+  _rosterOverrides[key]=val;
+  render();
+}
+function empFull(p){
+  var key=(p||'').replace(/[.#$\[\]]/g,'_');
+  if(_rosterOverrides[key]) return _rosterOverrides[key];
+  return emp(p);
+}
 function renderRoster(el,evs){
   var byP={};
   evs.forEach(function(ev){
@@ -596,22 +613,31 @@ function renderRoster(el,evs){
   var tbl=document.createElement('div');tbl.className='card';
   tbl.innerHTML='<div class="ct">All Providers</div><div style="overflow-x:auto"><table><thead><tr>'+
     '<th>Provider</th><th>Employment</th><th>Category</th><th class="r">Clin Hrs</th><th class="r">Anc Hrs</th>'+
-    '<th class="r">Total Hrs</th><th class="r">Months</th><th class="r">Clients</th><th>Services</th></tr></thead><tbody>'+
+    '<th class="r">Total Hrs</th><th class="r">Months</th><th class="r">Clients</th><th>Services</th><th>Edit</th></tr></thead><tbody>'+
     rows.map(function(kv){
       var r=kv[1],p=kv[0],e=emp(p);
+      var e=empFull(p);
       var cat=r.clin>0&&r.anc===0?'<span class="badge bc">Clinician</span>':
                r.clin===0?'<span class="badge ba">Ancillary</span>':
                '<span class="badge bc">Clin</span> <span class="badge ba">+Anc</span>';
       var ebadge=e==='W2'?'<span class="badge bw2">W2</span>':
                  e==='Contractor'?'<span class="badge bctr">1099</span>':
+                 e==='Skip'?'<span class="badge" style="background:#F3F4F6;color:#9CA3AF">Excluded</span>':
                  '<span class="badge" style="background:#FFE4E1;color:#9B1C1C">Unknown</span>';
+      var penc=encodeURIComponent(p);
+      var editBtns='<span style="margin-left:6px;display:inline-flex;gap:3px">'+
+        '<button onclick="saveOverride(''+p.replace(/'/g,"\'")+'',' +''W2')" style="padding:1px 6px;font-size:9px;border:1px solid #3730A3;border-radius:4px;background:'+(e==='W2'?'#3730A3':'#fff')+';color:'+(e==='W2'?'#fff':'#3730A3')+';cursor:pointer">W2</button>'+
+        '<button onclick="saveOverride(''+p.replace(/'/g,"\'")+'',' +''Contractor')" style="padding:1px 6px;font-size:9px;border:1px solid #92400E;border-radius:4px;background:'+(e==='Contractor'?'#92400E':'#fff')+';color:'+(e==='Contractor'?'#fff':'#92400E')+';cursor:pointer">1099</button>'+
+        '<button onclick="saveOverride(''+p.replace(/'/g,"\'")+'',' +''Skip')" style="padding:1px 6px;font-size:9px;border:1px solid #9CA3AF;border-radius:4px;background:'+(e==='Skip'?'#9CA3AF':'#fff')+';color:'+(e==='Skip'?'#fff':'#6B7280')+';cursor:pointer">Excl</button>'+
+        '</span>';
       var svcs=[...r.svcs].slice(0,3).join(', ')+(r.svcs.size>3?' +'+( r.svcs.size-3)+' more':'');
       return '<tr><td><b>'+p+'</b></td><td>'+ebadge+'</td><td>'+cat+'</td>'+
         '<td class="r">'+(r.clin?Math.round(r.clin*10)/10:'<span class="z">—</span>')+'</td>'+
         '<td class="r">'+(r.anc?Math.round(r.anc*10)/10:'<span class="z">—</span>')+'</td>'+
         '<td class="r"><b>'+Math.round((r.clin+r.anc)*10)/10+'</b></td>'+
         '<td class="r">'+r.mos.size+'</td><td class="r">'+r.clients.size+'</td>'+
-        '<td style="font-size:10px;color:#888">'+svcs+'</td></tr>';}).join('')+
+        '<td style="font-size:10px;color:#888">'+svcs+'</td>'+
+        '<td>'+editBtns+'</td></tr>';}).join('')+
     '</tbody></table></div>';
   el.appendChild(tbl);
 }
