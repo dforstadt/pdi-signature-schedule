@@ -165,16 +165,29 @@ function getEvs(){
 // Audit uses ALL client-linked events — no provider required
 function getAuditEvs(){
   var from=document.getElementById('f-from').value, to=document.getElementById('f-to').value;
+  // Log sample events to understand structure
+  var sample=DATA.events.filter(function(ev){
+    var sl=(ev.service||'').toLowerCase();
+    return sl.indexOf('group')>-1;
+  }).slice(0,3);
+  console.log('[Audit] Sample GROUP events (first 3):',JSON.stringify(sample));
+  var allKeys={};DATA.events.slice(0,50).forEach(function(ev){Object.keys(ev).forEach(function(k){allKeys[k]=true;});});
+  console.log('[Audit] All event field names found:',Object.keys(allKeys).join(', '));
+
   return DATA.events.filter(function(ev){
     if(!ev.date) return false;
     if(ev.status&&['cancelled','rescheduled'].indexOf(ev.status.toLowerCase())>-1) return false;
-    // Skip only if explicitly cancelled/rescheduled — include scheduled/completed/no-status
     if(isSkip(ev.provider||'',ev.service)) return false;
     var mo=ev.date.slice(0,7);
     if(from&&mo<from) return false;
     if(to&&mo>to) return false;
-    // Must have at least one client linked
-    var hasClient=(ev.clientId)||(ev.clientIds&&ev.clientIds.length);
+    // Check all possible client link fields
+    var hasClient=ev.clientId||
+      (ev.clientIds&&ev.clientIds.length)||
+      (ev.clients&&ev.clients.length)||
+      (ev.attendees&&ev.attendees.length)||
+      (ev.participants&&ev.participants.length)||
+      ev.client;
     return !!hasClient;
   });
 }
@@ -430,10 +443,15 @@ function renderAudit(el,evs){
   evs.forEach(function(ev){
     if(!ev.date) return;
     var day=ev.date.slice(0,10),wk=wkSun(day),h=getHrs(ev);
-    // Support both clientId (single) and clientIds (array for group sessions)
+    // Collect client IDs from all possible fields
     var ids=[];
-    if(ev.clientId) ids.push(ev.clientId);
-    if(ev.clientIds&&Array.isArray(ev.clientIds)) ev.clientIds.forEach(function(id){if(ids.indexOf(id)<0)ids.push(id);});
+    function addId(id){if(id&&ids.indexOf(String(id))<0)ids.push(String(id));}
+    if(ev.clientId) addId(ev.clientId);
+    if(ev.client) addId(ev.client);
+    if(ev.clientIds&&Array.isArray(ev.clientIds)) ev.clientIds.forEach(addId);
+    if(ev.clients&&Array.isArray(ev.clients)) ev.clients.forEach(function(c){addId(typeof c==='object'?c.id||c:c);});
+    if(ev.attendees&&Array.isArray(ev.attendees)) ev.attendees.forEach(function(c){addId(typeof c==='object'?c.id||c:c);});
+    if(ev.participants&&Array.isArray(ev.participants)) ev.participants.forEach(function(c){addId(typeof c==='object'?c.id||c:c);});
     if(!ids.length) return;
     allWks.add(wk);
     ids.forEach(function(cid){
