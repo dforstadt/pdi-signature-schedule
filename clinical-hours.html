@@ -105,7 +105,7 @@ var CLIN_KW=['individual','family','therapy','dbt','trauma','anger','relapse','c
 var FORCE_ANC_SVCS=['lunch','photomodulation','cognitive remediation','orientation'];
 var FORCE_CLIN=['nursing','brian','paul lazar','dr. paul'];
 var FORCE_ANC=['anthony','heather','alice','flavia','rabbi','nicole'];
-var W2=['nicole williams','nicole','tara alhadeff','tara','mirella ezeta','dr. mirella','rabbi brandon gaines','rabbi gaines','rabbi','sandra bernstein','sandy','despina karfis','dr. despina','alexandra marullo','dr. alex','robert bruno','dr. bruno','tamas biro','tamas','paul lazar','dr. paul','dr. hume','anisha hume','t.d.','td','esther entin','esther','miguel','nichole bessent','gina bonfigli','gina','david ockman','ockman','nicole williams','gus hernandez','dr. greg','gregory fortune','greg fortune'];
+var W2=['nicole williams','nicole','tara alhadeff','tara','mirella ezeta','dr. mirella','rabbi brandon gaines','rabbi gaines','rabbi','sandra bernstein','sandy','despina karfis','dr. despina','alexandra marullo','dr. alex','robert bruno','dr. bruno','tamas biro','tamas','paul lazar','dr. paul','dr. hume','t.d.','td','esther entin','esther','miguel','nichole bessent','gina bonfigli','gina','david ockman','ockman','nicole williams','gus hernandez','dr. greg','gregory fortune','greg fortune'];
 var CTR=['david forstadt','dr. forstadt','forstadt','anthony','heather','alice','dr. flannery','flannery','pbwi','brian','dr. spaedy','spaedy','nursing','dr. flavia','flavia','dr. shaeffer','shaeffer','dr. bober','bober','thomas young','dr. smith','smith'];
 
 function isSkip(p,svc){
@@ -127,21 +127,9 @@ function isClin(ev){
 }
 function getHrs(ev){return((ev.duration||2)/2);}
 function emp(p){
-  var pl=(p||'').trim().toLowerCase().replace(/\.$/,'');
-  // Exact match first
+  var pl=(p||'').trim().toLowerCase().replace(/\.+$/,'').replace(/\s+/g,' ');
   if(W2.some(function(w){return pl===w;})) return 'W2';
   if(CTR.some(function(c){return pl===c;})) return 'Contractor';
-  // Partial match — provider name contains a W2/CTR keyword as a whole word
-  if(W2.some(function(w){
-    if(w.length<3) return false;
-    var re=new RegExp('\\b'+w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','i');
-    return re.test(pl);
-  })) return 'W2';
-  if(CTR.some(function(c){
-    if(c.length<3) return false;
-    var re=new RegExp('\\b'+c.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','i');
-    return re.test(pl);
-  })) return 'Contractor';
   return 'Unknown';
 }
 function prog(ev){
