@@ -138,18 +138,27 @@ function prog(ev){
 }
 function getEvs(){
   var from=document.getElementById('f-from').value, to=document.getElementById('f-to').value, pg=document.getElementById('f-prog').value;
-  return DATA.events.filter(function(ev){
-    if(!ev.date||!ev.provider||!ev.status) return false;
-    if(ev.status.toLowerCase()!=='completed') return false;
-    if(isSkip(ev.provider,ev.service)) return false;
+  var all=DATA.events, passed=[];
+  var dbg={total:all.length,noDate:0,noProvider:0,noStatus:0,notCompleted:0,skipped:0,outOfRange:0,progFilter:0,passed:0};
+  // Log unique status values for diagnosis
+  var statuses={};all.forEach(function(e){statuses[e.status||'(none)']=(statuses[e.status||'(none)']||0)+1;});
+  console.log('[Clinical Hours] Status values in data:',statuses);
+  all.forEach(function(ev){
+    if(!ev.date){dbg.noDate++;return;}
+    if(!ev.provider){dbg.noProvider++;return;}
+    // Accept completed or no status (treat missing status as valid)
+    if(ev.status&&ev.status.toLowerCase()!=='completed'){dbg.notCompleted++;return;}
+    if(isSkip(ev.provider,ev.service)){dbg.skipped++;return;}
     var mo=ev.date.slice(0,7);
-    if(from&&mo<from) return false;
-    if(to&&mo>to) return false;
+    if(from&&mo<from){dbg.outOfRange++;return;}
+    if(to&&mo>to){dbg.outOfRange++;return;}
     if(pg){var p=prog(ev);
-      if(pg==='sig'&&p&&p!=='signature'&&p!=='sig'&&p!=='both') return false;
-      if(pg==='pdi'&&p&&p!=='pdi'&&p!=='both') return false;}
-    return true;
+      if(pg==='sig'&&p&&p!=='signature'&&p!=='sig'&&p!=='both'){dbg.progFilter++;return;}
+      if(pg==='pdi'&&p&&p!=='pdi'&&p!=='both'){dbg.progFilter++;return;}}
+    dbg.passed++;passed.push(ev);
   });
+  console.log('[Clinical Hours] Filter debug:',dbg);
+  return passed;
 }
 
 /* ── Auth ──────────────────────────────────────────────────── */
