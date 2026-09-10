@@ -156,7 +156,6 @@ var W2=[
   'tara alhadeff','tara',
   'mirella ezeta','dr. mirella',
   'rabbi brandon gaines','rabbi gaines','rabbi',
-  'anisha hume','dr. hume',
   'sandra bernstein','sandy',
   'despina karfis','dr. despina',
   'alexandra marullo','dr. alex',
@@ -734,4 +733,160 @@ function exportCSV(){
 
 </script>
 </body>
-</html>
+</html>function drawWeekGrid(el,byCD,cnames,weeks,wkStart){
+  var days=[],dayLabels=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var isWeekday=[false,true,true,true,true,true,false]; // Mon-Fri = true
+  for(var d=0;d<7;d++){
+    var dt=new Date(wkStart+'T12:00:00');dt.setDate(dt.getDate()+d);
+    days.push(dt.toISOString().slice(0,10));
+  }
+  var wkEnd=days[6];
+  var idx=weeks.indexOf(wkStart);
+
+  // Collect clients and build lookup
+  var wkEntries=Object.values(byCD).filter(function(r){return r.wk===wkStart;});
+  var lookup={};
+  wkEntries.forEach(function(r){
+    var k=r.id+'|'+r.date;
+    lookup[k]={clin:r.clin,anc:r.anc,total:r.total};
+  });
+  var clientIds=[...new Set(wkEntries.map(function(r){return r.id;}))];
+  clientIds.sort(function(a,b){return (cnames[a]||'').localeCompare(cnames[b]||'');});
+
+  // Compliance: M-F target = 5hrs/day. Weekend can make up missed hours.
+  var wkMet=0,wkUnder=0,wkOver=0;
+  clientIds.forEach(function(cid){
+    var wdHrs=0,weHrs=0,wdDays=0;
+    days.forEach(function(day,di){
+      var h=(lookup[cid+'|'+day]||{total:0}).total||0;
+      if(isWeekday[di]){wdHrs+=h;if(h>0)wdDays++;}
+      else weHrs+=h;
+    });
+    var needed=wdDays*TARGET; // 5 hrs per working day client had sessions
+    var total=wdHrs+weHrs;
+    if(total>=needed&&needed>0)wkMet++;
+    else if(total>needed&&needed>0)wkOver++;
+    else wkUnder++;
+  });
+  var wkPct=clientIds.length?Math.round((wkMet+wkOver)/clientIds.length*100):0;
+
+  var wkLbl=moLbl(wkStart.slice(0,7))+' '+parseInt(wkStart.slice(8),10)+
+    ' – '+moLbl(wkEnd.slice(0,7))+' '+parseInt(wkEnd.slice(8),10)+', '+wkEnd.slice(0,4);
+
+  var card=document.createElement('div');card.className='card';
+  var prevDis=idx===0?'opacity:.3;pointer-events:none;':'cursor:pointer;';
+  var nextDis=idx===weeks.length-1?'opacity:.3;pointer-events:none;':'cursor:pointer;';
+  card.innerHTML=
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'+
+    '<button onclick="_auditWkIdx--;render()" style="padding:6px 18px;border:1.5px solid #E5E2DE;border-radius:6px;background:#fff;font-size:14px;font-weight:700;'+prevDis+'">←</button>'+
+    '<div style="text-align:center">'+
+      '<div style="font-size:14px;font-weight:700;color:#1B2A4A">'+wkLbl+'</div>'+
+      '<div style="font-size:11px;color:#888;margin-top:3px">Week '+(idx+1)+' of '+weeks.length+
+      ' &nbsp;·&nbsp; Target: 5 hrs/day Mon–Fri · Weekend hours count toward weekly total'+
+      ' &nbsp;·&nbsp; '+wkPct+'% compliance</div>'+
+    '</div>'+
+    '<button onclick="_auditWkIdx++;render()" style="padding:6px 18px;border:1.5px solid #E5E2DE;border-radius:6px;background:#fff;font-size:14px;font-weight:700;'+nextDis+'">→</button>'+
+    '</div>';
+
+  if(!clientIds.length){
+    card.innerHTML+='<div style="text-align:center;color:#888;padding:20px">No sessions this week.</div>';
+    el.appendChild(card);return;
+  }
+
+  // Table: Client | Sun | Mon | Tue | Wed | Thu | Fri | Sat | Wk Total | Status
+  // Each day cell shows: Clin / Anc / Total
+  var tbl='<div style="overflow-x:auto"><table><thead><tr>'+
+    '<th style="min-width:140px">Client</th>'+
+    days.map(function(day,di){
+      var dt=new Date(day+'T12:00:00');
+      var isWd=isWeekday[di];
+      var bg=isWd?'#1B2A4A':'#4A6A84';
+      return '<th class="r" style="min-width:80px;background:'+bg+'">'+
+        dayLabels[di]+'<br>'+
+        '<span style="font-size:8px;font-weight:400">'+(dt.getMonth()+1)+'/'+dt.getDate()+'</span>'+
+        (isWd?'':' <span style="font-size:8px;opacity:.7">WE</span>')+
+        '</th>';
+    }).join('')+
+    '<th class="r" style="min-width:70px">Total</th>'+
+    '<th style="min-width:90px">Status</th>'+
+    '</tr>'+
+    // Sub-header row
+    '<tr style="background:#F5F0E8">'+
+    '<td style="font-size:9px;color:#888;padding:3px 10px">Client</td>'+
+    days.map(function(day,di){
+      return '<td class="r" style="font-size:9px;color:#888;padding:3px 8px">Clin / Anc / Tot</td>';
+    }).join('')+
+    '<td style="font-size:9px;color:#888;padding:3px 10px;text-align:right">Hrs</td>'+
+    '<td></td>'+
+    '</tr>'+
+    '</thead><tbody>';
+
+  clientIds.forEach(function(cid){
+    var name=cnames[cid]||cid;
+    var wkClin=0,wkAnc=0,wkTotal=0,wdHrs=0,wdDays=0;
+    var cells=days.map(function(day,di){
+      var rec=lookup[cid+'|'+day]||{clin:0,anc:0,total:0};
+      var c=Math.round((rec.clin||0)*10)/10;
+      var a=Math.round((rec.anc||0)*10)/10;
+      var t=Math.round((c+a)*10)/10;
+      wkClin+=c;wkAnc+=a;wkTotal+=t;
+      if(isWeekday[di]&&t>0){wdHrs+=t;wdDays++;}
+      var bg=t===0?'':t>=TARGET?'#E8F5E9':t>TARGET?'#EFF6FF':'#FFFBEB';
+      var tcol=t===0?'#CCC':t>=TARGET?'#2D6A4F':t>TARGET?'#1A56DB':'#D97706';
+      var inner=t===0?'<span style="color:#CCC">—</span>':
+        '<span style="font-size:9px;color:#555">'+c+'</span>'+
+        '<span style="font-size:9px;color:#888"> / </span>'+
+        '<span style="font-size:9px;color:#888">'+a+'</span>'+
+        '<br><b style="color:'+tcol+'">'+t+'h</b>';
+      var wdBorder=isWeekday[di]?'':'border-left:2px dashed #E5E2DE;';
+      return '<td class="r" style="background:'+bg+';'+wdBorder+'padding:4px 6px;vertical-align:middle">'+inner+'</td>';
+    });
+
+    // Status: weekday compliance + weekend supplement
+    var needed=wdDays*TARGET;
+    var hasWeekend=days.some(function(day,di){return !isWeekday[di]&&(lookup[cid+'|'+day]||{total:0}).total>0;});
+    var status;
+    if(!wdDays){status='<span style="color:#ccc;font-size:11px">No sessions</span>';}
+    else if(wkTotal>=needed){status='<span class="badge bk">✓ Target met</span>'+(hasWeekend?' <span style="font-size:9px;color:#888">incl. WE</span>':'');}
+    else{
+      var deficit=Math.round((needed-wkTotal)*10)/10;
+      status='<span class="badge bam">⬇ '+deficit+'h short</span>';
+    }
+
+    wkClin=Math.round(wkClin*10)/10;
+    wkAnc=Math.round(wkAnc*10)/10;
+    wkTotal=Math.round(wkTotal*10)/10;
+
+    tbl+='<tr><td><b>'+name+'</b>'+
+      '<div style="font-size:9px;color:#888;margin-top:1px">'+
+      '<span style="color:#1B2A4A">'+wkClin+'h clin</span> · '+
+      '<span style="color:#2D6A4F">'+wkAnc+'h anc</span></div></td>'+
+      cells.join('')+
+      '<td class="r"><b>'+wkTotal+'h</b></td>'+
+      '<td>'+status+'</td></tr>';
+  });
+
+  // Day totals row
+  tbl+='<tr style="background:#F5F0E8"><td><b>Day Total</b></td>'+
+    days.map(function(day,di){
+      var t=clientIds.reduce(function(s,cid){return s+((lookup[cid+'|'+day]||{total:0}).total||0);},0);
+      var bg=isWeekday[di]?'#F5F0E8':'#EDE8DF';
+      return '<td class="r" style="background:'+bg+'"><b>'+Math.round(t*10)/10+'h</b></td>';
+    }).join('')+'<td></td><td></td></tr>';
+
+  tbl+='</tbody></table></div>';
+  card.innerHTML+=tbl;
+
+  // Legend
+  card.innerHTML+='<div style="margin-top:10px;font-size:10px;color:#888;display:flex;gap:16px;flex-wrap:wrap">'+
+    '<span>Each cell: <b>Clin / Anc / Total</b></span>'+
+    '<span style="color:#2D6A4F">■ Green = met 5h target</span>'+
+    '<span style="color:#1A56DB">■ Blue = exceeded</span>'+
+    '<span style="color:#D97706">■ Amber = under target</span>'+
+    '<span style="color:#888">WE = Weekend (supplementary)</span>'+
+    '</div>';
+
+  el.appendChild(card);
+}
+
+
