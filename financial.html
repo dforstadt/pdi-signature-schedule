@@ -300,7 +300,6 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
         <tr><td><b>Norman P</b></td><td style="color:var(--tx3)">10</td><td style="text-align:right">$80,000 <span style="font-size:9px;color:var(--tx3)">$70K+$10K companion</span></td><td style="text-align:right">$4,350</td><td style="text-align:right">$23,738</td><td style="text-align:right">$28,088</td><td style="text-align:right;color:var(--green)">+$51,912</td><td style="text-align:right;font-weight:700;color:var(--green)">64.9%</td></tr>
         <tr><td><b>Angela T</b> <span style="font-size:9px;color:var(--step)">→ Sig ●</span></td><td style="color:var(--tx3)">10</td><td style="text-align:right">$70,000 </td><td style="text-align:right">$4,050</td><td style="text-align:right">$27,626</td><td style="text-align:right">$31,676</td><td style="text-align:right;color:var(--green)">+$38,324</td><td style="text-align:right;font-weight:700;color:var(--amber)">54.7%</td></tr>
       </tbody>
-      <tbody id="step-dynamic-rows"></tbody>
       <tbody id="pdi-dynamic-rows"></tbody>
 
     </table>
@@ -525,6 +524,7 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
         <tr><td><b>Blake P</b> <span style="font-size:9px;color:var(--tx3)">✓</span></td><td style="color:var(--tx3)">Jun 4–12 (9d)</td><td style="color:var(--tx3)">Jun 13–26 (14d)</td><td style="text-align:right">$3,975</td><td style="text-align:right">$22,038</td><td style="text-align:right">$27,626</td><td style="text-align:right">$53,639</td><td style="text-align:right;color:var(--green)">$112,000 <span style="font-size:9px;color:var(--tx3)">$70K PDI</span></td><td style="text-align:right;color:var(--green)">+$58,361</td><td style="text-align:right;font-weight:700;color:var(--green)">52.1%</td></tr>
         <tr><td><b>Angela T</b> <span style="font-size:9px;color:var(--sig)">●</span></td><td style="color:var(--tx3)">Jul 3–present (10d)</td><td style="color:var(--sig)">Jun 25–present (18d)</td><td style="text-align:right">$4,050</td><td style="text-align:right">$29,445</td><td style="text-align:right">$27,626</td><td style="text-align:right">$61,121</td><td style="text-align:right;color:var(--green)">$124,000 <span style="font-size:9px;color:var(--tx3)">$70K PDI</span></td><td style="text-align:right;color:var(--green)">+$62,879</td><td style="text-align:right;font-weight:700;color:var(--green)">50.7%</td></tr>
       </tbody>
+      <tbody id="step-dynamic-rows"></tbody>
       <tfoot>
         <tr class="grand-total">
           <td colspan="6">✓ Discharged · ● Active · PDI $70K hist. rate · Fixed costs PDI+Sig: $26,538 · Sig base: $7,075/wk · Wk1 (Flannery covered) · Wk2+: +$1,638 neurofeed</td>
@@ -1182,10 +1182,11 @@ firebase.database().ref('schedule_v3').on('value',function(snap){
                      'Alex A','Peter S','George R','Chayse B','Louis R','Jack S',
                      'Layla S (R)','Layla S R','William C'].map(normName);
     var PDI_HARD  = ['Matthew H','Leslie K','Abbegail M','Alex R','Francis R',
-                     'Thomas W','Norman P','Cassie W','Nicholas W'].map(normName);
+                     'Thomas W','Norman P','Cassie W','Nicholas W','Miguel'].map(normName);
     var STEP_HARD = ['Carlos L','Jessica C','George W','Marc C','Michael F',
                      'Kevin C','Layla S','Blake P','Angela T'].map(normName);
-    var ALL_HARD  = SIG_HARD.concat(PDI_HARD).concat(STEP_HARD);
+    var STEP_DYN_ONLY = ['Andrew C','Noah G'].map(normName);
+    var ALL_HARD  = SIG_HARD.concat(PDI_HARD).concat(STEP_HARD).concat(STEP_DYN_ONLY);
 
     function isHardcoded(name, list){ var n=normName(name); return list.indexOf(n)>=0; }
     function losD(a,b){
@@ -1315,14 +1316,16 @@ firebase.database().ref('schedule_v3').on('value',function(snap){
       var sRange = (c.sigAdmit||'?').slice(5).replace('-','/')
                  + (sd?'–'+sd.slice(5).replace('-','/'):sd?'':'–active')
                  +' ('+sDays+'d)';
+      // Step-down table: 10-col format matching header
+      // Client | PDI Phase | Sig Phase | PDI Var | Sig Cost | Fixed | Total | Revenue | Profit | Margin
+      var badge2=isAct?'<span style="color:var(--step);font-size:10px">&#9679;</span>':'<span style="color:var(--tx3);font-size:9px">&#10003;</span>';
       return '<tr>'
-        +'<td><b>'+c.name+'</b> '+(isAct?'<span style="color:var(--step);font-size:10px">&#9679;</span>':'<span style="color:var(--tx3);font-size:9px">&#10003;</span>')+'</td>'
+        +'<td><b>'+c.name+'</b> '+badge2+'</td>'
         +'<td style="color:var(--tx3)">'+pRange+'</td>'
         +'<td style="color:var(--tx3)">'+sRange+'</td>'
         +tdR(money(pdiV))+tdR(money(sigW))+tdR(money(fixC))+tdR(money(tot))
-        +'<td style="text-align:right">'+money(totRev)
-          +' <span style="font-size:9px;color:'+(profit>=0?'var(--green)':'var(--red)')
-          +';font-weight:600">'+(profit>=0?'+':'')+money(profit)+'</span></td>'
+        +'<td style="text-align:right">'+money(totRev)+'</td>'
+        +'<td style="text-align:right;font-weight:700;color:'+(profit>=0?'var(--green)':'var(--red)')+'">'+(profit>=0?'+':'')+money(profit)+'</td>'
         +'<td style="text-align:right;font-weight:700;color:'+mc(margin)+'">'+pct(margin)+'</td>'
         +'</tr>';
     }).join('');
