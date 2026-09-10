@@ -272,7 +272,7 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
     <div class="sec-h">
       <div class="sec-h-left">
         <div class="sec-title">Actual PDI Episode Margins</div>
-        <div class="sec-sub">Calculated from real schedule data · fixed rates + actual episode length · $80,000 revenue per episode (new rate · effective going forward) · <span style="color:var(--amber)">Historical clients below billed at previous $70,000 rate</span></div>
+        <div class="sec-sub">Calculated from real schedule data · fixed rates + actual episode length · $70,000 actual revenue per episode (historical rate) · <span style="color:var(--amber)">New rate of $80,000 applies to future episodes — no clients yet billed at new rate</span></div>
       </div>
       <span class="sec-badge" style="background:rgba(55,138,221,.1);color:var(--pdi)">16 PDI episodes</span>
     </div>
@@ -1255,7 +1255,7 @@ firebase.database().ref('schedule_v3').on('value',function(snap){
       var disch = c.pdiDischarge||c.pdiDisch||'';
       var days  = losD(c.pdiAdmit, disch||today);
       var isAct = !disch||disch>=today;
-      var rev   = 80000;
+      var rev   = 70000; // Historical rate — $80K not yet launched, no clients billed at new rate
       var varC  = Math.round(days/7*2550);
       var fixC  = 22788; // Updated: stipends $550, no wellness
       var tot   = varC+fixC;
@@ -1287,7 +1287,7 @@ firebase.database().ref('schedule_v3').on('value',function(snap){
       var pDays = losD(c.pdiAdmit, pd||today);
       var sDays = losD(c.sigAdmit,  sd||today);
       var isAct = (!pd||pd>=today)||(!sd||sd>=today);
-      var pdiRev = 80000;
+      var pdiRev = 70000; // Historical rate — $80K not yet launched
       var sigRev = Math.round(sDays/7*24500);
       var totRev = pdiRev+sigRev;
       var pdiV   = Math.round(pDays*375+Math.floor(pDays/7)*600);
