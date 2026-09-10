@@ -1083,7 +1083,7 @@ function calcSig(){
   var wk2OnlyAmt=lines.sig.filter(function(l){return l.cat==='PBWI (Wk 2+ only)';})
     .reduce(function(s,l){return s+(l.amt||0);},0);
   var baseAmt=lines.sig.filter(function(l){
-    return l.cat!=='PBWI (Wk 1 only)'&&l.cat!=='PBWI (Wk 2+ only)';
+    return l.cat!=='PBWI (Wk 1 only)'&&l.cat!=='PBWI (Wk 2+ only)'&&l.cat!=='Medical (Wk 1 only)';
   }).reduce(function(s,l){return s+(l.amt||0);},0);
 
   var wk1Cost=baseAmt+wk1OnlyAmt;
