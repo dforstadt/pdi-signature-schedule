@@ -713,4 +713,744 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
       <span>Signature costs: Dr. Forstadt $3,000/wk · Stipends: Ockman $250/person/wk · Liaison $500 · Lead Tech $700 · Culinary 7-day $1,050 · Training $750 · Wellness $150 · Ancillary $525 | Brain mapping $3,288 one-time (Wk1) · Neurofeedback $1,638/wk (Wk2+)</span>
       <span>Steady-state margin (long stay): <b>56.8%</b> · H&P amortizes quickly (0.67 percentage points impact at 10 days)</span>
     </div>
-  </div>>
+  </div><!-- /wrap -->
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// DATA STRUCTURES
+// ═══════════════════════════════════════════════════════════════════════════
+
+var DATA = {
+  pdi: [
+    // ── FIXED COSTS (per episode, regardless of length) ───────────────────
+    // Clinical Leadership
+    {cat:'Fixed — Clinical', name:'Dr. Forstadt — Program Direction', note:'Flat fee per person', amt:3000},
+    {cat:'Fixed — Clinical', name:'Psychometric Testing Battery (full protocol)', note:'SCID, MMPI-3, MCMI, WCST, TOVA, Rorschach, WAIS, projectives', amt:6900},
+    {cat:'Fixed — Clinical', name:'  └ Psychometric Assistant (data collection support)', note:'$2,133.33 of testing fee — if applicable', amt:0},
+    // PBWI Diagnostic
+    {cat:'Fixed — PBWI', name:'PBWI PDI Program Package — Dr. Flannery', note:'Medical services & care coordination · Medical records review · Brain map + interpretation + integrated report · Debriefing (medical & brain map) · Wellness services care coordination', amt:10038},
+    // Labs & Nutrition
+    {cat:'Fixed — Labs', name:'Lab Panels — Comprehensive Bloodwork', note:'Day 1–2 draw + full panel', amt:2000},
+    {cat:'Fixed — Nutritional', name:'Nutritional / Dietician Assessment', note:'Initial intake', amt:150},
+    {cat:'Fixed — Nutritional', name:'Nutritional / Dietician Follow-Up', note:'Follow-up session', amt:150},
+    // Stipends (PDI flat, no session fees)
+    {cat:'Fixed — Stipend', name:'Executive Oversight — Ockman', note:'One-time flat per episode', amt:250},
+    {cat:'Fixed — Stipend', name:'Clinical Liaison', note:'Flat per episode', amt:100},
+    {cat:'Fixed — Stipend', name:'Lead Tech (2 staff × $100)', note:'Per episode · 2 staff × $100', amt:200},
+    // ── DAILY / WEEKLY COSTS (× episode length) ──────────────────────────
+    {cat:'Daily — Training', name:'Personal Training (5 days/week)', note:'$750/wk · $150/day × 5 weekdays', amt:750},
+    {cat:'Daily — Culinary', name:'Culinary / Chef + Food (7 days/week)', note:'$150/day × 7 days — full chef model', amt:1050},
+    {cat:'Daily — Ancillary', name:'Client Ancillary Needs ($75/day × 10 days)', note:'$75 × 10 days = $750 · includes all days, weekdays and weekends', amt:750},
+  ],
+  stepPdi: [
+    {cat:'Fixed — Clinical', name:'Dr. Forstadt — Program Direction', note:'Flat fee per person', amt:3000},
+    {cat:'Fixed — Clinical', name:'Psychometric Testing Battery (full protocol)', note:'SCID, MMPI-3, MCMI, WCST, Rorschach, WAIS, projectives', amt:6900},
+    {cat:'Fixed — Clinical', name:'  └ Psychometric Assistant (if applicable)', note:'$2,133.33 of testing fee', amt:0},
+    {cat:'Fixed — PBWI', name:'PBWI PDI+Signature Package — Dr. Flannery', note:'Covers PDI phase + Week 1 of Signature | PDI: medical services & care coord, medical records review, brain map + interpretation + integrated report, debriefing, wellness coord | Sig Wk 1: 2 neurofeedback sessions & care coord, Dr. Flannery follow-up & note, wellness care coord', amt:13926},
+    {cat:'Fixed — Labs', name:'Lab Panels — Comprehensive Bloodwork', note:'Day 1–2', amt:2000},
+    {cat:'Fixed — Nutritional', name:'Nutritional / Dietician Assessment', note:'Initial intake', amt:150},
+    {cat:'Fixed — Nutritional', name:'Nutritional / Dietician Follow-Up', note:'Follow-up', amt:150},
+    {cat:'Fixed — Stipend', name:'Executive Oversight — Ockman', note:'One-time flat per episode', amt:250},
+    {cat:'Fixed — Stipend', name:'Clinical Liaison', note:'Flat per episode', amt:100},
+    {cat:'Fixed — Stipend', name:'Lead Tech (2 staff × $100)', note:'Per episode', amt:200},
+    {cat:'Daily — Training', name:'Personal Training (5 days/week)', note:'$750/wk · PDI phase weeks', amt:750},
+    {cat:'Daily — Culinary', name:'Culinary / Chef + Food (weekdays)', note:'$150/day × 5 weekdays', amt:750},
+    {cat:'Daily — Culinary', name:'Weekend Food — Ordering ($150/day × 2)', note:'$300/weekend', amt:300},
+    {cat:'Daily — Wellness', name:'Wellness Direct Services (2/week × $300/hr)', note:'Care coordination in PBWI package · direct service hour billed separately at $300 each', amt:600},
+    {cat:'Daily — Ancillary', name:'Client Ancillary Needs ($75/day × 10 days)', note:'$75 × 10 days = $750 · includes all days', amt:750},
+  ],
+  stepSig: [
+    {cat:'Clinical Leadership', name:'Dr. Forstadt — Ongoing Oversight', note:'$3,000/week — unchanged', amt:3000},
+    {cat:'Clinical', name:'Individual Therapy', note:'Included in program — not separately billed', amt:0},
+    {cat:'Clinical', name:'Family Therapy', note:'Included in program — not separately billed', amt:0},
+    {cat:'Clinical', name:'Specialist', note:'Included in program — not separately billed', amt:0},
+    {cat:'Wellness', name:'Personal Training', note:'5 days/wk · $150/session', amt:750},
+    {cat:'Wellness', name:'Wellness Direct Services (2×/month avg)', note:'2 sessions/month · $300/session · avg $150/week', amt:150},
+    {cat:'Nutritional', name:'Nutritional Follow-Up', note:'1/wk · $150/session', amt:150},
+    {cat:'Stipend', name:'David Ockman — Executive Oversight', note:'$250/person/week', amt:250},
+    {cat:'Stipend', name:'Clinical Liaison', note:'$100/day × 5 days/week = $500/week', amt:500},
+    {cat:'Stipend', name:'Lead Tech (2 alternating)', note:'$100/day × 7 days · 1 on at a time · $700/week', amt:700},
+    {cat:'Operational', name:'Culinary / Chef + Food (7 days/week)', note:'$150/day × 7 days — full chef model', amt:1050},
+    {cat:'Operational', name:'Client Ancillary Needs', note:'$75/day × 7 days', amt:525},
+    {cat:'Medical (Wk 1 only)', name:'Dr. Flannery — H&P at Transition', note:'Week 1 of Signature only · covered in PDI combined package', amt:0},
+    {cat:'PBWI (Wk 2+ only)', name:'Neurofeedback (2×/week)', note:'$819/session × 2 sessions — from Week 2', amt:1638},
+  ],
+  sigFull: [
+    {cat:'Medical (Wk 1 only)', name:'H&P — Medical Doctor (one-time intake)', freq:'History & Physical · billed once at intake · not Dr. Flannery', amt:300},
+    {cat:'PBWI (Wk 1 only)', name:'Brain Mapping (one-time intake)', freq:'Full brain map + interpretation + integrated report · billed Week 1 only', amt:3288},
+    {cat:'PBWI (Wk 2+ only)', name:'Neurofeedback (2×/week)', freq:'$819/session × 2 sessions/week · begins Week 2', amt:1638},
+    {cat:'Clinical Leadership', name:'Dr. Forstadt — Ongoing Oversight', freq:'$3,000/week — unchanged', amt:3000},
+    {cat:'Clinical', name:'Individual Therapy', freq:'Included in program — not separately billed', amt:0},
+    {cat:'Clinical', name:'Family Therapy', freq:'Included in program — not separately billed', amt:0},
+    {cat:'Clinical', name:'Specialist', freq:'Included in program — not separately billed', amt:0},
+    {cat:'Wellness', name:'Personal Training', freq:'5 days/wk · $150/session', amt:750},
+    {cat:'Wellness', name:'Wellness Direct Services (2×/month)', freq:'2 sessions/month · $300/session · avg $150/week', amt:150},
+    {cat:'Nutritional', name:'Nutritional Follow-Up', freq:'1×/wk · $150/session', amt:150},
+    {cat:'Stipend', name:'David Ockman — Executive Oversight', freq:'$250/person/week', amt:250},
+    {cat:'Stipend', name:'Clinical Liaison', freq:'$100/day × 5 days/week', amt:500},
+    {cat:'Stipend', name:'Lead Tech (2 alternating)', freq:'$100/day × 7 days · 1 on at a time', amt:700},
+    {cat:'Operational', name:'Culinary / Chef + Food (7 days/week)', freq:'$150/day × 7 days — full chef model', amt:1050},
+    {cat:'Operational', name:'Client Ancillary Needs', freq:'$75/day × 7 days', amt:525},
+  ],
+  sigReduced: [
+    {cat:'Medical (Wk 1 only)', name:'H&P — Medical Doctor (one-time intake)', freq:'History & Physical · billed once at intake · not Dr. Flannery', amt:300},
+    {cat:'PBWI (Wk 1 only)', name:'Brain Mapping (one-time intake)', freq:'Full brain map + interpretation + integrated report · billed Week 1 only', amt:3288},
+    {cat:'PBWI (Wk 2+ only)', name:'Neurofeedback (2×/week)', freq:'$819/session × 2 sessions/week · begins Week 2', amt:1638},
+    {cat:'Clinical Leadership', name:'Dr. Forstadt — Ongoing Oversight', freq:'$3,000/week — unchanged', amt:3000},
+    {cat:'Clinical', name:'Individual Therapy', freq:'Included in program — not separately billed', amt:0},
+    {cat:'Clinical', name:'Family Therapy', freq:'Included in program — not separately billed', amt:0},
+    {cat:'Clinical', name:'Specialist', freq:'Included in program — not separately billed', amt:0},
+    {cat:'Wellness', name:'Personal Training', freq:'5 days/wk · $150/session', amt:750},
+    {cat:'Wellness', name:'Wellness Direct Services (2×/month)', freq:'2 sessions/month · $300/session · avg $150/week', amt:150},
+    {cat:'Nutritional', name:'Nutritional Follow-Up', freq:'1×/wk · $150/session', amt:150},
+    {cat:'Stipend', name:'David Ockman — Executive Oversight', freq:'$250/person/week', amt:250},
+    {cat:'Stipend', name:'Clinical Liaison', freq:'$100/day × 5 days/week', amt:500},
+    {cat:'Stipend', name:'Lead Tech (2 alternating)', freq:'$100/day × 7 days · 1 on at a time', amt:700},
+    {cat:'Operational', name:'Culinary / Chef + Food (7 days/week)', freq:'$150/day × 7 days — full chef model', amt:1050},
+    {cat:'Operational', name:'Client Ancillary Needs', freq:'$75/day × 7 days', amt:525},
+  ]
+};
+
+// Working copies (editable)
+var lines = {
+  pdi: clone(DATA.pdi),
+  stepPdi: clone(DATA.stepPdi),
+  stepSig: clone(DATA.stepSig),
+  sig: clone(DATA.sigFull)
+};
+
+function clone(arr){ return arr.map(function(x){return Object.assign({},x);}); }
+function fmt$(v){ return '$'+Math.round(Math.abs(v)).toLocaleString(); }
+function fmtPct(v){ return Math.round(v)+'%'; }
+function profitColor(m,goal){ return m>=goal?'var(--green)':m>=goal-0.05?'var(--amber)':'var(--red)'; }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TAB SWITCHING
+// ═══════════════════════════════════════════════════════════════════════════
+function switchTab(t){
+  document.querySelectorAll('.prog-tab').forEach(function(b){b.classList.remove('active');});
+  document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');});
+  document.querySelector('.prog-tab.'+t).classList.add('active');
+  document.getElementById('tab-'+t).classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RENDER HELPERS
+// ═══════════════════════════════════════════════════════════════════════════
+function renderLines(tbodyId, key, hasFreq){
+  var tbody = document.getElementById(tbodyId);
+  var ls = lines[key];
+  var cats = [];
+  ls.forEach(function(li){ if(cats.indexOf(li.cat)===-1)cats.push(li.cat); });
+  var html='';
+  cats.forEach(function(cat){
+    html+='<tr class="cat-sep"><td colspan="'+(hasFreq?5:5)+'">'+cat+'</td></tr>';
+    ls.forEach(function(li,i){
+      if(li.cat!==cat)return;
+      html+='<tr>'+
+        '<td><input class="inp" value="'+escHtml(li.name)+'" onchange="lines.'+key+'['+i+'].name=this.value"></td>'+
+        '<td style="color:var(--tx3);font-size:11px">'+li.cat+'</td>'+
+        (hasFreq?'<td style="color:var(--tx3);font-size:11px">'+(li.freq||li.note||'')+'</td>':'<td style="color:var(--tx3);font-size:11px">'+(li.note||'')+'</td>')+
+        '<td style="text-align:right"><input class="inp inp-num" type="number" value="'+li.amt+'" onchange="lines.'+key+'['+i+'].amt=parseFloat(this.value)||0;calcAll()"></td>'+
+        '<td><button class="del-btn" onclick="lines.'+key+'.splice('+i+',1);renderAll();calcAll()">✕</button></td>'+
+      '</tr>';
+    });
+  });
+  tbody.innerHTML=html;
+}
+
+function addLine(key){
+  if(key==='pdi')       lines.pdi.push({cat:'Other',name:'New line item',note:'',amt:0});
+  else if(key==='step-pdi') lines.stepPdi.push({cat:'Other',name:'New line item',note:'',amt:0});
+  else if(key==='step-sig') lines.stepSig.push({cat:'Other',name:'New line item',freq:'',amt:0});
+  else if(key==='sig')  lines.sig.push({cat:'Other',name:'New line item',freq:'',amt:0});
+  document.getElementById('sig-a-scenario').value='custom';
+  renderAll();calcAll();
+}
+
+function escHtml(s){ return (s||'').replace(/"/g,'&quot;'); }
+
+function plRow(label, value, cls, indent){
+  return '<div class="pl-row'+(cls?' '+cls:'')+(indent?' pl-indent':'')+'">' +
+    '<span class="pl-label">'+label+'</span>'+
+    '<span class="pl-value" style="color:'+(cls==='profit'?'inherit':'var(--tx2)')+'">'+value+'</span>'+
+  '</div>';
+}
+
+function setGauge(id, pct, goal){
+  var el=document.getElementById(id);
+  var w=Math.min(100, pct*2);
+  el.style.width=w+'%';
+  el.style.background=pct/100>=goal?'var(--green)':pct/100>=goal-0.05?'var(--amber)':'var(--red)';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PDI CALC
+// ═══════════════════════════════════════════════════════════════════════════
+function calcPDI(){
+  var rev=parseFloat(document.getElementById('pdi-a-rev').value)||0;
+  var goal=(parseFloat(document.getElementById('pdi-a-goal').value)||44)/100;
+  var cost=lines.pdi.reduce(function(s,l){return s+(l.amt||0);},0);
+  var profit=rev-cost;
+  var margin=rev>0?profit/rev:0;
+  var pct=Math.round(margin*100);
+  var pc=profitColor(margin,goal);
+
+  document.getElementById('pdi-kpi-cost').textContent=fmt$(cost);
+  document.getElementById('pdi-kpi-profit').textContent=(profit>=0?'+':'-')+fmt$(profit);
+  document.getElementById('pdi-kpi-profit').style.color=pc;
+  document.getElementById('pdi-kpi-pct').textContent=fmtPct(pct);
+  document.getElementById('pdi-kpi-pct').style.color=pc;
+  document.getElementById('pdi-cost-badge').textContent=fmt$(cost);
+  document.getElementById('pdi-cost-total').textContent=fmt$(cost);
+  var t2=document.getElementById('pdi-cost-total-2');if(t2)t2.textContent=fmt$(cost);
+  document.getElementById('pdi-pl-badge').textContent=fmtPct(pct)+' margin';
+  setGauge('pdi-gauge',pct,goal);
+
+  document.getElementById('pdi-pl-rows').innerHTML=
+    plRow('Episode Revenue','+ '+fmt$(rev))+
+    plRow('Total Episode Cost','( '+fmt$(cost)+' )')+
+    '<div style="height:.5px;background:var(--bd);margin:0 20px"></div>'+
+    plRow('Episode Profit',(profit>=0?'+ ':' ')+fmt$(profit),'profit')+
+    '<div style="padding:10px 20px 14px;font-size:10px;color:var(--tx3)">'+
+    'Margin: <b style="color:'+pc+'">'+fmtPct(pct)+'</b> · Goal: '+fmtPct(Math.round(goal*100))+
+    ' · '+(margin>=goal?'<span style="color:var(--green)">On target ✓</span>':'Gap: <b style="color:var(--red)">'+fmtPct(Math.round(goal*100)-pct)+'pp</b>')+
+    '</div>';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// STEP-DOWN CALC
+// ═══════════════════════════════════════════════════════════════════════════
+function calcStep(){
+  var pdiRev=parseFloat(document.getElementById('step-a-pdi').value)||0;
+  var sigWkRev=parseFloat(document.getElementById('step-a-sig-wk').value)||0;
+  var sigWks=parseInt(document.getElementById('step-a-sig-wks').value)||1;
+  var goal=(parseFloat(document.getElementById('step-a-goal').value)||44)/100;
+  var sigRev=sigWkRev*sigWks;
+  var totalRev=pdiRev+sigRev;
+
+  var pdiCost=lines.stepPdi.reduce(function(s,l){return s+(l.amt||0);},0);
+  var sigCostPerWk=lines.stepSig.reduce(function(s,l){return s+(l.amt||0);},0);
+  var sigCostTotal=sigCostPerWk*sigWks;
+  var totalCost=pdiCost+sigCostTotal;
+  var profit=totalRev-totalCost;
+  var margin=totalRev>0?profit/totalRev:0;
+  var pct=Math.round(margin*100);
+  var pc=profitColor(margin,goal);
+  var pdiM=pdiRev>0?(pdiRev-pdiCost)/pdiRev:0;
+  var sigM=sigRev>0?(sigRev-sigCostTotal)/sigRev:0;
+
+  // Step tab uses renderStepTable() directly
+  document.getElementById('step-pdi-badge').textContent=fmt$(pdiTotal);
+  document.getElementById('step-pdi-total').textContent=fmt$(pdiTotal);
+  document.getElementById('step-sig-badge').textContent=fmt$(sigCostTotal)+' total';
+  document.getElementById('step-sig-total').textContent=fmt$(sigCostTotal)+' ('+fmt$(sigCostPerWk)+'/wk × '+sigWks+'wk)';
+  setGauge('step-gauge',pct,goal);
+
+  // Week-over-week progression table
+  // Step-down weekly costs (proposed model)
+  // Wk1: Flannery H&P via PDI pkg — base sig costs only
+  // Wk2+: base sig + Neurofeedback $1,638 (alternating wellness 2×/month)
+  var stepSigBase = lines.stepSig.filter(function(l){
+    return l.cat!=='PBWI (Wk 2+ only)' && l.cat!=='Medical (Wk 1 only)';
+  }).reduce(function(s,l){return s+(l.amt||0);},0);
+  var stepSigPBWI = lines.stepSig.filter(function(l){
+    return l.cat==='PBWI (Wk 2+ only)';
+  }).reduce(function(s,l){return s+(l.amt||0);},0);
+  var SIG_WK1=stepSigBase, SIG_WKN=stepSigBase+stepSigPBWI;
+  var pdiVarCost=lines.stepPdi.reduce(function(s,l){return s+(l.amt||0);},0);
+  var wkRows='';
+  var cRev=pdiRev, cCost=STEP_FIX+pdiVarCost;
+  var pdiM=(cRev-cCost)/cRev*100;
+  var pdiColor=pdiM>=44?'var(--green)':pdiM>=38?'var(--amber)':'var(--red)';
+  wkRows+='<tr style="background:rgba(55,138,221,.06)">'+
+    '<td><b>PDI Phase</b><span style="font-size:9px;color:var(--tx3);margin-left:6px">$70K flat fee · avg episode</span></td>'+
+    '<td style="text-align:right;color:var(--green)">'+fmt$(pdiRev)+'</td>'+
+    '<td style="text-align:right">'+fmt$(STEP_FIX+pdiVarCost)+'</td>'+
+    '<td style="text-align:right;font-weight:700;color:'+pdiColor+'">'+Math.round(pdiM)+'%</td>'+
+    '<td style="text-align:right">'+fmt$(cRev)+'</td>'+
+    '<td style="text-align:right">'+fmt$(cCost)+'</td>'+
+    '<td style="text-align:right;font-weight:700;color:'+pdiColor+'">'+Math.round(pdiM)+'%</td>'+
+  '</tr>';
+  var wkMax=Math.max(parseInt(document.getElementById('step-a-sig-wks').value)||4,12);
+  for(var w=1;w<=wkMax;w++){
+    var wCost=w===1?SIG_WK1:SIG_WKN;
+    var wRev=sigWkRev;
+    var wMargin=(wRev-wCost)/wRev*100;
+    cRev+=wRev; cCost+=wCost;
+    var blend=(cRev-cCost)/cRev*100;
+    var bColor=blend>=44?'var(--green)':blend>=40?'var(--amber)':'var(--red)';
+    var wColor=wMargin>=44?'var(--green)':wMargin>=40?'var(--amber)':'var(--red)';
+    var wColor2=wMargin>=55?'var(--green)':wMargin>=50?'var(--amber)':'var(--red)';
+    var wLabel=w===1?
+      'Sig Week 1 <span style="font-size:9px;color:var(--tx3)">Flannery H&P via PDI pkg · '+Math.round(wMargin)+'% weekly</span>':
+      'Sig Week '+w+' <span style="font-size:9px;color:var(--tx3)">Neurofeedback $1,638/wk · '+Math.round(wMargin)+'% weekly</span>';
+    var bg=w===1?'rgba(46,139,122,.05)':'';
+    wkRows+='<tr'+(bg?' style="background:'+bg+'"':'')+'>'+
+      '<td style="padding-left:18px">'+wLabel+'</td>'+
+      '<td style="text-align:right;color:var(--green)">'+fmt$(wRev)+'</td>'+
+      '<td style="text-align:right">'+fmt$(wCost)+'</td>'+
+      '<td style="text-align:right;font-weight:600;color:'+wColor+'">'+Math.round(wMargin)+'%</td>'+
+      '<td style="text-align:right">'+fmt$(cRev)+'</td>'+
+      '<td style="text-align:right">'+fmt$(cCost)+'</td>'+
+      '<td style="text-align:right;font-weight:700;color:'+bColor+'">'+Math.round(blend*10)/10+'%</td>'+
+    '</tr>';
+  }
+  var wkEl=document.getElementById('wk-body');
+  if(wkEl)wkEl.innerHTML=wkRows;
+  var badgeEl=document.getElementById('wk-badge');
+  if(badgeEl)badgeEl.textContent='Wks shown: '+wkMax;
+
+  var pPDI=profitColor(pdiM,goal),pSig=profitColor(sigM,goal);
+  document.getElementById('step-pdi-pl').innerHTML=
+    plRow('PDI Fee','+ '+fmt$(pdiRev))+
+    plRow('PDI Phase Cost','( '+fmt$(pdiTotal)+' )')+
+    '<div style="height:.5px;background:var(--bd);margin:0 20px"></div>'+
+    plRow('PDI Phase Profit',(pdiRev-pdiCost>=0?'+ ':'')+fmt$(pdiRev-pdiCost),'profit')+
+    '<div style="padding:8px 20px 12px;font-size:10px;color:'+pPDI+'">PDI margin: <b>'+fmtPct(Math.round(pdiM*100))+'%</b></div>';
+
+  document.getElementById('step-sig-pl').innerHTML=
+    plRow('Sig Revenue ('+sigWks+'wk)','+ '+fmt$(sigRev))+
+    plRow('Sig Phase Cost','( '+fmt$(sigCostTotal)+' )')+
+    '<div style="height:.5px;background:var(--bd);margin:0 20px"></div>'+
+    plRow('Sig Phase Profit',(sigRev-sigCostTotal>=0?'+ ':'')+fmt$(sigRev-sigCostTotal),'profit')+
+    '<div style="padding:8px 20px 12px;font-size:10px;color:'+pSig+'">Sig margin: <b>'+fmtPct(Math.round(sigM*100))+'%</b></div>';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SIGNATURE STANDALONE CALC
+// ═══════════════════════════════════════════════════════════════════════════
+function applySigScenario(){
+  var s=document.getElementById('sig-a-scenario').value;
+  if(s==='full') lines.sig=clone(DATA.sigFull);
+  else if(s==='reduced') lines.sig=clone(DATA.sigReduced);
+  renderLines('sig-cost-body','sig',true);
+}
+
+function calcSig(){
+  var rev=parseFloat(document.getElementById('sig-a-rev').value)||0;
+  var census=parseInt(document.getElementById('sig-a-census').value)||0;
+  var goal=(parseFloat(document.getElementById('sig-a-goal').value)||44)/100;
+
+  var wk1OnlyAmt=lines.sig.filter(function(l){return l.cat==='PBWI (Wk 1 only)';})
+    .reduce(function(s,l){return s+(l.amt||0);},0);
+  var wk2OnlyAmt=lines.sig.filter(function(l){return l.cat==='PBWI (Wk 2+ only)';})
+    .reduce(function(s,l){return s+(l.amt||0);},0);
+  var baseAmt=lines.sig.filter(function(l){
+    return l.cat!=='PBWI (Wk 1 only)'&&l.cat!=='PBWI (Wk 2+ only)'&&l.cat!=='Medical (Wk 1 only)';
+  }).reduce(function(s,l){return s+(l.amt||0);},0);
+
+  var wk1Cost=baseAmt+wk1OnlyAmt;
+  var wk2Cost=baseAmt+wk2OnlyAmt;
+  var costPerClient=wk2Cost;
+  var totalCost=costPerClient*census;
+  var totalRev=rev*census;
+  var profit=totalRev-totalCost;
+  var margin=totalRev>0?profit/totalRev:0;
+  var pct=Math.round(margin*100);
+  var pc=profitColor(margin,goal);
+  var breakEvenCost=rev*(1-goal);
+  var wk1Margin=rev>0?(rev-wk1Cost)/rev*100:0;
+  var wk2Margin=rev>0?(rev-wk2Cost)/rev*100:0;
+
+  document.getElementById('sig-kpi-rev').textContent=fmt$(rev);
+  document.getElementById('sig-kpi-rev-sub').textContent='$'+Math.round(rev/7).toLocaleString()+'/day · '+census+' clients';
+  document.getElementById('sig-kpi-cost').textContent=fmt$(wk2Cost);
+  document.getElementById('sig-kpi-cost-sub').textContent='Wk1: '+fmt$(wk1Cost)+' · Wk2+: '+fmt$(wk2Cost)+'/wk';
+  document.getElementById('sig-kpi-profit').textContent=fmt$(rev-wk2Cost)+'/client (Wk2+)';
+  document.getElementById('sig-kpi-profit').style.color=pc;
+  document.getElementById('sig-kpi-pct').textContent=fmtPct(Math.round(wk2Margin));
+  document.getElementById('sig-kpi-pct').style.color=pc;
+  document.getElementById('sig-cost-badge').textContent='Wk1: '+fmt$(wk1Cost)+' · Wk2+: '+fmt$(wk2Cost);
+  document.getElementById('sig-cost-per').textContent=fmt$(wk2Cost);
+  document.getElementById('sig-cost-total').textContent=fmt$(totalCost);
+  document.getElementById('sig-census-lbl').textContent=census;
+  setGauge('sig-gauge',pct,goal);
+
+  document.getElementById('sig-pl-rows').innerHTML=
+    '<div style="padding:10px 16px 4px;font-size:11px;font-weight:700;color:var(--tx3)">Week 1 — Brain Mapping Intake</div>'+
+    plRow('Revenue','+ '+fmt$(rev))+
+    plRow('Week 1 Cost (base + brain mapping)','( '+fmt$(wk1Cost)+' )')+
+    '<div style="height:.5px;background:var(--bd);margin:0 20px"></div>'+
+    plRow('Week 1 Profit',(rev-wk1Cost>=0?'+ ':'')+fmt$(rev-wk1Cost),'profit')+
+    '<div style="padding:4px 20px 10px;font-size:10px;color:var(--tx3)">Week 1 Margin: <b style="color:'+profitColor(wk1Margin/100,goal)+'">'+Math.round(wk1Margin)+'%</b></div>'+
+    '<div style="padding:6px 16px 4px;font-size:11px;font-weight:700;color:var(--tx3)">Week 2+ — Neurofeedback Ongoing</div>'+
+    plRow('Revenue','+ '+fmt$(rev))+
+    plRow('Wk2+ Cost (base + neurofeedback)','( '+fmt$(wk2Cost)+' )')+
+    '<div style="height:.5px;background:var(--bd);margin:0 20px"></div>'+
+    plRow('Wk2+ Profit',(rev-wk2Cost>=0?'+ ':'')+fmt$(rev-wk2Cost),'profit')+
+    '<div style="padding:4px 20px 12px;font-size:10px;color:var(--tx3)">Week 2+ Margin: <b style="color:'+pc+'">'+Math.round(wk2Margin)+'%</b>'+
+    ' · Brain mapping ($'+fmt$(wk1OnlyAmt)+') billed once at intake · Neurofeedback ($'+fmt$(wk2OnlyAmt)+'/wk) from Week 2</div>';
+  document.getElementById('sig-pl-badge').textContent='Wk1: '+Math.round(wk1Margin)+'% · Wk2+: '+Math.round(wk2Margin)+'%';
+}
+
+function renderAll(){
+  renderLines('pdi-cost-body','pdi',false);
+  renderLines('step-pdi-body','stepPdi',false);
+  renderLines('step-sig-body','stepSig',true);
+  renderLines('sig-cost-body','sig',true);
+}
+
+function calcAll(){ calcPDI(); calcStep(); calcSig(); }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FIREBASE
+// ═══════════════════════════════════════════════════════════════════════════
+firebase.initializeApp({
+  apiKey:'AIzaSyCERxntgytkfCHWN7EoAVYVmLBcfWyYZ5A',
+  databaseURL:'https://pdi-signature-schedule-default-rtdb.firebaseio.com',
+  projectId:'pdi-signature-schedule'
+});
+
+firebase.database().ref('schedule_v3').on('value',function(snap){
+  document.getElementById('ldot').className='ldot on';
+  document.getElementById('llbl').textContent='Live • Auto-updating';
+  var raw=snap.val(),clients=[];
+  if(raw&&raw.blob){try{var d=JSON.parse(raw.blob);clients=d.clients||[];}catch(e){}}
+  var today=new Date().toISOString().slice(0,10);
+  var activeSig=clients.filter(function(c){
+    var p=(c.program||'').trim().toLowerCase();
+    if(p!=='signature'&&p!=='both'&&p!=='sig')return false;
+    var admit=c.sigAdmit||'',disch=c.sigDischarge||c.sigDisch||c.endDate||'';
+    return admit&&admit<=today&&(!disch||disch>=today);
+  });
+  var activePDI=clients.filter(function(c){
+    var p=(c.program||'').trim().toLowerCase();
+    if(p!=='pdi'&&p!=='both')return false;
+    var admit=c.pdiAdmit||'',disch=c.pdiDischarge||c.pdiDisch||'';
+    if(c.sigAdmit&&admit&&admit===c.sigAdmit)return false;
+    return admit&&admit<=today&&(!disch||disch>=today);
+  });
+
+  // ── Dynamic rows for new clients not in hardcoded table ─────────────────
+  // Runs on every Firebase update — adds rows for clients added since last deploy
+  (function(){
+    var SIG_RATE  = 24500/7;
+    var SIG_WCOST = 8913/7; // $8,913 avg weekly recurring cost
+
+    // Normalise a name for comparison: lowercase, strip trailing periods/spaces
+    function normName(s){ return (s||'').toLowerCase().trim().replace(/[^a-z0-9 ]/g,'').replace(/\s+/g,' '); }
+
+    // All hardcoded names (normalised)
+    var SIG_HARD  = ['Tomas W','Jarrod W','Emma T','David R','Joseph G','Arianna B',
+                     'Alex A','Peter S','George R','Chayse B','Louis R','Jack S',
+                     'Layla S (R)','Layla S R','William C'].map(normName);
+    var PDI_HARD  = ['Matthew H','Leslie K','Abbegail M','Alex R','Francis R',
+                     'Thomas W','Norman P','Miguel'].map(normName);
+    var STEP_HARD = ['Carlos L','Jessica C','George W','Marc C','Michael F',
+                     'Kevin C','Layla S','Blake P','Angela T'].map(normName);
+    var STEP_DYN_ONLY = ['Andrew C','Noah G','Cassie W','Nicholas W'].map(normName);
+    var ALL_HARD  = SIG_HARD.concat(PDI_HARD).concat(STEP_HARD).concat(STEP_DYN_ONLY);
+
+    function isHardcoded(name, list){ var n=normName(name); return list.indexOf(n)>=0; }
+    function losD(a,b){
+      if(!a)return 0;
+      var d=(new Date(b||today))-(new Date(a));
+      return Math.max(0,Math.round(d/86400000));
+    }
+    function money(v){ return '$'+Math.round(Math.abs(v)).toLocaleString(); }
+    function pct(v){ return (Math.round(v*10)/10)+'%'; }
+    function mc(m){ return m>=55?'var(--green)':m>=50?'var(--amber)':'var(--red)'; }
+    function tdR(v,col){
+      return '<td style="text-align:right'+(col?';color:'+col:'')+'">'+(v||'—')+'</td>';
+    }
+
+    // ── SIG dynamic rows ────────────────────────────────────────────────
+    var sigDyn = clients.filter(function(c){
+      var p = (c.program||'').trim();
+      // Include Signature and Both programs
+      // Also include clients with sigAdmit but missing/empty program field
+      // (happens when calendar sessions are added before program is confirmed)
+      // Case-insensitive match — Firebase may store 'signature', 'Sig', etc.
+      var pl = p.toLowerCase();
+      var isSig = pl==='signature' || pl==='both' || pl==='sig';
+      if(!isSig && c.sigAdmit) isSig = true; // infer from sigAdmit when program unclear
+      if(!isSig) return false;
+      if(!c.sigAdmit) return false;
+      // Exclude if name matches any hardcoded Sig OR step-down client
+      return !isHardcoded(c.name, SIG_HARD.concat(STEP_HARD));
+    }).sort(function(a,b){ return a.sigAdmit>b.sigAdmit?1:-1; });
+
+    var sigHtml = sigDyn.map(function(c){
+      var disch = c.sigDischarge||c.sigDisch||c.endDate||'';
+      var los   = losD(c.sigAdmit, disch||today);
+      var isAct = !disch||disch>=today;
+      var rev    = Math.round(los*SIG_RATE);
+      var varC   = Math.round(los*SIG_WCOST);
+      var hp     = 200; // H&P one-time
+      var totC   = varC+hp;
+      var profit = rev-totC;
+      var margin = rev>0?profit/rev*100:0;
+      var badge = isAct
+        ? '<span style="color:var(--sig);font-size:10px">&#9679;</span>'
+        : '<span style="color:var(--tx3);font-size:9px">&#10003;</span>';
+      var admitFmt = c.sigAdmit ? c.sigAdmit.slice(5).replace('-','/') : '—';
+      var dischFmt = disch ? (isAct?'Active':disch.slice(5).replace('-','/')) : 'Active';
+      return '<tr>'
+        +'<td><b>'+c.name+'</b> '+badge+'</td>'
+        +'<td style="color:var(--tx3)">'+admitFmt+'</td>'
+        +'<td style="color:var(--tx3)">'+dischFmt+'</td>'
+        +'<td style="text-align:center;color:'+(isAct?'var(--sig)':'var(--tx3)')+'">'+los+'</td>'
+        +tdR(money(rev))
+        +tdR(money(varC),'var(--amber)')
+        +tdR(money(hp))
+        +tdR(money(totC))
+        +tdR((profit>=0?'+':'')+money(profit),(profit>=0?'var(--green)':'var(--red)'))
+        +tdR(pct(margin),mc(margin))
+        +'</tr>';
+    }).join('');
+    var sigDynEl = document.getElementById('sig-dynamic-rows');
+    if(sigDynEl) sigDynEl.innerHTML = sigHtml;
+
+    // ── PDI-only dynamic rows ────────────────────────────────────────────
+    var pdiDyn = clients.filter(function(c){
+      var pp=(c.program||'').trim().toLowerCase();
+      // Include: program=pdi OR has pdiAdmit but no sigAdmit (pure PDI clients)
+      var isPDI = pp==='pdi' || pp==='pdi only' || pp==='diagnostic'
+                  || (c.pdiAdmit && !c.sigAdmit && pp!=='signature' && pp!=='sig');
+      if(!isPDI) return false;
+      if(!c.pdiAdmit) return false;
+      return !isHardcoded(c.name, ALL_HARD);
+    }).sort(function(a,b){ return a.pdiAdmit>b.pdiAdmit?1:-1; });
+
+    var pdiHtml = pdiDyn.map(function(c){
+      var disch = c.pdiDischarge||c.pdiDisch||'';
+      var days  = losD(c.pdiAdmit, disch||today);
+      var isAct = !disch||disch>=today;
+      var rev   = 70000; // Historical rate — $80K applies to future episodes only
+      // Use same cost formula as other historical PDI clients
+      var varC  = Math.round(days*375 + Math.floor(days/7)*600);
+      var fixC  = 23738;
+      var tot   = varC+fixC;
+      var profit= rev-tot;
+      var margin= profit/rev*100;
+      var badge = isAct
+        ? '<span style="color:var(--pdi);font-size:10px">&#9679;</span>'
+        : '<span style="font-size:9px;color:var(--tx3)">&#10003;</span>';
+      return '<tr>'
+        +'<td><b>'+c.name+'</b> '+badge+'</td>'
+        +'<td style="color:var(--tx3)">'+days+'</td>'
+        +'<td style="text-align:right">'+money(rev)+'</td>'
+        +'<td style="text-align:right">'+money(varC)+'</td>'
+        +'<td style="text-align:right">'+money(fixC)+'</td>'
+        +'<td style="text-align:right">'+money(tot)+'</td>'
+        +'<td style="text-align:right;font-weight:700;color:'+(profit>=0?'var(--green)':'var(--red)')+'">'+(profit>=0?'+':'')+money(profit)+'</td>'
+        +'<td style="text-align:right;font-weight:700;color:'+mc(margin)+'">'+pct(margin)+'</td>'
+        +'</tr>';
+    }).join('');
+    var pdiDynEl = document.getElementById('pdi-dynamic-rows');
+    if(pdiDynEl) pdiDynEl.innerHTML = pdiHtml;
+
+    // ── Step-down dynamic rows ───────────────────────────────────────────
+    var stepDyn = clients.filter(function(c){
+      if((c.program||'').trim()!=='Both') return false;
+      if(!c.pdiAdmit||!c.sigAdmit) return false;
+      if(c.pdiAdmit===c.sigAdmit) return false;  // erroneous entry
+      return !isHardcoded(c.name, STEP_HARD);
+    }).sort(function(a,b){ return a.pdiAdmit>b.pdiAdmit?1:-1; });
+
+    var stepHtml = stepDyn.map(function(c){
+      var pd = c.pdiDischarge||c.pdiDisch||'';
+      var sd = c.sigDischarge||c.sigDisch||c.endDate||'';
+      var pDays = losD(c.pdiAdmit, pd||today);
+      var sDays = losD(c.sigAdmit,  sd||today);
+      var isAct = (!pd||pd>=today)||(!sd||sd>=today);
+      var pdiRev = 70000; // Historical rate — $80K not yet launched
+      var sigRev = Math.round(sDays/7*24500);
+      var totRev = pdiRev+sigRev;
+      var pdiV   = Math.round(pDays*375+Math.floor(pDays/7)*600);
+      var sigW   = Math.round(sDays/7*8913);
+      var fixC   = 26538;
+      var tot    = pdiV+sigW+fixC;
+      var profit = totRev-tot;
+      var margin = profit/totRev*100;
+      var pRange = (c.pdiAdmit||'?').slice(5).replace('-','/')
+                 + (pd?'–'+pd.slice(5).replace('-','/'):pd?'':'–active')
+                 +' ('+pDays+'d)';
+      var sRange = (c.sigAdmit||'?').slice(5).replace('-','/')
+                 + (sd?'–'+sd.slice(5).replace('-','/'):sd?'':'–active')
+                 +' ('+sDays+'d)';
+      // Step-down table: 10-col format matching header
+      // Client | PDI Phase | Sig Phase | PDI Var | Sig Cost | Fixed | Total | Revenue | Profit | Margin
+      var badge2=isAct?'<span style="color:var(--step);font-size:10px">&#9679;</span>':'<span style="color:var(--tx3);font-size:9px">&#10003;</span>';
+      return '<tr>'
+        +'<td><b>'+c.name+'</b> '+badge2+'</td>'
+        +'<td style="color:var(--tx3)">'+pRange+'</td>'
+        +'<td style="color:var(--tx3)">'+sRange+'</td>'
+        +tdR(money(pdiV))+tdR(money(sigW))+tdR(money(fixC))+tdR(money(tot))
+        +'<td style="text-align:right">'+money(totRev)+'</td>'
+        +'<td style="text-align:right;font-weight:700;color:'+(profit>=0?'var(--green)':'var(--red)')+'">'+(profit>=0?'+':'')+money(profit)+'</td>'
+        +'<td style="text-align:right;font-weight:700;color:'+mc(margin)+'">'+pct(margin)+'</td>'
+        +'</tr>';
+    }).join('');
+    var stepDynEl = document.getElementById('step-dynamic-rows');
+    if(stepDynEl) stepDynEl.innerHTML = stepHtml;
+
+    // Console log for debugging
+    // ── Debug output ───────────────────────────────────────────────
+    var _allSig=clients.filter(function(c){
+      var p=(c.program||'').trim();
+      return p==='Signature'||p==='Both';
+    });
+    console.log('[Financial] ALL Sig/Both in Firebase ('+_allSig.length+'):',
+      _allSig.map(function(c){return c.name+'['+c.program+']'+(c.sigAdmit?'✓':'NO-ADMIT');}).join(', '));
+    console.log('[Financial] Dynamic rows — Sig:'+sigDyn.length+' PDI:'+pdiDyn.length+' Step:'+stepDyn.length);
+    if(sigDyn.length) console.log('[Financial] New Sig:',
+      sigDyn.map(function(c){return c.name+'('+c.program+')';}).join(', '));
+    if(!sigDyn.length) console.warn('[Financial] No dynamic Sig rows — all Sig clients may be hardcoded or missing program/sigAdmit');
+
+  })(); // end IIFE
+  document.getElementById('sig-a-census').value=activeSig.length;
+  document.getElementById('pdi-a-eps').value=activePDI.length;
+  calcAll();
+},function(){
+  document.getElementById('ldot').style.background='var(--red)';
+  document.getElementById('llbl').textContent='Offline';
+  calcAll();
+});
+
+var STEP_FIX=26538; // Updated fixed costs // PDI+Sig fixed costs
+// ── Reset functions ────────────────────────────────────────────────────────
+function fmt$(v){return '$'+Math.round(Math.abs(v)).toLocaleString();}
+function renderStepTable(){
+  var PDI_REV=80000, SIG_WK_REV=24500;
+
+  // Derive all costs purely from line items — no hard-coded constants
+  var pdiTotal = lines.stepPdi.reduce(function(s,l){ return s+(l.amt||0); }, 0);
+  // sigWkN = all Sig lines including PBWI $3,888 (Week 2+)
+  var sigWkN   = lines.stepSig.reduce(function(s,l){ return s+(l.amt||0); }, 0);
+  // sigWk1 = Sig lines minus the PBWI $3,888 (Week 1 — PBWI already in combined pkg)
+  var sigWk1   = lines.stepSig.filter(function(l){ return l.amt!==3888; })
+                              .reduce(function(s,l){ return s+(l.amt||0); }, 0);
+
+  var baseCost   = pdiTotal + sigWk1;
+  var baseRev    = PDI_REV + SIG_WK_REV;   // $91,000
+  var baseProfit = baseRev - baseCost;
+  var baseMargin = baseProfit / baseRev * 100;
+
+  var wknCost    = sigWkN;
+  var wknProfit  = SIG_WK_REV - wknCost;
+  var wknMargin  = wknProfit / SIG_WK_REV * 100;
+
+  var c = function(m){ return m>=50?'var(--green)':m>=44?'var(--amber)':'var(--red)'; };
+  var $ = function(n){ return '$'+Math.round(Math.abs(n)).toLocaleString(); };
+  var set = function(id,v){ var e=document.getElementById(id); if(e) e.textContent=v; };
+
+  // ── Left card: PDI + Week 1 ──────────────────────────────────────────
+  set('s-pdi-var',    $(pdiTotal));
+  set('s-wk1-cost',   $(sigWk1));
+  set('s-base-cost',  $(baseCost));
+  set('s-base-profit', (baseProfit>=0?'+':'-') + $(baseProfit));
+  set('s-base-margin', Math.round(baseMargin*10)/10+'%');
+  var bm = document.getElementById('s-base-margin');
+  if(bm) bm.style.color = c(baseMargin);
+
+  // ── Right card: Each additional week ────────────────────────────────
+  set('s-wkn-base',   $(sigWk1));          // base weekly (without PBWI)
+  set('s-wkn-cost',   $(wknCost));          // with PBWI
+  set('s-wkn-profit', (wknProfit>=0?'+':'-') + $(wknProfit));
+  set('s-wkn-margin', Math.round(wknMargin*10)/10+'%');
+  var wm = document.getElementById('s-wkn-margin');
+  if(wm) wm.style.color = c(wknMargin);
+
+  // ── Phase P&L panels ────────────────────────────────────────────────
+  var pdiPL = '<div style="padding:14px 16px;font-size:12px">' +
+    '<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:var(--tx3)">Revenue</span><span style="color:var(--green);font-weight:700">'+$(PDI_REV)+'</span></div>' +
+    '<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:var(--tx3)">Total PDI Cost</span><span style="font-weight:600">'+$(pdiTotal)+'</span></div>' +
+    '<div style="display:flex;justify-content:space-between;border-top:.5px solid var(--bd);padding-top:8px;margin-top:4px">' +
+      '<span style="color:var(--tx3)">PDI Phase Profit</span>' +
+      '<span style="font-weight:800;font-size:15px;color:'+c(((PDI_REV-pdiTotal)/PDI_REV*100))+'">+'+ $(PDI_REV-pdiTotal) +' · '+Math.round((PDI_REV-pdiTotal)/PDI_REV*1000)/10+'%</span></div>' +
+    '<div style="margin-top:10px;font-size:10px;color:var(--tx3)">PDI alone: '+Math.round((PDI_REV-pdiTotal)/PDI_REV*100)+'% margin. Week 1 of Sig improves blended to '+Math.round(baseMargin*10)/10+'%.</div>' +
+  '</div>';
+  var pp = document.getElementById('step-pdi-pl'); if(pp) pp.innerHTML=pdiPL;
+
+  var sigPL = '<div style="padding:14px 16px;font-size:12px">' +
+    '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--tx3)">Revenue / week</span><span style="color:var(--green);font-weight:700">'+$(SIG_WK_REV)+'</span></div>' +
+    '<div style="display:flex;justify-content:space-between;margin-bottom:2px"><span style="color:var(--tx3)">Week 1 cost (PBWI in pkg)</span><span>'+$(sigWk1)+'</span></div>' +
+    '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--tx3)">Week 2+ cost (+ $3,888 PBWI)</span><span>'+$(wknCost)+'</span></div>' +
+    '<div style="display:flex;justify-content:space-between;border-top:.5px solid var(--bd);padding-top:8px;margin-top:4px">' +
+      '<span style="color:var(--tx3)">Wk 1 profit / margin</span>' +
+      '<span style="font-weight:700;color:'+c(((SIG_WK_REV-sigWk1)/SIG_WK_REV*100))+'">+'+ $(SIG_WK_REV-sigWk1)+' · '+Math.round((SIG_WK_REV-sigWk1)/SIG_WK_REV*1000)/10+'%</span></div>' +
+    '<div style="display:flex;justify-content:space-between;padding-top:4px">' +
+      '<span style="color:var(--tx3)">Wk 2+ profit / margin</span>' +
+      '<span style="font-weight:700;color:'+c(wknMargin)+'">+'+ $(wknProfit)+' · '+Math.round(wknMargin*10)/10+'%</span></div>' +
+  '</div>';
+  var sp = document.getElementById('step-sig-pl'); if(sp) sp.innerHTML=sigPL;
+
+  // ── Badges and table footers ─────────────────────────────────────────
+  set('step-pdi-badge', $(pdiTotal));
+  set('step-pdi-total', $(pdiTotal));
+  set('step-sig-badge', 'Wk1: '+$(sigWk1)+' · Wk2+: '+$(wknCost));
+  set('step-sig-wk1',   $(sigWk1));
+  set('step-sig-total', $(wknCost)+'/wk');
+
+  // ── Cumulative week-by-week table ────────────────────────────────────
+  var wks = Math.max(1, parseInt((document.getElementById('step-wks')||{}).value) || 4);
+  var rows = '';
+  var mc = function(m){ return m>=50?'var(--green)':m>=44?'var(--amber)':'var(--red)'; };
+
+  // Row 1: guaranteed baseline
+  rows += '<tr style="background:rgba(46,139,122,.08);font-weight:600">' +
+    '<td>PDI + Sig Week 1 <span style="font-size:9px;font-weight:400;color:var(--step)">Guaranteed minimum</span></td>' +
+    '<td style="text-align:right;color:var(--green)">'+$(baseRev)+'</td>' +
+    '<td style="text-align:right">'+$(baseCost)+'</td>' +
+    '<td style="text-align:right;color:var(--green)">+'+$(baseProfit)+'</td>' +
+    '<td style="text-align:right;font-weight:800;font-size:15px;color:'+mc(baseMargin)+'">'+Math.round(baseMargin*10)/10+'%</td>' +
+  '</tr>';
+
+  var cRev=baseRev, cCost=baseCost;
+  for(var w=2; w<=Math.max(wks,10); w++){
+    cRev  += SIG_WK_REV;
+    cCost += wknCost;
+    var cp = cRev - cCost;
+    var cm = cp / cRev * 100;
+    var isTarget = (w === wks);
+    var beyond   = (w > wks);
+    var rowStyle = isTarget ? 'background:rgba(46,139,122,.12);outline:2px solid rgba(46,139,122,.35);' : beyond ? 'opacity:.35;' : '';
+    rows += '<tr'+(rowStyle?' style="'+rowStyle+'"':'')+'>'+
+      '<td style="padding-left:20px">+ Sig Week '+w+
+        (isTarget ? ' <span style="font-size:9px;color:var(--step);font-weight:600">← your scenario</span>' : '')+
+      '</td>'+
+      '<td style="text-align:right;color:var(--green)">'+$(cRev)+'</td>'+
+      '<td style="text-align:right">'+$(cCost)+'</td>'+
+      '<td style="text-align:right;color:var(--green)">+'+$(cp)+'</td>'+
+      '<td style="text-align:right;font-weight:'+(isTarget?'800':'600')+';font-size:'+(isTarget?'14':'12')+'px;color:'+mc(cm)+'">'+Math.round(cm*10)/10+'%</td>'+
+    '</tr>';
+  }
+  var el = document.getElementById('step-wk-body'); if(el) el.innerHTML = rows;
+}
+
+function calcStep(){renderStepTable();}
+function resetPDI(){
+  lines.pdi=clone(DATA.pdi);
+  document.getElementById('pdi-a-rev').value=80000;
+  document.getElementById('pdi-a-days').value=12;
+  document.getElementById('pdi-a-eps').value=document.getElementById('pdi-a-eps').value;
+  document.getElementById('pdi-a-goal').value=44;
+  renderLines('pdi-cost-body','pdi',false);calcPDI();
+}
+function resetStep(){
+  lines.stepPdi=clone(DATA.stepPdi);
+  lines.stepSig=clone(DATA.stepSig);
+  document.getElementById('step-a-pdi').value=80000;
+  document.getElementById('step-a-pdi-days').value=12;
+  document.getElementById('step-a-sig-wk').value=24500;
+  document.getElementById('step-a-sig-wks').value=4;
+  document.getElementById('step-a-goal').value=44;
+  renderLines('step-pdi-body','stepPdi',false);
+  renderLines('step-sig-body','stepSig',true);
+  calcStep();
+}
+function resetSig(){
+  document.getElementById('sig-a-scenario').value='full';
+  document.getElementById('sig-a-rev').value=24500;
+  document.getElementById('sig-a-day').value=3500;
+  document.getElementById('sig-a-goal').value=44;
+  applySigScenario();calcSig();
+}
+
+// Init
+renderAll();
+calcAll();
+</script>
+</body></html>
