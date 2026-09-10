@@ -1220,10 +1220,12 @@ firebase.database().ref('schedule_v3').on('value',function(snap){
       var disch = c.sigDischarge||c.sigDisch||c.endDate||'';
       var los   = losD(c.sigAdmit, disch||today);
       var isAct = !disch||disch>=today;
-      var rev   = Math.round(los*SIG_RATE);
-      var cost  = Math.round(los*SIG_WCOST)+200;
-      var profit= rev-cost;
-      var margin= rev>0?profit/rev*100:0;
+      var rev    = Math.round(los*SIG_RATE);
+      var varC   = Math.round(los*SIG_WCOST);
+      var hp     = 200; // H&P one-time
+      var totC   = varC+hp;
+      var profit = rev-totC;
+      var margin = rev>0?profit/rev*100:0;
       var badge = isAct
         ? '<span style="color:var(--sig);font-size:10px">&#9679;</span>'
         : '<span style="color:var(--tx3);font-size:9px">&#10003;</span>';
@@ -1235,7 +1237,9 @@ firebase.database().ref('schedule_v3').on('value',function(snap){
         +'<td style="color:var(--tx3)">'+dischFmt+'</td>'
         +'<td style="text-align:center;color:'+(isAct?'var(--sig)':'var(--tx3)')+'">'+los+'</td>'
         +tdR(money(rev))
-        +tdR(money(cost),'var(--amber)')
+        +tdR(money(varC),'var(--amber)')
+        +tdR(money(hp))
+        +tdR(money(totC))
         +tdR((profit>=0?'+':'')+money(profit),(profit>=0?'var(--green)':'var(--red)'))
         +tdR(pct(margin),mc(margin))
         +'</tr>';
