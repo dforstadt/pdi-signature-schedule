@@ -417,16 +417,16 @@ function renderProvider(el,evs){
 
   // Detail tables
   var t='<div class="card"><div style="overflow-x:auto"><table><thead>'+
-    '<tr><th colspan="4" class="sec-hdr sec-clin">Clinician Providers — Direct Service Hours</th></tr>'+
-    '<tr><th>Provider</th><th class="r">Sessions</th><th class="r">Active Months</th><th class="r">Unique Clients</th></tr></thead><tbody>'+
+    '<tr><th colspan="2" class="sec-hdr sec-clin">Clinician Providers — Direct Service Hours</th></tr>'+
+    '<tr><th>Provider</th><th class="r">Hours</th></tr></thead><tbody>'+
     clinPs.map(function(kv){var r=kv[1];return '<tr><td><b>'+kv[0]+'</b></td>'+
-      '<td class="r"><b>'+r.clin+'</b></td><td class="r">'+r.mos.size+'</td><td class="r">'+r.clients.size+'</td></tr>';}).join('')+
-    '<tr><th colspan="4" class="sec-hdr sec-anc">Ancillary Providers — Support Services</th></tr>'+
-    '<tr><th>Provider</th><th class="r">Sessions</th><th class="r">Active Months</th><th class="r">Unique Clients</th></tr>'+
+      '<td class="r"><b>'+Math.round(r.clin*10)/10+' hrs</b></td></tr>';}).join('')+
+    '<tr><th colspan="2" class="sec-hdr sec-anc">Ancillary Providers — Support Services</th></tr>'+
+    '<tr><th>Provider</th><th class="r">Hours</th></tr>'+
     ancPs.map(function(kv){var r=kv[1];
       var svcs=Object.entries(r.ancSvcs).sort(function(a,b){return b[1]-a[1];}).slice(0,3).map(function(s){return s[0];}).join(' · ');
       return '<tr><td><b>'+kv[0]+'</b><span style="font-size:10px;color:#999;margin-left:8px">'+svcs+'</span></td>'+
-        '<td class="r"><b>'+r.anc+'</b></td><td class="r">'+r.mos.size+'</td><td class="r">'+r.clients.size+'</td></tr>';}).join('')+
+        '<td class="r"><b>'+Math.round(r.anc*10)/10+' hrs</b></td></tr>';}).join('')+
     '</tbody></table></div></div>';
   el.innerHTML+=t;
 
