@@ -192,8 +192,16 @@ function isSkip(p){var pl=(p||'').trim().toLowerCase();return !pl||SKIP.indexOf(
 function isClin(ev){
   var pl=(ev.provider||'').toLowerCase();
   var sl=(ev.service||'').toLowerCase();
-  // Spirituality without "group" = ancillary; Spirituality Group = clinician
-  if((sl.indexOf('spiritual')>-1)&&sl.indexOf('group')<0)return false;
+  // Tamas: ALL spirituality sessions are ancillary (regardless of group)
+  if(pl.indexOf('tamas')>-1 && sl.indexOf('spiritual')>-1) return false;
+  // Spirituality without "group" = ancillary; Spirituality Group = clinician (all other providers)
+  if((sl.indexOf('spiritual')>-1)&&sl.indexOf('group')<0) return false;
+  // Sandy: cognitive remediation is a provider entry error — exclude from clinician
+  if(pl.indexOf('sandy')>-1||pl.indexOf('sandra')>-1||pl.indexOf('bernstein')>-1) {
+    if(sl.indexOf('cognitive')>-1||sl.indexOf('remediation')>-1) return false;
+  }
+  // Dr. Paul: lunch is a data entry error — force ancillary
+  if((pl.indexOf('paul')>-1||pl.indexOf('lazar')>-1) && sl.indexOf('lunch')>-1) return false;
   // Other service-level overrides
   if(FORCE_ANC_SVCS.some(function(s){return sl.indexOf(s)>-1;}))return false;
   // Provider-level overrides
