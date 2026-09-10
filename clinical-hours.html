@@ -127,9 +127,21 @@ function isClin(ev){
 }
 function getHrs(ev){return((ev.duration||2)/2);}
 function emp(p){
-  var pl=(p||'').trim().toLowerCase();
+  var pl=(p||'').trim().toLowerCase().replace(/\.$/,'');
+  // Exact match first
   if(W2.some(function(w){return pl===w;})) return 'W2';
   if(CTR.some(function(c){return pl===c;})) return 'Contractor';
+  // Partial match — provider name contains a W2/CTR keyword as a whole word
+  if(W2.some(function(w){
+    if(w.length<3) return false;
+    var re=new RegExp('\\b'+w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','i');
+    return re.test(pl);
+  })) return 'W2';
+  if(CTR.some(function(c){
+    if(c.length<3) return false;
+    var re=new RegExp('\\b'+c.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','i');
+    return re.test(pl);
+  })) return 'Contractor';
   return 'Unknown';
 }
 function prog(ev){
