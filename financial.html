@@ -1179,7 +1179,7 @@ firebase.database().ref('schedule_v3').on('value',function(snap){
     var SIG_WCOST = 8913/7; // $8,913 avg weekly recurring cost
 
     // Normalise a name for comparison: lowercase, strip trailing periods/spaces
-    function normName(s){ return (s||'').toLowerCase().trim().replace(/\.$/,''); }
+    function normName(s){ return (s||'').toLowerCase().trim().replace(/[^a-z0-9 ]/g,'').replace(/\s+/g,' '); }
 
     // All hardcoded names (normalised)
     var SIG_HARD  = ['Tomas W','Jarrod W','Emma T','David R','Joseph G','Arianna B',
@@ -1250,7 +1250,10 @@ firebase.database().ref('schedule_v3').on('value',function(snap){
     // ── PDI-only dynamic rows ────────────────────────────────────────────
     var pdiDyn = clients.filter(function(c){
       var pp=(c.program||'').trim().toLowerCase();
-      if(pp!=='pdi') return false;
+      // Include: program=pdi OR has pdiAdmit but no sigAdmit (pure PDI clients)
+      var isPDI = pp==='pdi' || pp==='pdi only' || pp==='diagnostic'
+                  || (c.pdiAdmit && !c.sigAdmit && pp!=='signature' && pp!=='sig');
+      if(!isPDI) return false;
       if(!c.pdiAdmit) return false;
       return !isHardcoded(c.name, ALL_HARD);
     }).sort(function(a,b){ return a.pdiAdmit>b.pdiAdmit?1:-1; });
