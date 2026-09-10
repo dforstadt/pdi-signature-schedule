@@ -627,8 +627,8 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
     <div class="glass">
       <div class="sec-h"><div class="sec-h-left"><div class="sec-title">Signature Assumptions</div><div class="sec-sub">Weekly per-client inputs</div></div><button class="reset-btn" onclick="resetSig()" title="Restore original values">↺ Reset</button></div>
       <div class="assumptions">
-        <div class="inp-group"><label>Weekly Rate / Client</label><input type="number" id="sig-a-rev" value="21000" step="500" oninput="calcSig()"></div>
-        <div class="inp-group"><label>Daily Rate</label><input type="number" id="sig-a-day" value="3000" step="100" oninput="calcSig()"></div>
+        <div class="inp-group"><label>Weekly Rate / Client</label><input type="number" id="sig-a-rev" value="24500" step="500" oninput="calcSig()"></div>
+        <div class="inp-group"><label>Daily Rate</label><input type="number" id="sig-a-day" value="3500" step="100" oninput="calcSig()"></div>
         <div class="inp-group"><label>Active Census</label><input type="number" id="sig-a-census" value="13" step="1" min="0" oninput="calcSig()"></div>
         <div class="inp-group"><label>Scenario</label>
           <select id="sig-a-scenario" onchange="applySigScenario();calcSig()">
@@ -669,7 +669,7 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
     <div style="padding:10px 16px;font-size:10px;color:var(--tx3);border-top:.5px solid var(--bd);display:flex;gap:20px">
       <span>✦ PBWI package: <b>$3,888/wk</b> every week after the first Signature week &nbsp;·&nbsp; PDI→Sig clients: Week 1 covered in $13,926 combined package &nbsp;·&nbsp; Sig-standalone clients: $3,888 from Week 1</span>
       <span>✦ PDI+Sig combined package: <b>$13,926</b> (PDI phase + Sig Week 1) &nbsp;·&nbsp; PDI-only package: <b>$10,038</b></span>
-      <span>✦ To hit <b>44%</b> at $21K/wk: max total cost <b>$11,760/client/wk</b> &nbsp;·&nbsp; At $3,888 PBWI + $7,872 other costs = 44% margin</span>
+      <span>✦ To hit <b>56%</b> at $24.5K/wk: max total cost <b>$10,780/client/wk</b> &nbsp;·&nbsp; At $1,638 PBWI + $7,872 other costs = 44% margin</span>
     </div>
   </div>
 
@@ -780,12 +780,12 @@ var DATA = {
     {cat:'Fixed — Nutritional', name:'Nutritional / Dietician Assessment', note:'Initial intake', amt:150},
     {cat:'Fixed — Nutritional', name:'Nutritional / Dietician Follow-Up', note:'Follow-up session', amt:150},
     // Stipends (PDI flat, no session fees)
-    {cat:'Fixed — Stipend', name:'Staff PDI Flat Stipends', note:'~6 eligible providers × $250 — no per-session fees in PDI', amt:1500},
+    {cat:'Fixed — Stipend', name:'Executive Oversight — Ockman', note:'One-time flat per episode', amt:250},
+    {cat:'Fixed — Stipend', name:'Clinical Liaison', note:'Flat per episode', amt:100},
+    {cat:'Fixed — Stipend', name:'Lead Tech (2 staff × $100)', note:'Per episode · 2 staff × $100', amt:200},
     // ── DAILY / WEEKLY COSTS (× episode length) ──────────────────────────
     {cat:'Daily — Training', name:'Personal Training (5 days/week)', note:'$750/wk · $150/day × 5 weekdays', amt:750},
-    {cat:'Daily — Culinary', name:'Culinary / Chef + Food (weekdays)', note:'$150/day × 5 weekdays — chef model', amt:750},
-    {cat:'Daily — Culinary', name:'Weekend Food — Ordering ($150/day × 2)', note:'$300/weekend · same $150/day rate, ordering only', amt:300},
-    {cat:'Daily — Wellness', name:'Wellness Direct Services (2/week × $300/hr)', note:'Care coordination included in PBWI package · direct service hour billed separately at $300 each · 2 interventions/week (massage, acupuncture, yoga, Vielight, etc.)', amt:600},
+    {cat:'Daily — Culinary', name:'Culinary / Chef + Food (7 days/week)', note:'$150/day × 7 days — full chef model', amt:1050},
     {cat:'Daily — Ancillary', name:'Client Ancillary Needs ($75/day × 10 days)', note:'$75 × 10 days = $750 · includes all days, weekdays and weekends', amt:750},
   ],
   stepPdi: [
@@ -796,7 +796,9 @@ var DATA = {
     {cat:'Fixed — Labs', name:'Lab Panels — Comprehensive Bloodwork', note:'Day 1–2', amt:2000},
     {cat:'Fixed — Nutritional', name:'Nutritional / Dietician Assessment', note:'Initial intake', amt:150},
     {cat:'Fixed — Nutritional', name:'Nutritional / Dietician Follow-Up', note:'Follow-up', amt:150},
-    {cat:'Fixed — Stipend', name:'Staff PDI Flat Stipends', note:'~6 providers × $250 — no session fees', amt:1500},
+    {cat:'Fixed — Stipend', name:'Executive Oversight — Ockman', note:'One-time flat per episode', amt:250},
+    {cat:'Fixed — Stipend', name:'Clinical Liaison', note:'Flat per episode', amt:100},
+    {cat:'Fixed — Stipend', name:'Lead Tech (2 staff × $100)', note:'Per episode', amt:200},
     {cat:'Daily — Training', name:'Personal Training (5 days/week)', note:'$750/wk · PDI phase weeks', amt:750},
     {cat:'Daily — Culinary', name:'Culinary / Chef + Food (weekdays)', note:'$150/day × 5 weekdays', amt:750},
     {cat:'Daily — Culinary', name:'Weekend Food — Ordering ($150/day × 2)', note:'$300/weekend', amt:300},
@@ -804,53 +806,54 @@ var DATA = {
     {cat:'Daily — Ancillary', name:'Client Ancillary Needs ($75/day × 10 days)', note:'$75 × 10 days = $750 · includes all days', amt:750},
   ],
   stepSig: [
-    // Standard weekly Signature costs — same for ALL weeks including Week 1
-    {cat:'Clinical Leadership', name:'Dr. Forstadt — Ongoing Oversight', note:'Weekly', amt:3000},
+    // Standard weekly Signature costs
+    {cat:'Clinical Leadership', name:'Dr. Forstadt — Ongoing Oversight', note:'$3,000/week — unchanged', amt:3000},
     {cat:'Clinical', name:'Individual Therapy', note:'5/wk × $150', amt:750},
     {cat:'Clinical', name:'Family Therapy', note:'5/wk × $150', amt:750},
     {cat:'Clinical', name:'Specialist', note:'5/wk × $150', amt:750},
     {cat:'Wellness', name:'Personal Training', note:'5 days/wk · $150/session', amt:750},
-    {cat:'Wellness', name:'Wellness Direct Services (2/week × $300)', note:'Direct service fee · care coord in PBWI pkg', amt:600},
+    {cat:'Wellness', name:'Wellness Direct Services (2×/month avg)', note:'2 sessions/month · $300/session · avg $150/week', amt:150},
     {cat:'Nutritional', name:'Nutritional Follow-Up', note:'1/wk · $150/session', amt:150},
-    {cat:'Stipend', name:'David Ockman — Executive Oversight', note:'Weekly flat', amt:250},
-    {cat:'Stipend', name:'Gus Hernandez — Tech Oversight', note:'Weekly flat', amt:250},
-    {cat:'Stipend', name:'Nicole Williams — Clinical Liaison', note:'Weekly flat', amt:250},
-    {cat:'Operational', name:'Culinary / Chef + Food (weekdays)', note:'$150/day × 5 weekdays', amt:750},
-    {cat:'Operational', name:'Weekend Food — Ordering', note:'$150/day × 2 weekend days', amt:300},
+    {cat:'Stipend', name:'David Ockman — Executive Oversight', note:'$250/person/week', amt:250},
+    {cat:'Stipend', name:'Clinical Liaison', note:'$100/day × 5 days/week', amt:500},
+    {cat:'Stipend', name:'Lead Tech (2 alternating)', note:'$100/day × 7 days · 1 on at a time', amt:700},
+    {cat:'Operational', name:'Culinary / Chef + Food (7 days/week)', note:'$150/day × 7 days — full chef model', amt:1050},
     {cat:'Operational', name:'Client Ancillary Needs', note:'$75/day × 7 days', amt:525},
-    // PBWI weekly package — Week 2+ ONLY (Week 1 already covered in $13,926 combined pkg in PDI phase)
-    {cat:'PBWI (Wk 2+ only)', name:'PBWI Signature Weekly Package', note:'Neurofeedback + Dr. Flannery follow-up + wellness care coord — NOT charged Week 1', amt:3888},
+    // Week 1 only: Dr. Flannery H&P (covered in PDI pkg — $0 additional)
+    {cat:'Medical (Wk 1 only)', name:'Dr. Flannery — H&P at Transition', note:'Week 1 of Signature only · covered in PDI combined package', amt:0},
+    // Week 2+ only: Neurofeedback (Flannery removed after Wk 1)
+    {cat:'PBWI (Wk 2+ only)', name:'Neurofeedback (2×/week)', note:'$819/session × 2 sessions — ongoing from Week 2', amt:1638},
   ],
   sigFull: [
-    {cat:'Medical', name:'History & Physical (H&P)', freq:'One-time on admission · est.', amt:200},
-    {cat:'Clinical Leadership', name:'Dr. Forstadt — Case Mgmt / Clinical Oversight', freq:'Ongoing weekly', amt:3000},
+    {cat:'PBWI', name:'Brain Mapping (one-time intake)', freq:'Full brain map + interpretation + integrated report · billed once', amt:3288},
+    {cat:'PBWI', name:'Neurofeedback (2×/week)', freq:'$819/session × 2 sessions/week · weekly recurring', amt:1638},
+    {cat:'Clinical Leadership', name:'Dr. Forstadt — Ongoing Oversight', freq:'$3,000/week — unchanged', amt:3000},
     {cat:'Clinical', name:'Individual Therapy', freq:'5×/wk × $150', amt:750},
     {cat:'Clinical', name:'Family Therapy', freq:'5×/wk × $150', amt:750},
     {cat:'Clinical', name:'Specialist', freq:'5×/wk × $150', amt:750},
     {cat:'Wellness', name:'Personal Training', freq:'5 days/wk · $150/session', amt:750},
-    {cat:'Wellness', name:'Wellness Direct Services (2/week × $300)', freq:'2/wk · $300/direct service hour', amt:600},
+    {cat:'Wellness', name:'Wellness Direct Services (2×/month)', freq:'2 sessions/month · $300/session · avg $150/week', amt:150},
     {cat:'Nutritional', name:'Nutritional Follow-Up', freq:'1×/wk · $150/session', amt:150},
-    {cat:'Stipend', name:'David Ockman — Executive Oversight', freq:'Weekly flat', amt:250},
-    {cat:'Stipend', name:'Gus Hernandez — Tech Oversight', freq:'Weekly flat', amt:250},
-    {cat:'Stipend', name:'Nicole Williams — Clinical Liaison', freq:'Weekly flat', amt:250},
-    {cat:'Operational', name:'Culinary / Chef + Food (weekdays)', freq:'$150/day × 5 weekdays', amt:750},
-    {cat:'Operational', name:'Weekend Food — Ordering', freq:'$150/day × 2 weekend days', amt:300},
+    {cat:'Stipend', name:'David Ockman — Executive Oversight', freq:'$250/person/week', amt:250},
+    {cat:'Stipend', name:'Clinical Liaison', freq:'$100/day × 5 days/week', amt:500},
+    {cat:'Stipend', name:'Lead Tech (2 alternating)', freq:'$100/day × 7 days · 1 on at a time', amt:700},
+    {cat:'Operational', name:'Culinary / Chef + Food (7 days/week)', freq:'$150/day × 7 days — full chef model', amt:1050},
     {cat:'Operational', name:'Client Ancillary Needs', freq:'$75/day × 7 days', amt:525},
   ],
   sigReduced: [
-    {cat:'Medical', name:'History & Physical (H&P)', freq:'One-time on admission · est.', amt:200},
-    {cat:'Clinical Leadership', name:'Dr. Forstadt — Case Mgmt / Clinical Oversight', freq:'Ongoing weekly', amt:3000},
+    {cat:'PBWI', name:'Brain Mapping (one-time intake)', freq:'Full brain map + interpretation + integrated report · billed once', amt:3288},
+    {cat:'PBWI', name:'Neurofeedback (2×/week)', freq:'$819/session × 2 sessions/week · weekly recurring', amt:1638},
+    {cat:'Clinical Leadership', name:'Dr. Forstadt — Ongoing Oversight', freq:'$3,000/week — unchanged', amt:3000},
     {cat:'Clinical', name:'Individual Therapy', freq:'5×/wk × $150', amt:750},
     {cat:'Clinical', name:'Family Therapy', freq:'5×/wk × $150', amt:750},
     {cat:'Clinical', name:'Specialist', freq:'5×/wk × $150', amt:750},
     {cat:'Wellness', name:'Personal Training', freq:'5 days/wk · $150/session', amt:750},
-    {cat:'Wellness', name:'Wellness Direct Services (2/week × $300)', freq:'2/wk · $300/direct service hour', amt:600},
+    {cat:'Wellness', name:'Wellness Direct Services (2×/month)', freq:'2 sessions/month · $300/session · avg $150/week', amt:150},
     {cat:'Nutritional', name:'Nutritional Follow-Up', freq:'1×/wk · $150/session', amt:150},
-    {cat:'Stipend', name:'David Ockman — Executive Oversight', freq:'Weekly flat', amt:250},
-    {cat:'Stipend', name:'Gus Hernandez — Tech Oversight', freq:'Weekly flat', amt:250},
-    {cat:'Stipend', name:'Nicole Williams — Clinical Liaison', freq:'Weekly flat', amt:250},
-    {cat:'Operational', name:'Culinary / Chef + Food (weekdays)', freq:'$150/day × 5 weekdays', amt:750},
-    {cat:'Operational', name:'Weekend Food — Ordering', freq:'$150/day × 2 weekend days', amt:300},
+    {cat:'Stipend', name:'David Ockman — Executive Oversight', freq:'$250/person/week', amt:250},
+    {cat:'Stipend', name:'Clinical Liaison', freq:'$100/day × 5 days/week', amt:500},
+    {cat:'Stipend', name:'Lead Tech (2 alternating)', freq:'$100/day × 7 days · 1 on at a time', amt:700},
+    {cat:'Operational', name:'Culinary / Chef + Food (7 days/week)', freq:'$150/day × 7 days — full chef model', amt:1050},
     {cat:'Operational', name:'Client Ancillary Needs', freq:'$75/day × 7 days', amt:525},
   ]
 };
@@ -1142,8 +1145,8 @@ firebase.database().ref('schedule_v3').on('value',function(snap){
   // ── Dynamic rows for new clients not in hardcoded table ─────────────────
   // Runs on every Firebase update — adds rows for clients added since last deploy
   (function(){
-    var SIG_RATE  = 21000/7;
-    var SIG_WCOST = 9075/7;
+    var SIG_RATE  = 24500/7;
+    var SIG_WCOST = 8913/7; // $8,913 avg weekly recurring cost
 
     // Normalise a name for comparison: lowercase, strip trailing periods/spaces
     function normName(s){ return (s||'').toLowerCase().trim().replace(/\.$/,''); }
@@ -1227,8 +1230,8 @@ firebase.database().ref('schedule_v3').on('value',function(snap){
       var days  = losD(c.pdiAdmit, disch||today);
       var isAct = !disch||disch>=today;
       var rev   = 70000;
-      var varC  = Math.round(days*375 + Math.floor(days/7)*600);
-      var fixC  = 23738;
+      var varC  = Math.round(days/7*2550);
+      var fixC  = 22788; // Updated: stipends $550, no wellness
       var tot   = varC+fixC;
       var profit= rev-tot;
       var margin= profit/rev*100;
@@ -1259,11 +1262,11 @@ firebase.database().ref('schedule_v3').on('value',function(snap){
       var sDays = losD(c.sigAdmit,  sd||today);
       var isAct = (!pd||pd>=today)||(!sd||sd>=today);
       var pdiRev = 70000;
-      var sigRev = Math.round(sDays/7*21000);
+      var sigRev = Math.round(sDays/7*24500);
       var totRev = pdiRev+sigRev;
       var pdiV   = Math.round(pDays*375+Math.floor(pDays/7)*600);
-      var sigW   = Math.round(sDays/7*9075);
-      var fixC   = 27626;
+      var sigW   = Math.round(sDays/7*8913);
+      var fixC   = 26538;
       var tot    = pdiV+sigW+fixC;
       var profit = totRev-tot;
       var margin = profit/totRev*100;
@@ -1310,11 +1313,11 @@ firebase.database().ref('schedule_v3').on('value',function(snap){
   calcAll();
 });
 
-var STEP_FIX=27626; // PDI+Sig fixed costs
+var STEP_FIX=26538; // Updated fixed costs // PDI+Sig fixed costs
 // ── Reset functions ────────────────────────────────────────────────────────
 function fmt$(v){return '$'+Math.round(Math.abs(v)).toLocaleString();}
 function renderStepTable(){
-  var PDI_REV=70000, SIG_WK_REV=21000;
+  var PDI_REV=70000, SIG_WK_REV=24500;
 
   // Derive all costs purely from line items — no hard-coded constants
   var pdiTotal = lines.stepPdi.reduce(function(s,l){ return s+(l.amt||0); }, 0);
@@ -1435,7 +1438,7 @@ function resetStep(){
   lines.stepSig=clone(DATA.stepSig);
   document.getElementById('step-a-pdi').value=70000;
   document.getElementById('step-a-pdi-days').value=12;
-  document.getElementById('step-a-sig-wk').value=21000;
+  document.getElementById('step-a-sig-wk').value=24500;
   document.getElementById('step-a-sig-wks').value=4;
   document.getElementById('step-a-goal').value=44;
   renderLines('step-pdi-body','stepPdi',false);
@@ -1444,8 +1447,8 @@ function resetStep(){
 }
 function resetSig(){
   document.getElementById('sig-a-scenario').value='full';
-  document.getElementById('sig-a-rev').value=21000;
-  document.getElementById('sig-a-day').value=3000;
+  document.getElementById('sig-a-rev').value=24500;
+  document.getElementById('sig-a-day').value=3500;
   document.getElementById('sig-a-goal').value=44;
   applySigScenario();calcSig();
 }
