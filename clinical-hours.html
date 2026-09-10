@@ -12,68 +12,44 @@
 body{font-family:Arial,sans-serif;background:#F5F0E8;color:#1E1E1E;min-height:100vh}
 #login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#1B2A4A}
 .lbox{background:#fff;border-radius:16px;padding:40px;width:340px;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.3)}
-.lbox h1{font-size:18px;color:#1B2A4A;margin-bottom:6px}
-.lbox p{font-size:11px;color:#999;margin-bottom:20px;line-height:1.6}
+.lbox h1{font-size:18px;color:#1B2A4A;margin-bottom:6px}.lbox p{font-size:11px;color:#999;margin-bottom:20px;line-height:1.6}
 .lbox input{width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;margin-bottom:10px}
 .lbox button{width:100%;padding:10px;background:#1B2A4A;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
 #err{color:#c00;font-size:11px;margin-top:6px;min-height:15px}
 #app{display:none}
 .topbar{background:#1B2A4A;color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between}
-.topbar h1{font-size:15px;font-weight:700}
-.topbar .sub{font-size:10px;color:#A0B0C8;margin-top:2px}
-.dot{width:7px;height:7px;border-radius:50%;background:#555;display:inline-block;margin-right:4px}
-.dot.on{background:#4ade80}
-/* tabs */
+.topbar h1{font-size:15px;font-weight:700}.topbar .sub{font-size:10px;color:#A0B0C8;margin-top:2px}
+.dot{width:7px;height:7px;border-radius:50%;background:#555;display:inline-block;margin-right:4px}.dot.on{background:#4ade80}
 .tabs{background:#fff;border-bottom:2px solid #E5E2DE;display:flex;padding:0 20px;gap:2px}
 .tab{padding:11px 18px;font-size:12px;font-weight:600;color:#888;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap}
-.tab:hover{color:#1B2A4A}
-.tab.on{color:#1B2A4A;border-bottom-color:#1B2A4A}
-/* range + filter row */
+.tab:hover{color:#1B2A4A}.tab.on{color:#1B2A4A;border-bottom-color:#1B2A4A}
 .frow{background:#fff;border-bottom:1px solid #E5E2DE;padding:10px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 .frow label{font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.05em;margin-right:4px}
 .frow input[type=month]{padding:5px 9px;border:1px solid #ddd;border-radius:6px;font-size:11px;color:#333}
 .frow select{padding:5px 9px;border:1px solid #ddd;border-radius:6px;font-size:11px;color:#333;background:#fff}
-.frow .sep{color:#ddd;font-size:14px}
-/* layout */
 .pg{padding:18px 20px}
-.krow{display:grid;gap:10px;margin-bottom:16px}
-.k4{grid-template-columns:repeat(4,1fr)}
-.k3{grid-template-columns:repeat(3,1fr)}
+.krow{display:grid;gap:10px;margin-bottom:16px}.k4{grid-template-columns:repeat(4,1fr)}.k3{grid-template-columns:repeat(3,1fr)}
 @media(max-width:800px){.k4,.k3{grid-template-columns:repeat(2,1fr)}}
 .kpi{background:#fff;border-radius:10px;border:1px solid #E5E2DE;padding:14px 10px;text-align:center}
-.kpi .n{font-size:26px;font-weight:700;color:#1B2A4A;line-height:1}
-.kpi .l{font-size:9px;font-weight:700;color:#7A6A56;text-transform:uppercase;letter-spacing:.06em;margin-top:5px}
-.kpi .s{font-size:10px;color:#aaa;margin-top:2px}
-.kpi.ck .n{color:#2D6A4F}
-.kpi.cw .n{color:#D97706}
-.kpi.co .n{color:#1A56DB}
+.kpi .n{font-size:26px;font-weight:700;color:#1B2A4A;line-height:1}.kpi .l{font-size:9px;font-weight:700;color:#7A6A56;text-transform:uppercase;letter-spacing:.06em;margin-top:5px}.kpi .s{font-size:10px;color:#aaa;margin-top:2px}
+.kpi.ck .n{color:#2D6A4F}.kpi.cw .n{color:#D97706}.kpi.co .n{color:#1A56DB}
 .card{background:#fff;border-radius:10px;border:1px solid #E5E2DE;padding:16px;margin-bottom:12px}
 .ct{font-size:10px;font-weight:700;color:#7A6A56;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px}
 .r2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
 @media(max-width:800px){.r2{grid-template-columns:1fr}}
-.cw{position:relative}
 table{width:100%;border-collapse:collapse;font-size:11px}
 th{padding:7px 9px;background:#1B2A4A;color:#fff;text-align:left;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
 th.r{text-align:right}
-td{padding:6px 9px;border-bottom:.5px solid #F0EDE8}
-td.r{text-align:right;font-variant-numeric:tabular-nums}
-tr:hover td{background:#FAFAF8}
-tr.tot td{background:#F5F0E8;font-weight:700}
+td{padding:6px 9px;border-bottom:.5px solid #F0EDE8}td.r{text-align:right;font-variant-numeric:tabular-nums}
+tr:hover td{background:#FAFAF8}.totrow td{background:#F5F0E8;font-weight:700}
 .z{color:#CCC}
 .badge{display:inline-block;padding:1px 7px;border-radius:8px;font-size:10px;font-weight:600}
-.bc{background:#EEF2FF;color:#1B2A4A}
-.ba{background:#E8F5E9;color:#2D4A3E}
-.bw2{background:#F0F4FF;color:#3730A3}
-.bctr{background:#FEF3C7;color:#92400E}
-.rg{background:#F0FDF4}.ro{background:#EFF6FF}.rw{background:#FFFBEB}
-.bk{background:#E8F5E9;color:#2D4A3E}
-.bb{background:#DBEAFE;color:#1E40AF}
-.bam{background:#FEF3C7;color:#92400E}
+.bc{background:#EEF2FF;color:#1B2A4A}.ba{background:#E8F5E9;color:#2D4A3E}
+.bw2{background:#F0F4FF;color:#3730A3}.bctr{background:#FEF3C7;color:#92400E}
+.bk{background:#E8F5E9;color:#2D4A3E}.bb{background:#DBEAFE;color:#1E40AF}.bam{background:#FEF3C7;color:#92400E}
 .sec-hdr{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:5px 9px;color:#fff}
-.sec-clin{background:#1B2A4A}
-.sec-anc{background:#2D6A4F}
+.sec-clin{background:#1B2A4A}.sec-anc{background:#2D6A4F}
 </style>
-<!-- deploy: 2026-09-10 15:55:32 -->
 </head>
 <body>
 
@@ -96,132 +72,63 @@ tr.tot td{background:#F5F0E8;font-weight:700}
     </div>
     <a href="/index.html" style="color:#A0B0C8;font-size:11px;text-decoration:none">← Calendar</a>
   </div>
-
   <div class="tabs">
     <div class="tab on" data-t="monthly">Monthly Summary</div>
     <div class="tab" data-t="provider">By Provider</div>
-    <div class="tab" data-t="client-audit">Client Daily Audit</div>
+    <div class="tab" data-t="audit">Client Daily Audit</div>
     <div class="tab" data-t="roster">Provider Roster</div>
   </div>
-
   <div class="frow">
     <div><label>From</label><input type="month" id="f-from" value="2026-04" onchange="render()"></div>
-    <div class="sep">–</div>
+    <div style="font-size:14px;color:#ddd">–</div>
     <div><input type="month" id="f-to" onchange="render()"></div>
     <div style="margin-left:12px"><label>Program</label>
       <select id="f-prog" onchange="render()">
-        <option value="">All</option>
-        <option value="sig">Signature</option>
-        <option value="pdi">PDI</option>
+        <option value="">All</option><option value="sig">Signature</option><option value="pdi">PDI</option>
       </select>
     </div>
-    <div style="margin-left:auto;display:flex;gap:8px">
-      <button onclick="exportCSV()" style="padding:6px 14px;border:1px solid #1B2A4A;background:#fff;color:#1B2A4A;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer">↓ CSV</button>
+    <div style="margin-left:auto">
+      <button onclick="exportCSV()" style="padding:6px 14px;border:1px solid #1B2A4A;background:#fff;color:#1B2A4A;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer">↓ Export</button>
     </div>
   </div>
-
   <div class="pg" id="pg-load" style="text-align:center;padding:60px;color:#888">Loading…</div>
   <div id="pg" style="display:none"></div>
 </div>
 
 <script>
 const PW='ClinicalHours2026', TARGET=5;
-var DATA={events:[],clients:[]}, _ok=false, _tab='monthly';
+var DATA={events:[],clients:[]}, _ok=false, _tab='monthly', _auditWkIdx=0;
 
-/* Classification */
-var CLIN_KW=[
-  // Therapy types
-  'individual','family','therapy','dbt','trauma','anger','relapse','caseload',
-  // Clinical assessment & evaluation
-  'testing','assessment','psychometric','neuropsych','evaluation','interview','psych',
-  // Medical & nursing
-  'psychiatric','nursing','medical',
-  // Behavioral & legal
-  'debriefing','court','prevention',
-  // All groups = direct service (unless overridden by FORCE_ANC_SVCS)
-  'group'
-];
-// Service labels that are always Ancillary regardless of other keywords
-// e.g. "Spirituality Group" contains "group" but should be ancillary
+/* ── Classification ─────────────────────────────────────────── */
+var SKIP=['luis guillermo','keisha foster','lead tech','tech team','brandy','hume','none','tbd','family','n/a',''];
+var CLIN_KW=['individual','family','therapy','dbt','trauma','anger','relapse','caseload','testing','assessment','psychometric','neuropsych','evaluation','interview','psych','psychiatric','nursing','medical','debriefing','court','prevention','group'];
 var FORCE_ANC_SVCS=['lunch','photomodulation','cognitive remediation','orientation'];
-var FORCE_ANC=['anthony','heather','alice','flavia','rabbi','nicole']; // Always ancillary regardless of service label
-// Providers always classified as Clinician regardless of service label
 var FORCE_CLIN=['nursing','brian','paul lazar','dr. paul'];
-var SKIP=['luis guillermo','keisha foster','lead tech','tech team','brandy','none','tbd','family','n/a','hume',''];
-
-// W2 salaried — determines who gets tracked in Provider Audit
-var W2=[
-  // Confirmed salaried employees (updated roster)
-  'nicole williams','nicole',
-  'tara alhadeff','tara',
-  'mirella ezeta','dr. mirella',
-  'rabbi brandon gaines','rabbi gaines','rabbi',
-  'sandra bernstein','sandy',
-  'despina karfis','dr. despina',
-  'alexandra marullo','dr. alex',
-  'robert bruno','dr. bruno',
-  'tamas biro','tamas',
-  'paul lazar','dr. paul',
-  't.d.','td',
-  'esther entin','esther',
-  'miguel',
-  'nichole bessent',
-  'gina bonfigli','gina',
-  'dr. greg','gregory fortune','greg fortune'
-];
-var CTR=[
-  // Contractors / 1099
-  'david forstadt','dr. forstadt','forstadt',
-  'anthony','heather','alice',
-  'dr. flannery','flannery','pbwi',
-  'brian',
-  // Previously listed as salaried — now confirmed contractor
-  'david ockman','ockman',
-  'gus hernandez','gus',
-  'dr. spaedy','spaedy',
-  'nursing',
-  'dr. flavia','flavia',
-  'dr. shaeffer','shaeffer',
-  'dr. bober','bober',
-  'thomas young',
-  'dr. smith','smith'
-];
+var FORCE_ANC=['anthony','heather','alice','flavia','rabbi','nicole'];
+var W2=['nicole williams','nicole','tara alhadeff','tara','mirella ezeta','dr. mirella','rabbi brandon gaines','rabbi gaines','rabbi','sandra bernstein','sandy','despina karfis','dr. despina','alexandra marullo','dr. alex','robert bruno','dr. bruno','tamas biro','tamas','paul lazar','dr. paul','t.d.','td','esther entin','esther','miguel','nichole bessent','gina bonfigli','gina','david ockman','ockman','nicole williams','gus hernandez','dr. greg','gregory fortune','greg fortune'];
+var CTR=['david forstadt','dr. forstadt','forstadt','anthony','heather','alice','dr. flannery','flannery','pbwi','brian','dr. spaedy','spaedy','nursing','dr. flavia','flavia','dr. shaeffer','shaeffer','dr. bober','bober','thomas young','dr. smith','smith'];
 
 function isSkip(p,svc){
-  var pl=(p||'').trim().toLowerCase();
-  var sl=(svc||'').toLowerCase();
-  if(!pl||SKIP.indexOf(pl)>-1||pl.indexOf('lead tech')>-1) return true;
-  // Data entry errors — exclude specific provider+service combos
+  var pl=(p||'').trim().toLowerCase(), sl=(svc||'').toLowerCase();
+  if(!pl||SKIP.some(function(s){return pl===s;})||pl.indexOf('lead tech')>-1) return true;
   if((pl.indexOf('paul')>-1||pl.indexOf('lazar')>-1)&&sl.indexOf('lunch')>-1) return true;
   if((pl.indexOf('sandy')>-1||pl.indexOf('sandra')>-1||pl.indexOf('bernstein')>-1)&&(sl.indexOf('cognitive')>-1||sl.indexOf('remediation')>-1)) return true;
   return false;
 }
 function isClin(ev){
-  var pl=(ev.provider||'').toLowerCase();
-  var sl=(ev.service||'').toLowerCase();
-  // Tamas: ALL spirituality sessions are ancillary (regardless of group)
-  if(pl.indexOf('tamas')>-1 && sl.indexOf('spiritual')>-1) return false;
-  // Spirituality without "group" = ancillary; Spirituality Group = clinician (all other providers)
-  if((sl.indexOf('spiritual')>-1)&&sl.indexOf('group')<0) return false;
-  // Sandy: cognitive remediation is a provider entry error — exclude from clinician
-  if(pl.indexOf('sandy')>-1||pl.indexOf('sandra')>-1||pl.indexOf('bernstein')>-1) {
-    if(sl.indexOf('cognitive')>-1||sl.indexOf('remediation')>-1) return false;
-  }
-  // Dr. Paul: lunch is a data entry error — force ancillary
-  if((pl.indexOf('paul')>-1||pl.indexOf('lazar')>-1) && sl.indexOf('lunch')>-1) return false;
-  // Other service-level overrides
-  if(FORCE_ANC_SVCS.some(function(s){return sl.indexOf(s)>-1;}))return false;
-  // Provider-level overrides
-  if(FORCE_CLIN.some(function(f){return pl.indexOf(f)>-1;}))return true;
-  if(FORCE_ANC.some(function(f){return pl.indexOf(f)>-1;}))return false;
+  var pl=(ev.provider||'').toLowerCase(), sl=(ev.service||'').toLowerCase();
+  if(pl.indexOf('tamas')>-1&&sl.indexOf('spiritual')>-1) return false;
+  if(sl.indexOf('spiritual')>-1&&sl.indexOf('group')<0) return false;
+  if(FORCE_ANC_SVCS.some(function(s){return sl.indexOf(s)>-1;})) return false;
+  if(FORCE_CLIN.some(function(f){return pl.indexOf(f)>-1;})) return true;
+  if(FORCE_ANC.some(function(f){return pl.indexOf(f)>-1;})) return false;
   return CLIN_KW.some(function(k){return sl.indexOf(k)>-1;});
 }
 function getHrs(ev){return((ev.duration||2)/2);}
-
 function emp(p){
   var pl=(p||'').trim().toLowerCase();
-  if(W2.some(function(w){return pl===w;}))return 'W2';
-  if(CTR.some(function(c){return pl===c;}))return 'Contractor';
+  if(W2.some(function(w){return pl===w;})) return 'W2';
+  if(CTR.some(function(c){return pl===c;})) return 'Contractor';
   return 'Unknown';
 }
 function prog(ev){
@@ -229,16 +136,12 @@ function prog(ev){
   if(!p&&ev.clientId){var cl=DATA.clients.find(function(c){return c.id===ev.clientId;});if(cl)p=(cl.program||'').toLowerCase();}
   return p;
 }
-
 function getEvs(){
-  var from=document.getElementById('f-from').value;
-  var to=document.getElementById('f-to').value;
-  var pg=document.getElementById('f-prog').value;
+  var from=document.getElementById('f-from').value, to=document.getElementById('f-to').value, pg=document.getElementById('f-prog').value;
   return DATA.events.filter(function(ev){
     if(!ev.date||!ev.provider||!ev.status) return false;
     if(ev.status.toLowerCase()!=='completed') return false;
     if(isSkip(ev.provider,ev.service)) return false;
-    // Note: group sessions intentionally included — direct service hours per clinical model
     var mo=ev.date.slice(0,7);
     if(from&&mo<from) return false;
     if(to&&mo>to) return false;
@@ -249,84 +152,67 @@ function getEvs(){
   });
 }
 
-function moKey(d){return (d||'').slice(0,7);}
-function wkSun(d){var dt=new Date((d||'').slice(0,10)+'T12:00:00');if(isNaN(dt))return '';dt.setDate(dt.getDate()-dt.getDay());return dt.toISOString().slice(0,10);}
-function moLbl(k){return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+k.slice(5,7)-1]+' '+k.slice(0,4);}
-function dayLbl(d){var dt=new Date((d||'').slice(0,10)+'T12:00:00');return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][dt.getDay()]+' '+(dt.getMonth()+1)+'/'+dt.getDate();}
-
-/* Auth */
+/* ── Auth ──────────────────────────────────────────────────── */
 function go(){
   if((document.getElementById('pw').value||'').trim()===PW){
     document.getElementById('login-screen').style.display='none';
     document.getElementById('app').style.display='block';
     initFB();
-  } else {
-    document.getElementById('err').textContent='Incorrect code.';
-    setTimeout(function(){document.getElementById('err').textContent='';},2000);
-  }
+  }else{document.getElementById('err').textContent='Incorrect code.';setTimeout(function(){document.getElementById('err').textContent='';},2000);}
 }
 
-/* Firebase */
+/* ── Firebase ──────────────────────────────────────────────── */
 function initFB(){
   firebase.initializeApp({databaseURL:'https://pdi-signature-schedule-default-rtdb.firebaseio.com'});
   firebase.database().ref('schedule_v3').on('value',function(snap){
     var raw=snap.val();
-    if(raw&&raw.blob){try{var d=JSON.parse(raw.blob);
-      if(Array.isArray(d.events))DATA.events=d.events;
-      if(Array.isArray(d.clients))DATA.clients=d.clients;
-    }catch(e){console.error(e);}}
-    document.getElementById('ldot').className='dot on';
-    document.getElementById('llbl').textContent='Live';
+    if(raw&&raw.blob){try{var d=JSON.parse(raw.blob);if(Array.isArray(d.events))DATA.events=d.events;if(Array.isArray(d.clients))DATA.clients=d.clients;}catch(e){console.error(e);}}
+    document.getElementById('ldot').className='dot on';document.getElementById('llbl').textContent='Live';
     _ok=true;
-    var now=new Date();
-    document.getElementById('f-to').value=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
-    document.getElementById('pg-load').style.display='none';
-    document.getElementById('pg').style.display='block';
+    var now=new Date();document.getElementById('f-to').value=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+    document.getElementById('pg-load').style.display='none';document.getElementById('pg').style.display='block';
     render();
   });
 }
 
-/* Tabs */
+/* ── Tabs ──────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded',function(){
   document.querySelectorAll('.tab').forEach(function(t){
     t.addEventListener('click',function(){
       document.querySelectorAll('.tab').forEach(function(x){x.className='tab';});
-      t.className='tab on'; _tab=t.dataset.t; if(_ok)render();
+      t.className='tab on';_tab=t.dataset.t;if(_ok)render();
     });
   });
 });
 
-var _ch=[];
-function destroyCharts(){_ch.forEach(function(c){try{c.destroy();}catch(e){}});_ch=[];}
+/* ── Helpers ───────────────────────────────────────────────── */
+function moKey(d){return(d||'').slice(0,7);}
+function wkSun(d){var dt=new Date((d||'').slice(0,10)+'T12:00:00');if(isNaN(dt))return '';dt.setDate(dt.getDate()-dt.getDay());return dt.toISOString().slice(0,10);}
+function moLbl(k){return['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+k.slice(5,7)-1]+' '+k.slice(0,4);}
 function kpi(n,l,s,cls){return '<div class="kpi'+(cls?' '+cls:'')+'"><div class="n">'+n+'</div><div class="l">'+l+'</div>'+(s?'<div class="s">'+s+'</div>':'')+
 '</div>';}
+var _ch=[];
+function destroyCharts(){_ch.forEach(function(c){try{c.destroy();}catch(e){}});_ch=[];}
 
 function render(){
-  if(!_ok)return;
-  destroyCharts();
-  var evs=getEvs();
-  var el=document.getElementById('pg');
-  el.innerHTML='';
-  var wrap=document.createElement('div');
-  wrap.className='pg';
-  if(_tab==='monthly')     renderMonthly(wrap,evs);
-  else if(_tab==='provider')renderProvider(wrap,evs);
-  else if(_tab==='client-audit')renderClientAudit(wrap,evs);
+  if(!_ok)return;destroyCharts();
+  var evs=getEvs(),el=document.getElementById('pg');
+  el.innerHTML='';var wrap=document.createElement('div');wrap.className='pg';
+  if(_tab==='monthly') renderMonthly(wrap,evs);
+  else if(_tab==='provider') renderProvider(wrap,evs);
+  else if(_tab==='audit') renderAudit(wrap,evs);
   else renderRoster(wrap,evs);
   el.appendChild(wrap);
 }
 
-var PAL=['#1B2A4A','#2D6A4F','#7A6A56','#6B2737','#4A235A','#0A4F6E','#78350F','#065F46','#831843','#374151','#92400E','#3D1A6F','#145A32','#1A5276','#0E6655'];
-
-/* ═══ MONTHLY ═══════════════════════════════ */
+/* ══ MONTHLY ════════════════════════════════════════════════ */
 function renderMonthly(el,evs){
   var byMo={};var mos=new Set();
   evs.forEach(function(ev){
-    var mo=moKey(ev.date);mos.add(mo);
+    var mo=moKey(ev.date);mos.add(mo);var h=getHrs(ev);
     if(!byMo[mo])byMo[mo]={clin:0,anc:0,w2:0,ctr:0};
-    var _h=getHrs(ev);if(isClin(ev))byMo[mo].clin+=_h;else byMo[mo].anc+=_h;
-    var e=emp(ev.provider);
-    if(e==='W2')byMo[mo].w2+=_h;else if(e==='Contractor')byMo[mo].ctr+=_h;
+    if(isClin(ev))byMo[mo].clin+=h;else byMo[mo].anc+=h;
+    var e=emp(ev.provider);if(e==='W2')byMo[mo].w2+=h;else if(e==='Contractor')byMo[mo].ctr+=h;
   });
   var months=[...mos].sort();
   var tc=evs.reduce(function(s,e){return s+(isClin(e)?getHrs(e):0);},0);
@@ -335,93 +221,84 @@ function renderMonthly(el,evs){
   var tctr=evs.reduce(function(s,e){return s+(emp(e.provider)==='Contractor'?getHrs(e):0);},0);
 
   el.innerHTML='<div class="krow k4">'+
-    kpi(Math.round(evs.reduce(function(s,e){return s+getHrs(e);},0)*10)/10+' hrs','Total Direct Service Hours',months.length+' months')+
-    kpi(Math.round(tc*10)/10+' hrs','Clinician Hours','Therapy · Testing','')+
-    kpi(Math.round(ta*10)/10+' hrs','Ancillary Hours','All other services','')+
-    kpi(months.length,'Months','In selected range','')+
+    kpi(Math.round(tw+tctr),'Total Hours',months.length+' months')+
+    kpi(Math.round(tc),'Clinician Hours','Individual · Family · Testing','')+
+    kpi(Math.round(ta),'Ancillary Hours','All other services','')+
+    kpi(months.length,'Months','')+
   '</div>';
 
-  // Main chart: stacked clin+anc per month
   var c1=document.createElement('div');c1.className='card';
-  c1.innerHTML='<div class="ct">Monthly Sessions — Clinician vs Ancillary</div><div class="cw" style="height:260px"><canvas id="ch-mo1"></canvas></div>';
+  c1.innerHTML='<div class="ct">Monthly Sessions — Clinician vs Ancillary</div><div style="position:relative;height:260px"><canvas id="ch-mo1"></canvas></div>';
   el.appendChild(c1);
 
-  // W2 vs Contractor chart
   var c2=document.createElement('div');c2.className='card';
-  c2.innerHTML='<div class="ct">Monthly Sessions — Salaried vs Contractor</div><div class="cw" style="height:220px"><canvas id="ch-mo2"></canvas></div>';
+  c2.innerHTML='<div class="ct">Monthly Sessions — Salaried vs Contractor</div><div style="position:relative;height:220px"><canvas id="ch-mo2"></canvas></div>';
   el.appendChild(c2);
 
-  // Table
   var tbl='<div class="card"><div class="ct">Monthly Detail</div><div style="overflow-x:auto"><table><thead><tr>'+
-    '<th>Month</th><th class="r">Total</th><th class="r">Clinician</th><th class="r">Ancillary</th><th class="r">Salaried</th><th class="r">Contractor</th></tr></thead><tbody>'+
+    '<th>Month</th><th class="r">Clinician Hrs</th><th class="r">Ancillary Hrs</th><th class="r">Total Hrs</th><th class="r">Salaried</th><th class="r">Contractor</th></tr></thead><tbody>'+
     months.map(function(mo){var r=byMo[mo];return '<tr><td><b>'+moLbl(mo)+'</b></td>'+
-      '<td class="r"><b>'+(r.clin+r.anc)+'</b></td>'+
-      '<td class="r">'+r.clin+'</td><td class="r">'+r.anc+'</td>'+
-      '<td class="r">'+r.w2+'</td><td class="r">'+r.ctr+'</td></tr>';}).join('')+
-    '<tr class="tot"><td>Total</td><td class="r">'+evs.length+'</td>'+
-    '<td class="r">'+tc+'</td><td class="r">'+ta+'</td>'+
-    '<td class="r">'+tw+'</td><td class="r">'+tctr+'</td></tr>'+
+      '<td class="r">'+Math.round(r.clin)+'</td><td class="r">'+Math.round(r.anc)+'</td>'+
+      '<td class="r"><b>'+Math.round(r.clin+r.anc)+'</b></td>'+
+      '<td class="r">'+Math.round(r.w2)+'</td><td class="r">'+Math.round(r.ctr)+'</td></tr>';}).join('')+
+    '<tr class="totrow"><td>Total</td><td class="r">'+Math.round(tc)+'</td><td class="r">'+Math.round(ta)+'</td>'+
+    '<td class="r">'+Math.round(tc+ta)+'</td><td class="r">'+Math.round(tw)+'</td><td class="r">'+Math.round(tctr)+'</td></tr>'+
     '</tbody></table></div></div>';
   el.innerHTML+=tbl;
 
   setTimeout(function(){
     _ch.push(new Chart(document.getElementById('ch-mo1'),{type:'bar',
       data:{labels:months.map(moLbl),datasets:[
-        {label:'Clinician',data:months.map(function(m){return byMo[m].clin;}),backgroundColor:'#1B2A4A',borderRadius:3},
-        {label:'Ancillary',data:months.map(function(m){return byMo[m].anc;}),backgroundColor:'#2D6A4F',borderRadius:3}]},
+        {label:'Clinician',data:months.map(function(m){return Math.round(byMo[m].clin);}),backgroundColor:'#1B2A4A',borderRadius:3},
+        {label:'Ancillary',data:months.map(function(m){return Math.round(byMo[m].anc);}),backgroundColor:'#2D6A4F',borderRadius:3}]},
       options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:12}}},
         scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true}}}}));
     _ch.push(new Chart(document.getElementById('ch-mo2'),{type:'bar',
       data:{labels:months.map(moLbl),datasets:[
-        {label:'Salaried (W2)',data:months.map(function(m){return byMo[m].w2;}),backgroundColor:'#1B2A4A',borderRadius:3},
-        {label:'Contractor',data:months.map(function(m){return byMo[m].ctr;}),backgroundColor:'#C4924A',borderRadius:3}]},
+        {label:'Salaried (W2)',data:months.map(function(m){return Math.round(byMo[m].w2);}),backgroundColor:'#1B2A4A',borderRadius:3},
+        {label:'Contractor',data:months.map(function(m){return Math.round(byMo[m].ctr);}),backgroundColor:'#C4924A',borderRadius:3}]},
       options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:12}}},
         scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true}}}}));
   },60);
 }
 
-/* ═══ BY PROVIDER ════════════════════════════ */
+/* ══ BY PROVIDER ════════════════════════════════════════════ */
 function renderProvider(el,evs){
   var byP={};
   evs.forEach(function(ev){
-    var p=ev.provider;
-    if(!byP[p])byP[p]={clin:0,anc:0,mos:new Set(),clients:new Set(),ancSvcs:{}};
-    var _ph=getHrs(ev);if(isClin(ev))byP[p].clin+=_ph;
-    else{byP[p].anc+=_ph;var s=ev.service||'—';byP[p].ancSvcs[s]=(byP[p].ancSvcs[s]||0)+_ph;}
-    byP[p].mos.add(moKey(ev.date));
-    if(ev.clientId)byP[p].clients.add(ev.clientId);
+    var p=ev.provider,h=getHrs(ev);
+    if(!byP[p])byP[p]={clin:0,anc:0,ancSvcs:{}};
+    if(isClin(ev))byP[p].clin+=h;
+    else{byP[p].anc+=h;var s=ev.service||'—';byP[p].ancSvcs[s]=(byP[p].ancSvcs[s]||0)+h;}
   });
-
   var clinPs=Object.entries(byP).filter(function(kv){return kv[1].clin>0;}).sort(function(a,b){return b[1].clin-a[1].clin;});
-  var ancPs=Object.entries(byP).filter(function(kv){return kv[1].clin===0;}).sort(function(a,b){return b[1].anc-a[1].anc;});
+  var ancPs=Object.entries(byP).filter(function(kv){return kv[1].clin===0&&kv[1].anc>0;}).sort(function(a,b){return b[1].anc-a[1].anc;});
   var mixPs=Object.entries(byP).filter(function(kv){return kv[1].clin>0&&kv[1].anc>0;});
-
-  var h=Math.max(180,clinPs.length*26)+'px';
-  var h2=Math.max(180,ancPs.length*26)+'px';
+  var tc=evs.reduce(function(s,e){return s+(isClin(e)?getHrs(e):0);},0);
+  var ta=evs.reduce(function(s,e){return s+(isClin(e)?0:getHrs(e));},0);
 
   el.innerHTML='<div class="krow k4">'+
-    kpi(clinPs.length,'Clinician Providers','')+
-    kpi(Math.round(evs.reduce(function(s,e){return s+(isClin(e)?getHrs(e):0);},0)*10)/10+' hrs','Clinician Hours','')+
-    kpi(ancPs.length,'Ancillary Providers','')+
-    kpi(Math.round(evs.reduce(function(s,e){return s+(isClin(e)?0:getHrs(e));},0)*10)/10+' hrs','Ancillary Hours','')+
+    kpi(clinPs.length,'Clinician Providers','')+kpi(Math.round(tc)+' hrs','Clinician Hours','')+
+    kpi(ancPs.length,'Ancillary Providers','')+kpi(Math.round(ta)+' hrs','Ancillary Hours','')+
   '</div>';
 
+  var h1=Math.max(200,clinPs.length*26)+'px',h2=Math.max(200,ancPs.length*26)+'px';
   var c=document.createElement('div');c.className='r2';
-  c.innerHTML=
-    '<div class="card"><div class="ct" style="color:#1B2A4A">Clinician Providers</div>'+
+  c.innerHTML='<div class="card"><div class="ct" style="color:#1B2A4A">Clinician Providers</div>'+
     '<div style="font-size:10px;color:#999;margin-bottom:8px">Therapy · Testing · Assessment</div>'+
-    '<div class="cw" style="height:'+h+'"><canvas id="ch-pv-clin"></canvas></div></div>'+
+    '<div style="position:relative;height:'+h1+'"><canvas id="ch-clin"></canvas></div></div>'+
     '<div class="card"><div class="ct" style="color:#2D6A4F">Ancillary Providers</div>'+
     '<div style="font-size:10px;color:#999;margin-bottom:8px">All other completed services</div>'+
-    '<div class="cw" style="height:'+h2+'"><canvas id="ch-pv-anc"></canvas></div></div>';
+    '<div style="position:relative;height:'+h2+'"><canvas id="ch-anc"></canvas></div></div>';
   el.appendChild(c);
 
-  // Detail tables
+  // Detail table — no unique clients, no active months
   var t='<div class="card"><div style="overflow-x:auto"><table><thead>'+
     '<tr><th colspan="2" class="sec-hdr sec-clin">Clinician Providers — Direct Service Hours</th></tr>'+
     '<tr><th>Provider</th><th class="r">Hours</th></tr></thead><tbody>'+
-    clinPs.map(function(kv){var r=kv[1];return '<tr><td><b>'+kv[0]+'</b></td>'+
-      '<td class="r"><b>'+Math.round(r.clin*10)/10+' hrs</b></td></tr>';}).join('')+
+    clinPs.map(function(kv){var r=kv[1],et=emp(kv[0]);
+      return '<tr><td><b>'+kv[0]+'</b></td>'+
+        '<td class="r"><b>'+Math.round(r.clin*10)/10+' hrs</b></td></tr>';}).join('')+
     '<tr><th colspan="2" class="sec-hdr sec-anc">Ancillary Providers — Support Services</th></tr>'+
     '<tr><th>Provider</th><th class="r">Hours</th></tr>'+
     ancPs.map(function(kv){var r=kv[1];
@@ -432,370 +309,191 @@ function renderProvider(el,evs){
   el.innerHTML+=t;
 
   if(mixPs.length){
-    var w='<div class="card" style="border-color:#D97706"><div class="ct" style="color:#92400E">Service Label Review — Clinician Providers with Ancillary-Coded Sessions</div>'+
-      '<div style="font-size:11px;color:#888;margin-bottom:10px">These providers are classified as Clinicians but have sessions with labels not matching therapy/testing keywords. Review the labels below to confirm or update classification.</div>'+
-      '<div style="overflow-x:auto"><table><thead><tr><th>Provider</th><th class="r">Clinician</th><th class="r">Ancillary</th><th>Ancillary Service Labels</th></tr></thead><tbody>'+
+    el.innerHTML+='<div class="card" style="border-color:#D97706"><div class="ct" style="color:#92400E">Service Label Review — Clinician Providers with Ancillary-Coded Sessions</div>'+
+      '<div style="overflow-x:auto"><table><thead><tr><th>Provider</th><th class="r">Clinician Hrs</th><th class="r">Ancillary Hrs</th><th>Ancillary Service Labels</th></tr></thead><tbody>'+
       mixPs.sort(function(a,b){return b[1].anc-a[1].anc;}).map(function(kv){var r=kv[1];
         var tags=Object.entries(r.ancSvcs).sort(function(a,b){return b[1]-a[1];})
-          .map(function(s){return '<span class="badge bam">'+s[0]+' ×'+s[1]+'</span>';}).join(' ');
-        return '<tr><td><b>'+kv[0]+'</b></td><td class="r">'+r.clin+'</td><td class="r" style="color:#92400E;font-weight:600">'+r.anc+'</td><td>'+tags+'</td></tr>';}).join('')+
+          .map(function(s){return '<span class="badge bam" style="margin:2px">'+s[0]+' ×'+Math.round(s[1])+'</span>';}).join('');
+        return '<tr><td><b>'+kv[0]+'</b></td><td class="r">'+Math.round(r.clin*10)/10+'</td><td class="r" style="color:#92400E;font-weight:600">'+Math.round(r.anc*10)/10+'</td><td>'+tags+'</td></tr>';}).join('')+
       '</tbody></table></div></div>';
-    el.innerHTML+=w;
   }
 
   setTimeout(function(){
-    if(clinPs.length)_ch.push(new Chart(document.getElementById('ch-pv-clin'),{type:'bar',
-      data:{labels:clinPs.map(function(p){return p[0];}),
-        datasets:[{data:clinPs.map(function(p){return p[1].clin;}),backgroundColor:'#1B2A4A',borderRadius:3}]},
+    if(clinPs.length)_ch.push(new Chart(document.getElementById('ch-clin'),{type:'bar',
+      data:{labels:clinPs.map(function(p){return p[0];}),datasets:[{data:clinPs.map(function(p){return Math.round(p[1].clin*10)/10;}),backgroundColor:'#1B2A4A',borderRadius:3}]},
       options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},
         scales:{x:{beginAtZero:true,grid:{color:'#F0EDE8'}},y:{grid:{display:false}}}}}));
-    if(ancPs.length)_ch.push(new Chart(document.getElementById('ch-pv-anc'),{type:'bar',
-      data:{labels:ancPs.map(function(p){return p[0];}),
-        datasets:[{data:ancPs.map(function(p){return p[1].anc;}),backgroundColor:'#2D6A4F',borderRadius:3}]},
+    if(ancPs.length)_ch.push(new Chart(document.getElementById('ch-anc'),{type:'bar',
+      data:{labels:ancPs.map(function(p){return p[0];}),datasets:[{data:ancPs.map(function(p){return Math.round(p[1].anc*10)/10;}),backgroundColor:'#2D6A4F',borderRadius:3}]},
       options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},
         scales:{x:{beginAtZero:true,grid:{color:'#F0EDE8'}},y:{grid:{display:false}}}}}));
   },60);
 }
 
-/* ═══ CLIENT DAILY AUDIT — WEEK CAROUSEL ══════ */
-var _auditWkIdx=0;
-function renderClientAudit(el,evs){
-  var byCD={};var cnames={};var allWks=new Set();
+/* ══ CLIENT DAILY AUDIT ═════════════════════════════════════ */
+function renderAudit(el,evs){
+  var byCD={},cnames={},allWks=new Set();
   evs.forEach(function(ev){
-    if(!ev.clientId||!ev.date)return;
-    var day=ev.date.slice(0,10);
-    var wk=wkSun(day);
-    var k=ev.clientId+'|'+day;
-    var h=getHrs(ev);
-    if(!byCD[k])byCD[k]={id:ev.clientId,date:day,wk:wk,total:0};
-    byCD[k].total+=h;
+    if(!ev.clientId||!ev.date) return;
+    var day=ev.date.slice(0,10),wk=wkSun(day),h=getHrs(ev),k=ev.clientId+'|'+day;
+    if(!byCD[k])byCD[k]={id:ev.clientId,date:day,wk:wk,clin:0,anc:0};
+    if(isClin(ev))byCD[k].clin+=h;else byCD[k].anc+=h;
     allWks.add(wk);
-    if(!cnames[ev.clientId]){
-      var cl=DATA.clients.find(function(c){return c.id===ev.clientId;});
-      cnames[ev.clientId]=cl?cl.name||ev.clientId:ev.clientId;
-    }
+    if(!cnames[ev.clientId]){var cl=DATA.clients.find(function(c){return c.id===ev.clientId;});cnames[ev.clientId]=cl?cl.name||ev.clientId:ev.clientId;}
   });
+  Object.values(byCD).forEach(function(r){r.total=Math.round((r.clin+r.anc)*10)/10;r.clin=Math.round(r.clin*10)/10;r.anc=Math.round(r.anc*10)/10;});
+
   var weeks=[...allWks].sort();
-  if(!weeks.length){
-    el.innerHTML='<div class="card" style="color:#888;text-align:center;padding:40px">No session data.</div>';
-    return;
-  }
-  // Start at most recent week on first load
+  if(!weeks.length){el.innerHTML='<div class="card" style="text-align:center;padding:40px;color:#888">No session data.</div>';return;}
   if(_auditWkIdx===0)_auditWkIdx=weeks.length-1;
   if(_auditWkIdx>=weeks.length)_auditWkIdx=weeks.length-1;
   if(_auditWkIdx<0)_auditWkIdx=0;
 
-  // Overall KPIs
   var allRows=Object.values(byCD);
-  var totDays=allRows.length;
-  var totMet=allRows.filter(function(r){return r.total>=TARGET;}).length;
-  var totPct=totDays?Math.round(totMet/totDays*100):0;
+  var isWeekday=[false,true,true,true,true,true,false];
+
+  // Overall KPIs
+  var totDays=allRows.length,metAll=0;
+  allRows.forEach(function(r){if(r.total>=TARGET)metAll++;});
+  var pct=totDays?Math.round(metAll/totDays*100):0;
   el.innerHTML='<div class="krow k4">'+
-    kpi(totDays,'Total Client-Days','All weeks in range')+
-    kpi(totMet,'Met Target (≥'+TARGET+' hrs)','','ck')+
-    kpi(totDays-totMet,'Under Target','','cw')+
-    kpi(totPct+'%','Overall Compliance','',totPct>=80?'ck':'cw')+
+    kpi(totDays,'Client-Days','All weeks in range')+kpi(metAll,'Met Target (≥'+TARGET+' hrs)','','ck')+
+    kpi(totDays-metAll,'Under Target','','cw')+kpi(pct+'%','Overall Compliance','',pct>=80?'ck':'cw')+
   '</div>';
 
+  // Week carousel
   var wkStart=weeks[_auditWkIdx];
-  var days=[],dayLabels=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  for(var d=0;d<7;d++){
-    var dt=new Date(wkStart+'T12:00:00');dt.setDate(dt.getDate()+d);
-    days.push(dt.toISOString().slice(0,10));
-  }
+  var days=[];
+  for(var d=0;d<7;d++){var dt=new Date(wkStart+'T12:00:00');dt.setDate(dt.getDate()+d);days.push(dt.toISOString().slice(0,10));}
   var wkEnd=days[6];
-
-  // Clients this week
   var wkEntries=Object.values(byCD).filter(function(r){return r.wk===wkStart;});
-  var lookup={};
-  wkEntries.forEach(function(r){lookup[r.id+'|'+r.date]=r.total;});
-  var clientIds=[...new Set(wkEntries.map(function(r){return r.id;}))];
-  clientIds.sort(function(a,b){return (cnames[a]||'').localeCompare(cnames[b]||'');});
+  var lookup={};wkEntries.forEach(function(r){lookup[r.id+'|'+r.date]={clin:r.clin,anc:r.anc,total:r.total};});
+  var clientIds=[...new Set(wkEntries.map(function(r){return r.id;}))].sort(function(a,b){return(cnames[a]||'').localeCompare(cnames[b]||'');});
 
-  var wkMet=wkEntries.filter(function(r){return r.total>=TARGET;}).length;
-  var wkPct=wkEntries.length?Math.round(wkMet/wkEntries.length*100):0;
+  var wkPct=0;if(clientIds.length){
+    var wkMet=clientIds.filter(function(cid){
+      var wdHrs=0,wdDays=0,weHrs=0;
+      days.forEach(function(day,di){var h=(lookup[cid+'|'+day]||{total:0}).total||0;if(isWeekday[di]){wdHrs+=h;if(h>0)wdDays++;}else weHrs+=h;});
+      return(wdHrs+weHrs)>=(wdDays*TARGET)&&wdDays>0;
+    }).length;
+    wkPct=Math.round(wkMet/clientIds.length*100);
+  }
 
-  var wkLbl=moLbl(wkStart.slice(0,7))+' '+parseInt(wkStart.slice(8),10)+
-    ' – '+moLbl(wkEnd.slice(0,7))+' '+parseInt(wkEnd.slice(8),10)+', '+wkEnd.slice(0,4);
-
+  var wkLbl=moLbl(wkStart.slice(0,7))+' '+parseInt(wkStart.slice(8),10)+' – '+moLbl(wkEnd.slice(0,7))+' '+parseInt(wkEnd.slice(8),10)+', '+wkEnd.slice(0,4);
   var card=document.createElement('div');card.className='card';
   var prevDis=_auditWkIdx===0?'opacity:.3;pointer-events:none;':'cursor:pointer;';
   var nextDis=_auditWkIdx===weeks.length-1?'opacity:.3;pointer-events:none;':'cursor:pointer;';
-  card.innerHTML=
-    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'+
-    '<button onclick="_auditWkIdx--;render()" style="padding:6px 18px;border:1.5px solid #E5E2DE;border-radius:6px;background:#fff;font-size:14px;font-weight:700;'+prevDis+'">←</button>'+
-    '<div style="text-align:center">'+
-      '<div style="font-size:14px;font-weight:700;color:#1B2A4A">'+wkLbl+'</div>'+
-      '<div style="font-size:11px;color:#888;margin-top:3px">Week '+(_auditWkIdx+1)+' of '+weeks.length+' &nbsp;·&nbsp; '+wkMet+'/'+wkEntries.length+' client-days met target &nbsp;·&nbsp; '+wkPct+'% compliance</div>'+
-    '</div>'+
-    '<button onclick="_auditWkIdx++;render()" style="padding:6px 18px;border:1.5px solid #E5E2DE;border-radius:6px;background:#fff;font-size:14px;font-weight:700;'+nextDis+'">→</button>'+
-    '</div>';
 
-  if(!clientIds.length){
-    card.innerHTML+='<div style="text-align:center;color:#888;padding:20px">No sessions this week.</div>';
-    el.appendChild(card);return;
-  }
-
-  var tbl='<div style="overflow-x:auto"><table><thead><tr>'+
-    '<th style="min-width:150px">Client</th>'+
+  var dayLabels=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var tbl='<table><thead><tr><th style="min-width:140px">Client</th>'+
     days.map(function(day,di){
-      var dt=new Date(day+'T12:00:00');
-      return '<th class="r" style="min-width:72px">'+dayLabels[di]+'<br><span style="font-size:9px;font-weight:400">'+(dt.getMonth()+1)+'/'+dt.getDate()+'</span></th>';
+      var bg=isWeekday[di]?'#1B2A4A':'#4A6A84';
+      var dt2=new Date(day+'T12:00:00');
+      return '<th class="r" style="min-width:80px;background:'+bg+'">'+dayLabels[di]+'<br><span style="font-size:8px;font-weight:400">'+(dt2.getMonth()+1)+'/'+dt2.getDate()+'</span>'+(isWeekday[di]?'':' <span style="font-size:8px;opacity:.7">WE</span>')+'</th>';
     }).join('')+
-    '<th class="r">Week Total</th><th>Status</th></tr></thead><tbody>';
+    '<th class="r">Total</th><th>Status</th></tr>'+
+    '<tr style="background:#F5F0E8"><td style="font-size:9px;color:#888;padding:3px 10px">Client</td>'+
+    days.map(function(){return '<td class="r" style="font-size:9px;color:#888;padding:3px 6px">Clin / Anc / Tot</td>';}).join('')+
+    '<td></td><td></td></tr></thead><tbody>';
 
   clientIds.forEach(function(cid){
-    var name=cnames[cid]||cid;
-    var wkTotal=0;var under=0;var hasSess=false;
-    var cells=days.map(function(day){
-      var h=Math.round((lookup[cid+'|'+day]||0)*10)/10;
-      wkTotal+=h;
-      if(h>0)hasSess=true;
-      if(h>0&&h<TARGET)under++;
-      var bg=h===0?'':(h>=TARGET?'#E8F5E9':h>TARGET?'#EFF6FF':'#FFFBEB');
-      var col=h===0?'#CCC':(h>=TARGET?'#2D6A4F':h>TARGET?'#1A56DB':'#D97706');
-      return '<td class="r" style="background:'+bg+'">'+
-        (h===0?'<span style="color:#CCC">—</span>':'<b style="color:'+col+'">'+h+'h</b>')+'</td>';
+    var name=cnames[cid]||cid,wkClin=0,wkAnc=0,wkTotal=0,wdHrs=0,wdDays=0;
+    var cells=days.map(function(day,di){
+      var rec=lookup[cid+'|'+day]||{clin:0,anc:0,total:0};
+      var c=rec.clin||0,a=rec.anc||0,t=Math.round((c+a)*10)/10;
+      wkClin+=c;wkAnc+=a;wkTotal+=t;
+      if(isWeekday[di]&&t>0){wdHrs+=t;wdDays++;}
+      var bg=t===0?'':t>=TARGET?'#E8F5E9':t>TARGET?'#EFF6FF':'#FFFBEB';
+      var tcol=t===0?'#CCC':t>=TARGET?'#2D6A4F':t>TARGET?'#1A56DB':'#D97706';
+      var inner=t===0?'<span style="color:#CCC">—</span>':
+        '<span style="font-size:9px;color:#555">'+Math.round(c*10)/10+'</span><span style="font-size:9px;color:#aaa"> / </span><span style="font-size:9px;color:#888">'+Math.round(a*10)/10+'</span><br><b style="color:'+tcol+'">'+t+'h</b>';
+      return '<td class="r" style="background:'+bg+';vertical-align:middle;padding:4px 6px'+(isWeekday[di]?'':';border-left:2px dashed #E5E2DE')+'">'+inner+'</td>';
     });
-    var status=!hasSess?'<span style="color:#ccc;font-size:11px">No sessions</span>':
-      under===0?'<span class="badge bk">✓ All met</span>':
-      '<span class="badge bam">'+under+' day'+(under>1?'s':'')+' under</span>';
-    tbl+='<tr><td><b>'+name+'</b></td>'+cells.join('')+
-      '<td class="r"><b>'+Math.round(wkTotal*10)/10+'h</b></td>'+
-      '<td>'+status+'</td></tr>';
+    var needed=wdDays*TARGET,hasWE=days.some(function(day,di){return !isWeekday[di]&&(lookup[cid+'|'+day]||{total:0}).total>0;});
+    var status=!wdDays?'<span style="color:#ccc;font-size:11px">No sessions</span>':
+      wkTotal>=needed?'<span class="badge bk">✓ Met</span>'+(hasWE?' <span style="font-size:9px;color:#888">+WE</span>':''):
+      '<span class="badge bam">⬇ '+Math.round((needed-wkTotal)*10)/10+'h short</span>';
+    wkClin=Math.round(wkClin*10)/10;wkAnc=Math.round(wkAnc*10)/10;wkTotal=Math.round(wkTotal*10)/10;
+    tbl+='<tr><td><b>'+name+'</b><div style="font-size:9px;color:#888;margin-top:1px"><span style="color:#1B2A4A">'+wkClin+'h clin</span> · <span style="color:#2D6A4F">'+wkAnc+'h anc</span></div></td>'+
+      cells.join('')+'<td class="r"><b>'+wkTotal+'h</b></td><td>'+status+'</td></tr>';
   });
 
-  // Daily totals row
   tbl+='<tr style="background:#F5F0E8"><td><b>Day Total</b></td>'+
-    days.map(function(day){
-      var t=clientIds.reduce(function(s,cid){return s+(lookup[cid+'|'+day]||0);},0);
-      return '<td class="r"><b>'+Math.round(t*10)/10+'h</b></td>';
-    }).join('')+'<td></td><td></td></tr>';
+    days.map(function(day,di){
+      var t=clientIds.reduce(function(s,cid){return s+((lookup[cid+'|'+day]||{total:0}).total||0);},0);
+      return '<td class="r" style="background:'+(isWeekday[di]?'#F5F0E8':'#EDE8DF')+'"><b>'+Math.round(t*10)/10+'h</b></td>';
+    }).join('')+'<td></td><td></td></tr></tbody></table>';
 
-  tbl+='</tbody></table></div>';
-  card.innerHTML+=tbl;
+  card.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'+
+    '<button onclick="_auditWkIdx--;render()" style="padding:6px 18px;border:1.5px solid #E5E2DE;border-radius:6px;background:#fff;font-size:14px;font-weight:700;'+prevDis+'">←</button>'+
+    '<div style="text-align:center"><div style="font-size:14px;font-weight:700;color:#1B2A4A">'+wkLbl+'</div>'+
+    '<div style="font-size:11px;color:#888;margin-top:3px">Week '+(_auditWkIdx+1)+' of '+weeks.length+' &nbsp;·&nbsp; Target: 5 hrs/day Mon–Fri · Weekend counts toward weekly total &nbsp;·&nbsp; '+wkPct+'% compliance</div></div>'+
+    '<button onclick="_auditWkIdx++;render()" style="padding:6px 18px;border:1.5px solid #E5E2DE;border-radius:6px;background:#fff;font-size:14px;font-weight:700;'+nextDis+'">→</button></div>'+
+    (clientIds.length?'<div style="overflow-x:auto">'+tbl+'</div>':'<div style="text-align:center;color:#888;padding:20px">No sessions this week.</div>')+
+    '<div style="margin-top:10px;font-size:10px;color:#888;display:flex;gap:16px;flex-wrap:wrap">'+
+    '<span>Cell: <b>Clin / Anc / Total</b></span>'+
+    '<span style="color:#2D6A4F">■ Green ≥5h</span><span style="color:#1A56DB">■ Blue &gt;5h</span><span style="color:#D97706">■ Amber &lt;5h</span>'+
+    '<span>WE = Weekend (supplementary)</span></div>';
   el.appendChild(card);
 }
 
-/* ═══ PROVIDER ROSTER (all providers with any session) ══ */
+/* ══ PROVIDER ROSTER ════════════════════════════════════════ */
 function renderRoster(el,evs){
   var byP={};
   evs.forEach(function(ev){
-    var p=ev.provider;
+    var p=ev.provider,h=getHrs(ev);
     if(!byP[p])byP[p]={clin:0,anc:0,mos:new Set(),clients:new Set(),svcs:new Set()};
-    var _ph=getHrs(ev);if(isClin(ev))byP[p].clin+=_ph;else byP[p].anc++;
+    if(isClin(ev))byP[p].clin+=h;else byP[p].anc+=h;
     byP[p].mos.add(moKey(ev.date));
     if(ev.clientId)byP[p].clients.add(ev.clientId);
     if(ev.service)byP[p].svcs.add(ev.service);
   });
-
-  var rows=Object.entries(byP).sort(function(a,b){return (b[1].clin+b[1].anc)-(a[1].clin+a[1].anc);});
+  var rows=Object.entries(byP).sort(function(a,b){return(b[1].clin+b[1].anc)-(a[1].clin+a[1].anc);});
+  var unk=rows.filter(function(r){return emp(r[0])==='Unknown';}).length;
 
   var note=document.createElement('div');
   note.style.cssText='background:#FEF3C7;border-left:3px solid #D97706;padding:10px 14px;border-radius:0 6px 6px 0;font-size:11px;color:#92400E;margin-bottom:14px;line-height:1.6';
-  note.innerHTML='<b>Master Provider Roster</b> — all providers who have at least one completed session in the calendar. Use this to confirm employment classification (W2 vs Contractor) and service category. Providers marked <b>Unknown</b> are not yet classified.';
+  note.innerHTML='<b>Master Provider Roster</b> — all providers with completed sessions. Providers marked <b>Unknown</b> need classification.';
   el.appendChild(note);
 
-  var kpiRow=document.createElement('div');kpiRow.className='krow k3';
-  var unk=rows.filter(function(r){return emp(r[0])==='Unknown';}).length;
-  kpiRow.innerHTML=
-    kpi(rows.length,'Total Providers','All with ≥1 completed session')+
+  el.innerHTML+='<div class="krow k3">'+
+    kpi(rows.length,'Total Providers','With ≥1 completed session')+
     kpi(rows.filter(function(r){return emp(r[0])!=='Unknown';}).length,'Classified','W2 or Contractor confirmed')+
-    kpi(unk,'Unclassified',unk?'Need confirmation':'All confirmed',unk?'cw':'ck');
-  el.appendChild(kpiRow);
+    kpi(unk,'Unclassified',unk?'Need confirmation':'All confirmed',unk?'cw':'ck')+
+  '</div>';
 
   var tbl=document.createElement('div');tbl.className='card';
-  tbl.innerHTML='<div class="ct">All Providers — Classification Roster</div>'+
-    '<div style="overflow-x:auto"><table><thead><tr>'+
-    '<th>Provider (as shown in calendar)</th>'+
-    '<th>Employment</th><th>Service Category</th>'+
-    '<th class="r">Clinician Sess</th><th class="r">Ancillary Sess</th><th class="r">Total</th>'+
-    '<th class="r">Months</th><th class="r">Clients</th><th>Service Types</th></tr></thead><tbody>'+
+  tbl.innerHTML='<div class="ct">All Providers</div><div style="overflow-x:auto"><table><thead><tr>'+
+    '<th>Provider</th><th>Employment</th><th>Category</th><th class="r">Clin Hrs</th><th class="r">Anc Hrs</th>'+
+    '<th class="r">Total Hrs</th><th class="r">Months</th><th class="r">Clients</th><th>Services</th></tr></thead><tbody>'+
     rows.map(function(kv){
       var r=kv[1],p=kv[0],e=emp(p);
       var cat=r.clin>0&&r.anc===0?'<span class="badge bc">Clinician</span>':
-              r.clin===0?'<span class="badge ba">Ancillary</span>':
-              '<span class="badge bc">Clinician</span><span class="badge ba" style="margin-left:3px">+ Ancillary</span>';
+               r.clin===0?'<span class="badge ba">Ancillary</span>':
+               '<span class="badge bc">Clin</span> <span class="badge ba">+Anc</span>';
       var ebadge=e==='W2'?'<span class="badge bw2">W2</span>':
-                 e==='Contractor'?'<span class="badge bctr">Contractor</span>':
+                 e==='Contractor'?'<span class="badge bctr">1099</span>':
                  '<span class="badge" style="background:#FFE4E1;color:#9B1C1C">Unknown</span>';
       var svcs=[...r.svcs].slice(0,3).join(', ')+(r.svcs.size>3?' +'+( r.svcs.size-3)+' more':'');
       return '<tr><td><b>'+p+'</b></td><td>'+ebadge+'</td><td>'+cat+'</td>'+
-        '<td class="r">'+(r.clin||'<span class="z">—</span>')+'</td>'+
-        '<td class="r">'+(r.anc||'<span class="z">—</span>')+'</td>'+
-        '<td class="r"><b>'+(r.clin+r.anc)+'</b></td>'+
+        '<td class="r">'+(r.clin?Math.round(r.clin*10)/10:'<span class="z">—</span>')+'</td>'+
+        '<td class="r">'+(r.anc?Math.round(r.anc*10)/10:'<span class="z">—</span>')+'</td>'+
+        '<td class="r"><b>'+Math.round((r.clin+r.anc)*10)/10+'</b></td>'+
         '<td class="r">'+r.mos.size+'</td><td class="r">'+r.clients.size+'</td>'+
         '<td style="font-size:10px;color:#888">'+svcs+'</td></tr>';}).join('')+
     '</tbody></table></div>';
   el.appendChild(tbl);
 }
 
-/* Export */
+/* ── Export ─────────────────────────────────────────────────── */
 function exportCSV(){
   var evs=getEvs();
-  var rows=[['Date','Provider','Employment','Client ID','Service','Category','Status']];
-  evs.forEach(function(ev){rows.push([ev.date,ev.provider||'',emp(ev.provider),ev.clientId||'',ev.service||'',isClin(ev)?'Clinician':'Ancillary',ev.status||'']);});
+  var rows=[['Date','Provider','Employment','Client ID','Service','Category','Hours','Status']];
+  evs.forEach(function(ev){rows.push([ev.date,ev.provider||'',emp(ev.provider),ev.clientId||'',ev.service||'',isClin(ev)?'Clinician':'Ancillary',getHrs(ev),ev.status||'']);});
   var csv=rows.map(function(r){return r.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
   var a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
   a.download='ClinicalHours_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
 }
-
 </script>
 </body>
-</html>function drawWeekGrid(el,byCD,cnames,weeks,wkStart){
-  var days=[],dayLabels=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  var isWeekday=[false,true,true,true,true,true,false]; // Mon-Fri = true
-  for(var d=0;d<7;d++){
-    var dt=new Date(wkStart+'T12:00:00');dt.setDate(dt.getDate()+d);
-    days.push(dt.toISOString().slice(0,10));
-  }
-  var wkEnd=days[6];
-  var idx=weeks.indexOf(wkStart);
-
-  // Collect clients and build lookup
-  var wkEntries=Object.values(byCD).filter(function(r){return r.wk===wkStart;});
-  var lookup={};
-  wkEntries.forEach(function(r){
-    var k=r.id+'|'+r.date;
-    lookup[k]={clin:r.clin,anc:r.anc,total:r.total};
-  });
-  var clientIds=[...new Set(wkEntries.map(function(r){return r.id;}))];
-  clientIds.sort(function(a,b){return (cnames[a]||'').localeCompare(cnames[b]||'');});
-
-  // Compliance: M-F target = 5hrs/day. Weekend can make up missed hours.
-  var wkMet=0,wkUnder=0,wkOver=0;
-  clientIds.forEach(function(cid){
-    var wdHrs=0,weHrs=0,wdDays=0;
-    days.forEach(function(day,di){
-      var h=(lookup[cid+'|'+day]||{total:0}).total||0;
-      if(isWeekday[di]){wdHrs+=h;if(h>0)wdDays++;}
-      else weHrs+=h;
-    });
-    var needed=wdDays*TARGET; // 5 hrs per working day client had sessions
-    var total=wdHrs+weHrs;
-    if(total>=needed&&needed>0)wkMet++;
-    else if(total>needed&&needed>0)wkOver++;
-    else wkUnder++;
-  });
-  var wkPct=clientIds.length?Math.round((wkMet+wkOver)/clientIds.length*100):0;
-
-  var wkLbl=moLbl(wkStart.slice(0,7))+' '+parseInt(wkStart.slice(8),10)+
-    ' – '+moLbl(wkEnd.slice(0,7))+' '+parseInt(wkEnd.slice(8),10)+', '+wkEnd.slice(0,4);
-
-  var card=document.createElement('div');card.className='card';
-  var prevDis=idx===0?'opacity:.3;pointer-events:none;':'cursor:pointer;';
-  var nextDis=idx===weeks.length-1?'opacity:.3;pointer-events:none;':'cursor:pointer;';
-  card.innerHTML=
-    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'+
-    '<button onclick="_auditWkIdx--;render()" style="padding:6px 18px;border:1.5px solid #E5E2DE;border-radius:6px;background:#fff;font-size:14px;font-weight:700;'+prevDis+'">←</button>'+
-    '<div style="text-align:center">'+
-      '<div style="font-size:14px;font-weight:700;color:#1B2A4A">'+wkLbl+'</div>'+
-      '<div style="font-size:11px;color:#888;margin-top:3px">Week '+(idx+1)+' of '+weeks.length+
-      ' &nbsp;·&nbsp; Target: 5 hrs/day Mon–Fri · Weekend hours count toward weekly total'+
-      ' &nbsp;·&nbsp; '+wkPct+'% compliance</div>'+
-    '</div>'+
-    '<button onclick="_auditWkIdx++;render()" style="padding:6px 18px;border:1.5px solid #E5E2DE;border-radius:6px;background:#fff;font-size:14px;font-weight:700;'+nextDis+'">→</button>'+
-    '</div>';
-
-  if(!clientIds.length){
-    card.innerHTML+='<div style="text-align:center;color:#888;padding:20px">No sessions this week.</div>';
-    el.appendChild(card);return;
-  }
-
-  // Table: Client | Sun | Mon | Tue | Wed | Thu | Fri | Sat | Wk Total | Status
-  // Each day cell shows: Clin / Anc / Total
-  var tbl='<div style="overflow-x:auto"><table><thead><tr>'+
-    '<th style="min-width:140px">Client</th>'+
-    days.map(function(day,di){
-      var dt=new Date(day+'T12:00:00');
-      var isWd=isWeekday[di];
-      var bg=isWd?'#1B2A4A':'#4A6A84';
-      return '<th class="r" style="min-width:80px;background:'+bg+'">'+
-        dayLabels[di]+'<br>'+
-        '<span style="font-size:8px;font-weight:400">'+(dt.getMonth()+1)+'/'+dt.getDate()+'</span>'+
-        (isWd?'':' <span style="font-size:8px;opacity:.7">WE</span>')+
-        '</th>';
-    }).join('')+
-    '<th class="r" style="min-width:70px">Total</th>'+
-    '<th style="min-width:90px">Status</th>'+
-    '</tr>'+
-    // Sub-header row
-    '<tr style="background:#F5F0E8">'+
-    '<td style="font-size:9px;color:#888;padding:3px 10px">Client</td>'+
-    days.map(function(day,di){
-      return '<td class="r" style="font-size:9px;color:#888;padding:3px 8px">Clin / Anc / Tot</td>';
-    }).join('')+
-    '<td style="font-size:9px;color:#888;padding:3px 10px;text-align:right">Hrs</td>'+
-    '<td></td>'+
-    '</tr>'+
-    '</thead><tbody>';
-
-  clientIds.forEach(function(cid){
-    var name=cnames[cid]||cid;
-    var wkClin=0,wkAnc=0,wkTotal=0,wdHrs=0,wdDays=0;
-    var cells=days.map(function(day,di){
-      var rec=lookup[cid+'|'+day]||{clin:0,anc:0,total:0};
-      var c=Math.round((rec.clin||0)*10)/10;
-      var a=Math.round((rec.anc||0)*10)/10;
-      var t=Math.round((c+a)*10)/10;
-      wkClin+=c;wkAnc+=a;wkTotal+=t;
-      if(isWeekday[di]&&t>0){wdHrs+=t;wdDays++;}
-      var bg=t===0?'':t>=TARGET?'#E8F5E9':t>TARGET?'#EFF6FF':'#FFFBEB';
-      var tcol=t===0?'#CCC':t>=TARGET?'#2D6A4F':t>TARGET?'#1A56DB':'#D97706';
-      var inner=t===0?'<span style="color:#CCC">—</span>':
-        '<span style="font-size:9px;color:#555">'+c+'</span>'+
-        '<span style="font-size:9px;color:#888"> / </span>'+
-        '<span style="font-size:9px;color:#888">'+a+'</span>'+
-        '<br><b style="color:'+tcol+'">'+t+'h</b>';
-      var wdBorder=isWeekday[di]?'':'border-left:2px dashed #E5E2DE;';
-      return '<td class="r" style="background:'+bg+';'+wdBorder+'padding:4px 6px;vertical-align:middle">'+inner+'</td>';
-    });
-
-    // Status: weekday compliance + weekend supplement
-    var needed=wdDays*TARGET;
-    var hasWeekend=days.some(function(day,di){return !isWeekday[di]&&(lookup[cid+'|'+day]||{total:0}).total>0;});
-    var status;
-    if(!wdDays){status='<span style="color:#ccc;font-size:11px">No sessions</span>';}
-    else if(wkTotal>=needed){status='<span class="badge bk">✓ Target met</span>'+(hasWeekend?' <span style="font-size:9px;color:#888">incl. WE</span>':'');}
-    else{
-      var deficit=Math.round((needed-wkTotal)*10)/10;
-      status='<span class="badge bam">⬇ '+deficit+'h short</span>';
-    }
-
-    wkClin=Math.round(wkClin*10)/10;
-    wkAnc=Math.round(wkAnc*10)/10;
-    wkTotal=Math.round(wkTotal*10)/10;
-
-    tbl+='<tr><td><b>'+name+'</b>'+
-      '<div style="font-size:9px;color:#888;margin-top:1px">'+
-      '<span style="color:#1B2A4A">'+wkClin+'h clin</span> · '+
-      '<span style="color:#2D6A4F">'+wkAnc+'h anc</span></div></td>'+
-      cells.join('')+
-      '<td class="r"><b>'+wkTotal+'h</b></td>'+
-      '<td>'+status+'</td></tr>';
-  });
-
-  // Day totals row
-  tbl+='<tr style="background:#F5F0E8"><td><b>Day Total</b></td>'+
-    days.map(function(day,di){
-      var t=clientIds.reduce(function(s,cid){return s+((lookup[cid+'|'+day]||{total:0}).total||0);},0);
-      var bg=isWeekday[di]?'#F5F0E8':'#EDE8DF';
-      return '<td class="r" style="background:'+bg+'"><b>'+Math.round(t*10)/10+'h</b></td>';
-    }).join('')+'<td></td><td></td></tr>';
-
-  tbl+='</tbody></table></div>';
-  card.innerHTML+=tbl;
-
-  // Legend
-  card.innerHTML+='<div style="margin-top:10px;font-size:10px;color:#888;display:flex;gap:16px;flex-wrap:wrap">'+
-    '<span>Each cell: <b>Clin / Anc / Total</b></span>'+
-    '<span style="color:#2D6A4F">■ Green = met 5h target</span>'+
-    '<span style="color:#1A56DB">■ Blue = exceeded</span>'+
-    '<span style="color:#D97706">■ Amber = under target</span>'+
-    '<span style="color:#888">WE = Weekend (supplementary)</span>'+
-    '</div>';
-
-  el.appendChild(card);
-}
-
-
+</html>
