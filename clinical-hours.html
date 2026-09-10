@@ -70,7 +70,7 @@ tr:hover td{background:#FAFAF8}.totrow td{background:#F5F0E8;font-weight:700}
       <h1>Clinical Hours — Premier Signature Program</h1>
       <div class="sub"><span class="dot" id="ldot"></span><span id="llbl">Connecting…</span> · Completed direct service sessions</div>
     </div>
-    <span style="font-size:9px;color:#4A6A84;margin-right:10px">v Sep 10 23:22 UTC</span><a href="/index.html" style="color:#A0B0C8;font-size:11px;text-decoration:none">← Calendar</a>
+    <span style="font-size:9px;color:#4A6A84;margin-right:10px">v Sep 10 23:24 UTC</span><a href="/index.html" style="color:#A0B0C8;font-size:11px;text-decoration:none">← Calendar</a>
   </div>
   <div class="tabs">
     <div class="tab on" data-t="monthly">Monthly Summary</div>
@@ -615,7 +615,7 @@ function renderRoster(el,evs){
     '<th>Provider</th><th>Employment</th><th>Category</th><th class="r">Clin Hrs</th><th class="r">Anc Hrs</th>'+
     '<th class="r">Total Hrs</th><th class="r">Months</th><th class="r">Clients</th><th>Services</th><th>Edit</th></tr></thead><tbody>'+
     rows.map(function(kv){
-      var r=kv[1],p=kv[0],e=emp(p);
+      var r=kv[1],p=kv[0];
       var e=empFull(p);
       var cat=r.clin>0&&r.anc===0?'<span class="badge bc">Clinician</span>':
                r.clin===0?'<span class="badge ba">Ancillary</span>':
