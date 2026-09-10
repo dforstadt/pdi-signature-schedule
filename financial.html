@@ -232,7 +232,7 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
         <button class="reset-btn" onclick="resetPDI()" title="Restore original values">↺ Reset</button>
       </div>
       <div class="assumptions">
-        <div class="inp-group"><label>Episode Fee (Revenue)</label><input type="number" id="pdi-a-rev" value="70000" step="1000" oninput="calcPDI()"></div>
+        <div class="inp-group"><label>Episode Fee (Revenue)</label><input type="number" id="pdi-a-rev" value="80000" step="1000" oninput="calcPDI()"></div>
         <div class="inp-group"><label>Avg Episode Length (days)</label><input type="number" id="pdi-a-days" value="12" step="1" min="1" oninput="calcPDI()"></div>
         <div class="inp-group"><label>Active PDI Episodes</label><input type="number" id="pdi-a-eps" value="1" step="1" min="0" oninput="calcPDI()"></div>
         <div class="inp-group"><label>Profit Goal (%)</label><input type="number" id="pdi-a-goal" value="44" step="1" min="0" max="100" oninput="calcPDI()"></div>
@@ -1255,7 +1255,7 @@ firebase.database().ref('schedule_v3').on('value',function(snap){
       var disch = c.pdiDischarge||c.pdiDisch||'';
       var days  = losD(c.pdiAdmit, disch||today);
       var isAct = !disch||disch>=today;
-      var rev   = 70000;
+      var rev   = 80000;
       var varC  = Math.round(days/7*2550);
       var fixC  = 22788; // Updated: stipends $550, no wellness
       var tot   = varC+fixC;
@@ -1287,7 +1287,7 @@ firebase.database().ref('schedule_v3').on('value',function(snap){
       var pDays = losD(c.pdiAdmit, pd||today);
       var sDays = losD(c.sigAdmit,  sd||today);
       var isAct = (!pd||pd>=today)||(!sd||sd>=today);
-      var pdiRev = 70000;
+      var pdiRev = 80000;
       var sigRev = Math.round(sDays/7*24500);
       var totRev = pdiRev+sigRev;
       var pdiV   = Math.round(pDays*375+Math.floor(pDays/7)*600);
@@ -1343,7 +1343,7 @@ var STEP_FIX=26538; // Updated fixed costs // PDI+Sig fixed costs
 // ── Reset functions ────────────────────────────────────────────────────────
 function fmt$(v){return '$'+Math.round(Math.abs(v)).toLocaleString();}
 function renderStepTable(){
-  var PDI_REV=70000, SIG_WK_REV=24500;
+  var PDI_REV=80000, SIG_WK_REV=24500;
 
   // Derive all costs purely from line items — no hard-coded constants
   var pdiTotal = lines.stepPdi.reduce(function(s,l){ return s+(l.amt||0); }, 0);
@@ -1453,7 +1453,7 @@ function renderStepTable(){
 function calcStep(){renderStepTable();}
 function resetPDI(){
   lines.pdi=clone(DATA.pdi);
-  document.getElementById('pdi-a-rev').value=70000;
+  document.getElementById('pdi-a-rev').value=80000;
   document.getElementById('pdi-a-days').value=12;
   document.getElementById('pdi-a-eps').value=document.getElementById('pdi-a-eps').value;
   document.getElementById('pdi-a-goal').value=44;
@@ -1462,7 +1462,7 @@ function resetPDI(){
 function resetStep(){
   lines.stepPdi=clone(DATA.stepPdi);
   lines.stepSig=clone(DATA.stepSig);
-  document.getElementById('step-a-pdi').value=70000;
+  document.getElementById('step-a-pdi').value=80000;
   document.getElementById('step-a-pdi-days').value=12;
   document.getElementById('step-a-sig-wk').value=24500;
   document.getElementById('step-a-sig-wks').value=4;
