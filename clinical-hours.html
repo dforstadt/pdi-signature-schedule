@@ -6,7 +6,6 @@
 <title>Clinical Hours — Premier Signature Program</title>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="https://unpkg.com/chart.js@4.4.0/dist/chart.umd.min.js" onerror="window._chartFailed=true"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Arial,sans-serif;background:#F5F0E8;color:#1E1E1E;min-height:100vh}
@@ -201,8 +200,66 @@ function wkSun(d){var dt=new Date((d||'').slice(0,10)+'T12:00:00');if(isNaN(dt))
 function moLbl(k){return['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+k.slice(5,7)-1]+' '+k.slice(0,4);}
 function kpi(n,l,s,cls){return '<div class="kpi'+(cls?' '+cls:'')+'"><div class="n">'+n+'</div><div class="l">'+l+'</div>'+(s?'<div class="s">'+s+'</div>':'')+
 '</div>';}
-var _ch=[];
-function destroyCharts(){_ch.forEach(function(c){try{c.destroy();}catch(e){}});_ch=[];}
+/* ── Pure Canvas Charts (no library) ───────────────────── */
+function destroyCharts(){}
+function drawBar(canvasId,labels,datasets,opts){
+  var cv=document.getElementById(canvasId);if(!cv)return;
+  var ctx=cv.getContext('2d');
+  var W=cv.offsetWidth||cv.parentElement.offsetWidth||400,H=cv.offsetHeight||260;
+  cv.width=W;cv.height=H;
+  var horiz=opts&&opts.horiz,stacked=opts&&opts.stacked;
+  var pad={t:20,r:20,b:50,l:horiz?120:40};
+  var allVals=[];
+  datasets.forEach(function(ds){ds.data.forEach(function(v){allVals.push(v);});});
+  var maxV=stacked?labels.map(function(_,i){return datasets.reduce(function(s,ds){return s+(ds.data[i]||0);},0);}).reduce(function(a,b){return Math.max(a,b);},0):Math.max.apply(null,allVals)||1;
+  maxV=Math.ceil(maxV/10)*10||10;
+  var n=labels.length,gw=(horiz?H-pad.t-pad.b:W-pad.l-pad.r),gh=horiz?W-pad.l-pad.r:H-pad.t-pad.b;
+  var barSz=(horiz?gw/n:gw/n)*0.65,gap=(horiz?gw/n:gw/n)*0.35;
+  ctx.clearRect(0,0,W,H);
+  // Grid lines
+  ctx.strokeStyle='#F0EDE8';ctx.lineWidth=1;
+  for(var g=0;g<=5;g++){
+    var v=maxV*g/5;
+    if(horiz){var x=pad.l+v/maxV*gh;ctx.beginPath();ctx.moveTo(x,pad.t);ctx.lineTo(x,H-pad.b);ctx.stroke();}
+    else{var y=H-pad.b-v/maxV*gh;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();
+      ctx.fillStyle='#aaa';ctx.font='9px Arial';ctx.textAlign='right';ctx.fillText(Math.round(v),pad.l-4,y+3);}
+  }
+  // Bars
+  labels.forEach(function(lbl,i){
+    var offset=stacked?0:0;
+    datasets.forEach(function(ds,di){
+      var val=ds.data[i]||0;
+      ctx.fillStyle=ds.color||'#1B2A4A';
+      if(horiz){
+        var y=pad.t+i*(gw/n)+gap/2+(stacked?0:di*barSz/datasets.length);
+        var bh=stacked?barSz:barSz/datasets.length;
+        var x=pad.l+(stacked?offset/maxV*gh:0);
+        var bw=val/maxV*gh;
+        ctx.fillRect(x,y,bw,bh-2);
+        if(val>0){ctx.fillStyle='#fff';ctx.font='bold 9px Arial';ctx.textAlign='left';ctx.fillText(Math.round(val*10)/10,x+bw+3,y+bh/2+3);}
+        if(stacked)offset+=val;
+      } else {
+        var x=pad.l+i*(gw/n)+gap/2+(stacked?0:di*barSz/datasets.length);
+        var bw2=stacked?barSz:barSz/datasets.length;
+        var bh2=val/maxV*gh;
+        var y2=H-pad.b-(stacked?offset+val:val)/maxV*gh+(stacked?val/maxV*gh:0);
+        ctx.fillRect(x,H-pad.b-(stacked?offset+val:val)/maxV*gh,bw2-1,val/maxV*gh);
+        if(stacked)offset+=val;
+      }
+    });
+    // Labels
+    ctx.fillStyle='#555';ctx.font='9px Arial';
+    if(horiz){ctx.textAlign='right';ctx.fillText(lbl,pad.l-4,pad.t+i*(gw/n)+barSz/2+3);}
+    else{ctx.textAlign='center';var lx=pad.l+i*(gw/n)+barSz/2+gap/2;ctx.fillText(lbl.length>8?lbl.slice(0,8)+'…':lbl,lx,H-pad.b+12);}
+  });
+  // Legend
+  var lx=pad.l,ly=H-12;
+  datasets.forEach(function(ds){
+    ctx.fillStyle=ds.color||'#1B2A4A';ctx.fillRect(lx,ly-8,10,8);
+    ctx.fillStyle='#555';ctx.font='9px Arial';ctx.textAlign='left';ctx.fillText(ds.label||'',lx+13,ly);
+    lx+=ctx.measureText(ds.label||'').width+26;
+  });
+}
 
 function render(){
   if(!_ok)return;destroyCharts();
@@ -257,19 +314,14 @@ function renderMonthly(el,evs){
   el.innerHTML+=tbl;
 
   setTimeout(function(){
-    if(typeof Chart==='undefined'){console.warn('Chart.js unavailable — charts disabled');return;}
-    try{_ch.push(new Chart(document.getElementById('ch-mo1'),{type:'bar',
-      data:{labels:months.map(moLbl),datasets:[
-        {label:'Clinician',data:months.map(function(m){return Math.round(byMo[m].clin);}),backgroundColor:'#1B2A4A',borderRadius:3},
-        {label:'Ancillary',data:months.map(function(m){return Math.round(byMo[m].anc);}),backgroundColor:'#2D6A4F',borderRadius:3}]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:12}}},
-        scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true}}}}));
-    _ch.push(new Chart(document.getElementById('ch-mo2'),{type:'bar',
-      data:{labels:months.map(moLbl),datasets:[
-        {label:'Salaried (W2)',data:months.map(function(m){return Math.round(byMo[m].w2);}),backgroundColor:'#1B2A4A',borderRadius:3},
-        {label:'Contractor',data:months.map(function(m){return Math.round(byMo[m].ctr);}),backgroundColor:'#C4924A',borderRadius:3}]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:12}}},
-        scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true}}}}));}catch(e){console.warn('Chart error:',e);}
+    drawBar('ch-mo1',months.map(moLbl),[
+      {label:'Clinician',data:months.map(function(m){return Math.round(byMo[m].clin);}),color:'#1B2A4A'},
+      {label:'Ancillary',data:months.map(function(m){return Math.round(byMo[m].anc);}),color:'#2D6A4F'}
+    ],{stacked:true});
+    drawBar('ch-mo2',months.map(moLbl),[
+      {label:'Salaried (W2)',data:months.map(function(m){return Math.round(byMo[m].w2);}),color:'#1B2A4A'},
+      {label:'Contractor',data:months.map(function(m){return Math.round(byMo[m].ctr);}),color:'#C4924A'}
+    ],{stacked:true});
   },60);
 }
 
@@ -330,16 +382,10 @@ function renderProvider(el,evs){
   }
 
   setTimeout(function(){
-    if(typeof Chart==='undefined') return;
-    try{
-    if(clinPs.length)_ch.push(new Chart(document.getElementById('ch-clin'),{type:'bar',
-      data:{labels:clinPs.map(function(p){return p[0];}),datasets:[{data:clinPs.map(function(p){return Math.round(p[1].clin*10)/10;}),backgroundColor:'#1B2A4A',borderRadius:3}]},
-      options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},
-        scales:{x:{beginAtZero:true,grid:{color:'#F0EDE8'}},y:{grid:{display:false}}}}}));
-    if(ancPs.length)_ch.push(new Chart(document.getElementById('ch-anc'),{type:'bar',
-      data:{labels:ancPs.map(function(p){return p[0];}),datasets:[{data:ancPs.map(function(p){return Math.round(p[1].anc*10)/10;}),backgroundColor:'#2D6A4F',borderRadius:3}]},
-      options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},
-        scales:{x:{beginAtZero:true,grid:{color:'#F0EDE8'}},y:{grid:{display:false}}}}}));}catch(e){console.warn('Chart error:',e);}
+    if(clinPs.length)drawBar('ch-clin',clinPs.map(function(p){return p[0];}),
+      [{label:'Hours',data:clinPs.map(function(p){return Math.round(p[1].clin*10)/10;}),color:'#1B2A4A'}],{horiz:true});
+    if(ancPs.length)drawBar('ch-anc',ancPs.map(function(p){return p[0];}),
+      [{label:'Hours',data:ancPs.map(function(p){return Math.round(p[1].anc*10)/10;}),color:'#2D6A4F'}],{horiz:true});
   },60);
 }
 
