@@ -825,12 +825,12 @@ var DATA = {
     {cat:'PBWI (Wk 2+ only)', name:'Neurofeedback (2×/week)', note:'$819/session × 2 sessions — ongoing from Week 2', amt:1638},
   ],
   sigFull: [
-    {cat:'PBWI', name:'Brain Mapping (one-time intake)', freq:'Full brain map + interpretation + integrated report · billed once', amt:3288},
-    {cat:'PBWI', name:'Neurofeedback (2×/week)', freq:'$819/session × 2 sessions/week · weekly recurring', amt:1638},
+    {cat:'PBWI (Wk 1 only)', name:'Brain Mapping (one-time intake)', freq:'Full brain map + interpretation + integrated report · billed Week 1 only', amt:3288},
+    {cat:'PBWI (Wk 2+ only)', name:'Neurofeedback (2×/week)', freq:'$819/session × 2 sessions/week · begins Week 2', amt:1638},
     {cat:'Clinical Leadership', name:'Dr. Forstadt — Ongoing Oversight', freq:'$3,000/week — unchanged', amt:3000},
-    {cat:'Clinical', name:'Individual Therapy', freq:'5×/wk × $150', amt:750},
-    {cat:'Clinical', name:'Family Therapy', freq:'5×/wk × $150', amt:750},
-    {cat:'Clinical', name:'Specialist', freq:'5×/wk × $150', amt:750},
+    {cat:'Clinical', name:'Individual Therapy', freq:'Included in program — not separately billed', amt:0},
+    {cat:'Clinical', name:'Family Therapy', freq:'Included in program — not separately billed', amt:0},
+    {cat:'Clinical', name:'Specialist', freq:'Included in program — not separately billed', amt:0},
     {cat:'Wellness', name:'Personal Training', freq:'5 days/wk · $150/session', amt:750},
     {cat:'Wellness', name:'Wellness Direct Services (2×/month)', freq:'2 sessions/month · $300/session · avg $150/week', amt:150},
     {cat:'Nutritional', name:'Nutritional Follow-Up', freq:'1×/wk · $150/session', amt:150},
@@ -841,12 +841,12 @@ var DATA = {
     {cat:'Operational', name:'Client Ancillary Needs', freq:'$75/day × 7 days', amt:525},
   ],
   sigReduced: [
-    {cat:'PBWI', name:'Brain Mapping (one-time intake)', freq:'Full brain map + interpretation + integrated report · billed once', amt:3288},
-    {cat:'PBWI', name:'Neurofeedback (2×/week)', freq:'$819/session × 2 sessions/week · weekly recurring', amt:1638},
+    {cat:'PBWI (Wk 1 only)', name:'Brain Mapping (one-time intake)', freq:'Full brain map + interpretation + integrated report · billed Week 1 only', amt:3288},
+    {cat:'PBWI (Wk 2+ only)', name:'Neurofeedback (2×/week)', freq:'$819/session × 2 sessions/week · begins Week 2', amt:1638},
     {cat:'Clinical Leadership', name:'Dr. Forstadt — Ongoing Oversight', freq:'$3,000/week — unchanged', amt:3000},
-    {cat:'Clinical', name:'Individual Therapy', freq:'5×/wk × $150', amt:750},
-    {cat:'Clinical', name:'Family Therapy', freq:'5×/wk × $150', amt:750},
-    {cat:'Clinical', name:'Specialist', freq:'5×/wk × $150', amt:750},
+    {cat:'Clinical', name:'Individual Therapy', freq:'Included in program — not separately billed', amt:0},
+    {cat:'Clinical', name:'Family Therapy', freq:'Included in program — not separately billed', amt:0},
+    {cat:'Clinical', name:'Specialist', freq:'Included in program — not separately billed', amt:0},
     {cat:'Wellness', name:'Personal Training', freq:'5 days/wk · $150/session', amt:750},
     {cat:'Wellness', name:'Wellness Direct Services (2×/month)', freq:'2 sessions/month · $300/session · avg $150/week', amt:150},
     {cat:'Nutritional', name:'Nutritional Follow-Up', freq:'1×/wk · $150/session', amt:150},
@@ -995,7 +995,16 @@ function calcStep(){
   setGauge('step-gauge',pct,goal);
 
   // Week-over-week progression table
-  var SIG_WK1=8175, SIG_WKN=12063;
+  // Step-down weekly costs (proposed model)
+  // Wk1: Flannery H&P via PDI pkg — base sig costs only
+  // Wk2+: base sig + Neurofeedback $1,638 (alternating wellness 2×/month)
+  var stepSigBase = lines.stepSig.filter(function(l){
+    return l.cat!=='PBWI (Wk 2+ only)' && l.cat!=='Medical (Wk 1 only)';
+  }).reduce(function(s,l){return s+(l.amt||0);},0);
+  var stepSigPBWI = lines.stepSig.filter(function(l){
+    return l.cat==='PBWI (Wk 2+ only)';
+  }).reduce(function(s,l){return s+(l.amt||0);},0);
+  var SIG_WK1=stepSigBase, SIG_WKN=stepSigBase+stepSigPBWI;
   var pdiVarCost=lines.stepPdi.reduce(function(s,l){return s+(l.amt||0);},0);
   var wkRows='';
   var cRev=pdiRev, cCost=STEP_FIX+pdiVarCost;
@@ -1019,8 +1028,10 @@ function calcStep(){
     var blend=(cRev-cCost)/cRev*100;
     var bColor=blend>=44?'var(--green)':blend>=40?'var(--amber)':'var(--red)';
     var wColor=wMargin>=44?'var(--green)':wMargin>=40?'var(--amber)':'var(--red)';
-    var wLabel=w===1?'Sig Week 1 <span style="font-size:9px;color:var(--tx3)">PBWI covered in combined pkg → 61.1% weekly</span>':
-      'Sig Week '+w+' <span style="font-size:9px;color:var(--tx3)">+$3,888 PBWI pkg → 42.6% weekly</span>';
+    var wColor2=wMargin>=55?'var(--green)':wMargin>=50?'var(--amber)':'var(--red)';
+    var wLabel=w===1?
+      'Sig Week 1 <span style="font-size:9px;color:var(--tx3)">Flannery H&P via PDI pkg · '+Math.round(wMargin)+'% weekly</span>':
+      'Sig Week '+w+' <span style="font-size:9px;color:var(--tx3)">Neurofeedback $1,638/wk · '+Math.round(wMargin)+'% weekly</span>';
     var bg=w===1?'rgba(46,139,122,.05)':'';
     wkRows+='<tr'+(bg?' style="background:'+bg+'"':'')+'>'+
       '<td style="padding-left:18px">'+wLabel+'</td>'+
