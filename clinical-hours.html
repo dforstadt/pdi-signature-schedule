@@ -70,7 +70,7 @@ tr:hover td{background:#FAFAF8}.totrow td{background:#F5F0E8;font-weight:700}
       <h1>Clinical Hours — Premier Signature Program</h1>
       <div class="sub"><span class="dot" id="ldot"></span><span id="llbl">Connecting…</span> · Completed direct service sessions</div>
     </div>
-    <span style="font-size:9px;color:#4A6A84;margin-right:10px">v Sep 10 23:24 UTC</span><a href="/index.html" style="color:#A0B0C8;font-size:11px;text-decoration:none">← Calendar</a>
+    <span style="font-size:9px;color:#4A6A84;margin-right:10px">v Sep 10 23:26 UTC</span><a href="/index.html" style="color:#A0B0C8;font-size:11px;text-decoration:none">← Calendar</a>
   </div>
   <div class="tabs">
     <div class="tab on" data-t="monthly">Monthly Summary</div>
@@ -597,7 +597,7 @@ function renderRoster(el,evs){
     if(ev.service)byP[p].svcs.add(ev.service);
   });
   var rows=Object.entries(byP).sort(function(a,b){return(b[1].clin+b[1].anc)-(a[1].clin+a[1].anc);});
-  var unk=rows.filter(function(r){return emp(r[0])==='Unknown';}).length;
+  var unk=rows.filter(function(r){return empFull(r[0])==='Unknown';}).length;
 
   var note=document.createElement('div');
   note.style.cssText='background:#FEF3C7;border-left:3px solid #D97706;padding:10px 14px;border-radius:0 6px 6px 0;font-size:11px;color:#92400E;margin-bottom:14px;line-height:1.6';
@@ -606,7 +606,7 @@ function renderRoster(el,evs){
 
   el.innerHTML+='<div class="krow k3">'+
     kpi(rows.length,'Total Providers','With ≥1 completed session')+
-    kpi(rows.filter(function(r){return emp(r[0])!=='Unknown';}).length,'Classified','W2 or Contractor confirmed')+
+    kpi(rows.filter(function(r){return empFull(r[0])!=='Unknown';}).length,'Classified','W2 or Contractor confirmed')+
     kpi(unk,'Unclassified',unk?'Need confirmation':'All confirmed',unk?'cw':'ck')+
   '</div>';
 
