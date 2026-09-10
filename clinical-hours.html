@@ -569,7 +569,7 @@ function renderAudit(el,evs){
 }
 
 /* ══ PROVIDER ROSTER ════════════════════════════════════════ */
-var _rosterOverrides={};
+var _rosterOverrides={},_pMap={};
 function loadRosterOverrides(cb){
   firebase.database().ref('lifeskills_clinical/roster_overrides').once('value',function(snap){
     _rosterOverrides=snap.val()||{};cb();
@@ -624,11 +624,12 @@ function renderRoster(el,evs){
                  e==='Contractor'?'<span class="badge bctr">1099</span>':
                  e==='Skip'?'<span class="badge" style="background:#F3F4F6;color:#9CA3AF">Excluded</span>':
                  '<span class="badge" style="background:#FFE4E1;color:#9B1C1C">Unknown</span>';
-      var penc=encodeURIComponent(p);
+      var pid=btoa(unescape(encodeURIComponent(p))).replace(/=/g,'');
+      _pMap=_pMap||{};_pMap[pid]=p;
       var editBtns='<span style="margin-left:6px;display:inline-flex;gap:3px">'+
-        '<button onclick="saveOverride(''+p.replace(/'/g,"\'")+'',' +''W2')" style="padding:1px 6px;font-size:9px;border:1px solid #3730A3;border-radius:4px;background:'+(e==='W2'?'#3730A3':'#fff')+';color:'+(e==='W2'?'#fff':'#3730A3')+';cursor:pointer">W2</button>'+
-        '<button onclick="saveOverride(''+p.replace(/'/g,"\'")+'',' +''Contractor')" style="padding:1px 6px;font-size:9px;border:1px solid #92400E;border-radius:4px;background:'+(e==='Contractor'?'#92400E':'#fff')+';color:'+(e==='Contractor'?'#fff':'#92400E')+';cursor:pointer">1099</button>'+
-        '<button onclick="saveOverride(''+p.replace(/'/g,"\'")+'',' +''Skip')" style="padding:1px 6px;font-size:9px;border:1px solid #9CA3AF;border-radius:4px;background:'+(e==='Skip'?'#9CA3AF':'#fff')+';color:'+(e==='Skip'?'#fff':'#6B7280')+';cursor:pointer">Excl</button>'+
+        '<button data-pid="'+pid+'" data-val="W2" onclick="var n=_pMap[this.dataset.pid];saveOverride(n,this.dataset.val)" style="padding:1px 7px;font-size:9px;border:1.5px solid #3730A3;border-radius:4px;background:'+(e==='W2'?'#3730A3':'#fff')+';color:'+(e==='W2'?'#fff':'#3730A3')+';cursor:pointer;font-weight:600">W2</button>'+
+        '<button data-pid="'+pid+'" data-val="Contractor" onclick="var n=_pMap[this.dataset.pid];saveOverride(n,this.dataset.val)" style="padding:1px 7px;font-size:9px;border:1.5px solid #92400E;border-radius:4px;background:'+(e==='Contractor'?'#92400E':'#fff')+';color:'+(e==='Contractor'?'#fff':'#92400E')+';cursor:pointer;font-weight:600">1099</button>'+
+        '<button data-pid="'+pid+'" data-val="Skip" onclick="var n=_pMap[this.dataset.pid];saveOverride(n,this.dataset.val)" style="padding:1px 7px;font-size:9px;border:1.5px solid #9CA3AF;border-radius:4px;background:'+(e==='Skip'?'#9CA3AF':'#fff')+';color:'+(e==='Skip'?'#fff':'#6B7280')+';cursor:pointer;font-weight:600">Excl</button>'+
         '</span>';
       var svcs=[...r.svcs].slice(0,3).join(', ')+(r.svcs.size>3?' +'+( r.svcs.size-3)+' more':'');
       return '<tr><td><b>'+p+'</b></td><td>'+ebadge+'</td><td>'+cat+'</td>'+
