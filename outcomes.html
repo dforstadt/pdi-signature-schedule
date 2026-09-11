@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://unpkg.com/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -331,9 +331,9 @@ var ALL_EPISODES=[
   {name:'Allison Y', pdiAdmit:null,sigAdmit:'2026-07-27',sigDisch:'2026-08-12'},
   {name:'Drew L',    pdiAdmit:null,sigAdmit:'2026-07-16',sigDisch:'2026-07-31'},
   {name:'Andrew C',  pdiAdmit:'2026-07-24',pdiDisch:'2026-07-31',sigAdmit:'2026-08-01',sigDisch:'2026-08-07'},
-  {name:'Cassie W',  pdiAdmit:'2026-07-20',pdiDisch:'2026-07-30',sigAdmit:'2026-07-31',sigDisch:null},
-  {name:'Nicholas W',pdiAdmit:'2026-08-10',pdiDisch:'2026-08-19',sigAdmit:'2026-08-20',sigDisch:null},
-  {name:'Noah G',    pdiAdmit:'2026-08-07',pdiDisch:'2026-08-14',sigAdmit:'2026-08-15',sigDisch:null},
+  {name:'Cassie W',  pdiAdmit:'2026-07-20',pdiDisch:'2026-07-30',sigAdmit:'2026-07-31',sigDisch:'2026-08-30'},
+  {name:'Nicholas W',pdiAdmit:'2026-08-10',pdiDisch:'2026-08-19',sigAdmit:'2026-08-20',sigDisch:'2026-08-28'},
+  {name:'Noah G',    pdiAdmit:'2026-08-07',pdiDisch:'2026-08-14',sigAdmit:'2026-08-15',sigDisch:'2026-08-30'},
   {name:'Tristan L', pdiAdmit:null,sigAdmit:'2026-08-01',sigDisch:null},
   {name:'Meghan S',  pdiAdmit:null,sigAdmit:'2026-08-15',sigDisch:null},
   {name:'Alexandra D',pdiAdmit:null,sigAdmit:'2026-08-22',sigDisch:'2026-09-10'},
@@ -352,6 +352,7 @@ function mkChart(id,cfg){if(charts[id])charts[id].destroy();var ctx=document.get
 
 function render(fbClients){
   var today=new Date().toISOString().slice(0,10);
+  var TODAY=today; // alias used in renderFlowSection
 
   // ── Build episodes fresh from Firebase on every render ─────────────────
   // KEY FIX: ALL_EPISODES is kept as an ordered array — not collapsed into
@@ -630,6 +631,8 @@ function kpi(label, value, sub, color){
 }
 
 function renderFlowSection(){
+  var today=new Date().toISOString().slice(0,10);
+  var TODAY=today;
   var cb=document.getElementById('flow-coverage-bar');
   if(!Object.keys(_flowEdits).length){
     if(cb){cb.style.display='block';cb.style.background='#FFF9EC';cb.style.borderColor='#F5C842';
