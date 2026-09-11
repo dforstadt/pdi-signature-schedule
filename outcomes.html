@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="https://unpkg.com/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -348,14 +348,121 @@ var charts={};
 var ALL_EPS_LIVE=[];  // global so renderFlowSection can read it
 var _fbClients=[];   // global client roster from Firebase
 var _totalPDI=0, _totalSig=0, _totalActive=0;  // authoritative totals set by render()
+/* ── Native canvas fallback when Chart.js is blocked ── */
+function drawNative(canvasId,cfg){
+  var cv=document.getElementById(canvasId); if(!cv)return;
+  var ctx=cv.getContext('2d');
+  var type=cfg.type; var data=cfg.data; var opts=(cfg.options||{});
+  var horiz=(opts.indexAxis==='y');
+  var W=cv.parentElement.offsetWidth||500, H=cv.offsetHeight||cv.parentElement.offsetHeight||260;
+  var dpr=window.devicePixelRatio||1;
+  cv.style.width=W+'px'; cv.style.height=H+'px';
+  cv.width=W*dpr; cv.height=H*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,W,H);
+  var labels=data.labels||[]; var datasets=data.datasets||[];
+  var stacked=!!(opts.scales&&opts.scales.x&&opts.scales.x.stacked);
+  var pad={t:16,r:16,b:horiz?16:40,l:horiz?130:36};
+  var gw=W-pad.l-pad.r, gh=H-pad.t-pad.b;
+  // max value
+  var maxV=0;
+  if(stacked){
+    labels.forEach(function(_,i){var s=datasets.reduce(function(a,ds){return a+(ds.data[i]||0);},0);if(s>maxV)maxV=s;});
+  } else {
+    datasets.forEach(function(ds){ds.data.forEach(function(v){if(v>maxV)maxV=v;});});
+  }
+  maxV=Math.ceil((maxV||1)/5)*5||10;
+  // grid
+  ctx.strokeStyle='#E5E2DE'; ctx.lineWidth=0.5;
+  for(var g=0;g<=4;g++){
+    var v=maxV*g/4;
+    if(horiz){var x=pad.l+v/maxV*gw;ctx.beginPath();ctx.moveTo(x,pad.t);ctx.lineTo(x,H-pad.b);ctx.stroke();}
+    else{var y=H-pad.b-v/maxV*gh;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();
+      ctx.fillStyle='#999';ctx.font='9px Arial';ctx.textAlign='right';ctx.fillText(Math.round(v),pad.l-3,y+3);}
+  }
+  var n=labels.length; var bw=horiz?gh/n*0.65:gw/n*0.65; var gap=horiz?gh/n*0.35:gw/n*0.35;
+  var colors=['rgba(55,138,221,.75)','rgba(127,119,221,.75)','rgba(46,139,122,.75)','rgba(201,145,64,.75)'];
+  // bars
+  labels.forEach(function(lbl,i){
+    var offset=0;
+    datasets.forEach(function(ds,di){
+      var val=ds.data[i]||0; if(!val)return;
+      var color=ds.backgroundColor||(Array.isArray(ds.backgroundColor)?ds.backgroundColor[i]:null)||colors[di%colors.length];
+      ctx.fillStyle=color;
+      if(horiz){
+        var y=pad.t+i*(gh/n)+gap/2; var x=pad.l+(stacked?offset/maxV*gw:0);
+        var bh=stacked?bw:bw/Math.max(datasets.length,1);
+        var bww=val/maxV*gw;
+        ctx.fillRect(x,y+(stacked?0:di*bh),bww,bh-1);
+        if(stacked)offset+=val;
+      } else {
+        var x2=pad.l+i*(gw/n)+gap/2+(stacked?0:di*bw/Math.max(datasets.length,1));
+        var bww2=stacked?bw:bw/Math.max(datasets.length,1);
+        var barH=val/maxV*gh;
+        ctx.fillRect(x2,H-pad.b-(stacked?offset+val:val)/maxV*gh+(stacked?val/maxV*gh:0),bww2-1,barH);
+        if(stacked)offset+=val;
+      }
+    });
+    ctx.fillStyle='#555'; ctx.font='9px Arial';
+    if(horiz){ctx.textAlign='right';ctx.fillText(lbl.length>18?lbl.slice(0,18)+'…':lbl,pad.l-4,pad.t+i*(gh/n)+bw/2+gap/2+3);}
+    else{ctx.textAlign='center';ctx.fillText(lbl.length>6?lbl.slice(0,6):lbl,pad.l+i*(gw/n)+bw/2+gap/2,H-pad.b+12);}
+  });
+  if(type==='line'){
+    datasets.forEach(function(ds,di){
+      var pts=ds.data; ctx.strokeStyle=ds.borderColor||colors[di%colors.length];
+      ctx.lineWidth=2; ctx.beginPath();
+      pts.forEach(function(v,i){
+        var x=pad.l+i*(gw/Math.max(n-1,1)); var y=H-pad.b-v/maxV*gh;
+        i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+      }); ctx.stroke();
+    });
+  }
+  // legend
+  var lx=pad.l,ly=H-6;
+  datasets.forEach(function(ds,di){
+    var c=ds.backgroundColor||colors[di%colors.length];
+    ctx.fillStyle=Array.isArray(c)?c[0]:c; ctx.fillRect(lx,ly-8,10,8);
+    ctx.fillStyle='#555'; ctx.font='9px Arial'; ctx.textAlign='left';
+    var lbl=ds.label||''; ctx.fillText(lbl,lx+13,ly); lx+=ctx.measureText(lbl).width+26;
+  });
+}
+
 function mkChart(id,cfg){
-  if(typeof Chart==='undefined'){console.warn('Chart.js unavailable');return;}
-  try{
-    if(charts[id])charts[id].destroy();
-    var ctx=document.getElementById(id);
-    if(!ctx)return;
-    charts[id]=new Chart(ctx,cfg);
-  }catch(e){console.warn('Chart error:',id,e);}
+  if(typeof Chart!=='undefined'){
+    try{
+      if(charts[id])charts[id].destroy();
+      var ctx=document.getElementById(id); if(!ctx)return;
+      charts[id]=new Chart(ctx,cfg); return;
+    }catch(e){}
+  }
+  // Fallback: native canvas
+  if(cfg.type==='doughnut'||cfg.type==='pie'){
+    // Draw simple donut
+    var cv=document.getElementById(id); if(!cv)return;
+    var ctx2=cv.getContext('2d');
+    var W=cv.parentElement.offsetWidth||300, H=200, dpr=window.devicePixelRatio||1;
+    cv.style.width=W+'px'; cv.style.height=H+'px'; cv.width=W*dpr; cv.height=H*dpr; ctx2.scale(dpr,dpr);
+    ctx2.clearRect(0,0,W,H);
+    var ds=cfg.data.datasets[0]; var vals=ds.data||[]; var total=vals.reduce(function(a,b){return a+b;},0)||1;
+    var colors2=Array.isArray(ds.backgroundColor)?ds.backgroundColor:['#378ADD','#7F77DD','#2E8B7A'];
+    var angle=-Math.PI/2, cx=W/2, cy=H/2-10, r=Math.min(W,H)/2-20;
+    vals.forEach(function(v,i){
+      var slice=2*Math.PI*v/total;
+      ctx2.beginPath(); ctx2.moveTo(cx,cy); ctx2.arc(cx,cy,r,angle,angle+slice); ctx2.closePath();
+      ctx2.fillStyle=colors2[i%colors2.length]; ctx2.fill();
+      angle+=slice;
+    });
+    // hole
+    ctx2.beginPath(); ctx2.arc(cx,cy,r*0.55,0,2*Math.PI); ctx2.fillStyle='#fff'; ctx2.fill();
+    // labels
+    var lx2=10, ly2=H-10;
+    (cfg.data.labels||[]).forEach(function(l,i){
+      ctx2.fillStyle=colors2[i%colors2.length]; ctx2.fillRect(lx2,ly2-8,8,8);
+      ctx2.fillStyle='#555'; ctx2.font='9px Arial'; ctx2.textAlign='left';
+      ctx2.fillText(l,lx2+11,ly2); lx2+=ctx2.measureText(l).width+22;
+    });
+    return;
+  }
+  drawNative(id,cfg);
 }
 
 function render(fbClients){
