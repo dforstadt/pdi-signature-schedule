@@ -250,7 +250,7 @@ tbody tr:hover td{background:rgba(139,115,85,.05)}
         <div style="height:200px"><canvas id="prior-los-sig-chart"></canvas></div>
       </div>
     </div>
-  </div>
+    </div>
 
   <!-- ── Story beat 5: Step-down ──────────────────────────────────────────── -->
   <div style="margin-bottom:24px">
@@ -265,7 +265,7 @@ tbody tr:hover td{background:rgba(139,115,85,.05)}
           <div style="height:240px"><canvas id="stepdown-chart"></canvas></div>
         </div>
         <div>
-          <div id="stepdown-summary" style="font-size:11px;line-height:2;color:var(--tx)"></div>
+          
         </div>
       </div>
     </div>
@@ -284,9 +284,7 @@ tbody tr:hover td{background:rgba(139,115,85,.05)}
       <tbody id="flow-body"></tbody>
     </table></div>
   </details>
-  <div style="font-size:10px;color:var(--tx3);margin-bottom:24px;padding:0 2px">
-    All charts update live as records are completed.
-  </div>
+  
 </div>
 </div>
 
@@ -749,6 +747,7 @@ function renderFlowSection(){
   if(!Object.keys(_flowEdits).length){
     if(cb){cb.style.display='block';cb.style.background='#FFF9EC';cb.style.borderColor='#F5C842';
       cb.innerHTML='<strong>No flow data entered yet.</strong> Open the '
+        +'<a href="admin-fix2.html" style="color:var(--accent)">Client Flow Mapping tool</a> to begin.';}
     return;
   }
 
@@ -818,12 +817,15 @@ function renderFlowSection(){
     if(hasSig&&!sigSeen.has(k)){sigEdits.push(edit);sigSeen.add(k);}
   });
   var editNameSet=new Set(Object.keys(byName));
+  var missingPDI=episodeSource.filter(function(ep){return ep.pdiAdmit&&!editNameSet.has(normFlowName(ep.name||''));}).map(function(ep){return ep.name;});
+  var missingSig=episodeSource.filter(function(ep){return ep.sigAdmit&&!editNameSet.has(normFlowName(ep.name||''));}).map(function(ep){return ep.name;});
   var pdiCov=totalPDI?Math.round(pdiEdits.length/totalPDI*100):0;
   var sigCov=totalSig?Math.round(sigEdits.length/totalSig*100):0;
   var sub=document.getElementById('flow-sub');
   if(sub)sub.textContent=Object.keys(byName).length+' records  ·  PDI: '+pdiEdits.length+'/'+totalPDI+' ('+pdiCov+'%)  ·  Sig: '+sigEdits.length+'/'+totalSig+' ('+sigCov+'%)';
   if(cb){cb.style.display='block';cb.style.background='#F0F7FF';cb.style.borderColor='#C0D8F0';
     cb.innerHTML='<strong>Coverage:</strong> &nbsp;PDI '+pdiEdits.length+'/'+totalPDI+' &nbsp;|&nbsp; Signature '+sigEdits.length+'/'+totalSig
+      +(missingPDI.length||missingSig.length?'<br>':'')+'&nbsp;|&nbsp;<em><a href="admin-fix2.html" style="color:var(--accent)">Flow Mapping tool</a></em>';}
   var PDI_C='#4A6C8A',SIG_C='#6B5C45',EXT_C='#1D9E75',INT_C='#3786DD';
   var censusEl=document.getElementById('flow-census');
   if(censusEl)censusEl.innerHTML=kpi('Total PDI episodes',totalPDI,'all time',PDI_C)+kpi('Total Signature episodes',totalSig,'all time',SIG_C)+kpi('PDI\u2192Sig conversions',episodeSource.filter(function(e){return e.pdiAdmit&&e.sigAdmit&&!e.sigFirst;}).length,'direct pathway',EXT_C)+kpi('Active clients',totalActive||'—','currently enrolled','var(--amber)');
@@ -864,6 +866,9 @@ function renderFlowSection(){
     }
     var covEl=document.getElementById(covId);
     if(covEl)covEl.innerHTML=typed+' of '+enroll+' '+prog+' clients have source data'
+      +(missList.length?'<br><span style="color:#B45309;font-size:10px">&#9888; No flow record found for: <strong>'+missList.join(', ')+'</strong></span>':'')
+      +(noType.length?'<br><span style="color:#B45309;font-size:10px">&#9888; Flow record exists but <strong>Admission Type not set</strong>: '
+        +noType.map(function(n){return'<a href="admin-fix2.html" style="color:var(--accent);font-weight:700">'+n+'</a>';}).join(', ')
         +'</span>':'');
     var detEl=document.getElementById(detailId);
     if(!typed){if(detEl)detEl.innerHTML='<span style="color:var(--tx3);font-style:italic;font-size:10px">No source data yet</span>';return;}
@@ -872,6 +877,8 @@ function renderFlowSection(){
       detEl.innerHTML='<div style="margin-bottom:12px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span style="width:14px;height:14px;border-radius:50%;background:#1D9E75;flex-shrink:0"></span><span style="font-size:22px;font-weight:700;color:#1D9E75">'+ext.length+'</span><span style="font-size:11px;color:var(--tx3)">external referrals<br>('+extPct+'% of typed)</span></div><div style="display:flex;align-items:center;gap:8px"><span style="width:14px;height:14px;border-radius:50%;background:#3786DD;flex-shrink:0"></span><span style="font-size:22px;font-weight:700;color:#3786DD">'+int.length+'</span><span style="font-size:11px;color:var(--tx3)">internal transfers<br>('+intPct+'% of typed)</span></div></div>'+(prog==='Signature'?'<div style="font-size:9px;color:var(--tx3);border-top:1px solid var(--bd);padding-top:8px">PDI\u2192Sig clients counted as Internal</div>':'');
     }
   }
+  renderSourceChart('pdi-source-chart',pdiExt,pdiInt,pdiEdits,totalPDI,'pdi-source-detail','pdi-coverage-note','PDI',missingPDI);
+  renderSourceChart('sig-source-chart',sigExt,sigInt,sigEdits,totalSig,'sig-source-detail','sig-coverage-note','Signature',missingSig);
   var capEl=document.getElementById('flow-source-caption');
   if(capEl){var pN=pdiExt.length+pdiInt.length,sN=sigExt.length+sigInt.length;capEl.innerHTML=(pN?'PDI: '+(pdiExt.length>pdiInt.length?'<strong>External dominant</strong>':pdiInt.length>pdiExt.length?'<strong>Internal dominant</strong>':'Even split')+' ('+pN+' typed). ':'')+(sN?'Signature: '+(sigExt.length>sigInt.length?'<strong>External dominant</strong>':sigInt.length>sigExt.length?'<strong>Internal dominant</strong>':'Even split')+' ('+sN+' typed).':'');}
   function normLOC(l){
@@ -899,6 +906,8 @@ function renderFlowSection(){
   function rtcDays(srcEdits){return srcEdits.filter(function(e){return e.admitType==='Internal'&&(normLOC(e.priorLOC||'')).indexOf('Residential')>=0&&e._los>0;});}
   var pdiRTC=losStats(rtcDays(pdiEdits).map(function(e){return e._los;}));
   var sigRTC=losStats(rtcDays(sigEdits).map(function(e){return e._los;}));
+  var rtcEl=document.getElementById('flow-rtc-insight');
+  if(rtcEl&&(pdiRTC||sigRTC)){rtcEl.style.display='block';var lines=['<strong style="color:var(--amber)">&#9432; RTC Transition Timing</strong>'];if(pdiRTC)lines.push('Residential\u2192PDI: avg <strong>'+pdiRTC.avg+'d</strong> (range '+pdiRTC.min+'\u2013'+pdiRTC.max+'d, n='+pdiRTC.n+').');if(sigRTC)lines.push('Residential\u2192Signature: avg <strong>'+sigRTC.avg+'d</strong> (range '+sigRTC.min+'\u2013'+sigRTC.max+'d, n='+sigRTC.n+').');rtcEl.innerHTML=lines.join('<br><br>');}
   var allEdits=Object.values(byName);
   var withSD=allEdits.filter(function(e){return e.stepDown&&e.stepDown!=='---'&&e.stepDown!=='';});
   // Identify which matched clients are missing step-down data
@@ -919,6 +928,8 @@ function renderFlowSection(){
     mkChart('stepdown-chart',{type:'bar',data:{labels:allSD,datasets:[{label:'Stays within Lifeskills',data:allSD.map(function(l){return sdInt[l]||0;}),backgroundColor:'rgba(55,134,221,.8)',borderColor:'#3786DD',borderWidth:1.5,borderRadius:4},{label:'External step-down',data:allSD.map(function(l){return sdExt[l]||0;}),backgroundColor:'rgba(29,158,117,.8)',borderColor:'#1D9E75',borderWidth:1.5,borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:12,boxWidth:14}},tooltip:{callbacks:{label:function(ctx){var pct=withSD.length?Math.round(ctx.parsed.x/withSD.length*100):0;return ctx.dataset.label+': '+ctx.parsed.x+' ('+pct+'%)';}}}},scales:{x:{beginAtZero:true,stacked:true,ticks:{stepSize:1,font:{size:10}},grid:{color:'rgba(0,0,0,.04)'}},y:{stacked:true,ticks:{font:{size:10}},grid:{display:false}}}}});
     var intTot=Object.values(sdInt).reduce(function(a,b){return a+b;},0),extTot=Object.values(sdExt).reduce(function(a,b){return a+b;},0);
     var sumEl=document.getElementById('stepdown-summary');
+    if(sumEl)sumEl.innerHTML=(noSD.length?'<div style="font-size:10px;color:#B45309;margin-bottom:10px;padding:6px 8px;background:#FFF3E0;border-radius:4px">'
+      +'&#9888; Missing step-down: <strong>'+noSD.join(', ')+'</strong>'+'<br><a href="admin-fix2.html" style="color:var(--accent)">Update in Flow Mapping tool</a></div>':'')
       +'<div style="margin-bottom:14px"><div style="font-size:32px;font-weight:700;color:var(--navy)">'+withSD.length+'</div><div style="font-size:10px;color:var(--tx3)">clients with step-down data</div></div><div style="margin-bottom:12px"><div style="font-size:22px;font-weight:700;color:#3786DD">'+intTot+'</div><div style="font-size:10px;color:var(--tx3)">stayed within Lifeskills<br>('+( withSD.length?Math.round(intTot/withSD.length*100):'—')+'%)</div></div><div style="margin-bottom:12px"><div style="font-size:22px;font-weight:700;color:#1D9E75">'+extTot+'</div><div style="font-size:10px;color:var(--tx3)">stepped down externally<br>('+( withSD.length?Math.round(extTot/withSD.length*100):'—')+'%)</div></div>'+(allSD[0]?'<div style="border-top:1px solid var(--bd);padding-top:10px;font-size:10px;color:var(--tx3)">Most common:<br><strong style="color:var(--navy);font-size:12px">'+allSD[0]+'</strong><br>'+((sdInt[allSD[0]]||0)+(sdExt[allSD[0]]||0))+' clients</div>':'');
   }
   var sorted=allEdits.slice().sort(function(a,b){return(a._name||'').localeCompare(b._name||'');});
