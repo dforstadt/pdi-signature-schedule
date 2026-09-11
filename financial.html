@@ -321,6 +321,79 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
 
 
   <!-- PDI Variability -->
+</div><!-- /tab-pdi -->
+
+<div id="tab-step" class="tab-panel">
+
+  <!-- ── TWO FIXED FACTS ─────────────────────────────────────────────────── -->
+  <div style="display:flex;align-items:center;gap:12px;margin:22px 0 6px;padding:0 2px"><div style="width:26px;height:26px;border-radius:50%;background:#2E8B7A;color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div><div style="font-size:11px;font-weight:800;color:#2E8B7A;text-transform:uppercase;letter-spacing:.1em">Scenario Calculator</div><div style="flex:1;height:1px;background:#2E8B7A;opacity:.2"></div></div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+
+    <div class="glass" style="padding:22px 20px;border-left:4px solid var(--step)">
+      <div style="font-size:10px;font-weight:700;color:var(--step);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">PDI + Week 1 Signature — Guaranteed Minimum</div>
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:12px">
+        <div style="display:flex;justify-content:space-between;border-bottom:.5px solid var(--bd);padding-bottom:6px">
+          <span style="color:var(--tx3)">Revenue</span>
+          <span style="font-weight:700;color:var(--green)">$80,000 PDI + $24,500 Sig = <b>$104,500</b></span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px">
+          <span style="color:var(--tx3)">Total PDI costs (all line items)</span>
+          <span id="s-pdi-var">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px">
+          <span style="color:var(--tx3)">Sig Week 1 costs (PBWI in pkg)</span>
+          <span id="s-wk1-cost">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;border-top:.5px solid var(--bd);padding-top:6px">
+          <span style="color:var(--tx3)">Total Cost</span>
+          <span style="font-weight:700" id="s-base-cost">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <span style="color:var(--tx3)">Profit</span>
+          <span style="font-weight:800;font-size:18px;color:var(--green)" id="s-base-profit">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <span style="color:var(--tx3)">Profit Margin</span>
+          <span style="font-weight:800;font-size:28px;color:var(--step)" id="s-base-margin">—</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="glass" style="padding:22px 20px;border-left:4px solid var(--amber)">
+      <div style="font-size:10px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">Every Signature Week After Week 1</div>
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:12px">
+        <div style="display:flex;justify-content:space-between;border-bottom:.5px solid var(--bd);padding-bottom:6px">
+          <span style="color:var(--tx3)">Revenue per week</span>
+          <span style="font-weight:700;color:var(--green)">$21,000</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px">
+          <span style="color:var(--tx3)">Clinical + operational costs</span>
+          <span id="s-wkn-base">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px">
+          <span style="color:var(--tx3)">PBWI weekly package (Wk 2+)</span>
+          <span>$3,888</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;border-top:.5px solid var(--bd);padding-top:6px">
+          <span style="color:var(--tx3)">Total cost per week</span>
+          <span style="font-weight:700" id="s-wkn-cost">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <span style="color:var(--tx3)">Profit per week</span>
+          <span style="font-weight:800;font-size:18px;color:var(--green)" id="s-wkn-profit">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <span style="color:var(--tx3)">Weekly margin</span>
+          <span style="font-weight:800;font-size:28px;color:var(--amber)" id="s-wkn-margin">—</span>
+        </div>
+      </div>
+      <div style="margin-top:12px;padding-top:10px;border-top:.5px solid var(--bd);font-size:10px;color:var(--tx3)">
+        Standalone Signature weekly margin: <b>56.8%</b> — 14 percentage points higher because there is no $3,888/wk PBWI package for standalone clients.
+      </div>
+    </div>
+  </div>
+
   <!-- ── CUMULATIVE P&L TABLE ─────────────────────────────────────────────── -->
   <div class="glass full-col" style="margin-bottom:20px">
     <div class="sec-h">
@@ -437,6 +510,41 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
 
 
   <!-- Step variability -->
+</div><!-- /tab-step -->
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!-- TAB 3 — SIGNATURE STANDALONE                                        -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<div id="tab-sig" class="tab-panel">
+
+    <div class="kpi-strip">
+    <div class="glass kpi">
+      <div class="kpi-lbl">Weekly Revenue</div>
+      <div class="kpi-v" style="color:var(--sig)" id="sig-kpi-rev">—</div>
+      <div class="kpi-sub" id="sig-kpi-rev-sub">Per enrolled client</div>
+    </div>
+    <div class="glass kpi">
+      <div class="kpi-lbl">Weekly Cost / Client</div>
+      <div class="kpi-v" style="color:var(--amber)" id="sig-kpi-cost">—</div>
+      <div class="kpi-sub" id="sig-kpi-cost-sub"></div>
+    </div>
+    <div class="glass kpi">
+      <div class="kpi-lbl">Weekly Profit / Client</div>
+      <div class="kpi-v" id="sig-kpi-profit">—</div>
+      <div class="kpi-sub" id="sig-kpi-profit-sub"></div>
+    </div>
+    <div class="glass kpi">
+      <div class="kpi-lbl">Profit Margin</div>
+      <div class="kpi-v" id="sig-kpi-pct">—</div>
+      <div class="kpi-sub">Goal: 44%</div>
+      <div class="gauge-wrap">
+        <div class="gauge-fill" id="sig-gauge" style="background:var(--green);width:0%"></div>
+        <div class="gauge-mark" style="left:44%"></div>
+      </div>
+      <div class="gauge-lbl"><span>0%</span><span>▲44%</span><span>100%</span></div>
+    </div>
+  </div>
+
   <div style="display:flex;align-items:center;gap:12px;margin:22px 0 6px;padding:0 2px">
     <div style="width:26px;height:26px;border-radius:50%;background:#7F77DD;color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div>
     <div style="font-size:11px;font-weight:800;color:#7F77DD;text-transform:uppercase;letter-spacing:.1em">Scenario Calculator</div>
