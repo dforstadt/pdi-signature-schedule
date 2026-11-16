@@ -320,7 +320,7 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
 
     </table>
     <div style="padding:12px 18px;font-size:10px;color:var(--tx3);border-top:.5px solid var(--bd);display:flex;gap:24px;flex-wrap:wrap">
-      <span>Fixed costs (all episodes): <b>$22,788</b> — Dr. Forstadt $3K · Testing $6,900 · PBWI PDI package $10,038 · Labs $2K · Nutritional $300 · Stipends $550 (Ockman $250 · Liaison $100 · Lead Tech $200) | <b>1,500</span>
+      <span>Fixed costs (all episodes): <b>$22,538</b> — Dr. Forstadt $3K · Testing $6,900 · PBWI PDI package $10,038 · Labs $2K · Nutritional $300 · Stipends $300 (Liaison $100 · Lead Tech $200) | <b>1,500</span>
       <span>Variable: Personal training $150/weekday · Culinary $150/day · Wellness $300/session × 2/wk · Ancillary $75/day</span>
     </div>
   </div>
@@ -502,7 +502,7 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
       <tbody id="step-dynamic-rows"></tbody>
       <tfoot>
         <tr class="grand-total">
-          <td colspan="6">✓ Discharged · ● Active · PDI $70K hist. rate · Fixed costs PDI+Sig: $26,538 · Sig base: $7,075/wk · Wk1 (Flannery covered) · Wk2+: +$1,638 neurofeed</td>
+          <td colspan="6">✓ Discharged · ● Active · PDI $70K hist. rate · Fixed costs PDI+Sig: $26,538 · Sig base: $6,825/wk · Wk1 (Flannery covered) · Wk2+: +$1,638 neurofeed</td>
           <td style="text-align:right">—</td><td style="text-align:right">—</td>
           <td colspan="2" style="text-align:right;color:var(--step)">41.1% – 56.4%</td>
         </tr>
@@ -644,7 +644,7 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
       </tr></tfoot>
     </table>
     <div style="padding:12px 18px;font-size:10px;color:var(--tx3);border-top:.5px solid var(--bd);display:flex;gap:24px;flex-wrap:wrap">
-      <span>Signature costs: Dr. Forstadt $3,000/wk · Stipends: Ockman $250/person/wk · Liaison $500 · Lead Tech $700 · Culinary 7-day $1,050 · Training $750 · Wellness $150 · Ancillary $525 | Brain mapping $3,288 one-time (Wk1) · Neurofeedback $1,638/wk (Wk2+)</span>
+      <span>Signature costs: Dr. Forstadt $3,000/wk · Stipends: Liaison $500 · Lead Tech $700 · Culinary 7-day $1,050 · Training $750 · Wellness $150 · Ancillary $525 | Brain mapping $3,288 one-time (Wk1) · Neurofeedback $1,638/wk (Wk2+)</span>
       <span>Steady-state margin (long stay): <b>56.8%</b> · H&P amortizes quickly (0.67 percentage points impact at 10 days)</span>
     </div>
   </div><!-- /wrap -->
@@ -668,7 +668,6 @@ var DATA = {
     {cat:'Fixed — Nutritional', name:'Nutritional / Dietician Assessment', note:'Initial intake', amt:150},
     {cat:'Fixed — Nutritional', name:'Nutritional / Dietician Follow-Up', note:'Follow-up session', amt:150},
     // Stipends (PDI flat, no session fees)
-    {cat:'Fixed — Stipend', name:'Executive Oversight — Ockman', note:'One-time flat per episode', amt:250},
     {cat:'Fixed — Stipend', name:'Clinical Liaison', note:'Flat per episode', amt:100},
     {cat:'Fixed — Stipend', name:'Lead Tech (2 staff × $100)', note:'Per episode · 2 staff × $100', amt:200},
     // ── DAILY / WEEKLY COSTS (× episode length) ──────────────────────────
@@ -684,7 +683,6 @@ var DATA = {
     {cat:'Fixed — Labs', name:'Lab Panels — Comprehensive Bloodwork', note:'Day 1–2', amt:2000},
     {cat:'Fixed — Nutritional', name:'Nutritional / Dietician Assessment', note:'Initial intake', amt:150},
     {cat:'Fixed — Nutritional', name:'Nutritional / Dietician Follow-Up', note:'Follow-up', amt:150},
-    {cat:'Fixed — Stipend', name:'Executive Oversight — Ockman', note:'One-time flat per episode', amt:250},
     {cat:'Fixed — Stipend', name:'Clinical Liaison', note:'Flat per episode', amt:100},
     {cat:'Fixed — Stipend', name:'Lead Tech (2 staff × $100)', note:'Per episode', amt:200},
     {cat:'Daily — Training', name:'Personal Training (5 days/week)', note:'$750/wk · PDI phase weeks', amt:750},
@@ -701,7 +699,6 @@ var DATA = {
     {cat:'Wellness', name:'Personal Training', note:'5 days/wk · $150/session', amt:750},
     {cat:'Wellness', name:'Wellness Direct Services (2×/month avg)', note:'2 sessions/month · $300/session · avg $150/week', amt:150},
     {cat:'Nutritional', name:'Nutritional Follow-Up', note:'1/wk · $150/session', amt:150},
-    {cat:'Stipend', name:'David Ockman — Executive Oversight', note:'$250/person/week', amt:250},
     {cat:'Stipend', name:'Clinical Liaison', note:'$100/day × 5 days/week = $500/week', amt:500},
     {cat:'Stipend', name:'Lead Tech (2 alternating)', note:'$100/day × 7 days · 1 on at a time · $700/week', amt:700},
     {cat:'Operational', name:'Culinary / Chef + Food (7 days/week)', note:'$150/day × 7 days — full chef model', amt:1050},
@@ -720,7 +717,6 @@ var DATA = {
     {cat:'Wellness', name:'Personal Training', freq:'5 days/wk · $150/session', amt:750},
     {cat:'Wellness', name:'Wellness Direct Services (2×/month)', freq:'2 sessions/month · $300/session · avg $150/week', amt:150},
     {cat:'Nutritional', name:'Nutritional Follow-Up', freq:'1×/wk · $150/session', amt:150},
-    {cat:'Stipend', name:'David Ockman — Executive Oversight', freq:'$250/person/week', amt:250},
     {cat:'Stipend', name:'Clinical Liaison', freq:'$100/day × 5 days/week', amt:500},
     {cat:'Stipend', name:'Lead Tech (2 alternating)', freq:'$100/day × 7 days · 1 on at a time', amt:700},
     {cat:'Operational', name:'Culinary / Chef + Food (7 days/week)', freq:'$150/day × 7 days — full chef model', amt:1050},
@@ -737,7 +733,6 @@ var DATA = {
     {cat:'Wellness', name:'Personal Training', freq:'5 days/wk · $150/session', amt:750},
     {cat:'Wellness', name:'Wellness Direct Services (2×/month)', freq:'2 sessions/month · $300/session · avg $150/week', amt:150},
     {cat:'Nutritional', name:'Nutritional Follow-Up', freq:'1×/wk · $150/session', amt:150},
-    {cat:'Stipend', name:'David Ockman — Executive Oversight', freq:'$250/person/week', amt:250},
     {cat:'Stipend', name:'Clinical Liaison', freq:'$100/day × 5 days/week', amt:500},
     {cat:'Stipend', name:'Lead Tech (2 alternating)', freq:'$100/day × 7 days · 1 on at a time', amt:700},
     {cat:'Operational', name:'Culinary / Chef + Food (7 days/week)', freq:'$150/day × 7 days — full chef model', amt:1050},
@@ -1060,7 +1055,7 @@ firebase.database().ref('schedule_v3').on('value',function(snap){
   // Runs on every Firebase update — adds rows for clients added since last deploy
   (function(){
     var SIG_RATE  = 21000/7;
-    var SIG_WCOST = 8913/7; // $8,913 avg weekly recurring cost
+    var SIG_WCOST = 8663/7; // $8,663 avg weekly recurring cost
 
     // Normalise a name for comparison: lowercase, strip trailing periods/spaces
     function normName(s){ return (s||'').toLowerCase().trim().replace(/[^a-z0-9 ]/g,'').replace(/\s+/g,' '); }
@@ -1151,7 +1146,7 @@ firebase.database().ref('schedule_v3').on('value',function(snap){
       var rev   = 70000; // Historical rate — $80K applies to future episodes only
       // Use same cost formula as other historical PDI clients
       var varC  = Math.round(days*375 + Math.floor(days/7)*600);
-      var fixC  = 23738;
+      var fixC  = 23488;
       var tot   = varC+fixC;
       var profit= rev-tot;
       var margin= profit/rev*100;
@@ -1192,8 +1187,8 @@ firebase.database().ref('schedule_v3').on('value',function(snap){
       var sigRev = Math.round(sDays/7*21000);
       var totRev = pdiRev+sigRev;
       var pdiV   = Math.round(pDays*375+Math.floor(pDays/7)*600);
-      var sigW   = Math.round(sDays/7*8913);
-      var fixC   = 26538;
+      var sigW   = Math.round(sDays/7*8663);
+      var fixC   = 26288;
       var tot    = pdiV+sigW+fixC;
       var profit = totRev-tot;
       var margin = profit/totRev*100;
@@ -1261,7 +1256,7 @@ function setPdiFee(v,noCalc){
 }
 function syncFeeFromInput(v){ setPdiFee(v); }
 
-var STEP_FIX=26538; // Updated fixed costs // PDI+Sig fixed costs
+var STEP_FIX=26288; // Updated fixed costs // PDI+Sig fixed costs
 // ── Reset functions ────────────────────────────────────────────────────────
 function fmt$(v){return '$'+Math.round(Math.abs(v)).toLocaleString();}
 function renderStepTable(){
