@@ -101,7 +101,7 @@ var DATA={events:[],clients:[]}, _ok=false, _tab='monthly', _auditWkIdx=0;
 
 /* ── Classification ─────────────────────────────────────────── */
 var SKIP=['luis guillermo','keisha foster','lead tech','tech team','brandy','hume','none','tbd','family','n/a',''];
-var CLIN_KW=['individual','family','therapy','dbt','trauma','anger','relapse','caseload','testing','assessment','psychometric','neuropsych','evaluation','interview','psych','psychiatric','nursing','medical','debriefing','court','prevention'];
+var CLIN_KW=['individual','family','therapy','dbt','trauma','anger','relapse','caseload','assessment','psychometric','neuropsych','evaluation','interview','psych','psychiatric','nursing','medical','debriefing','court','prevention'];
 var FORCE_ANC_SVCS=['lunch','photomodulation','cognitive remediation','orientation'];
 var FORCE_CLIN=['nursing','brian','paul lazar','dr. paul'];
 var FORCE_ANC=['anthony','heather','alice','flavia','rabbi','nicole'];
@@ -117,6 +117,7 @@ function isSkip(p,svc){
 }
 function isClin(ev){
   var pl=(ev.provider||'').toLowerCase(), sl=(ev.service||'').toLowerCase();
+  if(sl.indexOf('testing')>-1) return false; // testing is not direct clinical service — counted as ancillary
   if(sl.indexOf('group')>-1) return false; // groups are not direct clinical hours (incl. Caseload/ACT Group) — counted as ancillary
   if(!pl) return CLIN_KW.some(function(k){return sl.indexOf(k)>-1;}); // no provider — classify by service only
   if(pl.indexOf('tamas')>-1&&sl.indexOf('spiritual')>-1) return false;
