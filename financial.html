@@ -173,16 +173,27 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
 </div>
 
 <div class="wrap">
+<div class="glass" id="fee-adjuster" style="padding:14px 20px;margin-bottom:14px;display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+  <div style="min-width:150px">
+    <div style="font-size:10px;font-weight:800;color:var(--pdi);text-transform:uppercase;letter-spacing:.1em">PDI Fee Adjuster</div>
+    <div style="font-size:10px;color:var(--tx3);margin-top:2px">Reprices PDI, Step-Down &amp; calculators</div>
+  </div>
+  <span style="font-size:10px;color:var(--tx3)">$60K</span>
+  <input type="range" id="pdi-fee-slider" min="60000" max="110000" step="1000" value="70000" style="flex:1;min-width:220px;accent-color:#378ADD" oninput="setPdiFee(this.value)">
+  <span style="font-size:10px;color:var(--tx3)">$110K</span>
+  <div id="pdi-fee-readout" style="font-size:20px;font-weight:800;color:var(--pdi);min-width:90px;text-align:right">$70,000</div>
+  <button class="reset-btn" onclick="setPdiFee(70000)" title="Back to $70,000">↺ $70K</button>
+</div>
 
 <!-- PROGRAM TABS -->
 <div class="prog-tabs">
   <button class="prog-tab pdi active" onclick="switchTab('pdi')">
     <span class="tab-icon">🔬</span>PDI Protocol
-    <div class="tab-sub">$80,000 flat · diagnostic intensive</div>
+    <div class="tab-sub" id="pdi-tab-sub">$70,000 flat · diagnostic intensive</div>
   </button>
   <button class="prog-tab step" onclick="switchTab('step')">
     <span class="tab-icon">↗️</span>PDI → Signature Step-Down
-    <div class="tab-sub">$70K + $21K/wk · conversion pathway</div>
+    <div class="tab-sub" id="step-tab-sub">$70K + $21K/wk · conversion pathway</div>
   </button>
   <button class="prog-tab sig" onclick="switchTab('sig')">
     <span class="tab-icon">⭐</span>Signature Standalone
@@ -198,7 +209,7 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
   <div class="kpi-strip">
     <div class="glass kpi">
       <div class="kpi-lbl">PDI Episode Fee</div>
-      <div class="kpi-v" style="color:var(--pdi)" id="pdi-kpi-rev">$80,000</div>
+      <div class="kpi-v" style="color:var(--pdi)" id="pdi-kpi-rev">$70,000</div>
       <div class="kpi-sub">Flat rate · full protocol</div>
     </div>
     <div class="glass kpi">
@@ -233,7 +244,7 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
         <button class="reset-btn" onclick="resetPDI()" title="Restore original values">↺ Reset</button>
       </div>
       <div class="assumptions">
-        <div class="inp-group"><label>Episode Fee (Revenue)</label><input type="number" id="pdi-a-rev" value="80000" step="1000" oninput="calcPDI()"></div>
+        <div class="inp-group"><label>Episode Fee (Revenue)</label><input type="number" id="pdi-a-rev" value="70000" step="1000" oninput="syncFeeFromInput(this.value)"></div>
         <div class="inp-group"><label>Avg Episode Length (days)</label><input type="number" id="pdi-a-days" value="12" step="1" min="1" oninput="calcPDI()"></div>
         <div class="inp-group"><label>Active PDI Episodes</label><input type="number" id="pdi-a-eps" value="1" step="1" min="0" oninput="calcPDI()"></div>
         <div class="inp-group"><label>Profit Goal (%)</label><input type="number" id="pdi-a-goal" value="44" step="1" min="0" max="100" oninput="calcPDI()"></div>
@@ -277,7 +288,7 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
     <div class="sec-h">
       <div class="sec-h-left">
         <div class="sec-title">Actual PDI Episode Margins</div>
-        <div class="sec-sub">Calculated from real schedule data · fixed rates + actual episode length · $70,000 actual revenue per episode (historical rate) · <span style="color:var(--amber)">New rate of $80,000 applies to future episodes — no clients yet billed at new rate</span></div>
+        <div class="sec-sub">Calculated from real schedule data · fixed rates + actual episode length · $70,000 actual revenue per episode (historical rate) · <span style="color:var(--amber)">Use the PDI Fee Adjuster above to model a higher forward-looking rate — historical rows stay at the actual $70,000</span></div>
       </div>
       <span class="sec-badge" style="background:rgba(55,138,221,.1);color:var(--pdi)">16 PDI episodes</span>
     </div>
@@ -330,7 +341,7 @@ body{font-family:var(--f);background:linear-gradient(rgba(245,241,235,.86),rgba(
       <div style="display:flex;flex-direction:column;gap:8px;font-size:12px">
         <div style="display:flex;justify-content:space-between;border-bottom:.5px solid var(--bd);padding-bottom:6px">
           <span style="color:var(--tx3)">Revenue</span>
-          <span style="font-weight:700;color:var(--green)">$80,000 PDI + $24,500 Sig = <b>$104,500</b></span>
+          <span style="font-weight:700;color:var(--green)" id="s-base-rev-txt">$70,000 PDI + $24,500 Sig = <b>$94,500</b></span>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:11px">
           <span style="color:var(--tx3)">Total PDI costs (all line items)</span>
@@ -1231,11 +1242,30 @@ firebase.database().ref('schedule_v3').on('value',function(snap){
   calcAll();
 });
 
+
+// ── PDI Fee Adjuster ──────────────────────────────────────────────────────
+var PDI_FEE=70000;
+function setPdiFee(v,noCalc){
+  v=Math.max(0,parseFloat(v)||0); PDI_FEE=v;
+  var f=function(id){return document.getElementById(id);};
+  var money='$'+Math.round(v).toLocaleString();
+  if(f('pdi-fee-slider')) f('pdi-fee-slider').value=v;
+  if(f('pdi-fee-readout')) f('pdi-fee-readout').textContent=money;
+  if(f('pdi-a-rev')) f('pdi-a-rev').value=v;
+  if(f('step-a-pdi')) f('step-a-pdi').value=v;
+  if(f('pdi-kpi-rev')) f('pdi-kpi-rev').textContent=money;
+  if(f('pdi-tab-sub')) f('pdi-tab-sub').textContent=money+' flat · diagnostic intensive';
+  var st=f('step-tab-sub'); if(st) st.textContent=Math.round(v/1000)+'K + $21K/wk · conversion pathway';
+  var br=f('s-base-rev-txt'); if(br) br.innerHTML=money+' PDI + $24,500 Sig = <b>$'+Math.round(v+24500).toLocaleString()+'</b>';
+  if(!noCalc && typeof calcAll==='function') calcAll();
+}
+function syncFeeFromInput(v){ setPdiFee(v); }
+
 var STEP_FIX=26538; // Updated fixed costs // PDI+Sig fixed costs
 // ── Reset functions ────────────────────────────────────────────────────────
 function fmt$(v){return '$'+Math.round(Math.abs(v)).toLocaleString();}
 function renderStepTable(){
-  var PDI_REV=80000, SIG_WK_REV=24500;
+  var PDI_REV=PDI_FEE, SIG_WK_REV=24500;
 
   // Derive all costs purely from line items — no hard-coded constants
   var pdiTotal = lines.stepPdi.reduce(function(s,l){ return s+(l.amt||0); }, 0);
@@ -1246,7 +1276,7 @@ function renderStepTable(){
                               .reduce(function(s,l){ return s+(l.amt||0); }, 0);
 
   var baseCost   = pdiTotal + sigWk1;
-  var baseRev    = PDI_REV + SIG_WK_REV;   // $91,000
+  var baseRev    = PDI_REV + SIG_WK_REV;
   var baseProfit = baseRev - baseCost;
   var baseMargin = baseProfit / baseRev * 100;
 
@@ -1345,7 +1375,7 @@ function renderStepTable(){
 function calcStep(){renderStepTable();}
 function resetPDI(){
   lines.pdi=clone(DATA.pdi);
-  document.getElementById('pdi-a-rev').value=80000;
+  setPdiFee(70000,true);
   document.getElementById('pdi-a-days').value=12;
   document.getElementById('pdi-a-eps').value=document.getElementById('pdi-a-eps').value;
   document.getElementById('pdi-a-goal').value=44;
@@ -1354,7 +1384,7 @@ function resetPDI(){
 function resetStep(){
   lines.stepPdi=clone(DATA.stepPdi);
   lines.stepSig=clone(DATA.stepSig);
-  document.getElementById('step-a-pdi').value=80000;
+  setPdiFee(70000,true);
   document.getElementById('step-a-pdi-days').value=12;
   document.getElementById('step-a-sig-wk').value=24500;
   document.getElementById('step-a-sig-wks').value=4;
