@@ -118,6 +118,7 @@ function isSkip(p,svc){
 }
 function isClin(ev){
   var pl=(ev.provider||'').toLowerCase(), sl=(ev.service||'').toLowerCase();
+  if(sl.indexOf('spiritual')>-1||sl.indexOf('dbt')>-1) return true; // Spirituality and DBT Skills (incl. groups) always count as direct service
   if(sl.indexOf('testing')>-1) return false; // testing is not direct clinical service — counted as ancillary
   if(sl.indexOf('group')>-1) return false; // groups are not direct clinical hours (incl. Caseload/ACT Group) — counted as ancillary
   if(!pl) return CLIN_KW.some(function(k){return sl.indexOf(k)>-1;}); // no provider — classify by service only
