@@ -75,6 +75,7 @@ tr:hover td{background:#FAFAF8}.totrow td{background:#F5F0E8;font-weight:700}
   <div class="tabs">
     <div class="tab on" data-t="monthly">Monthly Summary</div>
     <div class="tab" data-t="provider">By Provider</div>
+    <div class="tab" data-t="ppd">By Pay Period</div>
     <div class="tab" data-t="audit">Client Daily Audit</div>
     <div class="tab" data-t="roster">Provider Roster</div>
   </div>
@@ -139,8 +140,8 @@ function prog(ev){
   if(!p&&ev.clientId){var cl=DATA.clients.find(function(c){return c.id===ev.clientId;});if(cl)p=(cl.program||'').toLowerCase();}
   return p;
 }
-function getEvs(){
-  var from=document.getElementById('f-from').value, to=document.getElementById('f-to').value, pg=document.getElementById('f-prog').value;
+function getEvs(noRange){
+  var from=noRange?'':document.getElementById('f-from').value, to=noRange?'':document.getElementById('f-to').value, pg=document.getElementById('f-prog').value;
   var all=DATA.events, passed=[];
   var dbg={total:all.length,noDate:0,noProvider:0,noStatus:0,notCompleted:0,skipped:0,outOfRange:0,progFilter:0,passed:0};
   // Log unique status values for diagnosis
@@ -304,6 +305,7 @@ function render(){
   el.innerHTML='';var wrap=document.createElement('div');wrap.className='pg';
   if(_tab==='monthly') renderMonthly(wrap,evs);
   else if(_tab==='provider') renderProvider(wrap,evs);
+  else if(_tab==='ppd') renderPPD(wrap,getEvs(true));
   else if(_tab==='audit') renderAudit(wrap,getAuditEvs());
   else renderRoster(wrap,evs);
   el.appendChild(wrap);
@@ -425,6 +427,101 @@ function renderProvider(el,evs){
       [{label:'Hours',data:ancPs.map(function(p){return Math.round(p[1].anc*10)/10;}),color:'#2D6A4F'}],{horiz:true});
   },60);
 }
+
+
+/* ══ BY PAY PERIOD ══════════════════════════════════════════ */
+// Same biweekly schedule as the Stipends page (Sun–Sat, 14 days)
+var PAY_PERIODS=[
+  {ppd:1,start:'2025-12-14',end:'2025-12-27',chk:'2026-01-02'},{ppd:2,start:'2025-12-28',end:'2026-01-10',chk:'2026-01-16'},
+  {ppd:3,start:'2026-01-11',end:'2026-01-24',chk:'2026-01-30'},{ppd:4,start:'2026-01-25',end:'2026-02-07',chk:'2026-02-13'},
+  {ppd:5,start:'2026-02-08',end:'2026-02-21',chk:'2026-02-27'},{ppd:6,start:'2026-02-22',end:'2026-03-07',chk:'2026-03-13'},
+  {ppd:7,start:'2026-03-08',end:'2026-03-21',chk:'2026-03-27'},{ppd:8,start:'2026-03-22',end:'2026-04-04',chk:'2026-04-10'},
+  {ppd:9,start:'2026-04-05',end:'2026-04-18',chk:'2026-04-24'},{ppd:10,start:'2026-04-19',end:'2026-05-02',chk:'2026-05-08'},
+  {ppd:11,start:'2026-05-03',end:'2026-05-16',chk:'2026-05-22'},{ppd:12,start:'2026-05-17',end:'2026-05-30',chk:'2026-06-05'},
+  {ppd:13,start:'2026-05-31',end:'2026-06-13',chk:'2026-06-18'},{ppd:14,start:'2026-06-14',end:'2026-06-27',chk:'2026-07-02'},
+  {ppd:15,start:'2026-06-28',end:'2026-07-11',chk:'2026-07-17'},{ppd:16,start:'2026-07-12',end:'2026-07-25',chk:'2026-07-31'},
+  {ppd:17,start:'2026-07-26',end:'2026-08-08',chk:'2026-08-14'},{ppd:18,start:'2026-08-09',end:'2026-08-22',chk:'2026-08-28'},
+  {ppd:19,start:'2026-08-23',end:'2026-09-05',chk:'2026-09-11'},{ppd:20,start:'2026-09-06',end:'2026-09-19',chk:'2026-09-25'},
+  {ppd:21,start:'2026-09-20',end:'2026-10-03',chk:'2026-10-09'},{ppd:22,start:'2026-10-04',end:'2026-10-17',chk:'2026-10-23'},
+  {ppd:23,start:'2026-10-18',end:'2026-10-31',chk:'2026-11-06'},{ppd:24,start:'2026-11-01',end:'2026-11-14',chk:'2026-11-20'},
+  {ppd:25,start:'2026-11-15',end:'2026-11-28',chk:'2026-12-04'},{ppd:26,start:'2026-11-29',end:'2026-12-12',chk:'2026-12-18'},
+  {ppd:27,start:'2026-12-13',end:'2026-12-26',chk:'2026-12-31'}
+];
+var _ppdSel=null;
+function ppdFd(d){var m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return m[parseInt(d.slice(5,7),10)-1]+' '+parseInt(d.slice(8),10);}
+function ppdIdxFor(d){for(var i=0;i<PAY_PERIODS.length;i++){if(d>=PAY_PERIODS[i].start&&d<=PAY_PERIODS[i].end)return i;}return -1;}
+function r1(n){return Math.round(n*10)/10;}
+function renderPPD(el,evs){
+  // direct service only (isClin) — groups, testing and ancillary services are excluded
+  var N=PAY_PERIODS.length, byPP=[], i;
+  for(i=0;i<N;i++) byPP.push({tot:0,prov:{}});
+  var outside=0;
+  evs.forEach(function(ev){
+    if(!isClin(ev)) return;
+    var ix=ppdIdxFor(ev.date); if(ix<0){outside+=getHrs(ev);return;}
+    var h=getHrs(ev),p=ev.provider;
+    byPP[ix].tot+=h; byPP[ix].prov[p]=(byPP[ix].prov[p]||0)+h;
+  });
+  if(_ppdSel===null||_ppdSel<0||_ppdSel>=N){
+    var today=new Date().toISOString().slice(0,10), t=ppdIdxFor(today);
+    if(t<0||!byPP[t].tot){ t=-1; for(i=N-1;i>=0;i--){ if(byPP[i].tot>0){t=i;break;} } }
+    _ppdSel=t<0?0:t;
+  }
+  var sel=_ppdSel, pp=PAY_PERIODS[sel], cur=byPP[sel];
+  var provs=Object.keys(cur.prov).sort(function(a,b){return cur.prov[b]-cur.prov[a];});
+  var w2=0,ctr=0,unk=0;
+  provs.forEach(function(p){var e=emp(p),h=cur.prov[p];if(e==='W2')w2+=h;else if(e==='Contractor')ctr+=h;else unk+=h;});
+
+  var nav='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">'+
+    '<button onclick="ppdShift(-1)" '+(sel<=0?'disabled ':'')+'style="padding:6px 14px;border:1px solid #ccc;background:#fff;border-radius:6px;font-size:16px;cursor:pointer">‹</button>'+
+    '<div style="font-size:14px;font-weight:700;color:#1B2A4A;min-width:260px;text-align:center">PPD '+pp.ppd+' · '+ppdFd(pp.start)+' – '+ppdFd(pp.end)+', '+pp.end.slice(0,4)+
+    '<div style="font-size:10px;font-weight:500;color:#999;margin-top:2px">Check date '+ppdFd(pp.chk)+', '+pp.chk.slice(0,4)+'</div></div>'+
+    '<button onclick="ppdShift(1)" '+(sel>=N-1?'disabled ':'')+'style="padding:6px 14px;border:1px solid #ccc;background:#fff;border-radius:6px;font-size:16px;cursor:pointer">›</button>'+
+    '<span style="font-size:10px;color:#999">Direct service hours only · groups, testing and ancillary services excluded</span></div>';
+
+  var h='<div class="krow k4">'+
+    kpi(r1(cur.tot)+' hrs','Direct Service Hours','PPD '+pp.ppd)+
+    kpi(provs.length,'Providers','with direct hours')+
+    kpi(r1(w2)+' hrs','W2 Providers','')+
+    kpi(r1(ctr)+' hrs','Contractors',unk?r1(unk)+' hrs unclassified':'')+
+  '</div>';
+
+  h+='<div class="card"><div class="ct" style="color:#1B2A4A">PPD '+pp.ppd+' — Direct Service Hours by Provider</div><div style="overflow-x:auto"><table><thead><tr><th>Provider</th><th>Type</th><th class="r">Hours</th><th class="r">% of PPD</th></tr></thead><tbody>'+
+    (provs.length?provs.map(function(p){var e=emp(p);
+      return '<tr><td><b>'+p+'</b></td><td><span class="badge '+(e==='W2'?'bw2':e==='Contractor'?'bctr':'bam')+'">'+e+'</span></td><td class="r"><b>'+r1(cur.prov[p])+'</b></td><td class="r">'+Math.round(cur.prov[p]/cur.tot*100)+'%</td></tr>';}).join('')+
+      '<tr class="totrow"><td colspan="2">Total</td><td class="r">'+r1(cur.tot)+'</td><td class="r">100%</td></tr>'
+      :'<tr><td colspan="4" style="text-align:center;color:#999;padding:18px">No direct service hours in this pay period.</td></tr>')+
+    '</tbody></table></div></div>';
+
+  // all pay periods — totals
+  var first=-1,last=-1;for(i=0;i<N;i++){if(byPP[i].tot>0){if(first<0)first=i;last=i;}}
+  if(first<0){first=0;last=0;}
+  h+='<div class="card"><div class="ct" style="color:#1B2A4A">All Pay Periods — Total Direct Service Hours</div><div style="overflow-x:auto"><table><thead><tr><th>PPD</th><th>Period</th><th>Check Date</th><th class="r">Providers</th><th class="r">Direct Hours</th></tr></thead><tbody>';
+  var grand=0;
+  for(i=first;i<=last;i++){var b=byPP[i],q=PAY_PERIODS[i];grand+=b.tot;
+    h+='<tr style="cursor:pointer;'+(i===sel?'background:#EEF2FF;':'')+'" onclick="ppdPick('+i+')"><td><b>'+q.ppd+'</b></td><td>'+ppdFd(q.start)+' – '+ppdFd(q.end)+'</td><td>'+ppdFd(q.chk)+'</td><td class="r">'+Object.keys(b.prov).length+'</td><td class="r"><b>'+r1(b.tot)+'</b></td></tr>';}
+  h+='<tr class="totrow"><td colspan="4">Total</td><td class="r">'+r1(grand)+'</td></tr></tbody></table></div>'+
+    (outside?'<div style="font-size:10px;color:#92400E;margin-top:8px">'+r1(outside)+' direct hours fall outside the defined 2026 pay periods.</div>':'')+'</div>';
+
+  // provider x PPD matrix
+  var provTot={};
+  for(i=first;i<=last;i++){Object.keys(byPP[i].prov).forEach(function(p){provTot[p]=(provTot[p]||0)+byPP[i].prov[p];});}
+  var allP=Object.keys(provTot).sort(function(a,b){return provTot[b]-provTot[a];});
+  h+='<div class="card"><div class="ct" style="color:#1B2A4A">Direct Service Hours by Provider × Pay Period</div><div style="overflow-x:auto"><table style="min-width:'+(220+(last-first+2)*62)+'px"><thead><tr><th style="position:sticky;left:0;background:#1B2A4A">Provider</th>';
+  for(i=first;i<=last;i++) h+='<th class="r" title="'+ppdFd(PAY_PERIODS[i].start)+' – '+ppdFd(PAY_PERIODS[i].end)+'">PPD '+PAY_PERIODS[i].ppd+'</th>';
+  h+='<th class="r">Total</th></tr></thead><tbody>';
+  allP.forEach(function(p){
+    h+='<tr><td style="position:sticky;left:0;background:#fff"><b>'+p+'</b></td>';
+    for(var j=first;j<=last;j++){var v=byPP[j].prov[p]||0;h+='<td class="r'+(v?'':' z')+'">'+(v?r1(v):'—')+'</td>';}
+    h+='<td class="r"><b>'+r1(provTot[p])+'</b></td></tr>';});
+  h+='<tr class="totrow"><td style="position:sticky;left:0;background:#F5F0E8">Total</td>';
+  for(i=first;i<=last;i++) h+='<td class="r">'+r1(byPP[i].tot)+'</td>';
+  h+='<td class="r">'+r1(grand)+'</td></tr></tbody></table></div></div>';
+
+  el.innerHTML=nav+h;
+}
+function ppdShift(d){_ppdSel=(_ppdSel===null?0:_ppdSel)+d;render();}
+function ppdPick(i){_ppdSel=i;render();window.scrollTo(0,0);}
 
 /* ══ CLIENT DAILY AUDIT ═════════════════════════════════════ */
 function renderAudit(el,evs){
